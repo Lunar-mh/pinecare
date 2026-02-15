@@ -1,0 +1,144 @@
+@import '../../../styles/theme/variables.scss';
+
+.metric-card {
+  background: $bg-card;
+  border-radius: $radius-lg;
+  padding: $space-lg;
+  box-shadow: $shadow-card;
+  display: flex;
+  flex-direction: column;
+  min-height: 140px;
+  transition: transform $transition-normal;
+  
+  &:active {
+    transform: scale(0.98);
+  }
+  
+  // 状态样式
+  &--normal {
+    border-left: 6px solid $color-success;
+    background: linear-gradient(to right, #f1f8e9 0%, $bg-card 100%);
+  }
+  
+  &--warning {
+    border-left: 6px solid $color-warning;
+    background: linear-gradient(to right, #fff8e1 0%, $bg-card 100%);
+  }
+  
+  &--danger {
+    border-left: 6px solid $color-danger;
+    background: linear-gradient(to right, #ffebee 0%, $bg-card 100%);
+  }
+
+  // Loading Skeleton
+  &--loading {
+    border-left: 6px solid $border-light;
+    background: $bg-card;
+    pointer-events: none;
+  }
+
+  &__skeleton {
+    background: #f0f0f0;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    animation: skeleton-loading 1.5s infinite ease-in-out;
+
+    &--title { width: 40%; height: 20px; }
+    &--subtitle { width: 60%; height: 16px; margin-bottom: 16px; }
+    &--value { width: 80%; height: 36px; margin-bottom: 12px; }
+    &--footer { width: 30%; height: 24px; border-radius: 12px; }
+  }
+  
+  // 标题
+  &__title {
+    font-size: $font-body;
+    color: $text-secondary;
+    margin-bottom: $space-sm;
+    font-weight: $font-weight-medium;
+  }
+
+  &__subtitle {
+    font-size: 16px; // Force minimum readable size
+    color: $text-secondary; // Increase contrast (was tertiary)
+    margin-bottom: $space-md;
+  }
+  
+  // 数值行
+  &__value-row {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: $space-md;
+    flex: 1;
+  }
+  
+  // 数值（大字）
+  &__value {
+    font-size: 40px; // Larger display font for readability
+    font-weight: $font-weight-bold;
+    color: $text-primary;
+    line-height: $line-height-tight;
+    letter-spacing: -1px;
+  }
+  
+  // 单位
+  &__unit {
+    font-size: 18px; // Larger unit for readability
+    color: $text-secondary;
+    margin-left: 6px;
+    font-weight: $font-weight-medium;
+  }
+
+@keyframes skeleton-loading {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0.6; }
+}
+  
+  // 底部信息
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  // 状态标签
+  &__status {
+    font-size: $font-caption;
+    font-weight: $font-weight-semibold;
+    padding: 4px 12px;
+    border-radius: 12px;
+    
+    &--normal {
+      color: $color-success;
+      background: #e8f5e9;
+    }
+    
+    &--warning {
+      color: #e65100;
+      background: #ffe0b2;
+    }
+    
+    &--danger {
+      color: #c62828;
+      background: #ffcdd2;
+    }
+  }
+  
+  // 趋势
+  &__trend {
+    font-size: $font-caption;
+    font-weight: $font-weight-medium;
+    
+    &--up {
+      color: $color-danger;
+    }
+    
+    &--down {
+      color: $color-success;
+    }
+    
+    &--stable {
+      color: $text-tertiary;
+    }
+  }
+}

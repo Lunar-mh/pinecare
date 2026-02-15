@@ -1,0 +1,227 @@
+openapi: 3.0.3
+info:
+  title: 银伴平台 - 时间银行API
+  description: 银伴全域智慧照护平台时间银行接口
+  version: 1.0.0
+  contact:
+    name: 银伴技术团队
+
+servers:
+  - url: https://api.yinban.com/v1
+    description: 生产环境
+  - url: https://staging-api.yinban.com/v1
+    description: 测试环境
+
+tags:
+  - name: 时间银行
+    description: 时间银行相关接口
+
+paths:
+  # ==================== 时间银行 ====================
+  
+  /time-bank/account:
+    get:
+      tags:
+        - 时间银行
+      summary: 获取账户信息
+      operationId: getAccount
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: integer
+                  totalEarned:
+                    type: integer
+                  totalSpent:
+                    type: integer
+                  creditScore:
+                    type: integer
+                  creditLevel:
+                    type: string
+
+  /time-bank/balance:
+    get:
+      tags:
+        - 时间银行
+      summary: 查询余额
+      operationId: getBalance
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: integer
+
+  /time-bank/service/record:
+    post:
+      tags:
+        - 时间银行
+      summary: 记录服务
+      operationId: recordService
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recipientId
+                - type
+                - duration
+              properties:
+                recipientId:
+                  type: integer
+                type:
+                  type: string
+                  enum: [normal, professional, emergency]
+                duration:
+                  type: number
+                startTime:
+                  type: string
+                  format: date-time
+                endTime:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: 记录成功
+
+  /time-bank/service/confirm:
+    post:
+      tags:
+        - 时间银行
+      summary: 确认服务完成
+      operationId: confirmService
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recordId
+                - action
+              properties:
+                recordId:
+                  type: integer
+                action:
+                  type: string
+                  enum: [confirm, cancel]
+      responses:
+        '200':
+          description: 确认成功
+
+  /time-bank/service/history:
+    get:
+      tags:
+        - 时间银行
+      summary: 服务历史
+      operationId: getServiceHistory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [provided, received]
+      responses:
+        '200':
+          description: 获取成功
+
+  /time-bank/exchange:
+    post:
+      tags:
+        - 时间银行
+      summary: 发起兑换
+      operationId: exchange
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - exchangeType
+                - itemName
+                - coinsRequired
+              properties:
+                exchangeType:
+                  type: string
+                  enum: [service, goods, medical, donation]
+                itemName:
+                  type: string
+                coinsRequired:
+                  type: integer
+      responses:
+        '200':
+          description: 兑换成功
+
+  /time-bank/exchange/history:
+    get:
+      tags:
+        - 时间银行
+      summary: 兑换历史
+      operationId: getExchangeHistory
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 获取成功
+
+  /time-bank/leaderboard:
+    get:
+      tags:
+        - 时间银行
+      summary: 排行榜
+      operationId: getLeaderboard
+      parameters:
+        - name: communityId
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 获取成功
+
+# ==================== Components ====================
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 400
+              message:
+                type: string

@@ -1,0 +1,135 @@
+@import '../../../styles/theme/variables.scss';
+
+/* LargeInput 样式 */
+.large-input-wrapper {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.large-input__label {
+  margin-bottom: 12px;
+
+  &-text {
+    font-size: 20px;
+    font-weight: $font-weight-medium;
+    color: $color-text-primary;
+  }
+}
+
+.large-input__required {
+  color: $color-danger;
+}
+
+.large-input {
+  width: 100%;
+  height: 68px;
+  min-height: 68px;
+  background: #FFFFFF;
+  border: 2px solid $color-border;
+  border-radius: 12px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease-in-out;
+
+  &:focus-within {
+    border-color: $color-primary;
+    box-shadow: 0 0 0 3px rgba(1, 87, 155, 0.1);
+  }
+
+  &--error {
+    border-color: $color-danger;
+    background: #FFF5F5;
+
+    &:focus-within {
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+  }
+
+  &--disabled {
+    background: $color-background;
+    border-color: $color-border-light;
+
+    .large-input__field {
+      color: $color-text-disabled;
+    }
+  }
+
+  &__field {
+    flex: 1;
+    height: 100%;
+    font-size: 22px;
+    color: $color-text-primary;
+    background: transparent;
+    border: none;
+    outline: none;
+
+    &::placeholder {
+      color: $color-text-hint;
+    }
+  }
+}
+
+/* LargeTextarea 样式 */
+.large-textarea {
+  width: 100%;
+  background: #FFFFFF;
+  border: 2px solid $color-border;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  transition: all 0.2s ease-in-out;
+
+  &:focus-within {
+    border-color: $color-primary;
+    box-shadow: 0 0 0 3px rgba(1, 87, 155, 0.1);
+  }
+
+  &--error {
+    border-color: $color-danger;
+    background: #FFF5F5;
+
+    &:focus-within {
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+  }
+
+  &--disabled {
+    background: $color-background;
+    border-color: $color-border-light;
+
+    .large-textarea__field {
+      color: $color-text-disabled;
+    }
+  }
+
+  &__field {
+    flex: 1;
+    width: 100%;
+    font-size: 22px;
+    line-height: 1.6;
+    color: $color-text-primary;
+    background: transparent;
+    border: none;
+    outline: none;
+
+    &::placeholder {
+      color: $color-text-hint;
+    }
+  }
+}
+
+.large-input__error {
+  display: block;
+  margin-top: 8px;
+  font-size: 16px;
+  color: $color-danger;
+}
+
+/* 支持减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .large-input,
+  .large-textarea {
+    transition: none;
+  }
+}

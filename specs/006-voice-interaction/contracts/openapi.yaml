@@ -1,0 +1,23 @@
+openapi: 3.0.3
+info:
+  title: 银伴平台 - 语音交互API
+  version: 1.0.0
+
+paths:
+  /voice/recognize:
+    post:
+      tags:
+        - 语音
+      summary: 语音识别
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 识别成功
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

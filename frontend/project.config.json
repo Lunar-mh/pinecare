@@ -1,0 +1,9 @@
+{
+  "miniprogramRoot": "./dist/",
+  "projectname": "yinban-frontend",
+  "description": "",
+  "appid": "touristappid",
+  "setting": {
+    "urlCheck": false
+  }
+}

@@ -1,0 +1,214 @@
+@import '../../../../styles/theme/variables.scss';
+
+.records-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: $bg-primary;
+}
+
+// ========== 导航 ==========
+.records-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 48px $page-padding $space-md;
+  background: $bg-card;
+  flex-shrink: 0;
+
+  &__back {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(180deg);
+  }
+
+  &__title {
+    font-size: $font-h2;
+    font-weight: $font-weight-bold;
+    color: $text-primary;
+  }
+
+  &__placeholder {
+    width: 44px;
+  }
+}
+
+// ========== 类型切换 ==========
+.type-tabs {
+  display: flex;
+  background: $bg-card;
+  padding: 0 $page-padding $space-sm;
+  gap: $space-sm;
+  flex-shrink: 0;
+  border-bottom: 1px solid $border-light;
+
+  &__item {
+    flex: 1;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: $radius-md;
+    font-size: $font-body;
+    color: $text-secondary;
+    font-weight: $font-weight-medium;
+    position: relative;
+
+    &--active {
+      color: $color-primary;
+      font-weight: $font-weight-semibold;
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -$space-sm;
+        left: 20%;
+        width: 60%;
+        height: 3px;
+        background: $color-primary;
+        border-radius: 2px;
+      }
+    }
+  }
+}
+
+// ========== 滚动区 ==========
+.records-scroll {
+  flex: 1;
+  overflow: hidden;
+}
+
+// ========== 列表 ==========
+.records-list {
+  padding: $space-md $page-padding;
+  display: flex;
+  flex-direction: column;
+  gap: $space-sm;
+}
+
+// ========== 记录项 ==========
+.record-item {
+  background: $bg-card;
+  border-radius: $radius-lg;
+  padding: $space-md;
+  box-shadow: $shadow-card;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: $space-sm;
+    flex: 1;
+  }
+
+  &__icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: $radius-md;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__info {
+    flex: 1;
+  }
+
+  &__value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 2px;
+  }
+
+  &__value {
+    font-size: $font-h2;
+    font-weight: $font-weight-bold;
+    color: $text-primary;
+    line-height: $line-height-tight;
+  }
+
+  &__unit {
+    font-size: $font-caption;
+    color: $text-secondary;
+  }
+
+  &__sub {
+    font-size: $font-caption;
+    color: $text-tertiary;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  &__time {
+    font-size: $font-caption;
+    color: $text-tertiary;
+    display: block;
+  }
+
+  &__badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: $font-caption;
+    font-weight: $font-weight-medium;
+    flex-shrink: 0;
+
+    &--normal {
+      background: #e8f5e9;
+      color: $color-success;
+    }
+
+    &--warning {
+      background: #fff3e0;
+      color: $color-warning;
+    }
+
+    &--danger {
+      background: #ffebee;
+      color: $color-danger;
+    }
+  }
+}
+
+// ========== 空状态 ==========
+.records-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $space-xxl $page-padding;
+  gap: $space-sm;
+
+  &__text {
+    font-size: $font-h3;
+    color: $text-tertiary;
+    font-weight: $font-weight-medium;
+  }
+
+  &__hint {
+    font-size: $font-caption;
+    color: $text-disabled;
+  }
+}
+
+// ========== 加载/结束 ==========
+.records-loading,
+.records-end {
+  display: flex;
+  justify-content: center;
+  padding: $space-lg 0;
+
+  &__text {
+    font-size: $font-caption;
+    color: $text-tertiary;
+  }
+}

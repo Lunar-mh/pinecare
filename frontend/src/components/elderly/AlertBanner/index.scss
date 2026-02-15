@@ -1,0 +1,81 @@
+@import '../../../styles/theme/variables.scss';
+
+/* AlertBanner 样式 */
+.alert-banner {
+  width: 100%;
+  padding: 20px 24px;
+  border-radius: 16px;
+  border-left-width: 4px;
+  border-left-style: solid;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  transition: all 0.3s ease-in-out;
+
+  &__content {
+    display: flex;
+    align-items: flex-start;
+    flex: 1;
+    gap: 16px;
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+  }
+
+  &__text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__title {
+    font-size: 22px;
+    font-weight: $font-weight-bold;
+    color: $color-text-primary;
+    line-height: 1.4;
+  }
+
+  &__message {
+    font-size: 18px;
+    color: $color-text-secondary;
+    line-height: 1.5;
+  }
+
+  &__close {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+    border-radius: 50%;
+    transition: background-color 0.2s ease-in-out;
+
+    &:active {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+  }
+
+  /* 可点击状态 */
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+/* 支持减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .alert-banner {
+    transition: none;
+  }
+}

@@ -1,0 +1,127 @@
+@import '../../../../styles/theme/variables.scss';
+
+.health-index {
+  min-height: 100vh;
+  background: $color-background;
+  position: relative;
+
+  &__scroll {
+    height: 100vh;
+    padding: 16px;
+    padding-bottom: 120px;
+  }
+
+  &__alerts {
+    margin-bottom: 16px;
+
+    &--empty {
+      background: #e8f5e9;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid rgba(67, 160, 71, 0.2);
+
+      .empty-icon-wrapper {
+        width: 40px;
+        height: 40px;
+        background: #ffffff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(67, 160, 71, 0.15);
+      }
+
+      .empty-text {
+        font-size: 16px;
+        color: $color-success;
+        font-weight: $font-weight-medium;
+      }
+    }
+  }
+
+  &__metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 8px;
+
+    & > *:nth-child(3) {
+      grid-column: span 2;
+    }
+  }
+
+  &__trend-card {
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 16px;
+    box-shadow: $shadow-sm;
+
+    .trend-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+
+      &__text {
+        font-size: 18px;
+        color: $color-text-secondary;
+      }
+    }
+  }
+
+  &__actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: $shadow-sm;
+
+    .action-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 8px;
+      border-radius: 12px;
+      transition: background-color 0.2s ease-in-out;
+
+      &:active {
+        background-color: $color-background;
+      }
+
+      &__icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      &__text {
+        font-size: 18px;
+        color: $color-text-primary;
+        font-weight: $font-weight-medium;
+      }
+    }
+  }
+
+  &__fab {
+    position: fixed;
+    right: 24px;
+    bottom: 32px;
+    z-index: 100;
+  }
+
+  .safe-area-bottom {
+    height: constant(safe-area-inset-bottom);
+    height: env(safe-area-inset-bottom);
+    min-height: 20px;
+  }
+}

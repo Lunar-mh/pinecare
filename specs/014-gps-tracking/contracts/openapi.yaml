@@ -1,0 +1,94 @@
+openapi: 3.0.3
+info:
+  title: 银伴平台 - GPS定位API
+  description: 银伴全域智慧照护平台GPS定位接口
+  version: 1.0.0
+
+servers:
+  - url: https://api.yinban.com/v1
+
+tags:
+  - name: GPS定位
+    description: GPS定位相关接口
+
+paths:
+  /location/upload:
+    post:
+      tags:
+        - GPS定位
+      summary: 上传位置
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 成功
+
+  /location/current:
+    get:
+      tags:
+        - GPS定位
+      summary: 获取当前位置
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 成功
+
+  /location/trail:
+    get:
+      tags:
+        - GPS定位
+      summary: 获取轨迹
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+        - name: endDate
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+
+  /location/fences:
+    get:
+      tags:
+        - GPS定位
+      summary: 围栏列表
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 成功
+
+    post:
+      tags:
+        - GPS定位
+      summary: 创建围栏
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 成功
+
+  /location/alerts:
+    get:
+      tags:
+        - GPS定位
+      summary: 告警列表
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 成功
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,227 @@
+openapi: 3.0.3
+info:
+  title: 银伴平台 - AI健康顾问API
+  description: 银伴全域智慧照护平台AI健康顾问接口
+  version: 1.0.0
+  contact:
+    name: 银伴技术团队
+
+servers:
+  - url: https://api.yinban.com/v1
+    description: 生产环境
+  - url: https://staging-api.yinban.com/v1
+    description: 测试环境
+
+tags:
+  - name: AI咨询
+    description: AI健康顾问相关接口
+
+paths:
+  # ==================== AI咨询 ====================
+  
+  /ai-consult/chat:
+    post:
+      tags:
+        - AI咨询
+      summary: 发送咨询消息
+      operationId: sendChatMessage
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+                - sessionId
+              properties:
+                message:
+                  type: string
+                  description: 用户消息
+                  example: "我血压高怎么办"
+                sessionId:
+                  type: string
+                  description: 会话ID
+                  example: "session-uuid"
+      responses:
+        '200':
+          description: 咨询成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: object
+                    properties:
+                      reply:
+                        type: string
+                        description: AI回复
+                      sessionId:
+                        type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /ai-consult/history:
+    get:
+      tags:
+        - AI咨询
+      summary: 获取会话历史
+      operationId: getChatHistory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    role:
+                      type: string
+                      enum: [user, assistant]
+                    content:
+                      type: string
+                    createdAt:
+                      type: string
+                      format: date-time
+
+  /ai-consult/voice:
+    post:
+      tags:
+        - AI咨询
+      summary: 语音咨询
+      operationId: voiceConsult
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - audioData
+                - sessionId
+              properties:
+                audioData:
+                  type: string
+                  description: Base64编码的音频数据
+                sessionId:
+                  type: string
+      responses:
+        '200':
+          description: 咨询成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reply:
+                    type: string
+                  audioData:
+                    type: string
+                    description: Base64编码的回复音频
+
+  /ai-consult/profile:
+    get:
+      tags:
+        - AI咨询
+      summary: 获取健康画像
+      operationId: getHealthProfile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  age:
+                    type: integer
+                  gender:
+                    type: string
+                  chronicDiseases:
+                    type: array
+                    items:
+                      type: string
+                  allergies:
+                    type: array
+                    items:
+                      type: string
+                  recentIndicators:
+                    type: object
+
+    put:
+      tags:
+        - AI咨询
+      summary: 更新健康画像
+      operationId: updateHealthProfile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                age:
+                  type: integer
+                gender:
+                  type: string
+                chronicDiseases:
+                  type: array
+                  items:
+                    type: string
+                allergies:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: 更新成功
+
+# ==================== Components ====================
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 400
+              message:
+                type: string

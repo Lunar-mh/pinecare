@@ -1,0 +1,531 @@
+openapi: 3.0.3
+info:
+  title: 银伴平台 - 用户认证API
+  description: 银伴全域智慧照护平台用户注册与身份认证接口
+  version: 1.0.0
+  contact:
+    name: 银伴技术团队
+
+servers:
+  - url: https://api.yinban.com/v1
+    description: 生产环境
+  - url: https://staging-api.yinban.com/v1
+    description: 测试环境
+
+tags:
+  - name: 认证
+    description: 用户注册登录相关接口
+  - name: 用户
+    description: 用户信息管理
+
+paths:
+  # ==================== 认证相关 ====================
+  
+  /auth/send-sms:
+    post:
+      tags:
+        - 认证
+      summary: 发送短信验证码
+      operationId: sendSmsCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone
+                - purpose
+              properties:
+                phone:
+                  type: string
+                  description: 手机号
+                  example: "13800138000"
+                purpose:
+                  type: string
+                  enum: [register, login, bind, reset_password]
+                  description: 验证码用途
+      responses:
+        '200':
+          description: 发送成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "验证码已发送"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /auth/register/phone:
+    post:
+      tags:
+        - 认证
+      summary: 手机号注册
+      operationId: registerWithPhone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone
+                - code
+                - password
+              properties:
+                phone:
+                  type: string
+                  description: 手机号
+                code:
+                  type: string
+                  description: 短信验证码
+                password:
+                  type: string
+                  description: 登录密码(加密传输)
+      responses:
+        '200':
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /auth/login/phone:
+    post:
+      tags:
+        - 认证
+      summary: 手机号密码登录
+      operationId: loginWithPhone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone
+                - password
+              properties:
+                phone:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '423':
+          $ref: '#/components/responses/AccountLocked'
+
+  /auth/login/wechat:
+    post:
+      tags:
+        - 认证
+      summary: 微信一键登录
+      operationId: loginWithWechat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                  description: 微信wx.login返回的code
+                userInfo:
+                  $ref: '#/components/schemas/WechatUserInfo'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResult'
+
+  /auth/refresh-token:
+    post:
+      tags:
+        - 认证
+      summary: 刷新访问令牌
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: 刷新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  expires_in:
+                    type: integer
+
+  # ==================== 用户信息 ====================
+
+  /user/profile:
+    get:
+      tags:
+        - 用户
+      summary: 获取当前用户信息
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+    
+    put:
+      tags:
+        - 用户
+      summary: 更新用户信息
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                real_name:
+                  type: string
+                age:
+                  type: integer
+                gender:
+                  type: string
+                  enum: [male, female, unknown]
+                chronic_diseases:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: 更新成功
+
+  /user/emergency-contacts:
+    get:
+      tags:
+        - 用户
+      summary: 获取紧急联系人列表
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmergencyContact'
+    
+    post:
+      tags:
+        - 用户
+      summary: 添加紧急联系人
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - phone
+                - relationship
+              properties:
+                name:
+                  type: string
+                phone:
+                  type: string
+                relationship:
+                  type: string
+      responses:
+        '201':
+          description: 添加成功
+
+  /user/emergency-contacts/{id}:
+    delete:
+      tags:
+        - 用户
+      summary: 删除紧急联系人
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: 删除成功
+
+  /user/binding/qrcode:
+    post:
+      tags:
+        - 用户
+      summary: 生成绑定二维码
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 生成成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  qr_code:
+                    type: string
+                  expire_at:
+                    type: string
+                    format: date-time
+
+  /user/binding/approve:
+    post:
+      tags:
+        - 用户
+      summary: 同意/拒绝家属绑定
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - binding_id
+                - action
+              properties:
+                binding_id:
+                  type: integer
+                action:
+                  type: string
+                  enum: [approve, reject]
+
+  /user/account/delete:
+    post:
+      tags:
+        - 用户
+      summary: 注销账户
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                  description: 短信验证码
+      responses:
+        '200':
+          description: 注销成功
+
+  /user/unlock:
+    post:
+      tags:
+        - 用户
+      summary: 验证码解锁账户
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone
+                - code
+              properties:
+                phone:
+                  type: string
+                code:
+                  type: string
+      responses:
+        '200':
+          description: 解锁成功
+
+# ==================== Components ====================
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AuthResult:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: 访问令牌(JWT)
+        refresh_token:
+          type: string
+          description: 刷新令牌
+        expires_in:
+          type: integer
+          description: 访问令牌有效期(秒)
+        user:
+          $ref: '#/components/schemas/UserProfile'
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        phone:
+          type: string
+        nickname:
+          type: string
+        avatar_url:
+          type: string
+        real_name:
+          type: string
+        age:
+          type: integer
+        gender:
+          type: string
+        chronic_diseases:
+          type: array
+          items:
+            type: string
+        account_status:
+          type: string
+
+    EmergencyContact:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        relationship:
+          type: string
+        is_primary:
+          type: boolean
+
+    WechatUserInfo:
+      type: object
+      properties:
+        nickName:
+          type: string
+        avatarUrl:
+          type: string
+        gender:
+          type: integer
+
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 400
+              message:
+                type: string
+
+    Unauthorized:
+      description: 未授权
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 401
+              message:
+                type: string
+
+    AccountLocked:
+      description: 账户已锁定
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 423
+              message:
+                type: string
+              locked_until:
+                type: string
+                format: date-time
+
+    Conflict:
+      description: 资源冲突
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 409
+              message:
+                type: string
+
+    TooManyRequests:
+      description: 请求过于频繁
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 429
+              message:
+                type: string

@@ -1,0 +1,320 @@
+@import '../../styles/theme/variables.scss';
+
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, $color-primary 0%, $color-primary-light 35%, $bg-primary 35%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 40px;
+}
+
+// ========== 品牌区 ==========
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 0 40px;
+
+  &__logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  }
+
+  &__logo-text {
+    font-size: 40px;
+    color: #fff;
+    font-weight: $font-weight-bold;
+    line-height: 1;
+  }
+
+  &__name {
+    font-size: 32px;
+    color: #fff;
+    font-weight: $font-weight-bold;
+    margin-bottom: 8px;
+    letter-spacing: 4px;
+  }
+
+  &__slogan {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 1px;
+  }
+}
+
+// ========== 登录卡片 ==========
+.login-card {
+  width: 90%;
+  max-width: 400px;
+  background: $bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-float;
+  padding: 8px 0 32px;
+  margin-top: -8px;
+}
+
+// ========== Tab 切换 ==========
+.login-tabs {
+  display: flex;
+  border-bottom: 1px solid $border-light;
+  margin-bottom: 28px;
+}
+
+.login-tab {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 20px 0 16px;
+  position: relative;
+
+  &__text {
+    font-size: 20px;
+    color: $text-secondary;
+    font-weight: $font-weight-medium;
+    transition: color $transition-normal $ease-default;
+  }
+
+  &--active {
+    .login-tab__text {
+      color: $color-primary;
+      font-weight: $font-weight-bold;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 20%;
+      right: 20%;
+      height: 3px;
+      background: $color-primary;
+      border-radius: 2px;
+    }
+  }
+}
+
+// ========== 表单区 ==========
+.login-form {
+  padding: 0 24px;
+}
+
+.login-field {
+  display: flex;
+  align-items: center;
+  background: #f5f7fa;
+  border-radius: $radius-md;
+  border: 1.5px solid transparent;
+  height: $input-height;
+  margin-bottom: 8px;
+  transition: border-color $transition-fast $ease-default;
+  overflow: hidden;
+
+  &:focus-within {
+    border-color: $color-primary;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(1, 87, 155, 0.1); // Add focus ring
+  }
+
+  &--error {
+    border-color: $color-danger !important;
+    background: #fff5f5; // Slight red background for error state
+  }
+
+  &--code {
+    margin-bottom: 8px;
+  }
+
+  &__icon {
+    width: 52px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  &__input {
+    flex: 1;
+    height: 100%;
+    font-size: 20px;
+    color: $text-primary;
+    background: transparent;
+    padding: 0;
+    border: none;
+
+    // placeholder
+    &::placeholder {
+      color: $text-tertiary;
+    }
+  }
+}
+
+// 错误提示
+.login-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: #ffebee;
+  border-radius: 8px;
+  border: 1px solid rgba(229, 57, 53, 0.2);
+
+  &__text {
+    font-size: 16px;
+    color: $color-danger;
+    font-weight: $font-weight-medium;
+  }
+}
+
+// 发送验证码按钮
+.send-code-btn {
+  padding: 0 16px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: $color-primary;
+  margin-right: 10px;
+  flex-shrink: 0;
+  transition: opacity $transition-fast;
+
+  &__text {
+    font-size: 16px;
+    color: #fff;
+    white-space: nowrap;
+    font-weight: $font-weight-medium;
+  }
+
+  &--disabled {
+    opacity: 0.5;
+  }
+}
+
+// 登录按钮
+.login-btn {
+  height: $button-height-large;
+  background: $color-primary;
+  border-radius: $radius-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 24px;
+  box-shadow: 0 6px 20px rgba(1, 87, 155, 0.4);
+  transition: opacity $transition-fast;
+  active-opacity: 0.8;
+
+  &--loading {
+    opacity: 0.7;
+  }
+
+  &__text {
+    font-size: 22px;
+    color: #fff;
+    font-weight: $font-weight-bold;
+    letter-spacing: 6px;
+  }
+}
+
+// ========== 微信登录 ==========
+.wechat-login {
+  padding: 0 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &__illustration {
+    width: 100px;
+    height: 100px;
+    background: #e8f5e9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  &__illustration-icon {
+    font-size: 52px;
+    line-height: 1;
+  }
+
+  &__desc {
+    font-size: 18px;
+    color: $text-secondary;
+    line-height: $line-height-relaxed;
+    text-align: center;
+    margin-bottom: 32px;
+    white-space: pre-line;
+  }
+
+  &__tip {
+    font-size: 16px;
+    color: $text-tertiary;
+    margin-top: 16px;
+  }
+}
+
+.wechat-btn {
+  width: 100%;
+  height: $button-height-large;
+  background: #07c160 !important;
+  border-radius: $radius-md !important;
+  border: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 6px 20px rgba(7, 193, 96, 0.4);
+  padding: 0 !important;
+
+  &::after {
+    display: none;
+  }
+
+  &--loading {
+    opacity: 0.7;
+  }
+
+  &__icon {
+    font-size: 20px;
+    color: #fff;
+    font-weight: $font-weight-bold;
+  }
+
+  &__text {
+    font-size: 22px;
+    color: #fff !important;
+    font-weight: $font-weight-bold;
+    letter-spacing: 2px;
+  }
+}
+
+// ========== 底部协议 ==========
+.login-agreement {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 32px;
+  padding: 0 24px;
+  gap: 2px;
+
+  &__text {
+    font-size: 16px;
+    color: $text-tertiary;
+  }
+
+  &__link {
+    font-size: 16px;
+    color: $color-primary;
+  }
+}

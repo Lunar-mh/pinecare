@@ -1,0 +1,181 @@
+openapi: 3.0.3
+info:
+  title: 银伴平台 - 用药交互检查API
+  description: 银伴全域智慧照护平台用药交互检查接口
+  version: 1.0.0
+  contact:
+    name: 银伴技术团队
+
+servers:
+  - url: https://api.yinban.com/v1
+    description: 生产环境
+  - url: https://staging-api.yinban.com/v1
+    description: 测试环境
+
+tags:
+  - name: 用药交互
+    description: 用药交互检查相关接口
+
+paths:
+  # ==================== 用药交互检查 ====================
+  
+  /drug-interaction/check:
+    post:
+      tags:
+        - 用药交互
+      summary: 检测药物相互作用
+      operationId: checkDrugInteraction
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - drugList
+              properties:
+                drugList:
+                  type: array
+                  items:
+                    type: string
+                  description: 药物通用名列表
+                  example: ["氨氯地平", "布洛芬"]
+      responses:
+        '200':
+          description: 检测成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    example: 0
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        drugA:
+                          type: string
+                        drugB:
+                          type: string
+                        level:
+                          type: string
+                          enum: [X, D, C, B, A]
+                        mechanism:
+                          type: string
+                        description:
+                          type: string
+
+  /drug-interaction/history:
+    get:
+      tags:
+        - 用药交互
+      summary: 获取历史检测记录
+      operationId: getInteractionHistory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [new, acknowledged, dismissed]
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /drug-interaction/acknowledge:
+    post:
+      tags:
+        - 用药交互
+      summary: 确认已知悉风险
+      operationId: acknowledgeRisk
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - interactionId
+              properties:
+                interactionId:
+                  type: integer
+      responses:
+        '200':
+          description: 确认成功
+
+  /drug-interaction/contraindication:
+    get:
+      tags:
+        - 用药交互
+      summary: 检测药物禁忌
+      operationId: checkContraindication
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: drugName
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 检测成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /drug-interaction/food:
+    get:
+      tags:
+        - 用药交互
+      summary: 药物食物相互作用
+      operationId: checkFoodInteraction
+      parameters:
+        - name: drugName
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 查询成功
+
+# ==================== Components ====================
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: 请求参数错误
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 400
+              message:
+                type: string

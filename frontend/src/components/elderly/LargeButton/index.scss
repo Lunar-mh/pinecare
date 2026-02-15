@@ -1,0 +1,102 @@
+@import '../../../styles/theme/variables.scss';
+
+.elderly-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-md;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-normal $ease-default;
+  box-sizing: border-box;
+  
+  // 适老化大尺寸 - 确保热区≥60px
+  &--large {
+    height: 60px;
+    padding: 0 32px;
+    font-size: 22px;
+    min-width: 200px;
+  }
+  
+  &--medium {
+    height: 52px;
+    padding: 0 24px;
+    font-size: 20px;
+    min-width: 160px;
+  }
+  
+  // 主按钮样式
+  &--primary {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $text-white;
+    border: none;
+    box-shadow: $shadow-button;
+    
+    &:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 8px rgba(1, 87, 155, 0.2);
+    }
+  }
+  
+  // 默认按钮样式
+  &--default {
+    background: $bg-card;
+    color: $text-primary;
+    border: 2px solid $border-default;
+    
+    &:active {
+      background: $bg-hover;
+      border-color: #b0b0b0;
+    }
+  }
+  
+  // 危险按钮样式
+  &--danger {
+    background: linear-gradient(135deg, $color-danger 0%, #f44336 100%);
+    color: $text-white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3);
+    
+    &:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 8px rgba(229, 57, 53, 0.2);
+    }
+  }
+  
+  // 禁用状态
+  &--disabled {
+    opacity: 0.5;
+  }
+  
+  // 加载动画
+  &__loading {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  
+  &__text {
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+  }
+
+  &__icon {
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+  }
+
+  &--block {
+    width: 100%;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

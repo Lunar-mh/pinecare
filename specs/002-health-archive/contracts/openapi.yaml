@@ -1,0 +1,309 @@
+openapi: 3.0.3
+info:
+  title: 银伴平台 - 健康档案API
+  description: 银伴全域智慧照护平台健康档案管理接口
+  version: 1.0.0
+  contact:
+    name: 银伴技术团队
+
+servers:
+  - url: https://api.yinban.com/v1
+    description: 生产环境
+  - url: https://staging-api.yinban.com/v1
+    description: 测试环境
+
+tags:
+  - name: 健康数据
+    description: 健康档案与数据同步
+  - name: 设备
+    description: 设备绑定与管理
+
+paths:
+  # ==================== 健康数据 ====================
+  
+  /health/today:
+    get:
+      tags:
+        - 健康数据
+      summary: 获取今日健康数据
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: user_id
+          in: query
+          schema:
+            type: integer
+          description: 老人用户ID(家属端查询时使用)
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  blood_pressure:
+                    $ref: '#/components/schemas/HealthMetric'
+                  heart_rate:
+                    $ref: '#/components/schemas/HealthMetric'
+                  blood_oxygen:
+                    $ref: '#/components/schemas/HealthMetric'
+                  steps:
+                    $ref: '#/components/schemas/HealthMetric'
+                  sleep:
+                    $ref: '#/components/schemas/SleepMetric'
+
+  /health/trend:
+    get:
+      tags:
+        - 健康数据
+      summary: 获取健康数据趋势
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: metric_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [blood_pressure, heart_rate, blood_oxygen, steps, sleep]
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d]
+            default: 7d
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/HealthRecord'
+
+  /health/manual:
+    post:
+      tags:
+        - 健康数据
+      summary: 手动录入健康数据
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - metric_type
+                - value
+              properties:
+                metric_type:
+                  type: string
+                  enum: [blood_sugar, blood_pressure, heart_rate]
+                value:
+                  type: string
+                  description: 指标值
+      responses:
+        '201':
+          description: 添加成功
+
+  /health/sync:
+    post:
+      tags:
+        - 健康数据
+      summary: 同步手环数据
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - device_id
+                - data
+              properties:
+                device_id:
+                  type: integer
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/HealthRecord'
+      responses:
+        '200':
+          description: 同步成功
+
+  # ==================== 设备管理 ====================
+  
+  /device/bind:
+    post:
+      tags:
+        - 设备
+      summary: 绑定智能设备
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - device_name
+                - device_mac
+              properties:
+                device_name:
+                  type: string
+                device_mac:
+                  type: string
+                device_type:
+                  type: string
+                  default: bracelet
+      responses:
+        '201':
+          description: 绑定成功
+
+  /device/unbind:
+    post:
+      tags:
+        - 设备
+      summary: 解绑设备
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - device_id
+              properties:
+                device_id:
+                  type: integer
+      responses:
+        '200':
+          description: 解绑成功
+
+  /device/list:
+    get:
+      tags:
+        - 设备
+      summary: 获取绑定设备列表
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeviceBinding'
+
+  /device/set-primary:
+    post:
+      tags:
+        - 设备
+      summary: 设置主设备
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - device_id
+              properties:
+                device_id:
+                  type: integer
+      responses:
+        '200':
+          description: 设置成功
+
+# ==================== Components ====================
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthMetric:
+      type: object
+      properties:
+        value:
+          type: string
+        unit:
+          type: string
+        is_abnormal:
+          type: boolean
+        measured_at:
+          type: string
+          format: date-time
+
+    SleepMetric:
+      type: object
+      properties:
+        total_duration:
+          type: integer
+          description: 总睡眠时长(分钟)
+        deep_duration:
+          type: integer
+          description: 深睡眠时长(分钟)
+        light_duration:
+          type: integer
+          description: 浅睡眠时长(分钟)
+        measured_at:
+          type: string
+          format: date-time
+
+    HealthRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        metric_type:
+          type: string
+        value:
+          type: string
+        value_high:
+          type: integer
+        value_low:
+          type: integer
+        source:
+          type: string
+        measured_at:
+          type: string
+          format: date-time
+
+    DeviceBinding:
+      type: object
+      properties:
+        id:
+          type: integer
+        device_name:
+          type: string
+        device_mac:
+          type: string
+        device_type:
+          type: string
+        is_primary:
+          type: boolean
+        battery_level:
+          type: integer
+        last_sync_at:
+          type: string
+          format: date-time

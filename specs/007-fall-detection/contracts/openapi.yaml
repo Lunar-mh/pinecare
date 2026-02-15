@@ -1,0 +1,17 @@
+openapi: 3.0.3
+info:
+  title: 银伴平台 - 跌倒检测API
+  version: 1.0.0
+
+paths:
+  /fall/history:
+    get:
+      tags: [跌倒]
+      summary: 获取跌倒记录
+      security: [BearerAuth: []]
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer

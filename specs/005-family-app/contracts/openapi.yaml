@@ -1,0 +1,23 @@
+openapi: 3.0.3
+info:
+  title: 银伴平台 - 家属端API
+  version: 1.0.0
+
+paths:
+  /family/bindings:
+    get:
+      tags:
+        - 绑定
+      summary: 获取绑定列表
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 获取成功
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

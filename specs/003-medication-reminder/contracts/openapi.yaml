@@ -1,0 +1,339 @@
+openapi: 3.0.3
+info:
+  title: 银伴平台 - 用药提醒API
+  description: 银伴全域智慧照护平台智慧用药提醒接口
+  version: 1.0.0
+  contact:
+    name: 银伴技术团队
+
+servers:
+  - url: https://api.yinban.com/v1
+    description: 生产环境
+  - url: https://staging-api.yinban.com/v1
+    description: 测试环境
+
+tags:
+  - name: 用药计划
+    description: 用药计划管理
+  - name: 服药记录
+    description: 服药记录与提醒
+  - name: 设置
+    description: 用药提醒设置
+
+paths:
+  # ==================== 用药计划 ====================
+  
+  /medication/plans:
+    get:
+      tags:
+        - 用药计划
+      summary: 获取用药计划列表
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MedicationPlan'
+    
+    post:
+      tags:
+        - 用药计划
+      summary: 添加用药计划
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - medication_name
+                - dosage
+                - frequency
+                - remind_times
+                - start_date
+              properties:
+                medication_name:
+                  type: string
+                dosage:
+                  type: string
+                frequency:
+                  type: string
+                  enum: [once_daily, twice_daily, three_times, as_needed]
+                remind_times:
+                  type: array
+                  items:
+                    type: string
+                    example: "08:00"
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+                remaining_quantity:
+                  type: integer
+                reminder_threshold:
+                  type: integer
+                  default: 3
+      responses:
+        '201':
+          description: 添加成功
+
+  /medication/plans/{id}:
+    put:
+      tags:
+        - 用药计划
+      summary: 修改用药计划
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                medication_name:
+                  type: string
+                dosage:
+                  type: string
+                frequency:
+                  type: string
+                remind_times:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: 修改成功
+
+    delete:
+      tags:
+        - 用药计划
+      summary: 删除用药计划
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: 删除成功
+
+  # ==================== 服药记录 ====================
+  
+  /medication/logs:
+    get:
+      tags:
+        - 服药记录
+      summary: 获取服药记录
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MedicationLog'
+
+  /medication/confirm:
+    post:
+      tags:
+        - 服药记录
+      summary: 确认服药
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - log_id
+                - status
+              properties:
+                log_id:
+                  type: integer
+                status:
+                  type: string
+                  enum: [taken, skipped]
+      responses:
+        '200':
+          description: 确认成功
+
+  /medication/history/calendar:
+    get:
+      tags:
+        - 服药记录
+      summary: 获取服药日历
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "2025-07"
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  days:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        status:
+                          type: string
+                        details:
+                          type: array
+                          items:
+                            type: object
+
+  # ==================== 设置 ====================
+  
+  /medication/settings:
+    get:
+      tags:
+        - 设置
+      summary: 获取用药提醒设置
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicationSettings'
+    
+    put:
+      tags:
+        - 设置
+      summary: 更新用药提醒设置
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reminder_enabled:
+                  type: integer
+                family_sync_enabled:
+                  type: integer
+                sleep_start:
+                  type: string
+                sleep_end:
+                  type: string
+      responses:
+        '200':
+          description: 更新成功
+
+# ==================== Components ====================
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    MedicationPlan:
+      type: object
+      properties:
+        id:
+          type: integer
+        medication_name:
+          type: string
+        dosage:
+          type: string
+        frequency:
+          type: string
+        remind_times:
+          type: array
+          items:
+            type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        remaining_quantity:
+          type: integer
+        reminder_threshold:
+          type: integer
+        is_active:
+          type: boolean
+
+    MedicationLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        plan_id:
+          type: integer
+        medication_name:
+          type: string
+        scheduled_time:
+          type: string
+          format: date-time
+        actual_time:
+          type: string
+          format: date-time
+        status:
+          type: string
+
+    MedicationSettings:
+      type: object
+      properties:
+        reminder_enabled:
+          type: integer
+        family_sync_enabled:
+          type: integer
+        sleep_start:
+          type: string
+        sleep_end:
+          type: string

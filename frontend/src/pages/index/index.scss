@@ -1,0 +1,283 @@
+@import '../../styles/theme/variables.scss';
+
+.home-page {
+  min-height: 100vh;
+  background: $bg-primary;
+  padding-bottom: $space-xxl;
+}
+
+// ========== 头部问候 ==========
+.home-header {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  padding: 48px $page-padding $space-xl;
+
+  &__greeting {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: $space-xs;
+  }
+
+  &__hello {
+    font-size: $font-h1;
+    font-weight: $font-weight-regular;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  &__name {
+    font-size: $font-h1;
+    font-weight: $font-weight-bold;
+    color: $text-white;
+  }
+
+  &__date {
+    font-size: $font-caption;
+    color: rgba(255, 255, 255, 0.75);
+    display: block;
+  }
+}
+
+// ========== 健康摘要卡片 ==========
+.health-summary-card {
+  margin: -$space-md $page-padding 0;
+  background: $bg-card;
+  border-radius: $radius-lg;
+  padding: $space-lg;
+  box-shadow: $shadow-float;
+  margin-bottom: $space-md;
+
+  &__title {
+    font-size: $font-h3;
+    font-weight: $font-weight-semibold;
+    color: $text-primary;
+    display: block;
+    margin-bottom: $space-md;
+  }
+
+  &__metrics {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.health-metric {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+
+  &__icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: $radius-md;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__info {
+    flex: 1;
+  }
+
+  &__label {
+    font-size: $font-caption;
+    color: $text-secondary;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  &__value {
+    font-size: $font-h3;
+    font-weight: $font-weight-bold;
+    color: $text-primary;
+    display: block;
+
+    &--empty {
+      font-size: $font-caption;
+      color: $text-tertiary;
+      font-weight: $font-weight-regular;
+    }
+  }
+
+  &__unit {
+    font-size: $font-caption;
+    color: $text-secondary;
+    font-weight: $font-weight-regular;
+  }
+
+  &__badge {
+    flex-shrink: 0;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: $font-weight-medium;
+
+    &--normal {
+      background: #e8f5e9;
+      color: $color-success;
+    }
+
+    &--warning {
+      background: #fff3e0;
+      color: $color-warning;
+    }
+
+    &--danger {
+      background: #ffebee;
+      color: $color-danger;
+    }
+  }
+
+  &__divider {
+    width: 1px;
+    height: 48px;
+    background: $border-light;
+    margin: 0 $space-sm;
+    flex-shrink: 0;
+  }
+}
+
+// ========== 用药提醒卡片 ==========
+.medication-card {
+  margin: 0 $page-padding $space-md;
+  background: $bg-card;
+  border-radius: $radius-lg;
+  padding: $space-md;
+  box-shadow: $shadow-card;
+  border-left: 4px solid $color-warning;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $space-sm;
+
+    &-left {
+      display: flex;
+      align-items: center;
+      gap: $space-xs;
+    }
+  }
+
+  &__icon-wrap {
+    width: 32px;
+    height: 32px;
+    background: #fff3e0;
+    border-radius: $radius-sm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__title {
+    font-size: $font-body;
+    font-weight: $font-weight-semibold;
+    color: $text-primary;
+  }
+
+  &__progress {
+    font-size: $font-body;
+    font-weight: $font-weight-bold;
+    color: $color-warning;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: $space-xs;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: $space-sm;
+    padding: $space-xs 0;
+  }
+
+  &__time {
+    font-size: $font-caption;
+    color: $text-secondary;
+    font-weight: $font-weight-medium;
+    min-width: 40px;
+  }
+
+  &__name {
+    font-size: $font-body;
+    color: $text-primary;
+    flex: 1;
+  }
+
+  &__dosage {
+    font-size: $font-caption;
+    color: $text-tertiary;
+  }
+
+  &__more {
+    font-size: $font-caption;
+    color: $text-tertiary;
+    display: block;
+    padding-top: $space-xs;
+  }
+
+  &__done {
+    padding: $space-xs 0;
+  }
+
+  &__done-text {
+    font-size: $font-body;
+    color: $color-success;
+    font-weight: $font-weight-medium;
+  }
+}
+
+// ========== 模块网格 ==========
+.modules-section {
+  margin: 0 $page-padding;
+
+  &__title {
+    font-size: $font-h3;
+    font-weight: $font-weight-semibold;
+    color: $text-primary;
+    display: block;
+    margin-bottom: $space-md;
+  }
+}
+
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); // Change from 4 to 3 for larger touch targets
+  gap: $space-lg; // Increase gap
+  padding-bottom: 40px;
+}
+
+.module-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-sm;
+  transition: transform 0.1s ease;
+
+  &:active {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+
+  &__icon-wrap {
+    width: 64px; // Increase from 56px
+    height: 64px;
+    border-radius: 20px; // More rounded
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); // Softer shadow
+    margin-bottom: 4px;
+  }
+
+  &__label {
+    font-size: 15px; // Increase from 12px to 15px for readability
+    color: $text-primary; // Darker text
+    text-align: center;
+    line-height: $line-height-normal;
+    font-weight: $font-weight-medium;
+  }
+}

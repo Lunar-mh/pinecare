@@ -1,0 +1,90 @@
+openapi: 3.0.3
+info:
+  title: 银伴平台 - 医疗资源API
+  description: 银伴全域智慧照护平台医疗资源整合接口
+  version: 1.0.0
+
+servers:
+  - url: https://api.yinban.com/v1
+
+tags:
+  - name: 医疗资源
+    description: 医疗资源相关接口
+
+paths:
+  /medical/hospitals:
+    get:
+      tags:
+        - 医疗资源
+      summary: 医院列表
+      responses:
+        '200':
+          description: 成功
+
+  /medical/departments:
+    get:
+      tags:
+        - 医疗资源
+      summary: 科室列表
+      parameters:
+        - name: hospitalId
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 成功
+
+  /medical/doctors:
+    get:
+      tags:
+        - 医疗资源
+      summary: 医生列表
+      parameters:
+        - name: departmentId
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 成功
+
+  /medical/consult/start:
+    post:
+      tags:
+        - 医疗资源
+      summary: 发起问诊
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 成功
+
+  /medical/appointment:
+    post:
+      tags:
+        - 医疗资源
+      summary: 预约挂号
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 成功
+
+  /medical/reports:
+    get:
+      tags:
+        - 医疗资源
+      summary: 报告列表
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 成功
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

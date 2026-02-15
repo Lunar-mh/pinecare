@@ -1,0 +1,442 @@
+@import '../../../../styles/theme/variables.scss';
+
+$drug-primary: #6a1b9a;
+$drug-primary-light: #7b1fa2;
+$drug-bg: #f3e5f5;
+
+.drug-check {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #faf5ff;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: $drug-primary;
+    flex-shrink: 0;
+  }
+
+  &__header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__title {
+    font-size: 20px;
+    color: #fff;
+    font-weight: $font-weight-bold;
+    display: block;
+  }
+
+  &__subtitle {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    display: block;
+    margin-top: 2px;
+  }
+
+  &__content {
+    flex: 1;
+    overflow: hidden;
+  }
+}
+
+// Tab 导航
+.drug-tabs {
+  display: flex;
+  background: #fff;
+  border-bottom: 2px solid $drug-bg;
+  flex-shrink: 0;
+}
+
+.drug-tab {
+  flex: 1;
+  padding: 14px 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  transition: all 0.2s ease;
+
+  &--active {
+    background: #fff;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 30%;
+      right: 30%;
+      height: 4px;
+      background: $drug-primary;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(106, 27, 154, 0.3);
+    }
+  }
+
+  &__text {
+    font-size: 18px;
+    color: $color-text-secondary;
+    font-weight: $font-weight-medium;
+
+    .drug-tab--active & {
+      color: $drug-primary;
+      font-weight: $font-weight-bold;
+    }
+  }
+}
+
+// 药品输入行
+.drug-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+}
+
+.drug-input {
+  flex: 1;
+  height: 52px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 0 16px;
+  font-size: 18px;
+  color: $color-text-primary;
+  border: 2px solid $drug-bg;
+
+  &:focus {
+    border-color: $drug-primary;
+  }
+}
+
+.drug-input-add {
+  width: 52px;
+  height: 52px;
+  background: $drug-primary;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(106, 27, 154, 0.35);
+}
+
+// 药品标签
+.drug-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0 16px 16px;
+}
+
+.drug-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: $drug-bg;
+  border-radius: 20px;
+  border: 1px solid rgba(106, 27, 154, 0.25);
+
+  &__name {
+    font-size: 18px;
+    color: $drug-primary;
+    font-weight: $font-weight-medium;
+  }
+
+  &__remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// 检查按钮
+.check-btn {
+  margin: 0 16px 20px;
+  height: 56px;
+  background: $drug-primary;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(106, 27, 154, 0.4);
+
+  &--loading {
+    opacity: 0.7;
+  }
+
+  &__text {
+    font-size: 20px;
+    color: #fff;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+// 结果区块
+.results-section {
+  padding: 0 16px 8px;
+
+  &__title {
+    font-size: 18px;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    display: block;
+    margin-bottom: 12px;
+  }
+}
+
+// 结果卡片
+.result-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border-left: 6px solid #ccc;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 0.1s ease;
+
+  &:active {
+    transform: scale(0.99);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  &__drugs {
+    font-size: 18px;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    flex: 1;
+    margin-right: 8px;
+  }
+
+  &__desc {
+    font-size: 16px;
+    color: $color-text-secondary;
+    line-height: 1.5;
+    display: block;
+    margin-top: 4px;
+  }
+
+  &__mechanism {
+    font-size: 15px;
+    color: $color-text-tertiary;
+    display: block;
+    margin-top: 6px;
+  }
+}
+
+// 风险级别徽章
+.result-level {
+  padding: 4px 10px;
+  border-radius: 12px;
+  flex-shrink: 0;
+
+  &__text {
+    font-size: 14px;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+// 历史记录
+.history-panel {
+  padding: 16px;
+}
+
+.history-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border-left: 4px solid #ccc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  &__drugs {
+    font-size: 18px;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    flex: 1;
+    margin-right: 8px;
+  }
+
+  &__desc {
+    font-size: 16px;
+    color: $color-text-secondary;
+    line-height: 1.5;
+    display: block;
+    margin-top: 4px;
+  }
+
+  &__suggestion {
+    font-size: 16px;
+    color: $drug-primary;
+    display: block;
+    margin-top: 6px;
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+
+  &__time {
+    font-size: 14px;
+    color: $color-text-tertiary;
+  }
+
+  &__ack {
+    font-size: 14px;
+    color: $color-success;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.acknowledge-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: $drug-primary;
+  border-radius: 20px;
+
+  &__text {
+    font-size: 15px;
+    color: #fff;
+    font-weight: $font-weight-medium;
+  }
+}
+
+// 禁忌查询面板
+.contra-panel {
+  padding-bottom: 16px;
+}
+
+.contra-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border-left: 4px solid #ccc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  &__disease {
+    font-size: 18px;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+  }
+
+  &__severity {
+    font-size: 15px;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__desc {
+    font-size: 16px;
+    color: $color-text-secondary;
+    line-height: 1.5;
+    display: block;
+  }
+}
+
+.food-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border-left: 4px solid $color-warning;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  &__name {
+    font-size: 18px;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+  }
+
+  &__type {
+    font-size: 14px;
+    color: $color-warning;
+    font-weight: $font-weight-medium;
+    padding: 2px 8px;
+    background: #fff3e0;
+    border-radius: 8px;
+  }
+
+  &__desc {
+    font-size: 16px;
+    color: $color-text-secondary;
+    line-height: 1.5;
+    display: block;
+    margin-top: 4px;
+  }
+
+  &__suggestion {
+    font-size: 16px;
+    color: $drug-primary;
+    display: block;
+    margin-top: 6px;
+  }
+}
+
+// check panel padding
+.check-panel {
+  padding-top: 4px;
+}
+
+// 空提示
+.empty-hint {
+  padding: 40px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &__text {
+    font-size: 18px;
+    color: $color-text-tertiary;
+    text-align: center;
+  }
+}

@@ -1,0 +1,341 @@
+@import '../../../../styles/theme/variables.scss';
+
+.sos-page {
+  min-height: 100vh;
+  background: $color-background;
+  padding: 16px;
+
+  .sos-header {
+    text-align: center;
+    padding: 40px 20px;
+    background: linear-gradient(180deg, #ffebee 0%, $bg-primary 100%);
+    margin: -16px -16px 20px; // Offset parent padding
+
+    &__title {
+      font-size: 36px; // Larger
+      font-weight: 800;
+      color: #c62828; // Darker red
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    &__desc {
+      font-size: 18px;
+      color: $text-secondary;
+    }
+  }
+
+  .sos-trigger-area {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0 40px;
+    position: relative;
+
+    .sos-button {
+      position: relative;
+      width: 240px; // Larger trigger area
+      height: 240px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ef5350 0%, #d32f2f 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 
+        0 12px 32px rgba(211, 47, 47, 0.4),
+        inset 0 4px 12px rgba(255, 255, 255, 0.3);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 10;
+
+      &:active {
+        transform: scale(0.92);
+      }
+
+      &__progress {
+        position: absolute;
+        inset: -8px;
+        border-radius: 50%;
+        padding: 8px;
+        background: $color-background;
+        mask: radial-gradient(transparent 65%, black 66%);
+        -webkit-mask: radial-gradient(transparent 65%, black 66%);
+      }
+
+      &__inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        z-index: 1;
+      }
+
+      &__text {
+        font-size: 24px;
+        font-weight: $font-weight-bold;
+        color: #fff;
+      }
+    }
+
+    .sos-ripple {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid rgba(239, 68, 68, 0.5);
+      animation: ripple 1.5s ease-out infinite;
+
+      &--2 {
+        animation-delay: 0.5s;
+      }
+    }
+
+    .sos-active-card {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      border-radius: 24px;
+      padding: 40px 32px;
+      text-align: center;
+      color: #fff;
+      width: 100%;
+      max-width: 320px;
+      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
+
+      .sos-active-icon {
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+      }
+
+      .sos-active-title {
+        font-size: 28px;
+        font-weight: $font-weight-bold;
+        margin-bottom: 12px;
+      }
+
+      .sos-active-time {
+        font-size: 16px;
+        opacity: 0.9;
+        margin-bottom: 16px;
+      }
+
+      .sos-active-desc {
+        font-size: 18px;
+        opacity: 0.9;
+        margin-bottom: 24px;
+        line-height: 1.5;
+      }
+
+      .sos-cancel-btn {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        border-radius: 12px;
+        padding: 16px 32px;
+        font-size: 18px;
+        font-weight: $font-weight-medium;
+        transition: all 0.2s ease;
+
+        &:active {
+          background: rgba(255, 255, 255, 0.3);
+        }
+      }
+    }
+  }
+
+  @keyframes ripple {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  }
+
+  .emergency-contacts {
+    margin-top: 32px;
+
+    .section-title {
+      font-size: 20px;
+      font-weight: $font-weight-bold;
+      color: $color-text-primary;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .contact-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: $shadow-sm;
+      transition: transform 0.2s ease;
+
+      &:active {
+        transform: scale(0.98);
+      }
+
+      &--emergency {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: #fff;
+
+        .contact-name, .contact-number {
+          color: #fff;
+        }
+
+        .contact-action__text {
+          background: #fff;
+          color: #ef4444;
+        }
+      }
+
+      .contact-icon {
+        width: 56px;
+        height: 56px;
+        background: rgba(239, 68, 68, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+      }
+
+      .contact-info {
+        flex: 1;
+
+        .contact-name {
+          font-size: 20px;
+          font-weight: $font-weight-bold;
+          color: $color-text-primary;
+          margin-bottom: 4px;
+        }
+
+        .contact-number {
+          font-size: 24px;
+          font-weight: $font-weight-bold;
+          color: $color-primary;
+        }
+
+        .contact-desc {
+          font-size: 16px;
+          color: $color-text-secondary;
+        }
+      }
+
+      .contact-action {
+        &__text {
+          background: $color-primary;
+          color: #fff;
+          padding: 10px 20px;
+          border-radius: 20px;
+          font-size: 16px;
+          font-weight: $font-weight-medium;
+        }
+      }
+    }
+  }
+
+  .sos-guide {
+    margin-top: 32px;
+
+    .section-title {
+      font-size: 20px;
+      font-weight: $font-weight-bold;
+      color: $color-text-primary;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .guide-list {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: $shadow-sm;
+    }
+
+    .guide-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid $color-border-light;
+
+      &:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+
+      &:first-child {
+        padding-top: 0;
+      }
+
+      .guide-number {
+        width: 32px;
+        height: 32px;
+        background: $color-primary;
+        color: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: $font-weight-bold;
+        flex-shrink: 0;
+      }
+
+      .guide-text {
+        flex: 1;
+        font-size: 18px;
+        color: $color-text-primary;
+        line-height: 1.6;
+        padding-top: 4px;
+      }
+    }
+  }
+
+  .sos-warning {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #FFF8E1;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 24px;
+
+    &__text {
+      flex: 1;
+      font-size: 16px;
+      color: #F57C00;
+      line-height: 1.5;
+    }
+  }
+
+  .safe-area-bottom {
+    height: constant(safe-area-inset-bottom);
+    height: env(safe-area-inset-bottom);
+    min-height: 20px;
+  }
+}
+
+/* 支持减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .sos-page {
+    .sos-ripple {
+      animation: none;
+    }
+
+    .sos-button {
+      transition: none;
+    }
+  }
+}
