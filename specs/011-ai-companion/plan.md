@@ -1,24 +1,33 @@
-# Implementation Plan: AI陪伴
+# 实施计划: AI陪伴
 
-**Branch**: `011-ai-companion` | **Date**: 2025-07-18 | **Spec**: `specs/011-ai-companion/`
+**分支**: `011-ai-companion` | **日期**: 2025-07-18 | **规格**: `specs/011-ai-companion/`
 
-## Summary
-
+## 概述
 银伴平台AI陪伴模块，针对独居/空巢老人孤独感问题，提供AI情感对话、认知训练游戏、怀旧疗法等服务。融合NLP情感计算与大语言模型，打造有温度的数字伴侣。前端采用Taro跨端框架，后端采用Node.js + Express + MySQL + Redis + AI大模型。
 
-## Technical Context
-
-**Language/Version**: Node.js 18.x, Express 4.x, MySQL 8.0, Redis 7.x  
-**Primary Dependencies**: Taro 4.x (前端), Express (后端), mysql2, ioredis, 阿里云通义千问  
-**Storage**: MySQL (陪伴记录/游戏数据) + Redis (会话缓存)  
+## 技术背景
+**语言/版本**: Node.js 18.x, Express 4.x, MySQL 8.0, Redis 7.x  
+**主要依赖**: Taro 4.x (前端), Express (后端), mysql2, ioredis, 阿里云通义千问  
+**存储**: MySQL (陪伴记录/游戏数据) + Redis (会话缓存)  
 **Testing**: Jest + Supertest (后端)  
 **Target Platform**: 微信小程序 + 智能音箱  
 **Project Type**: 移动端小程序 + 后端API服务  
 **Performance Goals**: 对话响应 <3秒, 游戏加载 <1秒  
 **Scale/Scope**: MVP阶段支持千级日活
 
-## Constitution Check
+## 跨模块依赖
 
+- 当前实现计划未定义对其他业务模块（001-015）的强依赖（按模块内自包含服务规划）。
+- 若后续需要复用其他模块的数据/接口（如统一鉴权、绑定关系、健康档案摘要等），必须在此补充：依赖模块、数据/接口契约、失败语义，并同步更新 tasks.md。
+
+## 指标口径与观测
+
+- **响应时间**：默认以 p95 口径度量；起止点为“网关/服务入口接收请求”到“返回响应”的服务端耗时。
+- **成功率**：以业务成功码（如 `code=0`）与 HTTP 状态码综合统计；需明确计入/排除的失败类型。
+- **外部依赖**：第三方 API 超时/限流/不可用应单独计数，并在错误语义中区分。
+- **审计与隐私**：访问敏感数据的关键行为需记录审计日志；日志字段需脱敏。
+
+## 宪法检查
 | 宪法原则 | 检查结果 | 说明 |
 |----------|----------|------|
 | 数据真实性 | ✅ PASS | 基于真实用户画像提供服务 |
@@ -26,9 +35,10 @@
 | 中文优先 | ✅ PASS | 全程中文对话 |
 | 删繁就简 | ✅ PASS | 语音交互为主 |
 | 分阶段交付 | ✅ PASS | MVP对话+游戏，后续怀旧 |
+| 前后一致性 | ✅ PASS | 与008 AI健康顾问、003用药提醒模块数据互通；会话上下文与健康档案保持一致 |
+| 适老化设计 | ✅ PASS | 语音优先交互，大字界面，情感对话使用简单易懂语言，操作步骤不超过3步 |
 
-## Project Structure
-
+## 项目结构
 ```text
 specs/011-ai-companion/
 ├── plan.md

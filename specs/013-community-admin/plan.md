@@ -1,28 +1,49 @@
-# Implementation Plan: 社区管理端
+# 实施计划: 社区管理端
 
-**Branch**: `013-community-admin` | **Date**: 2025-07-18 | **Spec**: `specs/013-community-admin/`
+**分支**: `013-community-admin` | **日期**: 2025-07-18 | **规格**: `specs/013-community-admin/`
 
-## Summary
-
+## 概述
 银伴平台社区管理端，为社区工作者提供志愿者管理、服务调度、数据分析等功能。Web端采用Vue 3 + Element Plus，后端采用Node.js + Express + MySQL。
 
-## Technical Context
-
-**Language/Version**: Node.js 18.x, Express 4.x, MySQL 8.0, Vue 3  
-**Primary Dependencies**: Vue 3, Element Plus, Express, mysql2  
-**Storage**: MySQL  
+## 技术背景
+**语言/版本**: Node.js 18.x, Express 4.x, MySQL 8.0, Vue 3  
+**主要依赖**: Vue 3, Element Plus, Express, mysql2  
+**存储**: MySQL  
 **Target Platform**: Web管理后台  
 **Project Type**: Web后台管理系统  
 
-## Constitution Check
+## 跨模块依赖
 
+- 当前实现计划未定义对其他业务模块（001-015）的强依赖（按模块内自包含服务规划）。
+- 若后续需要复用其他模块的数据/接口（如统一鉴权、绑定关系、健康档案摘要等），必须在此补充：依赖模块、数据/接口契约、失败语义，并同步更新 tasks.md。
+
+## 指标口径与观测
+
+- **响应时间**：默认以 p95 口径度量；起止点为“网关/服务入口接收请求”到“返回响应”的服务端耗时。
+- **成功率**：以业务成功码（如 `code=0`）与 HTTP 状态码综合统计；需明确计入/排除的失败类型。
+- **外部依赖**：第三方 API 超时/限流/不可用应单独计数，并在错误语义中区分。
+- **审计与隐私**：访问敏感数据的关键行为需记录审计日志；日志字段需脱敏。
+
+## 宪法检查
 | 宪法原则 | 检查结果 | 说明 |
 |----------|----------|------|
-| 数据真实性 | ✅ PASS | 真实数据展示 |
-| 分阶段交付 | ✅ PASS | MVP基础管理功能 |
+| 数据真实性 | ✅ PASS | 真实数据展示，统计数据来源于各模块真实业务数据，禁止伪造 |
+| 可落地优先 | ✅ PASS | 基于 Vue 3 + Element Plus + MySQL 标准 Web 后台方案，技术成熟度高 |
+| 中文优先 | ✅ PASS | 全程中文管理后台界面与操作提示 |
+| 删繁就简 | ✅ PASS | 聚焦社区工作者核心操作（志愿者调度+服务记录），避免功能堆砌 |
+| 前后一致性 | ✅ PASS | 志愿者数据与010时间银行积分模块互通；服务记录与002健康档案关联 |
+| 分阶段交付 | ✅ PASS | MVP基础管理功能（志愿者管理+服务调度），后续迭代数据分析看板 |
+| 适老化设计 | ⚠️ 豁免 | 本模块面向社区工作者（非老年用户），适老化规范不适用；按标准Web交互规范（Element Plus默认规范）执行 |
 
-## Project Structure
+## 社区统计服务（设计决策）
 
+**statsService 设计说明**（对应 tasks.md T034）：
+- **数据来源**：聚合010时间银行（服务时长）、011 AI陪伴（使用频率）、013自身业务（服务完成率）数据
+- **聚合策略**：日/周/月维度定时聚合，结果缓存至 Redis（TTL 1小时），避免实时查询大表
+- **接口**：`GET /community/stats?period=week` 返回志愿者活跃数、服务完成率、时间银行余额分布
+- **数据真实性**：所有统计数据从各模块真实数据库表派生，禁止硬编码或伪造
+
+## 项目结构
 ```text
 specs/013-community-admin/
 ├── plan.md
