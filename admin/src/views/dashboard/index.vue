@@ -1,42 +1,34 @@
 ﻿<script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { User, Timer, TrendCharts, Odometer } from '@element-plus/icons-vue'
+import { computed, onMounted, ref } from 'vue'
 import { getDashboardStats, getRecentActivities } from '@/services'
-import type { StatItem, ActivityItem } from '@/services'
+import type { DashboardStats } from '@/services/dashboard'
+import { buildRiskItems, buildWorkbenchCards } from '@/view-models/workbench'
 
-const defaultStats: StatItem[] = [
-  { label: 'Active Users', value: '--', unit: '', color: '#01579b', bg: '#e3f2fd', trend: '' },
-  { label: 'Today Records', value: '--', unit: '', color: '#2e7d32', bg: '#e8f5e9', trend: '' },
-  { label: 'Pending Orders', value: '--', unit: '', color: '#e65100', bg: '#fff3e0', trend: '' },
-  { label: 'Active SOS', value: '--', unit: '', color: '#6a1b9a', bg: '#f3e5f5', trend: '' },
-]
-
-const stats = ref<StatItem[]>(defaultStats)
-const recentActivities = ref<ActivityItem[]>([])
+const dashboard = ref<DashboardStats>({ stats: [], recentActivities: [] })
 const loading = ref(true)
-const statIcons = [User, Odometer, TrendCharts, Timer]
+
+const cards = computed(() => buildWorkbenchCards(dashboard.value.stats || []))
+const risks = computed(() => buildRiskItems(dashboard.value.recentActivities || []))
+const recentActivities = computed(() => dashboard.value.recentActivities || [])
 
 function statusTagType(status: string): string {
-  const map: Record<string, string> = {
-    正常: 'success',
-    已处理: 'info',
-    待审核: 'warning',
-    已完成: 'success',
-    完成: 'success',
-  }
-  return map[status] || 'info'
+  if (status.includes('正常') || status.includes('完成')) return 'success'
+  if (status.includes('待') || status.includes('审核')) return 'warning'
+  if (status.includes('SOS') || status.includes('异常')) return 'danger'
+  return 'info'
 }
 
 onMounted(async () => {
   loading.value = true
   try {
-    const [dashData, activities] = await Promise.all([
+    const [stats, activities] = await Promise.all([
       getDashboardStats(),
-      getRecentActivities(10),
+      getRecentActivities(8),
     ])
-
-    stats.value = dashData.stats?.length ? dashData.stats : defaultStats
-    recentActivities.value = activities || []
+    dashboard.value = {
+      stats: stats.stats || [],
+      recentActivities: activities || [],
+    }
   } finally {
     loading.value = false
   }
@@ -44,108 +36,98 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="dashboard-page">
-    <div class="page-title">Dashboard</div>
+  <div>
+    <div class="wb-page-header">
+      <div>
+        <span class="wb-page-title">今日态势总览</span>
+        <span class="wb-page-subtitle">先看活跃、告警、待处理，再进入各业务页做细分操作。</span>
+      </div>
+      <div class="wb-chip">值班建议：先处理 SOS 与离线异常</div>
+    </div>
 
-    <el-row :gutter="16" class="stats-row">
-      <el-col v-for="(stat, idx) in stats" :key="stat.label" :span="6">
-        <div class="stat-card">
-          <div class="stat-icon" :style="{ background: stat.bg }">
-            <el-icon :size="28" :color="stat.color">
-              <component :is="statIcons[idx]" />
-            </el-icon>
+    <div class="wb-metric-grid">
+      <div v-for="card in cards" :key="card.label" class="wb-metric-card">
+        <span class="wb-card-label">{{ card.label }}</span>
+        <div class="wb-card-value">{{ card.value }}<small>{{ card.unit }}</small></div>
+        <span class="wb-card-hint">{{ card.hint }}</span>
+      </div>
+    </div>
+
+    <div class="wb-grid-2">
+      <div class="wb-panel">
+        <div class="wb-page-header" style="margin-bottom: 14px">
+          <div>
+            <span class="wb-page-title" style="font-size: 22px">高风险事项</span>
+            <span class="wb-page-subtitle">把最需要先处理的事项放在最上方。</span>
           </div>
-          <div class="stat-info">
-            <div class="stat-value">
-              <span v-if="loading" class="loading-placeholder">--</span>
-              <template v-else>{{ stat.value }}</template>
-              <span class="stat-unit">{{ stat.unit }}</span>
-            </div>
-            <div class="stat-label">{{ stat.label }}</div>
-          </div>
-          <div v-if="stat.trend" class="stat-trend" style="color: #2e7d32">{{ stat.trend }}</div>
         </div>
-      </el-col>
-    </el-row>
+        <div class="wb-list">
+          <div v-for="item in risks" :key="item.title + item.description" class="wb-list-item">
+            <div>
+              <span class="wb-list-title">{{ item.title }}</span>
+              <span class="wb-list-desc">{{ item.description }}</span>
+            </div>
+            <el-tag :type="item.level === '高优先' ? 'danger' : item.level === '跟进中' ? 'warning' : 'success'">{{ item.level }}</el-tag>
+          </div>
+        </div>
+      </div>
 
-    <el-card class="activity-card">
-      <template #header>
-        <span class="card-title">Recent Activities</span>
-      </template>
-      <el-table :data="recentActivities" stripe style="width: 100%" v-loading="loading">
+      <div class="wb-panel">
+        <div class="wb-page-header" style="margin-bottom: 14px">
+          <div>
+            <span class="wb-page-title" style="font-size: 22px">待处理提醒</span>
+            <span class="wb-page-subtitle">结合近期动态，快速判断下一步工作。</span>
+          </div>
+        </div>
+        <div class="wb-list">
+          <div class="wb-list-item">
+            <div>
+              <span class="wb-list-title">SOS 与位置异常</span>
+              <span class="wb-list-desc">优先确认高风险事件是否已被接单和跟进。</span>
+            </div>
+            <el-tag type="danger">优先</el-tag>
+          </div>
+          <div class="wb-list-item">
+            <div>
+              <span class="wb-list-title">长辈离线与弱网</span>
+              <span class="wb-list-desc">检查位置共享、设备在线状态和告警是否重复触发。</span>
+            </div>
+            <el-tag type="warning">关注</el-tag>
+          </div>
+          <div class="wb-list-item">
+            <div>
+              <span class="wb-list-title">志愿者调度</span>
+              <span class="wb-list-desc">核对志愿者班次、服务时长和工单饱和度。</span>
+            </div>
+            <el-tag type="success">平稳</el-tag>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="wb-panel" style="margin-top: 20px">
+      <div class="wb-page-header" style="margin-bottom: 14px">
+        <div>
+          <span class="wb-page-title" style="font-size: 22px">近期动态</span>
+          <span class="wb-page-subtitle">保留表格视图，便于继续下钻处理。</span>
+        </div>
+      </div>
+      <el-table :data="recentActivities" stripe v-loading="loading">
         <template #empty>
-          <div style="padding: 24px; text-align: center; color: #999">
-            {{ loading ? 'Loading...' : 'No data' }}
+          <div style="padding: 28px; text-align: center; color: var(--wb-text-soft)">
+            {{ loading ? '加载中...' : '暂无近期动态' }}
           </div>
         </template>
-        <el-table-column prop="type" label="Type" width="180" />
-        <el-table-column prop="user" label="User" width="140" />
-        <el-table-column prop="time" label="Time" />
-        <el-table-column label="Status" width="120">
+        <el-table-column prop="type" label="事件类型" width="200" />
+        <el-table-column prop="user" label="相关用户" width="160" />
+        <el-table-column prop="time" label="时间" />
+        <el-table-column label="状态" width="140">
           <template #default="{ row }">
-            <el-tag :type="statusTagType(row.status)" size="small">{{ row.status }}</el-tag>
+            <el-tag :type="statusTagType(row.status)">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </div>
   </div>
 </template>
 
-<style scoped>
-.dashboard-page { max-width: 1200px; }
-.page-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 20px;
-}
-.stats-row { margin-bottom: 20px; }
-.stat-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-.stat-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.stat-info { flex: 1; }
-.stat-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1a1a1a;
-  line-height: 1.2;
-}
-.loading-placeholder { color: #ccc; }
-.stat-unit {
-  font-size: 14px;
-  font-weight: 400;
-  color: #666;
-  margin-left: 2px;
-}
-.stat-label {
-  font-size: 13px;
-  color: #999;
-  margin-top: 4px;
-}
-.stat-trend {
-  font-size: 13px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-.activity-card { border-radius: 8px; }
-.card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-</style>

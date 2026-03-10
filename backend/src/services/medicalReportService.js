@@ -1,7 +1,8 @@
-'use strict';
+﻿'use strict';
 
 const medicalApiService = require('./medicalApiService');
 const medicalReportModel = require('../models/medicalReportModel');
+const { logThirdPartyError } = require('../utils/thirdParty');
 
 function createBizError(code, message, statusCode) {
   const error = new Error(message);
@@ -13,7 +14,7 @@ function createBizError(code, message, statusCode) {
 function normalizePositiveInt(value, fieldName) {
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw createBizError(422, `${fieldName} 必须为正整数`, 422);
+    throw createBizError(422, `${fieldName} must be a positive integer.`, 422);
   }
   return parsed;
 }
@@ -25,20 +26,13 @@ function normalizeDate(dateText, fieldName) {
 
   const value = String(dateText).trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    throw createBizError(422, `${fieldName} 格式必须为 YYYY-MM-DD`, 422);
+    throw createBizError(422, `${fieldName} must use YYYY-MM-DD format.`, 422);
   }
 
   return value;
 }
 
 const medicalReportService = {
-  /**
-   * 查询并同步报告
-   * 规则：优先返回同步后的本地结果；若第三方失败且本地有缓存则降级返回缓存。
-   * @param {number} userId
-   * @param {object} filters
-   * @returns {Promise<object>}
-   */
   async list(userId, filters = {}) {
     const userIdNum = normalizePositiveInt(userId, 'userId');
     const normalizedFilters = {
@@ -50,15 +44,23 @@ const medicalReportService = {
     const localReports = await medicalReportModel.listByUserId(userIdNum, normalizedFilters);
 
     try {
-      const remoteReports = await medicalApiService.fetchMedicalReports(userIdNum, normalizedFilters);
+      const remoteReports = await medicalApiService.fetchMedicalReports(
+        userIdNum,
+        normalizedFilters
+      );
       await medicalReportModel.batchUpsert(userIdNum, remoteReports);
       const synced = await medicalReportModel.listByUserId(userIdNum, normalizedFilters);
 
       return {
-        source: 'remote',
+        source: medicalApiService.getSourceTag(),
         list: synced,
       };
     } catch (error) {
+      logThirdPartyError('medical-report', error, {
+        operation: 'listReports',
+        userId: userIdNum,
+      });
+
       if (localReports.length > 0) {
         return {
           source: 'cache',
@@ -66,7 +68,11 @@ const medicalReportService = {
         };
       }
 
-      throw createBizError(503, '报告服务暂不可用，请稍后重试', 503);
+      if (error && (typeof error.code === 'number' || typeof error.statusCode === 'number')) {
+        throw error;
+      }
+
+      throw createBizError(503, 'Medical report service is temporarily unavailable.', 503);
     }
   },
 };

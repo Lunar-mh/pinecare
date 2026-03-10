@@ -1,74 +1,56 @@
-// 银伴设计系统 - 变量定义
+﻿$color-primary: #2f6c5b;
+$color-primary-light: #438470;
+$color-primary-dark: #204d41;
+$color-secondary: #c97b55;
+$color-secondary-light: #db916c;
+$color-secondary-dark: #8f5134;
 
-// ========== 颜色系统 ==========
+$color-success: #4b8d63;
+$color-warning: #d99a3e;
+$color-danger: #d75a4a;
+$color-info: #3d7ca6;
 
-// 主色调
-$color-primary: #01579b;
-$color-primary-light: #0277bd;
-$color-secondary: #e65100;
-
-// 功能色
-$color-success: #43a047;
-$color-warning: #fb8c00;
-$color-danger: #e53935;
-$color-info: #1e88e5;
-
-// 文字色
-$text-primary: #1a1a1a;
-$text-secondary: #666666;
-$text-tertiary: #999999;
-$text-disabled: #cccccc;
+$text-primary: #22303a;
+$text-secondary: #596570;
+$text-tertiary: #8d98a3;
+$text-disabled: #bcc5ce;
 $text-white: #ffffff;
 
-// 背景色
-$bg-primary: #f5f5f0;
-$bg-card: #ffffff;
-$bg-hover: #f0f0f0;
-$bg-active: #e8e8e8;
+$bg-primary: #f6f1e7;
+$bg-card: #fffdf9;
+$bg-card-alt: #f3ede3;
+$bg-hover: #f7f1e8;
+$bg-active: #efe7dc;
 
-// 边框色
-$border-light: #e0e0e0;
-$border-default: #d0d0d0;
-$border-focus: #01579b;
+$border-light: #ece2d4;
+$border-default: #ded6c7;
+$border-focus: $color-primary;
 
-// 健康数据色
-$health-bp-systolic: #FF6B6B;
-$health-bp-diastolic: #4ECDC4;
-$health-heart-rate: #e53935;
-$health-oxygen: #43a047;
-$health-glucose: #fb8c00;
-$health-temperature: #1e88e5;
+$health-bp-systolic: #d75a4a;
+$health-bp-diastolic: #3d7ca6;
+$health-heart-rate: #c97b55;
+$health-oxygen: $color-success;
+$health-glucose: $color-warning;
+$health-temperature: $color-info;
 
-// ========== 字体系统 ==========
-
-// 字体族
-$font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-
-// 字体大小
-$font-display: 36px;
-$font-h1: 28px;
-$font-h2: 24px;
-$font-h3: 20px;
+$font-family: 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+$font-display: 38px;
+$font-h1: 32px;
+$font-h2: 28px;
+$font-h3: 24px;
 $font-body: 20px;
 $font-caption: 16px;
 
-// 字重
 $font-weight-regular: 400;
 $font-weight-medium: 500;
 $font-weight-semibold: 600;
 $font-weight-bold: 700;
 
-// 行高
 $line-height-tight: 1.2;
-$line-height-normal: 1.5;
-$line-height-relaxed: 1.6;
+$line-height-normal: 1.55;
+$line-height-relaxed: 1.7;
 
-// ========== 间距系统 ==========
-
-// 基础单位
 $space-unit: 8px;
-
-// 间距层级
 $space-xs: 8px;
 $space-sm: 12px;
 $space-md: 16px;
@@ -76,47 +58,28 @@ $space-lg: 24px;
 $space-xl: 32px;
 $space-xxl: 48px;
 
-// 页面边距
 $page-padding: 16px;
 
-// ========== 尺寸系统 ==========
-
-// 按钮高度
-$button-height-large: 56px;
+$button-height-large: 58px;
 $button-height-medium: 48px;
-
-// 输入框高度
-$input-height: 52px;
-
-// 热区最小尺寸（适老化）
+$input-height: 54px;
 $touch-target-min: 44px;
 $touch-target-primary: 60px;
 
-// ========== 视觉效果 ==========
+$radius-sm: 12px;
+$radius-md: 18px;
+$radius-lg: 26px;
 
-// 圆角
-$radius-sm: 8px;
-$radius-md: 12px;
-$radius-lg: 16px;
+$shadow-card: 0 12px 30px rgba(51, 65, 78, 0.08);
+$shadow-button: 0 10px 24px rgba(47, 108, 91, 0.18);
+$shadow-float: 0 18px 40px rgba(39, 52, 63, 0.14);
 
-// 阴影
-$shadow-card: 0 4px 12px rgba(0, 0, 0, 0.1);
-$shadow-button: 0 4px 12px rgba(0, 0, 0, 0.15);
-$shadow-float: 0 8px 24px rgba(0, 0, 0, 0.12);
+$transition-fast: 0.16s;
+$transition-normal: 0.22s;
+$transition-slow: 0.32s;
 
-// ========== 动画 ==========
-
-// 过渡时间
-$transition-fast: 0.15s;
-$transition-normal: 0.2s;
-$transition-slow: 0.3s;
-
-// 缓动函数
 $ease-default: ease;
 $ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-
-// ========== 兼容别名（用于组件样式变量统一） ==========
-// 说明：项目早期组件使用了 color-text/background/border 等命名，这里做别名映射，避免重复改动。
 
 $color-text-primary: $text-primary;
 $color-text-secondary: $text-secondary;
@@ -125,29 +88,19 @@ $color-text-disabled: $text-disabled;
 $color-text-hint: $text-tertiary;
 
 $color-background: $bg-primary;
-
 $color-border: $border-default;
 $color-border-light: $border-light;
 
 $shadow-sm: $shadow-card;
 
-$color-primary-dark: #014a80;
+$color-family-primary: $color-secondary;
+$color-family-light: $color-secondary-light;
 
-
-// ========== 扩展变量（2026-03 UI 重设计）==========
-
-// 家属端主色
-$color-family-primary: #2e7d32;
-$color-family-light: #388e3c;
-
-// 老年人适配字体
 $font-elder-body: 22px;
 $font-elder-h3: 26px;
 
-// z-index 层级
 $z-float: 999;
 $z-modal: 1000;
 $z-toast: 1001;
 
-// 安全区域
 $safe-bottom: env(safe-area-inset-bottom);

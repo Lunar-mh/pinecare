@@ -2,6 +2,13 @@
 
 const axios = require('axios');
 const ossConfig = require('../config/oss');
+const {
+  createUpstreamError,
+  isRetryableError,
+  logThirdPartyError,
+} = require('../utils/thirdParty');
+
+const MAX_RETRY = Math.max(0, Number(process.env.OSS_MAX_RETRY || 2));
 
 const mockHttpClient = axios.create({
   adapter: async (config) => ({
@@ -18,11 +25,15 @@ const mockHttpClient = axios.create({
 
 const liveHttpClient = axios.create({
   timeout: ossConfig.timeoutMs,
-  baseURL: ossConfig.endpoint || '',
+  baseURL: process.env.OSS_UPLOAD_API_URL || ossConfig.endpoint || '',
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function normalizeKey(key) {
   return String(key || '')
@@ -31,24 +42,51 @@ function normalizeKey(key) {
     .replace(/\\/g, '/');
 }
 
-function isLiveMode() {
-  return (
-    String(process.env.OSS_MODE || '').toLowerCase() === 'live' &&
-    Boolean(ossConfig.endpoint) &&
-    Boolean(ossConfig.accessKeyId) &&
-    Boolean(ossConfig.accessKeySecret)
-  );
-}
-
-function buildPublicUrl(bucket, key) {
-  const safeBucket = String(bucket || ossConfig.bucket || 'family-space').trim();
-  const safeKey = normalizeKey(key)
+function sanitizePathPart(text) {
+  return String(text || '')
     .split('/')
     .filter(Boolean)
     .map((item) => encodeURIComponent(item))
     .join('/');
+}
 
-  return `https://oss.example.com/${safeBucket}/${safeKey}`;
+function isLiveMode() {
+  return (
+    String(process.env.OSS_MODE || '').toLowerCase() === 'live' &&
+    Boolean(process.env.OSS_UPLOAD_API_URL || ossConfig.endpoint || '') &&
+    (Boolean(process.env.OSS_UPLOAD_TOKEN) ||
+      (Boolean(ossConfig.accessKeyId) && Boolean(ossConfig.accessKeySecret)))
+  );
+}
+
+function getLiveHeaders() {
+  const token = String(process.env.OSS_UPLOAD_TOKEN || '').trim();
+  if (token) {
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  }
+
+  return {
+    'X-OSS-ACCESS-KEY-ID': ossConfig.accessKeyId,
+    'X-OSS-ACCESS-KEY-SECRET': ossConfig.accessKeySecret,
+  };
+}
+
+function buildPublicUrl(bucket, key) {
+  const safeBucket = String(bucket || ossConfig.bucket || 'family-space').trim();
+  const safeKey = sanitizePathPart(normalizeKey(key));
+
+  const publicBase = String(process.env.OSS_PUBLIC_BASE_URL || '').trim();
+  if (publicBase) {
+    return `${publicBase.replace(/\/+$/, '')}/${safeKey}`;
+  }
+
+  if (ossConfig.endpoint && /^https?:\/\//i.test(ossConfig.endpoint)) {
+    return `${ossConfig.endpoint.replace(/\/+$/, '')}/${safeBucket}/${safeKey}`;
+  }
+
+  return `https://${safeBucket}.${ossConfig.region}.aliyuncs.com/${safeKey}`;
 }
 
 async function simulateUpload(kind, key, content) {
@@ -57,6 +95,39 @@ async function simulateUpload(kind, key, content) {
     key: normalizeKey(key),
     size: Buffer.isBuffer(content) ? content.length : 0,
   });
+}
+
+function toOssError(err) {
+  return createUpstreamError(err, {
+    timeout: 'OSS upload timeout.',
+    rateLimited: 'OSS upload rate limited.',
+    unavailable: 'OSS upload service unavailable.',
+    failed: 'OSS upload failed.',
+  });
+}
+
+async function requestWithRetry(operation, requestFactory) {
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRY; attempt += 1) {
+    try {
+      return await requestFactory();
+    } catch (err) {
+      lastError = err;
+      logThirdPartyError('oss-upload', err, {
+        operation,
+        attempt: attempt + 1,
+      });
+
+      if (!isRetryableError(err) || attempt >= MAX_RETRY) {
+        throw toOssError(err);
+      }
+
+      await sleep(100 * (attempt + 1));
+    }
+  }
+
+  throw toOssError(lastError);
 }
 
 async function uploadWithLiveApi(kind, content, key, contentType) {
@@ -68,19 +139,19 @@ async function uploadWithLiveApi(kind, content, key, contentType) {
     data: Buffer.from(content).toString('base64'),
   };
 
-  const headers = {
-    'X-OSS-ACCESS-KEY-ID': ossConfig.accessKeyId,
-    'X-OSS-ACCESS-KEY-SECRET': ossConfig.accessKeySecret,
-  };
+  const response = await requestWithRetry('uploadWithLiveApi', () =>
+    liveHttpClient.post('/upload', payload, { headers: getLiveHeaders() })
+  );
 
-  const response = await liveHttpClient.post('/upload', payload, { headers });
   const data = response.data || {};
-
-  if (!data.url || typeof data.url !== 'string') {
-    throw new Error('Invalid OSS upload response.');
+  const url = data.url || (data.data && data.data.url);
+  if (!url || typeof url !== 'string') {
+    const err = new Error('Invalid OSS upload response.');
+    err.code = 'INVALID_OSS_RESPONSE';
+    throw toOssError(err);
   }
 
-  return data.url;
+  return url;
 }
 
 async function uploadAudio(content, key) {

@@ -1,194 +1,146 @@
-@use '../../styles/theme/variables.scss' as *;
-.profile-page {
-  min-height: 100vh;
-  background-color: $bg-primary;
-  padding-bottom: 120px;
-}
+﻿@use '../../styles/theme/variables.scss' as *;
 
-// ── 角色切换 ────────────────────────────────────────────────
-.profile-role-toggle {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  padding: $space-xl $page-padding $space-lg;
-  gap: $space-sm;
-}
-
-.profile-role-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 28px;
-  border-radius: 999px;
-  font-size: $font-body;
-  font-weight: $font-weight-medium;
-  transition: all $transition-normal;
-  border: 2px solid transparent;
-  min-height: $touch-target-primary;
-  box-sizing: border-box;
-
-  &--elder-active {
-    background-color: $color-primary;
-    color: $text-white;
-    box-shadow: 0 4px 16px rgba($color-primary, 0.35);
-  }
-
-  &--family-active {
-    background-color: $color-family-primary;
-    color: $text-white;
-    box-shadow: 0 4px 16px rgba($color-family-primary, 0.35);
-  }
-
-  &--inactive {
-    background-color: $bg-card;
-    color: $text-secondary;
-    border-color: #e0e0e0;
-  }
-}
-
-// ── 头像区域 ─────────────────────────────────────────────────
-.profile-avatar-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: $space-xl $page-padding $space-xl;
-  margin: 0 $page-padding $space-lg;
+.profile-card {
+  padding: 22px;
+  border-radius: $radius-lg;
   background: $bg-card;
-  border-radius: $radius-lg;
   box-shadow: $shadow-card;
-}
-
-.profile-avatar {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, $color-primary, #1976d2);
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: $space-md;
-  box-shadow: 0 8px 24px rgba($color-primary, 0.3);
+  gap: 16px;
+  margin-bottom: 16px;
 
-  .profile-avatar-icon {
-    color: $text-white;
+  &__avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, $color-primary, $color-primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__body {
+    flex: 1;
+  }
+
+  &__name,
+  &__meta {
+    display: block;
+  }
+
+  &__name {
+    font-size: 24px;
+    color: $text-primary;
+    font-weight: $font-weight-bold;
+  }
+
+  &__meta {
+    margin-top: 8px;
+    font-size: 15px;
+    color: $text-secondary;
+    line-height: 1.5;
   }
 }
 
-.profile-name {
-  font-size: $font-h2;
-  font-weight: $font-weight-bold;
-  color: $text-primary;
-  margin-bottom: $space-xs;
+.profile-role-switch {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+
+  &__item {
+    min-height: 48px;
+    border-radius: 999px;
+    background: rgba($bg-card-alt, 0.8);
+    color: $text-secondary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: $font-weight-semibold;
+
+    &--family.profile-role-switch__item--active {
+      background: $color-secondary;
+      color: $text-white;
+    }
+
+    &--active {
+      background: $color-primary;
+      color: $text-white;
+    }
+  }
 }
 
-.profile-phone {
-  font-size: $font-caption;
-  color: $text-secondary;
-}
-
-// ── 菜单列表 ──────────────────────────────────────────────────
-.profile-menu {
-  background-color: $bg-card;
-  margin: 0 $page-padding $space-lg;
+.profile-list {
   border-radius: $radius-lg;
-  box-shadow: $shadow-card;
   overflow: hidden;
-}
+  background: $bg-card;
+  box-shadow: $shadow-card;
 
-.profile-menu-item {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  padding: 0 $space-xl;
-  height: 72px;
-  border-bottom: 1px solid #f5f5f5;
-  box-sizing: border-box;
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+    border-bottom: 1px solid rgba($border-light, 0.9);
+  }
 
-  &:last-child {
+  &__item:last-child {
     border-bottom: none;
   }
 
-  &:active {
-    background-color: $bg-hover;
+  &__icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+    background: rgba($color-primary, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__body {
+    flex: 1;
+  }
+
+  &__title,
+  &__desc {
+    display: block;
+  }
+
+  &__title {
+    font-size: 18px;
+    color: $text-primary;
+    font-weight: $font-weight-bold;
+  }
+
+  &__desc {
+    margin-top: 6px;
+    font-size: 15px;
+    color: $text-secondary;
+    line-height: 1.5;
   }
 }
 
-.profile-menu-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  margin-right: $space-md;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba($color-primary, 0.1);
-  color: $color-primary;
-
-  // 各菜单项彩色图标背景
-  .profile-menu-item:nth-child(1) & {
-    background-color: rgba(#5c6bc0, 0.12);
-    color: #5c6bc0;
-  }
-  .profile-menu-item:nth-child(2) & {
-    background-color: rgba(#26a69a, 0.12);
-    color: #26a69a;
-  }
-  .profile-menu-item:nth-child(3) & {
-    background-color: rgba(#ef5350, 0.12);
-    color: #ef5350;
-  }
-  .profile-menu-item:nth-child(4) & {
-    background-color: rgba(#ff9800, 0.12);
-    color: #ff9800;
-  }
-  .profile-menu-item:nth-child(5) & {
-    background-color: rgba(#ab47bc, 0.12);
-    color: #ab47bc;
-  }
-}
-
-.profile-menu-text {
-  flex: 1;
-  font-size: $font-body;
-  color: $text-primary;
-  font-weight: $font-weight-medium;
-}
-
-.profile-menu-arrow {
-  color: #cccccc;
-}
-
-// ── 版本号 ──────────────────────────────────────────────────
-.profile-version {
-  text-align: center;
-  padding: $space-xl;
-  font-size: $font-caption;
-  color: $text-secondary;
-}
-
-// ── 退出登录 ─────────────────────────────────────────────────
 .profile-logout {
-  margin: 0 $page-padding;
-  background-color: #fff0f0;
-  color: #e53935;
-  font-size: $font-body;
-  font-weight: $font-weight-semibold;
-  border-radius: $radius-lg;
-  height: $touch-target-primary;
-  border: 1.5px solid rgba(#e53935, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: calc(100% - 32px);
+  width: 100%;
+  margin-top: 8px;
+  min-height: 54px;
+  border-radius: 999px;
+  border: none;
+  background: rgba($color-danger, 0.1);
+  color: $color-danger;
+  font-size: 18px;
+  font-weight: $font-weight-bold;
+}
 
-  &::after {
-    border: none;
-  }
-
-  &:active {
-    background-color: rgba(#e53935, 0.12);
-  }
+.profile-version {
+  display: block;
+  margin-top: 16px;
+  text-align: center;
+  font-size: 14px;
+  color: $text-tertiary;
 }

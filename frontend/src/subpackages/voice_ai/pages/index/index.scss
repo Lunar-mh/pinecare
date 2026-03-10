@@ -1,364 +1,96 @@
-@use '../../../../styles/theme/variables.scss' as *;
-.voice-ai {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: #f0f4f8;
+﻿@use '../../../../styles/theme/variables.scss' as *;
 
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    background: $color-primary;
-    flex-shrink: 0;
-  }
-
-  &__header-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  &__avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  &__name {
-    font-size: 20px;
-    color: #fff;
-    font-weight: $font-weight-bold;
-    display: block;
-  }
-
-  &__status {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
-    display: block;
-    margin-top: 2px;
+.voice-overview-page {
+  &__scroll {
+    max-height: calc(100vh - 220px);
   }
 
   &__clear {
-    padding: 8px 12px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    color: $text-white;
+    font-size: 15px;
+    font-weight: $font-weight-semibold;
   }
 
-  &__clear-text {
-    font-size: 16px;
-    color: rgba(255, 255, 255, 0.8);
+  &__hint,
+  &__message-text,
+  &__message-time {
+    display: block;
   }
 
-  &__chat {
-    flex: 1;
-    padding: 16px;
-    overflow: hidden;
+  &__hint {
+    font-size: 17px;
+    color: $text-secondary;
   }
 
-  &__controls {
-    flex-shrink: 0;
-    background: #fff;
-    border-top: 1px solid $color-border-light;
-    padding: 12px 16px;
-    padding-bottom: calc(12px + constant(safe-area-inset-bottom));
-    padding-bottom: calc(12px + env(safe-area-inset-bottom));
-  }
-}
-
-// 聊天气泡行
-.bubble-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  margin-bottom: 16px;
-
-  &--user {
-    flex-direction: row-reverse;
-  }
-}
-
-.bubble-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-
-  &--ai {
-    background: $color-primary;
+  &__message-list {
+    display: grid;
+    gap: $space-md;
   }
 
-  &--user {
-    background: #e65100;
+  &__message {
+    max-width: 88%;
+    padding: 18px;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-card;
+
+    &--assistant {
+      background: $bg-card;
+      border: 1px solid rgba($border-light, 0.9);
+    }
+
+    &--user {
+      margin-left: auto;
+      background: linear-gradient(135deg, rgba($color-primary, 0.12), rgba($color-info, 0.12));
+      border: 1px solid rgba($color-primary, 0.12);
+    }
   }
 
-  &__text {
+  &__message-text {
+    font-size: 18px;
+    color: $text-primary;
+    line-height: $line-height-relaxed;
+  }
+
+  &__message-time {
+    margin-top: 10px;
     font-size: 14px;
-    color: #fff;
-    font-weight: $font-weight-bold;
+    color: $text-tertiary;
   }
-}
 
-.bubble {
-  max-width: 75%; // Widen slightly
-  padding: 14px 18px; // Increase padding
-  border-radius: 20px;
-  position: relative;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05); // Subtle depth
-
-  &--assistant {
-    background: #ffffff;
-    border-bottom-left-radius: 4px;
+  &__input {
+    min-height: 56px;
+    padding: 0 18px;
+    border-radius: $radius-md;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba($border-light, 0.9);
+    font-size: 18px;
     color: $text-primary;
   }
 
-  &--user {
-    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%); // Gradient
-    border-bottom-right-radius: 4px;
-    color: #fff;
-  }
-
-  &--loading {
-    padding: 16px 20px;
-  }
-
-  &__text {
-    font-size: 20px;
-    line-height: 1.6;
-    display: block;
-
-    .bubble--assistant & {
-      color: $color-text-primary;
-    }
-
-    .bubble--user & {
-      color: #fff;
-    }
-  }
-
-  &__time {
-    font-size: 12px;
-    display: block;
-    margin-top: 6px;
-    opacity: 0.6;
-
-    .bubble--assistant & {
-      color: $color-text-tertiary;
-    }
-
-    .bubble--user & {
-      color: rgba(255, 255, 255, 0.8);
-    }
-  }
-}
-
-// 打字动画
-.typing-dots {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-
-  &__dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: $color-text-tertiary;
-    animation: typingBounce 1.2s infinite ease-in-out;
-
-    &:nth-child(1) { animation-delay: 0s; }
-    &:nth-child(2) { animation-delay: 0.2s; }
-    &:nth-child(3) { animation-delay: 0.4s; }
-  }
-}
-
-@keyframes typingBounce {
-  0%, 60%, 100% { transform: translateY(0); }
-  30% { transform: translateY(-8px); }
-}
-
-// 快捷指令
-.quick-commands {
-  flex-shrink: 0;
-  padding: 10px 12px;
-  background: #fff;
-  white-space: nowrap;
-  border-top: 1px solid $color-border-light;
-}
-
-.quick-cmd-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
-  background: #f0f4f8;
-  border-radius: 24px;
-  margin-right: 10px;
-
-  &__icon {
-    font-size: 18px;
-  }
-
-  &__label {
-    font-size: 18px;
-    color: $color-text-primary;
-    font-weight: $font-weight-medium;
-    white-space: nowrap;
-  }
-}
-
-// 语音控制区
-.voice-controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 0;
-
-  &__side {
+  &__send-row {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    width: 64px;
-    padding: 8px;
-    border-radius: 12px;
+    justify-content: flex-end;
+    margin-top: $space-md;
   }
 
-  &__side-icon {
-    font-size: 24px;
-  }
-
-  &__side-label {
-    font-size: 14px;
-    color: $color-text-secondary;
-  }
-}
-
-.voice-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%); // Gradient
-  box-shadow: 0 8px 24px rgba(1, 87, 155, 0.3); // Softer shadow
-  gap: 6px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  z-index: 10;
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: -5px; bottom: -5px; left: -5px; right: -5px;
-    border-radius: 50%;
-    border: 2px solid rgba(1, 87, 155, 0.1);
-    animation: ripple 2s infinite;
-    z-index: -1;
-    opacity: 0;
-  }
-
-  &--recording {
-    background: linear-gradient(135deg, #e53935 0%, #ff5252 100%);
-    box-shadow: 0 8px 24px rgba(229, 57, 53, 0.4);
-    transform: scale(1.1);
-
-    &::after {
-      border-color: rgba(229, 57, 53, 0.3);
-      animation-play-state: running;
-      opacity: 1;
-    }
-  }
-
-  &--processing {
-    background: linear-gradient(135deg, $color-warning 0%, #ffa726 100%);
-    box-shadow: 0 8px 24px rgba(251, 140, 0, 0.3);
-    
-    &::after {
-      display: none;
-    }
-  }
-
-  &__label {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.95);
-    font-weight: $font-weight-medium;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-  }
-}
-
-@keyframes ripple {
-  0% { transform: scale(1); opacity: 0.6; }
-  100% { transform: scale(1.4); opacity: 0; }
-}
-
-// 录音波形动画
-.recording-wave {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  height: 32px;
-
-  &__bar {
-    width: 4px;
-    background: #fff;
-    border-radius: 2px;
-    animation: waveBar 0.8s infinite ease-in-out;
-
-    &:nth-child(1) { height: 12px; animation-delay: 0s; }
-    &:nth-child(2) { height: 22px; animation-delay: 0.15s; }
-    &:nth-child(3) { height: 32px; animation-delay: 0.3s; }
-    &:nth-child(4) { height: 22px; animation-delay: 0.45s; }
-    &:nth-child(5) { height: 12px; animation-delay: 0.6s; }
-  }
-}
-
-@keyframes waveBar {
-  0%, 100% { transform: scaleY(0.5); }
-  50% { transform: scaleY(1); }
-}
-
-// 文字输入栏
-.text-input-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  &__input {
-    flex: 1;
-    height: 48px;
-    background: #f0f4f8;
-    border-radius: 24px;
-    padding: 0 16px;
-    font-size: 18px;
-    color: $color-text-primary;
-    border: none;
-  }
-
-  &__send {
-    width: 48px;
-    height: 48px;
-    background: $color-primary;
-    border-radius: 50%;
-    display: flex;
+  &__send-btn {
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 999px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
+    background: $color-primary;
+    color: $text-white;
+    font-size: 15px;
+    font-weight: $font-weight-semibold;
   }
 
-  &__cancel {
-    padding: 8px;
-  }
-
-  &__cancel-text {
-    font-size: 18px;
-    color: $color-text-secondary;
+  &__bottom-space {
+    height: 120px;
   }
 }
+

@@ -1,231 +1,135 @@
-import React, { useState } from 'react';
-import { View, Text, Button } from '@tarojs/components';
-import Taro, { useLoad } from '@tarojs/taro';
-import { get } from '@/services/request';
-import { ElderlyOverview } from '@/services/types';
-import { MetricCard } from '@/components/elderly/MetricCard';
-import { AlertBanner } from '@/components/elderly/AlertBanner';
-import { SectionTitle } from '@/components/elderly/SectionTitle';
-import { LocationIcon, UserIcon } from '@/components/icons';
-import './FamilyDashboard.scss';
+﻿import { useCallback, useMemo, useState } from 'react'
+import { View, Text } from '@tarojs/components'
+import Taro, { useLoad } from '@tarojs/taro'
+import { getElderlyOverview } from '@/services/modules/family'
+import type { ElderlyOverview } from '@/services/types'
+import { Icon, UserIcon, AlertIcon } from '@/components/icons'
+import { ActionGrid, DataPanel, EmptyState, HeroHeader, PageShell, SectionBlock, StatusCard, StickyPrimaryAction } from '@/components/shell'
+import { homeQuickActionsByRole } from '@/design/navigation'
+import { buildFamilySummaryCards } from '@/view-models/dashboard'
+import './FamilyDashboard.scss'
 
-const FamilyDashboard: React.FC = () => {
-  const [data, setData] = useState<ElderlyOverview | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+export default function FamilyDashboard() {
+  const [overview, setOverview] = useState<ElderlyOverview | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const data = await getElderlyOverview()
+      setOverview(data)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '暂时无法获取长辈状态'
+      setError(message)
+      setOverview(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useLoad(() => {
-    fetchData();
-  });
+    loadData()
+  })
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await get<ElderlyOverview>('/family/elderly-overview');
-      setData(response);
-    } catch (e: unknown) {
-      const err = e as { message?: string };
-      setError(err.message || '加载失败，请稍后重试');
-    } finally {
-      setLoading(false);
+  const navigateByPath = (path: string) => {
+    if (path.startsWith('/pages/')) {
+      Taro.switchTab({ url: path })
+      return
     }
-  };
-
-  const handleBindClick = () => {
-    Taro.navigateTo({
-      url: '/subpackages/family_space/pages/index/index'
-    });
-  };
-
-  const handleHealthDetailClick = (type: 'blood-pressure' | 'heart-rate') => {
-    Taro.navigateTo({
-      url: `/subpackages/family_health/pages/${type}/index`
-    });
-  };
-
-  const handleSOSDetailClick = () => {
-    Taro.navigateTo({
-      url: '/subpackages/sos/pages/index/index'
-    });
-  };
-
-  if (loading) {
-    return (
-      <View className="family-dashboard">
-        <View className="family-dashboard__loading">
-          <Text>加载中...</Text>
-        </View>
-      </View>
-    );
+    Taro.navigateTo({ url: path })
   }
 
-  if (error) {
-    return (
-      <View className="family-dashboard">
-        <View className="family-dashboard__error">
-          <Text>{error}</Text>
-          <Button className="family-dashboard__retry-btn" onClick={fetchData}>重试</Button>
-        </View>
-      </View>
-    );
-  }
-
-  if (!data) {
-    return (
-      <View className="family-dashboard">
-        <View className="family-dashboard__empty-state">
-          <Text className="family-dashboard__empty-text">暂未绑定长辈账号</Text>
-          <Button className="family-dashboard__bind-button" onClick={handleBindClick}>
-            去绑定
-          </Button>
-        </View>
-      </View>
-    );
-  }
-
-  const {
-    name,
-    isOnline,
-    lastActiveAt,
-    todayHealth,
-    location,
-    alerts
-  } = data;
-
-  const bpData = todayHealth?.bloodPressure;
-  const hrData = todayHealth?.heartRate;
-  const medicationProgress = todayHealth?.medicationProgress || 0;
-
-  const unreadAlerts = alerts ? alerts.filter(a => !a.isRead) : [];
-
-  const getAlertType = (type: string): 'warning' | 'danger' | 'info' | 'success' => {
-    switch (type) {
-      case 'health': return 'warning';
-      case 'medication': return 'info';
-      case 'sos': return 'danger';
-      case 'location': return 'info';
-      default: return 'info';
-    }
-  };
+  const summaryCards = useMemo(() => buildFamilySummaryCards(overview), [overview])
+  const quickActions = homeQuickActionsByRole.family
+  const alerts = overview?.alerts.filter(item => !item.isRead).slice(0, 3) || []
 
   return (
-    <View className="family-dashboard">
-      {/* Header bar */}
-      <View className="family-dashboard__header">
-        <Text className="family-dashboard__header-title">家属视角</Text>
-        <Text className="family-dashboard__header-subtitle">实时关注长辈健康</Text>
-      </View>
+    <PageShell roleTone="family" className="family-dashboard">
+      <HeroHeader
+        roleTone="family"
+        eyebrow={overview ? `${overview.name} · ${overview.isOnline ? '在线' : '离线'}` : '家属守护视角'}
+        title="把风险、位置和陪伴放到同一个首页"
+        subtitle="先看长辈状态，再处理提醒，最后进入更细的模块。"
+        aside={<View className="family-dashboard__avatar"><UserIcon size={22} color="#fff" /></View>}
+      />
 
-      {/* Elder card */}
-      <View className="family-dashboard__elder-card">
-        <View className="family-dashboard__avatar">
-          <UserIcon size={40} color="#ffffff" />
-        </View>
-        <View className="family-dashboard__elder-info">
-          <Text className="family-dashboard__elder-name">{name}</Text>
-          <View className="family-dashboard__status-row">
-            <View className={`family-dashboard__online-badge ${!isOnline ? 'family-dashboard__online-badge--offline' : ''}`}>
-              <Text>{isOnline ? '在线' : '离线'}</Text>
+      {error && !loading ? (
+        <EmptyState title="暂时无法获取守护数据" description={error} actionLabel="重新加载" onAction={loadData} icon={<AlertIcon size={28} color="#d75a4a" />} />
+      ) : null}
+
+      {!loading && !overview && !error ? (
+        <EmptyState title="还没有绑定长辈" description="绑定后就能在这里看到长辈状态、异常提醒和位置共享。" actionLabel="前往家庭空间" onAction={() => navigateByPath('/subpackages/family_space/pages/index/index')} icon={<Icon name="family" size={28} color="#c97b55" />} />
+      ) : null}
+
+      {overview ? (
+        <>
+          <SectionBlock title="守护总览" description="先看在线状态、提醒数量和用药完成度。">
+            <View className="family-dashboard__summary-grid">
+              {summaryCards.map(card => (
+                <StatusCard key={card.key} title={card.title} value={card.value} unit={card.unit} hint={card.hint} tone={card.tone} />
+              ))}
             </View>
-            <Text className="family-dashboard__last-active">
-              {lastActiveAt ? `最后活跃: ${lastActiveAt}` : ''}
-            </Text>
-          </View>
-        </View>
-      </View>
+          </SectionBlock>
 
-      {/* Health row - 点击跳转详情 */}
-      <View className="family-dashboard__health-row">
-        <View
-          className="family-dashboard__health-item"
-          onClick={() => handleHealthDetailClick('blood-pressure')}
-        >
-          <MetricCard
-            title="血压"
-            value={bpData ? `${bpData.systolic}/${bpData.diastolic}` : '--'}
-            unit="mmHg"
-            status={bpData?.status || 'normal'}
-          />
-        </View>
-        <View
-          className="family-dashboard__health-item"
-          onClick={() => handleHealthDetailClick('heart-rate')}
-        >
-          <MetricCard
-            title="心率"
-            value={hrData ? hrData.value.toString() : '--'}
-            unit="次/分"
-            status={hrData?.status || 'normal'}
-          />
-        </View>
-      </View>
+          <SectionBlock title="位置与陪伴" description="保持位置共享，也别忽略情绪陪伴。">
+            <View className="family-dashboard__double-grid">
+              <DataPanel tone="info">
+                <Text className="family-dashboard__panel-title">最近位置</Text>
+                <Text className="family-dashboard__panel-main">{overview.location?.address || '暂未获取位置'}</Text>
+                <Text className="family-dashboard__panel-sub">{overview.location ? `更新时间 ${overview.location.updatedAt}` : '建议检查定位权限和共享设置。'}</Text>
+              </DataPanel>
+              <DataPanel tone="primary">
+                <Text className="family-dashboard__panel-title">今日用药完成度</Text>
+                <Text className="family-dashboard__panel-main">{overview.todayHealth.medicationProgress}%</Text>
+                <Text className="family-dashboard__panel-sub">配合提醒页可以继续查看未完成计划。</Text>
+              </DataPanel>
+            </View>
+          </SectionBlock>
 
-      {/* Medication progress */}
-      <View className="family-dashboard__section">
-        <View className="family-dashboard__medication-card">
-          <View className="family-dashboard__medication-header">
-            <Text className="family-dashboard__medication-title">今日用药</Text>
-            <Text className="family-dashboard__medication-value">{medicationProgress}%</Text>
-          </View>
-          <View className="family-dashboard__progress-bar-bg">
-            <View
-              className="family-dashboard__progress-bar-fill"
-              style={{ width: `${medicationProgress}%` }}
+          <SectionBlock title="快速进入" description="高频守护动作集中在这里。">
+            <ActionGrid
+              items={quickActions.map(item => ({
+                key: item.key,
+                label: item.label,
+                description: item.description,
+                badge: item.badge,
+                icon: <Icon name={item.icon} size={28} color="#c97b55" />,
+              }))}
+              onSelect={(key) => {
+                const target = quickActions.find(item => item.key === key)
+                if (target) navigateByPath(target.path)
+              }}
             />
-          </View>
-        </View>
-      </View>
+          </SectionBlock>
 
-      {/* Location card */}
-      <View className="family-dashboard__section">
-        <SectionTitle title="当前位置" />
-        <View className="family-dashboard__location-card">
-          <View className="family-dashboard__location-icon">
-            <LocationIcon size={24} />
-          </View>
-          <View className="family-dashboard__location-info">
-            {location?.address ? (
-              <>
-                <Text className="family-dashboard__location-address">{location.address}</Text>
-                <Text className="family-dashboard__location-time">更新于: {location.updatedAt}</Text>
-              </>
-            ) : (
-              <Text className="family-dashboard__location-address">暂无位置信息</Text>
-            )}
-          </View>
-        </View>
-      </View>
+          <SectionBlock title="待处理提醒" description="异常与告警先看最紧急的三条。" actionLabel="查看 SOS" onAction={() => navigateByPath('/subpackages/sos/pages/index/index')}>
+            <DataPanel tone={alerts.length > 0 ? 'danger' : 'success'}>
+              {alerts.length > 0 ? (
+                <View className="family-dashboard__alert-list">
+                  {alerts.map(item => (
+                    <View key={item.id} className="family-dashboard__alert-item">
+                      <View>
+                        <Text className="family-dashboard__alert-title">{item.title}</Text>
+                        <Text className="family-dashboard__alert-desc">{item.message}</Text>
+                      </View>
+                      <Text className="family-dashboard__alert-tag">未处理</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View className="family-dashboard__panel-empty">
+                  <Text className="family-dashboard__panel-title">当前没有待处理提醒</Text>
+                  <Text className="family-dashboard__panel-sub">如果出现 SOS、用药异常或定位异常，这里会优先展示。</Text>
+                </View>
+              )}
+            </DataPanel>
+          </SectionBlock>
 
-      {/* Alerts section */}
-      <View className="family-dashboard__section">
-        <View className="family-dashboard__alerts-header">
-          <SectionTitle title="待处理提醒" />
-          {unreadAlerts.some(a => a.type === 'sos') && (
-            <View className="family-dashboard__sos-btn" onClick={handleSOSDetailClick}>
-              <Text className="family-dashboard__sos-btn-text">查看SOS</Text>
-            </View>
-          )}
-        </View>
-        <View className="family-dashboard__alerts-list">
-          {unreadAlerts.length > 0 ? (
-            unreadAlerts.map(alert => (
-              <AlertBanner
-                key={alert.id}
-                type={getAlertType(alert.type)}
-                title={alert.title}
-                message={alert.message}
-              />
-            ))
-          ) : (
-            <View className="family-dashboard__empty-alerts">
-              <Text>暂无待处理提醒</Text>
-            </View>
-          )}
-        </View>
-      </View>
-    </View>
-  );
-};
-
-export default FamilyDashboard;
+          <StickyPrimaryAction label="查看实时定位" tone="family" icon={<Icon name="location" size={20} color="#fff" />} onClick={() => navigateByPath('/subpackages/location/pages/index/index')} />
+        </>
+      ) : null}
+    </PageShell>
+  )
+}

@@ -1,11 +1,13 @@
+﻿import { useEffect, useState } from 'react'
 import { View, Text, Button } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { useState, useEffect } from 'react'
+import { HeroHeader, PageShell, SectionBlock } from '@/components/shell'
+import { Icon, UserIcon } from '@/components/icons'
+import { profileSectionsByRole } from '@/design/navigation'
 import { useRole } from '@/hooks/useRole'
-import { UserIcon, ChevronRightIcon, SettingsIcon, PhoneIcon, AlertIcon, InfoIcon } from '@/components/icons'
 import './index.scss'
 
-export default function Profile() {
+export default function ProfilePage() {
   const [userInfo, setUserInfo] = useState<{ phone?: string; nickname?: string; id?: string } | null>(null)
   const { role, setRole } = useRole()
 
@@ -13,18 +15,22 @@ export default function Profile() {
     try {
       const info = Taro.getStorageSync('userInfo')
       if (info) {
-        setUserInfo(JSON.parse(info))
+        setUserInfo(JSON.parse(info) as { phone?: string; nickname?: string; id?: string })
       }
-    } catch (e: unknown) {}
+    } catch (_) {
+      setUserInfo(null)
+    }
   }, [])
 
-  const handleRoleSwitch = (newRole: 'elder' | 'family') => {
-    setRole(newRole)
-    Taro.showToast({ title: '已切换', icon: 'success' })
-    // 强制刷新 TabBar 首页以应用新角色
-    setTimeout(() => {
-      Taro.switchTab({ url: '/pages/index/index' })
-    }, 300)
+  const displayName = userInfo?.nickname || userInfo?.phone || '银伴用户'
+  const sections = profileSectionsByRole[role]
+
+  const navigateByPath = (path: string) => {
+    if (path.startsWith('/pages/')) {
+      Taro.switchTab({ url: path })
+      return
+    }
+    Taro.navigateTo({ url: path })
   }
 
   const handleLogout = () => {
@@ -32,78 +38,51 @@ export default function Profile() {
     Taro.reLaunch({ url: '/pages/login/index' })
   }
 
-
-  const displayName = userInfo?.nickname || userInfo?.phone || '用户'
-  const showPhone = userInfo?.nickname && userInfo?.phone
-
   return (
-    <View className="profile-page">
-      <View className="profile-role-toggle">
-        <View 
-          className={`profile-role-btn ${role === 'elder' ? 'profile-role-btn--elder-active' : 'profile-role-btn--inactive'}`}
-          onClick={() => handleRoleSwitch('elder')}
-        >
+    <PageShell roleTone={role === 'elder' ? 'elder' : 'family'} className="profile-dashboard">
+      <HeroHeader
+        roleTone={role === 'elder' ? 'elder' : 'family'}
+        eyebrow={role === 'elder' ? '身份卡' : '家庭守护身份'}
+        title={role === 'elder' ? '我的照护设置与家庭关系' : '我的守护设置与家庭关系'}
+        subtitle="把角色切换、设备、紧急设置和关于信息收纳在同一页。"
+      />
+
+      <View className="profile-card">
+        <View className="profile-card__avatar"><UserIcon size={28} color="#fff" /></View>
+        <View className="profile-card__body">
+          <Text className="profile-card__name">{displayName}</Text>
+          <Text className="profile-card__meta">{userInfo?.phone || '登录后会同步手机号'} · {role === 'elder' ? '长辈身份' : '家属身份'}</Text>
+        </View>
+      </View>
+
+      <View className="profile-role-switch">
+        <View className={`profile-role-switch__item ${role === 'elder' ? 'profile-role-switch__item--active' : ''}`} onClick={() => setRole('elder')}>
           <Text>长辈模式</Text>
         </View>
-        <View 
-          className={`profile-role-btn ${role === 'family' ? 'profile-role-btn--family-active' : 'profile-role-btn--inactive'}`}
-          onClick={() => handleRoleSwitch('family')}
-        >
+        <View className={`profile-role-switch__item profile-role-switch__item--family ${role === 'family' ? 'profile-role-switch__item--active' : ''}`} onClick={() => setRole('family')}>
           <Text>家属模式</Text>
         </View>
       </View>
 
-      <View className="profile-avatar-section">
-        <View className="profile-avatar">
-          <UserIcon size={48} className="profile-avatar-icon" />
-        </View>
-        <Text className="profile-name">{displayName}</Text>
-        {showPhone && <Text className="profile-phone">{userInfo?.phone}</Text>}
-      </View>
-
-      <View className="profile-menu">
-        <View className="profile-menu-item" onClick={() => Taro.navigateTo({ url: '/subpackages/settings/pages/index/index' })}>
-          <View className="profile-menu-icon">
-            <SettingsIcon size={24} />
+      {sections.map(section => (
+        <SectionBlock key={section.key} title={section.title}>
+          <View className="profile-list">
+            {section.items.map(item => (
+              <View key={item.key} className="profile-list__item" onClick={() => navigateByPath(item.path)}>
+                <View className="profile-list__icon"><Icon name={item.icon} size={22} color={role === 'elder' ? '#2f6c5b' : '#c97b55'} /></View>
+                <View className="profile-list__body">
+                  <Text className="profile-list__title">{item.label}</Text>
+                  <Text className="profile-list__desc">{item.description}</Text>
+                </View>
+                <Icon name="arrow-right" size={18} color="#8d98a3" />
+              </View>
+            ))}
           </View>
-          <Text className="profile-menu-text">系统设置</Text>
-          <ChevronRightIcon size={20} className="profile-menu-arrow" />
-        </View>
-        <View className="profile-menu-item" onClick={() => Taro.navigateTo({ url: '/subpackages/settings/pages/device/index' })}>
-          <View className="profile-menu-icon">
-            <PhoneIcon size={24} />
-          </View>
-          <Text className="profile-menu-text">设备绑定</Text>
-          <ChevronRightIcon size={20} className="profile-menu-arrow" />
-        </View>
-        <View className="profile-menu-item" onClick={() => Taro.navigateTo({ url: '/subpackages/settings/pages/emergency/index' })}>
-          <View className="profile-menu-icon">
-            <AlertIcon size={24} />
-          </View>
-          <Text className="profile-menu-text">紧急联系人</Text>
-          <ChevronRightIcon size={20} className="profile-menu-arrow" />
-        </View>
-        <View className="profile-menu-item" onClick={() => Taro.navigateTo({ url: '/subpackages/settings/pages/feedback/index' })}>
-          <View className="profile-menu-icon">
-            <InfoIcon size={24} />
-          </View>
-          <Text className="profile-menu-text">帮助与反馈</Text>
-          <ChevronRightIcon size={20} className="profile-menu-arrow" />
-        </View>
-        <View className="profile-menu-item" onClick={() => Taro.navigateTo({ url: '/subpackages/settings/pages/about/index' })}>
-          <View className="profile-menu-icon">
-            <InfoIcon size={24} />
-          </View>
-          <Text className="profile-menu-text">关于银伴</Text>
-          <ChevronRightIcon size={20} className="profile-menu-arrow" />
-        </View>
-      </View>
+        </SectionBlock>
+      ))}
 
       <Button className="profile-logout" onClick={handleLogout}>退出登录</Button>
-
-      <View className="profile-version">
-        <Text>v1.0.0</Text>
-      </View>
-    </View>
+      <Text className="profile-version">银伴前端体验重构版 · v1.0.0</Text>
+    </PageShell>
   )
 }

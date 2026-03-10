@@ -1,332 +1,114 @@
-@use '../../../../styles/theme/variables.scss' as *;
-.medication-index {
-  min-height: 100vh;
-  background: $color-background;
-  position: relative;
+﻿@use '../../../../styles/theme/variables.scss' as *;
 
+.medication-overview-page {
   &__scroll {
-    height: 100vh;
-    padding: 16px;
-    padding-bottom: 120px;
+    max-height: calc(100vh - 220px);
   }
 
-  .progress-card {
-    background: linear-gradient(135deg, #42a5f5 0%, #1565c0 100%); // Brighter blue gradient
-    border-radius: 20px;
-    padding: 24px;
-    margin-bottom: 20px;
-    color: #fff;
-    box-shadow: 0 8px 24px rgba(21, 101, 192, 0.25); // Add glow shadow
-
-    .progress-info {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-
-      .progress-title {
-        font-size: 22px;
-        font-weight: $font-weight-medium;
-      }
-
-      .progress-value {
-        font-size: 36px;
-        font-weight: $font-weight-bold;
-      }
-    }
-
-    .progress-bar {
-      height: 12px;
-      background: rgba(255, 255, 255, 0.3);
-      border-radius: 6px;
-      overflow: hidden;
-      margin-bottom: 12px;
-
-      &__fill {
-        height: 100%;
-        background: #fff;
-        border-radius: 6px;
-        transition: width 0.3s ease;
-      }
-    }
-
-    .progress-detail {
-      font-size: 16px;
-      opacity: 0.9;
-    }
+  &__grid,
+  &__stack {
+    display: grid;
+    gap: $space-md;
   }
 
-  .tab-bar {
-    display: flex;
-    background: #fff;
-    border-radius: 12px;
-    padding: 4px;
-    margin-bottom: 16px;
-    box-shadow: $shadow-sm;
-
-    .tab-item {
-      flex: 1;
-      padding: 16px;
-      text-align: center;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-
-      &__text {
-        font-size: 20px;
-        color: $color-text-secondary;
-        font-weight: $font-weight-medium;
-      }
-
-      &--active {
-        background: $color-primary;
-
-        .tab-item__text {
-          color: #fff;
-        }
-      }
-    }
-  }
-
-  .medication-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .medication-item {
+  &__progress-ring {
+    width: 86px;
+    height: 86px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
-    background: #fff;
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04); // Softer shadow
-    transition: transform 0.1s ease;
-
-    &:active {
-      transform: scale(0.98); // Click feedback
-    }
-
-    &--pending {
-      border-left: 6px solid $color-primary; // Thicker border
-    }
-
-    &--taken {
-      border-left: 6px solid $color-success;
-      opacity: 0.7; // Reduce opacity for done items
-      background: #f9f9f9;
-    }
-
-    &--missed {
-      border-left: 6px solid $color-warning;
-      background: #fff8e1; // Light yellow background
-    }
-
-    &__time {
-      width: 70px;
-      flex-shrink: 0;
-
-      .time-value {
-        font-size: 24px;
-        font-weight: $font-weight-bold;
-        color: $color-text-primary;
-      }
-    }
-
-    &__content {
-      flex: 1;
-      padding: 0 16px;
-
-      .medication-name {
-        font-size: 22px;
-        font-weight: $font-weight-bold;
-        color: $color-text-primary;
-        margin-bottom: 4px;
-      }
-
-      .medication-dosage {
-        font-size: 18px;
-        color: $color-text-secondary;
-      }
-
-      .medication-time {
-        font-size: 14px;
-        color: $color-success;
-        margin-top: 4px;
-      }
-    }
-
-    &__actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-
-      .action-btn {
-        min-width: 80px;
-        min-height: 44px;
-        padding: 10px 16px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-        font-size: 16px;
-        font-weight: $font-weight-medium;
-
-        &--take {
-          background: $color-success;
-          color: #fff;
-        }
-
-        &--skip {
-          background: $color-background;
-          color: $color-text-secondary;
-        }
-      }
-    }
-
-    &__status {
-      width: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.16);
+    color: $text-white;
+    font-size: 22px;
+    font-weight: $font-weight-bold;
+    border: 2px solid rgba(255, 255, 255, 0.22);
   }
 
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 64px 24px;
-
-    .empty-text {
-      font-size: 20px;
-      color: $color-text-secondary;
-      margin-top: 16px;
-    }
-
-    .empty-hint {
-      font-size: 16px;
-      color: $color-text-tertiary;
-      margin-top: 8px;
-    }
+  &__tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: $space-sm;
+    margin-bottom: $space-lg;
   }
 
-  // 用药计划列表
-  .plan-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .plan-item {
-    background: #fff;
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: $shadow-sm;
+  &__tab {
+    min-height: 52px;
+    border-radius: $radius-md;
+    background: rgba($bg-card, 0.85);
+    border: 1px solid rgba($border-light, 0.9);
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    color: $text-secondary;
+    font-size: 18px;
+    font-weight: $font-weight-semibold;
 
-    &--inactive {
-      opacity: 0.6;
-    }
-
-    &__left {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      flex: 1;
-    }
-
-    &__icon-wrap {
-      width: 44px;
-      height: 44px;
-      background: #e3f2fd;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-
-      &--inactive {
-        background: $color-background;
-      }
-    }
-
-    &__info {
-      flex: 1;
-    }
-
-    &__name {
-      font-size: 20px;
-      font-weight: $font-weight-bold;
-      color: $color-text-primary;
-      display: block;
-      margin-bottom: 4px;
-
-      &--inactive {
-        color: $color-text-tertiary;
-      }
-    }
-
-    &__dosage {
-      font-size: 16px;
-      color: $color-text-secondary;
-      display: block;
-      margin-bottom: 2px;
-    }
-
-    &__schedule {
-      font-size: 15px;
-      color: $color-primary;
-      display: block;
-      margin-bottom: 2px;
-    }
-
-    &__instructions {
-      font-size: 14px;
-      color: $color-text-tertiary;
-      display: block;
-    }
-
-    &__right {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-
-    &__delete {
-      padding: 4px 8px;
-
-      &-text {
-        font-size: 14px;
-        color: $color-warning;
-      }
+    &--active {
+      color: $text-white;
+      background: linear-gradient(135deg, $color-primary, $color-primary-light);
+      box-shadow: $shadow-button;
     }
   }
 
-  .medication-item {
-    &__time {
-      display: flex;
-      align-items: center;
-      gap: 4px;
+  &__panel-text,
+  &__item-title,
+  &__item-desc,
+  &__item-meta {
+    display: block;
+  }
+
+  &__panel-text {
+    font-size: 18px;
+    color: $text-secondary;
+  }
+
+  &__item-title {
+    font-size: 22px;
+    color: $text-primary;
+    font-weight: $font-weight-bold;
+  }
+
+  &__item-desc,
+  &__item-meta {
+    margin-top: 8px;
+    font-size: 16px;
+    color: $text-secondary;
+    line-height: $line-height-normal;
+  }
+
+  &__actions {
+    display: flex;
+    gap: $space-sm;
+    flex-wrap: wrap;
+    margin-top: $space-md;
+  }
+
+  &__btn {
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba($color-primary, 0.1);
+    color: $color-primary;
+    font-size: 15px;
+    font-weight: $font-weight-semibold;
+
+    &--primary {
+      background: $color-primary;
+      color: $text-white;
+    }
+
+    &--danger {
+      background: rgba($color-danger, 0.12);
+      color: $color-danger;
     }
   }
 
-  &__fab {
-    position: fixed;
-    right: 24px;
-    bottom: 32px;
-    z-index: 100;
-  }
-
-  .safe-area-bottom {
-    height: constant(safe-area-inset-bottom);
-    height: env(safe-area-inset-bottom);
-    min-height: 20px;
+  &__bottom-space {
+    height: 120px;
   }
 }
+

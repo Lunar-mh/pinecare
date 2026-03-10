@@ -1,4 +1,4 @@
-export default defineAppConfig({
+﻿export default defineAppConfig({
   pages: [
     'pages/login/index',
     'pages/index/index',
@@ -8,25 +8,25 @@ export default defineAppConfig({
   entryPagePath: 'pages/login/index',
   window: {
     backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: '#f5f5f0',
+    navigationBarBackgroundColor: '#f6f1e7',
     navigationBarTitleText: '银伴',
     navigationBarTextStyle: 'black'
   },
   tabBar: {
-    color: '#999999',
-    selectedColor: '#01579b',
-    backgroundColor: '#ffffff',
+    color: '#8d98a3',
+    selectedColor: '#2f6c5b',
+    backgroundColor: '#fffdf9',
     borderStyle: 'white',
     list: [
       {
         pagePath: 'pages/index/index',
-        text: '关怀',
+        text: '首页',
         iconPath: 'assets/tabbar/home.png',
         selectedIconPath: 'assets/tabbar/home-active.png'
       },
       {
         pagePath: 'pages/services/index',
-        text: '服务',
+        text: '守护服务',
         iconPath: 'assets/tabbar/services.png',
         selectedIconPath: 'assets/tabbar/services-active.png'
       },
@@ -38,7 +38,6 @@ export default defineAppConfig({
       }
     ]
   },
-  // 分包草案：具体页面待逐步补齐
   subPackages: [
     {
       root: 'subpackages/health',

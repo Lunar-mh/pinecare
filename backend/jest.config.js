@@ -1,22 +1,19 @@
 module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/*.test.js'],
-  collectCoverageFrom: [
-    'src/**/*.js',
-    '!src/docs/**'
-  ],
+  collectCoverageFrom: ['src/**/*.js', '!src/docs/**'],
   coverageThreshold: {
     global: {
-      branches: 15,
-      functions: 20,
-      lines: 30
-    }
+      branches: 22,
+      functions: 30,
+      lines: 38,
+    },
   },
   testTimeout: 30000,
   moduleNameMapper: {
-    '@/(.*)': '<rootDir>/src/$1'
+    '@/(.*)': '<rootDir>/src/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/tests/helpers/setup.js'],
   coverageDirectory: 'coverage',
-  verbose: true
+  verbose: true,
 };

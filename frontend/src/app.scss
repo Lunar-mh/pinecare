@@ -1,4 +1,13 @@
+﻿@use './styles/theme/variables.scss' as *;
+@import '@nutui/icons-react-taro/dist/style_icon.css';
+
 page {
-  background: #f5f5f0;
-  color: #1a1a1a;
+  background: $bg-primary;
+  color: $text-primary;
+  font-family: $font-family;
+}
+
+view,
+text {
+  box-sizing: border-box;
 }

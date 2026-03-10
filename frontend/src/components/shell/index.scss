@@ -1,0 +1,333 @@
+﻿@use '../../styles/theme/variables.scss' as *;
+
+.page-shell {
+  min-height: 100vh;
+  padding: 28px $page-padding 140px;
+  background:
+    radial-gradient(circle at top left, rgba($color-primary, 0.14), transparent 36%),
+    linear-gradient(180deg, #fbf8f2 0%, $bg-primary 32%, #f5efe4 100%);
+
+  &--family {
+    background:
+      radial-gradient(circle at top left, rgba($color-secondary, 0.16), transparent 38%),
+      linear-gradient(180deg, #fff7f1 0%, $bg-primary 34%, #f7efe8 100%);
+  }
+}
+
+.hero-header {
+  margin-bottom: $space-lg;
+  padding: 28px;
+  border-radius: $radius-lg;
+  color: $text-white;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-md;
+  box-shadow: $shadow-float;
+
+  &--elder {
+    background: linear-gradient(135deg, #2f6c5b 0%, #438470 100%);
+  }
+
+  &--family {
+    background: linear-gradient(135deg, #c97b55 0%, #db916c 100%);
+  }
+
+  &__body {
+    flex: 1;
+  }
+
+  &__eyebrow,
+  &__subtitle {
+    display: block;
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  &__eyebrow {
+    font-size: 16px;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+  }
+
+  &__title {
+    display: block;
+    font-size: 34px;
+    line-height: 1.2;
+    font-weight: $font-weight-bold;
+  }
+
+  &__subtitle {
+    margin-top: 12px;
+    font-size: 18px;
+    line-height: 1.6;
+  }
+}
+
+.section-block {
+  margin-bottom: $space-lg;
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $space-sm;
+    margin-bottom: $space-md;
+  }
+
+  &__title,
+  &__description {
+    display: block;
+  }
+
+  &__title {
+    font-size: 26px;
+    color: $text-primary;
+    font-weight: $font-weight-bold;
+  }
+
+  &__description {
+    margin-top: 8px;
+    font-size: 16px;
+    color: $text-secondary;
+    line-height: 1.6;
+  }
+
+  &__action {
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: rgba($color-primary, 0.1);
+    color: $color-primary;
+    font-size: 15px;
+    font-weight: $font-weight-semibold;
+    white-space: nowrap;
+  }
+}
+
+.status-card,
+.data-panel,
+.action-grid__item,
+.empty-state {
+  background: $bg-card;
+  border: 1px solid rgba($border-light, 0.9);
+  box-shadow: $shadow-card;
+}
+
+.status-card {
+  padding: 20px;
+  border-radius: $radius-md;
+
+  &--clickable:active {
+    transform: scale(0.985);
+  }
+
+  &--primary { border-top: 4px solid $color-primary; }
+  &--success { border-top: 4px solid $color-success; }
+  &--warning { border-top: 4px solid $color-warning; }
+  &--danger { border-top: 4px solid $color-danger; }
+  &--info { border-top: 4px solid $color-info; }
+
+  &__top,
+  &__value-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-sm;
+  }
+
+  &__title,
+  &__hint {
+    display: block;
+  }
+
+  &__title {
+    font-size: 16px;
+    color: $text-secondary;
+    font-weight: $font-weight-semibold;
+  }
+
+  &__icon {
+    color: $text-tertiary;
+  }
+
+  &__value-row {
+    justify-content: flex-start;
+    margin-top: 16px;
+  }
+
+  &__value {
+    font-size: 30px;
+    line-height: 1.1;
+    color: $text-primary;
+    font-weight: $font-weight-bold;
+  }
+
+  &__unit {
+    margin-top: 6px;
+    font-size: 16px;
+    color: $text-secondary;
+  }
+
+  &__hint {
+    margin-top: 14px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: $text-secondary;
+  }
+}
+
+.data-panel {
+  border-radius: $radius-lg;
+  padding: 22px;
+
+  &--primary { background: linear-gradient(180deg, rgba($color-primary, 0.08), rgba(255, 255, 255, 0.95)); }
+  &--success { background: linear-gradient(180deg, rgba($color-success, 0.08), rgba(255, 255, 255, 0.95)); }
+  &--warning { background: linear-gradient(180deg, rgba($color-warning, 0.1), rgba(255, 255, 255, 0.95)); }
+  &--danger { background: linear-gradient(180deg, rgba($color-danger, 0.08), rgba(255, 255, 255, 0.95)); }
+  &--info { background: linear-gradient(180deg, rgba($color-info, 0.08), rgba(255, 255, 255, 0.95)); }
+}
+
+.empty-state {
+  padding: 28px 22px;
+  border-radius: $radius-lg;
+  text-align: center;
+
+  &__icon,
+  &__title,
+  &__description {
+    display: block;
+  }
+
+  &__icon {
+    margin-bottom: 12px;
+  }
+
+  &__title {
+    font-size: 22px;
+    color: $text-primary;
+    font-weight: $font-weight-bold;
+  }
+
+  &__description {
+    margin-top: 8px;
+    font-size: 16px;
+    color: $text-secondary;
+    line-height: 1.6;
+  }
+
+  &__action {
+    margin-top: 16px;
+    display: inline-flex;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: rgba($color-primary, 0.1);
+    color: $color-primary;
+    font-size: 15px;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.action-grid {
+  display: grid;
+  gap: $space-md;
+
+  &--cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  &--cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  &__item {
+    position: relative;
+    border-radius: $radius-lg;
+    padding: 20px 18px;
+    min-height: 156px;
+  }
+
+  &__item:active {
+    transform: scale(0.985);
+  }
+
+  &__badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba($color-danger, 0.1);
+    color: $color-danger;
+    font-size: 12px;
+    font-weight: $font-weight-bold;
+  }
+
+  &__icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 18px;
+    background: rgba($color-primary, 0.1);
+    color: $color-primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__label,
+  &__description {
+    display: block;
+  }
+
+  &__label {
+    margin-top: 16px;
+    font-size: 20px;
+    color: $text-primary;
+    font-weight: $font-weight-bold;
+  }
+
+  &__description {
+    margin-top: 8px;
+    font-size: 15px;
+    color: $text-secondary;
+    line-height: 1.5;
+  }
+}
+
+.sticky-action {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(#{$safe-bottom} + 16px);
+  display: flex;
+  justify-content: center;
+  z-index: $z-float;
+  pointer-events: none;
+
+  &__button {
+    pointer-events: auto;
+    min-width: 280px;
+    max-width: calc(100vw - 32px);
+    min-height: 58px;
+    padding: 0 26px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: $text-white;
+    box-shadow: $shadow-float;
+
+    &--elder {
+      background: linear-gradient(135deg, $color-danger, #ef7b67);
+    }
+
+    &--family {
+      background: linear-gradient(135deg, $color-secondary, #de916e);
+    }
+  }
+
+  &__label {
+    font-size: 20px;
+    font-weight: $font-weight-bold;
+    letter-spacing: 1px;
+  }
+}

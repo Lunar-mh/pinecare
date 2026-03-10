@@ -1,430 +1,329 @@
-@use '../../styles/theme/variables.scss' as *;
+﻿@use '../../styles/theme/variables.scss' as *;
+
 .login-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, $color-primary 0%, $color-primary-light 35%, $bg-primary 35%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-bottom: 40px;
+  padding: 28px $page-padding 48px;
+  background:
+    radial-gradient(circle at top, rgba($color-primary, 0.18), transparent 35%),
+    linear-gradient(180deg, #f9f6ef 0%, $bg-primary 45%, #f4ede2 100%);
 
-  &--role {
-    background: linear-gradient(180deg, $color-primary 0%, $color-primary-light 30%, $bg-primary 30%);
+  &--family {
+    background:
+      radial-gradient(circle at top, rgba($color-secondary, 0.22), transparent 35%),
+      linear-gradient(180deg, #fff8f2 0%, $bg-primary 45%, #f5ece3 100%);
   }
 }
 
-// ========== 品牌区 ==========
-.login-brand {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 60px 0 40px;
+.login-hero {
+  padding: 12px 8px 24px;
 
-  &__logo {
-    width: 80px;
-    height: 80px;
-    border-radius: 24px;
-    background: rgba(255, 255, 255, 0.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  &__badge,
+  &__title,
+  &__subtitle {
+    display: block;
   }
 
-  &__logo-text {
-    font-size: 40px;
-    color: #fff;
+  &__badge {
+    display: inline-flex;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.7);
+    color: $text-secondary;
+    font-size: 14px;
+    margin-bottom: 18px;
+  }
+
+  &__title {
+    font-size: 36px;
+    line-height: 1.2;
+    color: $text-primary;
     font-weight: $font-weight-bold;
-    line-height: 1;
   }
 
-  &__name {
-    font-size: 32px;
-    color: #fff;
-    font-weight: $font-weight-bold;
-    margin-bottom: 8px;
-    letter-spacing: 4px;
-  }
-
-  &__slogan {
+  &__subtitle {
+    margin-top: 12px;
     font-size: 18px;
-    color: rgba(255, 255, 255, 0.85);
-    letter-spacing: 1px;
+    color: $text-secondary;
+    line-height: 1.6;
   }
 }
 
-// ========== 登录卡片 ==========
-.login-card {
-  width: 90%;
-  max-width: 400px;
-  background: $bg-card;
+.login-panel {
+  background: rgba(255, 253, 249, 0.92);
+  border: 1px solid rgba($border-light, 0.9);
   border-radius: $radius-lg;
   box-shadow: $shadow-float;
-  padding: 8px 0 32px;
-  margin-top: -8px;
+  padding: 22px 18px 26px;
 }
 
-// ========== Tab 切换 ==========
-.login-tabs {
-  display: flex;
-  border-bottom: 1px solid $border-light;
-  margin-bottom: 28px;
-}
-
-.login-tab {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  padding: 20px 0 16px;
-  position: relative;
-
-  &__text {
-    font-size: 20px;
-    color: $text-secondary;
-    font-weight: $font-weight-medium;
-    transition: color $transition-normal $ease-default;
-  }
-
-  &--active {
-    .login-tab__text {
-      color: $color-primary;
-      font-weight: $font-weight-bold;
-    }
-
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -1px;
-      left: 20%;
-      right: 20%;
-      height: 3px;
-      background: $color-primary;
-      border-radius: 2px;
-    }
-  }
-}
-
-// ========== 表单区 ==========
-.login-form {
-  padding: 0 24px;
-}
-
-.login-field {
+.login-stage {
   display: flex;
   align-items: center;
-  background: #f5f7fa;
-  border-radius: $radius-md;
-  border: 1.5px solid transparent;
-  height: $input-height;
-  margin-bottom: 8px;
-  transition: border-color $transition-fast $ease-default;
-  overflow: hidden;
+  gap: 10px;
+  margin: 8px 0 16px;
 
-  &:focus-within {
-    border-color: $color-primary;
-    background: #fff;
-    box-shadow: 0 0 0 3px rgba(1, 87, 155, 0.1);
-  }
-
-  &--error {
-    border-color: $color-danger !important;
-    background: #fff5f5;
-  }
-
-  &__icon {
-    width: 52px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-shrink: 0;
-  }
-
-  &__input {
-    flex: 1;
-    height: 100%;
-    font-size: 20px;
-    color: $text-primary;
-    background: transparent;
-    padding: 0;
-    border: none;
-
-    &::placeholder {
-      color: $text-tertiary;
-    }
-  }
-}
-
-// 错误提示
-.login-error {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 12px;
-  padding: 8px 12px;
-  background: #ffebee;
-  border-radius: 8px;
-  border: 1px solid rgba(229, 57, 53, 0.2);
-
-  &__text {
-    font-size: 15px;
-    color: $color-danger;
-    font-weight: $font-weight-medium;
-  }
-}
-
-// 开发提示
-.login-dev-tip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 0;
-  margin-bottom: 4px;
-
-  &__text {
-    font-size: 15px;
-    color: $color-info;
-  }
-}
-
-// 发送验证码按钮
-.send-code-btn {
-  padding: 0 16px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 18px;
-  background: $color-primary;
-  margin-right: 10px;
-  flex-shrink: 0;
-  transition: opacity $transition-fast;
-
-  &__text {
-    font-size: 15px;
-    color: #fff;
-    white-space: nowrap;
-    font-weight: $font-weight-medium;
-  }
-
-  &--disabled {
-    opacity: 0.5;
-  }
-}
-
-// 登录按钮
-.login-btn {
-  height: $touch-target-primary;
-  background: $color-primary;
-  border-radius: $radius-md;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 24px;
-  box-shadow: 0 6px 20px rgba(1, 87, 155, 0.4);
-  transition: opacity $transition-fast;
-
-  &--loading {
-    opacity: 0.7;
-  }
-
-  &__text {
-    font-size: 22px;
-    color: #fff;
-    font-weight: $font-weight-bold;
-    letter-spacing: 6px;
-  }
-}
-
-// ========== 微信登录 ==========
-.wechat-login {
-  padding: 0 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  &__illustration {
-    width: 100px;
-    height: 100px;
-    background: #e8f5e9;
+  &__index {
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 20px;
-  }
-
-  &__desc {
-    font-size: 18px;
-    color: $text-secondary;
-    line-height: $line-height-relaxed;
-    text-align: center;
-    margin-bottom: 32px;
-    white-space: pre-line;
-  }
-
-  &__tip {
-    font-size: 15px;
-    color: $text-tertiary;
-    margin-top: 16px;
-  }
-}
-
-.wechat-btn {
-  width: 100%;
-  height: $touch-target-primary;
-  background: #07c160;
-  border-radius: $radius-md;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 6px 20px rgba(7, 193, 96, 0.4);
-  transition: opacity $transition-fast;
-
-  &--loading {
-    opacity: 0.7;
-  }
-
-  &__text {
-    font-size: 22px;
-    color: #fff;
-    font-weight: $font-weight-bold;
-    letter-spacing: 2px;
-  }
-}
-
-// ========== 底部协议 ==========
-.login-agreement {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 32px;
-  padding: 0 24px;
-  gap: 2px;
-
-  &__text {
-    font-size: 15px;
-    color: $text-tertiary;
-  }
-
-  &__link {
-    font-size: 15px;
+    background: rgba($color-primary, 0.12);
     color: $color-primary;
-  }
-}
-
-// ========== 角色选择 ==========
-.role-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 60px 0 40px;
-
-  &__logo {
-    width: 72px;
-    height: 72px;
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.25);
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 16px;
-  }
-
-  &__logo-text {
-    font-size: 36px;
-    color: #fff;
+    font-size: 14px;
     font-weight: $font-weight-bold;
   }
 
   &__title {
-    font-size: 28px;
-    color: #fff;
+    font-size: 22px;
+    color: $text-primary;
     font-weight: $font-weight-bold;
-    margin-bottom: 8px;
-  }
-
-  &__sub {
-    font-size: 17px;
-    color: rgba(255, 255, 255, 0.85);
   }
 }
 
-.role-cards {
-  width: 90%;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 8px;
+.login-role-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin-bottom: 26px;
 }
 
-.role-card {
+.login-role-card {
+  padding: 18px;
+  border-radius: $radius-md;
   background: $bg-card;
-  border-radius: $radius-lg;
-  padding: 28px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  box-shadow: $shadow-float;
-  position: relative;
-  min-height: 120px;
-  transition: transform $transition-fast $ease-in-out;
+  border: 1px solid rgba($border-light, 0.9);
+  box-shadow: $shadow-card;
 
-  &:active {
-    transform: scale(0.98);
+  &--family.login-role-card--active {
+    border-color: rgba($color-secondary, 0.48);
+    box-shadow: 0 12px 30px rgba(201, 123, 85, 0.16);
   }
 
-  &--elder {
-    border-left: 4px solid $color-primary;
+  &--active {
+    border-color: rgba($color-primary, 0.46);
+    box-shadow: 0 12px 30px rgba(47, 108, 91, 0.16);
   }
 
-  &--family {
-    border-left: 4px solid $color-family-primary;
-  }
-
-  &__icon-wrap {
-    width: 72px;
-    height: 72px;
-    border-radius: $radius-lg;
+  &__icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 4px;
 
     &--elder {
-      background: #e3f2fd;
+      background: rgba($color-primary, 0.1);
     }
 
     &--family {
-      background: #e8f5e9;
+      background: rgba($color-secondary, 0.12);
     }
   }
 
-  &__name {
-    font-size: $font-elder-h3;
-    font-weight: $font-weight-bold;
+  &__title,
+  &__desc {
+    display: block;
+  }
+
+  &__title {
+    margin-top: 14px;
+    font-size: 22px;
     color: $text-primary;
+    font-weight: $font-weight-bold;
   }
 
   &__desc {
-    font-size: $font-caption;
+    margin-top: 8px;
+    font-size: 16px;
     color: $text-secondary;
-    line-height: $line-height-normal;
-    white-space: pre-line;
-  }
-
-  &__arrow {
-    position: absolute;
-    right: 24px;
-    top: 50%;
-    transform: translateY(-50%);
+    line-height: 1.6;
   }
 }
 
-.role-footer {
+.login-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.login-tab {
+  min-height: 48px;
+  border-radius: 999px;
+  background: rgba($bg-card-alt, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &--active {
+    background: $text-primary;
+
+    .login-tab__text {
+      color: $text-white;
+    }
+  }
+
+  &__text {
+    font-size: 16px;
+    color: $text-secondary;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-field {
+  min-height: $input-height;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: $radius-md;
+  background: #fffdf9;
+  border: 1px solid rgba($border-light, 0.9);
+
+  &--error {
+    border-color: rgba($color-danger, 0.4);
+    background: #fff8f6;
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__input {
+    flex: 1;
+    font-size: 18px;
+    color: $text-primary;
+  }
+}
+
+.send-code-btn {
+  min-width: 102px;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba($color-primary, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &--disabled {
+    opacity: 0.55;
+  }
+
+  &__text {
+    font-size: 14px;
+    color: $color-primary;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.login-error,
+.login-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px;
+
+  &__text {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+.login-error__text {
+  color: $color-danger;
+}
+
+.login-tip__text {
+  color: $text-secondary;
+}
+
+.login-submit {
+  min-height: 56px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, $color-primary, $color-primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: $shadow-button;
+
+  &--wechat {
+    background: linear-gradient(135deg, $color-success, #62a578);
+  }
+
+  &--loading {
+    opacity: 0.65;
+  }
+
+  &__text {
+    font-size: 20px;
+    color: $text-white;
+    font-weight: $font-weight-bold;
+  }
+}
+
+.wechat-panel {
+  padding: 10px 4px 0;
+  text-align: center;
+
+  &__icon {
+    width: 74px;
+    height: 74px;
+    margin: 8px auto 16px;
+    border-radius: 24px;
+    background: rgba($color-success, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__text {
+    font-size: 16px;
+    color: $text-secondary;
+    line-height: 1.6;
+    margin-bottom: 18px;
+  }
+}
+
+.login-benefits {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
   margin-top: 24px;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
+
+  &__item {
+    padding: 16px;
+    border-radius: $radius-md;
+    background: rgba($bg-card-alt, 0.72);
+  }
+
+  &__title,
+  &__desc {
+    display: block;
+  }
+
+  &__title {
+    font-size: 16px;
+    color: $text-primary;
+    font-weight: $font-weight-bold;
+  }
+
+  &__desc {
+    margin-top: 8px;
+    font-size: 14px;
+    color: $text-secondary;
+    line-height: 1.5;
+  }
 }
