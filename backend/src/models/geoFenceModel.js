@@ -1,31 +1,15 @@
-'use strict';
+﻿'use strict';
 
 const { query } = require('../config/db');
 
-/**
- * 兼容 query 返回结构
- * @param {any} result
- * @returns {any}
- */
 function unwrap(result) {
   return Array.isArray(result) ? result[0] : result;
 }
 
-/**
- * 执行 SQL 并解包
- * @param {string} sql
- * @param {Array<any>} params
- * @returns {Promise<any>}
- */
 async function execute(sql, params) {
   return unwrap(await query(sql, params));
 }
 
-/**
- * 安全解析围栏点位 JSON
- * @param {string|Array|null} points
- * @returns {Array}
- */
 function parsePoints(points) {
   if (!points) {
     return [];
@@ -40,11 +24,6 @@ function parsePoints(points) {
   }
 }
 
-/**
- * 行数据转换
- * @param {object} row
- * @returns {object}
- */
 function mapRow(row) {
   return {
     id: row.id,
@@ -62,11 +41,6 @@ function mapRow(row) {
 }
 
 const geoFenceModel = {
-  /**
-   * 创建围栏
-   * @param {object} payload
-   * @returns {Promise<object>}
-   */
   async create(payload) {
     const result = await execute(
       `INSERT INTO geo_fences
@@ -85,26 +59,113 @@ const geoFenceModel = {
       ]
     );
 
-    return {
-      id: result.insertId,
-      userId: payload.userId,
-      name: payload.name,
-      fenceType: payload.fenceType,
-      centerLat: payload.centerLat !== undefined ? Number(payload.centerLat) : null,
-      centerLng: payload.centerLng !== undefined ? Number(payload.centerLng) : null,
-      radius: payload.radius !== undefined ? Number(payload.radius) : null,
-      points: payload.points || [],
-      alertType: payload.alertType || 'both',
-      isActive: payload.isActive !== false,
-      createdAt: new Date(),
-    };
+    return this.findByIdAndUserId(result.insertId, payload.userId);
   },
 
-  /**
-   * 查询用户围栏列表
-   * @param {number} userId
-   * @returns {Promise<object[]>}
-   */
+  async findByIdAndUserId(id, userId) {
+    const rows = await execute(
+      `SELECT id, user_id, name, fence_type, center_lat, center_lng, radius, points, alert_type, is_active, created_at
+       FROM geo_fences
+       WHERE id = ? AND user_id = ?
+       LIMIT 1`,
+      [id, userId]
+    );
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return null;
+    }
+
+    return mapRow(rows[0]);
+  },
+
+  async updateByIdAndUserId(id, userId, patch = {}) {
+    const fields = [];
+    const params = [];
+
+    if (patch.name !== undefined) {
+      fields.push('name = ?');
+      params.push(patch.name);
+    }
+
+    if (patch.fenceType !== undefined) {
+      fields.push('fence_type = ?');
+      params.push(patch.fenceType);
+    }
+
+    if (patch.centerLat !== undefined) {
+      fields.push('center_lat = ?');
+      params.push(patch.centerLat);
+    }
+
+    if (patch.centerLng !== undefined) {
+      fields.push('center_lng = ?');
+      params.push(patch.centerLng);
+    }
+
+    if (patch.radius !== undefined) {
+      fields.push('radius = ?');
+      params.push(patch.radius);
+    }
+
+    if (patch.points !== undefined) {
+      fields.push('points = ?');
+      params.push(patch.points ? JSON.stringify(patch.points) : null);
+    }
+
+    if (patch.alertType !== undefined) {
+      fields.push('alert_type = ?');
+      params.push(patch.alertType);
+    }
+
+    if (patch.isActive !== undefined) {
+      fields.push('is_active = ?');
+      params.push(patch.isActive ? 1 : 0);
+    }
+
+    if (fields.length === 0) {
+      return this.findByIdAndUserId(id, userId);
+    }
+
+    params.push(id, userId);
+    const result = await execute(
+      `UPDATE geo_fences
+       SET ${fields.join(', ')}
+       WHERE id = ? AND user_id = ?`,
+      params
+    );
+
+    if (!result.affectedRows) {
+      return null;
+    }
+
+    return this.findByIdAndUserId(id, userId);
+  },
+
+  async deleteByIdAndUserId(id, userId) {
+    const result = await execute(
+      `DELETE FROM geo_fences
+       WHERE id = ? AND user_id = ?`,
+      [id, userId]
+    );
+
+    return result.affectedRows;
+  },
+
+  async toggleByIdAndUserId(id, userId, isActive) {
+    const result = await execute(
+      `UPDATE geo_fences
+       SET is_active = ?
+       WHERE id = ? AND user_id = ?`,
+      [isActive ? 1 : 0, id, userId]
+    );
+
+    if (!result.affectedRows) {
+      return null;
+    }
+
+    return this.findByIdAndUserId(id, userId);
+  },
+
   async listByUserId(userId) {
     const rows = await execute(
       `SELECT id, user_id, name, fence_type, center_lat, center_lng, radius, points, alert_type, is_active, created_at
@@ -117,11 +178,6 @@ const geoFenceModel = {
     return Array.isArray(rows) ? rows.map(mapRow) : [];
   },
 
-  /**
-   * 查询用户启用中的围栏
-   * @param {number} userId
-   * @returns {Promise<object[]>}
-   */
   async getActiveByUserId(userId) {
     const rows = await execute(
       `SELECT id, user_id, name, fence_type, center_lat, center_lng, radius, points, alert_type, is_active, created_at

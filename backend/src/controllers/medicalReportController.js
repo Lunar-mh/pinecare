@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const medicalReportService = require('../services/medicalReportService');
 const { ok, fail } = require('../utils/response');
@@ -11,7 +11,7 @@ function handleError(res, err) {
         ? err.statusCode
         : 500;
   const status = typeof err.statusCode === 'number' ? err.statusCode : code;
-  const message = err.message || '检查报告查询失败';
+  const message = err.message || 'Medical reports request failed.';
   return fail(res, code, message, null, status);
 }
 
@@ -21,9 +21,11 @@ async function list(req, res) {
       reportType: req.query.reportType,
       startDate: req.query.startDate,
       endDate: req.query.endDate,
+      page: req.query.page,
+      pageSize: req.query.pageSize,
     });
 
-    return ok(res, data, '检查报告查询成功');
+    return ok(res, data, 'ok');
   } catch (err) {
     return handleError(res, err);
   }

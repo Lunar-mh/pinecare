@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { query } = require('../config/database');
 
@@ -23,11 +23,6 @@ function mapRow(row) {
 }
 
 const appointmentModel = {
-  /**
-   * 创建预约记录
-   * @param {object} payload
-   * @returns {Promise<object>}
-   */
   async create(payload) {
     const result = unwrap(
       await query(
@@ -52,11 +47,6 @@ const appointmentModel = {
     return this.findById(result.insertId);
   },
 
-  /**
-   * 根据 ID 查询预约
-   * @param {number|string} id
-   * @returns {Promise<object|null>}
-   */
   async findById(id) {
     const rows = unwrap(
       await query(
@@ -76,11 +66,25 @@ const appointmentModel = {
     return mapRow(rows[0]);
   },
 
-  /**
-   * 根据幂等键查询预约
-   * @param {string} idempotencyKey
-   * @returns {Promise<object|null>}
-   */
+  async findByIdAndUserId(id, userId) {
+    const rows = unwrap(
+      await query(
+        `SELECT id, user_id, hospital_id, department, doctor_id, appointment_date,
+                time_slot, appoint_status, third_party_appoint_id, idempotency_key, created_at
+         FROM appointments
+         WHERE id = ? AND user_id = ?
+         LIMIT 1`,
+        [Number(id), Number(userId)]
+      )
+    );
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return null;
+    }
+
+    return mapRow(rows[0]);
+  },
+
   async findByIdempotencyKey(idempotencyKey) {
     const rows = unwrap(
       await query(
@@ -100,12 +104,6 @@ const appointmentModel = {
     return mapRow(rows[0]);
   },
 
-  /**
-   * 更新预约状态
-   * @param {number|string} id
-   * @param {'pending'|'confirmed'|'cancelled'} appointStatus
-   * @returns {Promise<boolean>}
-   */
   async updateStatus(id, appointStatus) {
     const result = unwrap(
       await query(
@@ -119,26 +117,49 @@ const appointmentModel = {
     return result.affectedRows > 0;
   },
 
-  /**
-   * 按用户查询预约
-   * @param {number|string} userId
-   * @param {number} limit
-   * @returns {Promise<Array<object>>}
-   */
-  async listByUserId(userId, limit = 20) {
+  async listByUserId(userId, options = {}) {
+    const status = options.status ? String(options.status).trim() : '';
+    const page = Number.isInteger(Number(options.page)) ? Math.max(1, Number(options.page)) : 1;
+    const pageSize = Number.isInteger(Number(options.pageSize))
+      ? Math.min(Math.max(1, Number(options.pageSize)), 100)
+      : 20;
+
+    const where = ['user_id = ?'];
+    const countParams = [Number(userId)];
+
+    if (status) {
+      where.push('appoint_status = ?');
+      countParams.push(status);
+    }
+
+    const [countRows] = await query(
+      `SELECT COUNT(1) AS total
+       FROM appointments
+       WHERE ${where.join(' AND ')}`,
+      countParams
+    );
+
+    const total = Number(countRows[0] ? countRows[0].total : 0);
+    const offset = (page - 1) * pageSize;
+
     const rows = unwrap(
       await query(
         `SELECT id, user_id, hospital_id, department, doctor_id, appointment_date,
                 time_slot, appoint_status, third_party_appoint_id, idempotency_key, created_at
          FROM appointments
-         WHERE user_id = ?
+         WHERE ${where.join(' AND ')}
          ORDER BY created_at DESC, id DESC
-         LIMIT ?`,
-        [Number(userId), Number(limit)]
+         LIMIT ? OFFSET ?`,
+        [...countParams, pageSize, offset]
       )
     );
 
-    return Array.isArray(rows) ? rows.map(mapRow) : [];
+    return {
+      list: Array.isArray(rows) ? rows.map(mapRow) : [],
+      page,
+      pageSize,
+      total,
+    };
   },
 };
 

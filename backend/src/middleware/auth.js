@@ -3,6 +3,14 @@
 const jwt = require('jsonwebtoken');
 const { fail } = require('../utils/response');
 
+function getJwtSecret() {
+  const secret = String(process.env.JWT_SECRET || '').trim();
+  if (!secret) {
+    return null;
+  }
+  return secret;
+}
+
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 
@@ -10,10 +18,15 @@ function authMiddleware(req, res, next) {
     return fail(res, 401, 'Unauthorized.', null, 401);
   }
 
+  const secret = getJwtSecret();
+  if (!secret) {
+    return fail(res, 500, 'JWT_SECRET is not configured.', null, 500);
+  }
+
   const token = authHeader.slice(7);
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    const decoded = jwt.verify(token, secret);
     req.user = {
       userId: decoded.userId,
       role: decoded.role,

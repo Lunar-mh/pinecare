@@ -7,6 +7,7 @@ const {
   isRetryableError,
   logThirdPartyError,
 } = require('../utils/thirdParty');
+const { isCompetitionSandbox, isProductionLive } = require('../config/runtimeMode');
 
 const MAX_RETRY = Math.max(0, Number(process.env.OSS_MAX_RETRY || 2));
 
@@ -50,13 +51,24 @@ function sanitizePathPart(text) {
     .join('/');
 }
 
-function isLiveMode() {
+function hasLiveConfig() {
   return (
-    String(process.env.OSS_MODE || '').toLowerCase() === 'live' &&
     Boolean(process.env.OSS_UPLOAD_API_URL || ossConfig.endpoint || '') &&
     (Boolean(process.env.OSS_UPLOAD_TOKEN) ||
       (Boolean(ossConfig.accessKeyId) && Boolean(ossConfig.accessKeySecret)))
   );
+}
+
+function isLiveMode() {
+  const mode = String(process.env.OSS_MODE || '').toLowerCase();
+  if (mode === 'live') return true;
+  if (mode === 'mock' || mode === 'stub') return false;
+
+  if (isProductionLive()) {
+    return true;
+  }
+
+  return hasLiveConfig();
 }
 
 function getLiveHeaders() {
@@ -131,6 +143,10 @@ async function requestWithRetry(operation, requestFactory) {
 }
 
 async function uploadWithLiveApi(kind, content, key, contentType) {
+  if (!hasLiveConfig()) {
+    throw toOssError(new Error('OSS live mode requires OSS endpoint and credentials.'));
+  }
+
   const payload = {
     bucket: ossConfig.bucket,
     key: normalizeKey(key),
@@ -161,6 +177,10 @@ async function uploadAudio(content, key) {
     return uploadWithLiveApi('audio', content, safeKey, 'audio/wav');
   }
 
+  if (isProductionLive() && !isCompetitionSandbox()) {
+    throw toOssError(new Error('OSS mock mode is disabled in PRODUCTION_LIVE mode.'));
+  }
+
   await simulateUpload('audio', safeKey, content);
   return buildPublicUrl(ossConfig.bucket, safeKey);
 }
@@ -170,6 +190,10 @@ async function uploadImage(content, key) {
 
   if (isLiveMode()) {
     return uploadWithLiveApi('image', content, safeKey, 'image/jpeg');
+  }
+
+  if (isProductionLive() && !isCompetitionSandbox()) {
+    throw toOssError(new Error('OSS mock mode is disabled in PRODUCTION_LIVE mode.'));
   }
 
   await simulateUpload('image', safeKey, content);

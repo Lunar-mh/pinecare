@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const express = require('express');
 const auth = require('../middleware/auth');
@@ -9,9 +9,18 @@ const router = express.Router();
 router.get('/profile', auth, userController.getProfile);
 router.put('/profile', auth, userController.updateProfile);
 
+// Backward-compatible alias for legacy mini-program clients.
+router.get('/info', auth, userController.getProfile);
+router.put('/info', auth, userController.updateProfile);
+
 router.get('/emergency-contacts', auth, userController.listEmergencyContacts);
 router.post('/emergency-contacts', auth, userController.createEmergencyContact);
+router.put('/emergency-contacts/:id', auth, userController.updateEmergencyContact);
+router.put('/emergency-contacts/:id/primary', auth, userController.setPrimaryContact);
 router.delete('/emergency-contacts/:id', auth, userController.deleteEmergencyContact);
+
+// Backward-compatible alias for legacy delete call.
+router.post('/emergency-contacts/:id/delete', auth, userController.deleteEmergencyContact);
 
 router.post('/binding/qrcode', auth, userController.createBindingQrcode);
 router.post('/binding/approve', auth, userController.approveBinding);

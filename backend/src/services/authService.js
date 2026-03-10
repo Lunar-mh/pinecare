@@ -25,11 +25,16 @@ function createBusinessError(code, message, data = null, httpStatus = null) {
 }
 
 function getJwtSecret() {
-  return process.env.JWT_SECRET || 'fallback_secret';
+  const secret = String(process.env.JWT_SECRET || '').trim();
+  if (!secret) {
+    throw createBusinessError(500, 'JWT_SECRET is not configured.', null, 500);
+  }
+  return secret;
 }
 
 function getRefreshSecret() {
-  return process.env.JWT_REFRESH_SECRET || getJwtSecret();
+  const refreshSecret = String(process.env.JWT_REFRESH_SECRET || '').trim();
+  return refreshSecret || getJwtSecret();
 }
 
 function refreshTokenKey(userId) {

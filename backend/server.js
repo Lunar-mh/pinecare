@@ -1,8 +1,9 @@
-'use strict';
+﻿'use strict';
 
 require('dotenv').config();
 
 const { validateEnv } = require('./src/config/validateEnv');
+const { resolveMode } = require('./src/config/runtimeMode');
 const app = require('./src/app');
 
 validateEnv();
@@ -10,20 +11,18 @@ validateEnv();
 const port = process.env.PORT || 3000;
 
 const server = app.listen(port, () => {
-  console.log(`银伴后端服务已启动，端口: ${port}`);
+  console.log(`Backend server started on port ${port} (mode=${resolveMode()}).`);
 });
 
-// 优雅关闭
 function gracefulShutdown(signal) {
-  console.log(`收到 ${signal} 信号，正在关闭服务...`);
+  console.log(`Received ${signal}, shutting down server...`);
   server.close(() => {
-    console.log('服务已关闭');
+    console.log('Server closed.');
     process.exit(0);
   });
 
-  // 若10秒内未关闭，强制退出
   setTimeout(() => {
-    console.error('服务关闭超时，强制退出');
+    console.error('Server shutdown timeout, forcing exit.');
     process.exit(1);
   }, 10000);
 }

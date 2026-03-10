@@ -1,7 +1,8 @@
-'use strict';
+﻿'use strict';
 
 const axios = require('axios');
 const { query } = require('../config/database');
+const { isCompetitionSandbox, isProductionLive } = require('../config/runtimeMode');
 
 const DEFAULT_TIMEOUT = 5000;
 const DEFAULT_RETRY_TIMES = 2;
@@ -17,7 +18,7 @@ function createBizError(message, code, statusCode, data) {
 function formatDateTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return '未知时间';
+    return 'unknown time';
   }
 
   const y = date.getFullYear();
@@ -40,7 +41,7 @@ async function findOpenIdByUserId(userId) {
 
   const user = rows[0] || null;
   if (!user || !user.openid) {
-    throw createBizError('用户未绑定微信openid，无法发送通知', 400, 400);
+    throw createBizError('User does not have a bound wechat openid.', 400, 400);
   }
 
   return String(user.openid);
@@ -74,17 +75,17 @@ function buildApiUrl() {
 
 function mapWechatError(data) {
   const errCode = Number(data && data.errcode);
-  const errMsg = String((data && data.errmsg) || '微信服务返回失败');
+  const errMsg = String((data && data.errmsg) || 'wechat api error');
 
   if (errCode === -1 || errCode === 45009) {
-    return createBizError(`微信服务繁忙：${errMsg}`, 503, 503, data);
+    return createBizError(`wechat rate limit: ${errMsg}`, 503, 503, data);
   }
 
   if (errCode === 40001 || errCode === 42001) {
-    return createBizError(`微信访问凭证无效：${errMsg}`, 502, 502, data);
+    return createBizError(`wechat access token invalid: ${errMsg}`, 502, 502, data);
   }
 
-  return createBizError(`微信通知发送失败：${errMsg}`, 502, 502, data);
+  return createBizError(`wechat notify failed: ${errMsg}`, 502, 502, data);
 }
 
 function shouldRetry(err) {
@@ -100,9 +101,15 @@ function shouldRetry(err) {
 
 async function requestWithRetry(payload, retryTimes) {
   const apiUrl = buildApiUrl();
+  const mockEnabledByEnv = process.env.WECHAT_NOTIFY_MOCK === '1';
+  const allowMock = isCompetitionSandbox();
 
-  if (!apiUrl || process.env.WECHAT_NOTIFY_MOCK === '1') {
-    console.warn('[用药提醒] 微信通知配置缺失，已降级为模拟发送');
+  if (!apiUrl || mockEnabledByEnv) {
+    if (!allowMock || isProductionLive()) {
+      throw createBizError('WeChat notify config is missing in PRODUCTION_LIVE mode.', 503, 503);
+    }
+
+    console.warn('[medication] wechat notify fallback to mock in COMPETITION_SANDBOX mode.');
     return {
       errcode: 0,
       errmsg: 'mock success',
@@ -138,13 +145,17 @@ async function requestWithRetry(payload, retryTimes) {
     throw lastError;
   }
 
-  throw createBizError(`微信通知调用失败：${lastError ? lastError.message : '未知错误'}`, 502, 502);
+  throw createBizError(`wechat notify request failed: ${lastError ? lastError.message : 'unknown'}`, 502, 502);
 }
 
 async function sendTemplateByOpenId(options) {
   const templateId = resolveTemplateId(options.type);
   if (!templateId) {
-    console.warn('[用药提醒] 未配置模板ID，已降级为模拟发送');
+    if (isProductionLive()) {
+      throw createBizError('WeChat template id is required in PRODUCTION_LIVE mode.', 503, 503);
+    }
+
+    console.warn('[medication] wechat template id missing, fallback to mock.');
     return {
       msgid: `mock-${Date.now()}`,
       mock: true,
@@ -176,10 +187,10 @@ const wechatNotifier = {
       openid,
       type: params.remindType === 'second' ? 'second' : 'first',
       data: {
-        thing1: { value: String(params.medicationName || '用药提醒').slice(0, 20) },
+        thing1: { value: String(params.medicationName || 'medication reminder').slice(0, 20) },
         thing2: { value: String(params.dosage || '').slice(0, 20) },
         time3: { value: formatDateTime(params.scheduledTime) },
-        thing4: { value: String(params.remark || '请按时服药并确认').slice(0, 20) },
+        thing4: { value: String(params.remark || 'please take medicine on time').slice(0, 20) },
       },
     });
   },
@@ -191,9 +202,9 @@ const wechatNotifier = {
       openid,
       type: 'family',
       data: {
-        thing1: { value: String(params.medicationName || '用药提醒').slice(0, 20) },
+        thing1: { value: String(params.medicationName || 'medication reminder').slice(0, 20) },
         time2: { value: formatDateTime(params.scheduledTime) },
-        thing3: { value: '老人超过2小时未确认服药'.slice(0, 20) },
+        thing3: { value: 'elder did not confirm medication in 2 hours'.slice(0, 20) },
       },
     });
   },
@@ -205,11 +216,11 @@ const wechatNotifier = {
       openid,
       type: 'refill',
       data: {
-        thing1: { value: String(params.medicationName || '药品').slice(0, 20) },
+        thing1: { value: String(params.medicationName || 'medicine').slice(0, 20) },
         thing2: {
-          value: `剩余${params.remainingQuantity}，阈值${params.reminderThreshold}`.slice(0, 20),
+          value: `remaining ${params.remainingQuantity}, threshold ${params.reminderThreshold}`.slice(0, 20),
         },
-        thing3: { value: '请及时续药，避免断药'.slice(0, 20) },
+        thing3: { value: 'please refill medicine in time'.slice(0, 20) },
       },
     });
   },

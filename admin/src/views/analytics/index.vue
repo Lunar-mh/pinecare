@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { getDashboardStats, getRecentActivities } from '@/services'
 import type { DashboardStats, ActivityItem } from '@/services'
 
@@ -11,23 +11,14 @@ const activities = ref<ActivityItem[]>([])
 
 const activityByType = computed(() => {
   const map = new Map<string, number>()
-  for (const item of activities.value) {
-    map.set(item.type, (map.get(item.type) || 0) + 1)
-  }
-  return Array.from(map.entries())
-    .map(([type, count]) => ({ type, count }))
-    .sort((a, b) => b.count - a.count)
+  activities.value.forEach(item => map.set(item.type, (map.get(item.type) || 0) + 1))
+  return Array.from(map.entries()).map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count)
 })
 
 const topUsers = computed(() => {
   const map = new Map<string, number>()
-  for (const item of activities.value) {
-    map.set(item.user, (map.get(item.user) || 0) + 1)
-  }
-  return Array.from(map.entries())
-    .map(([user, count]) => ({ user, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10)
+  activities.value.forEach(item => map.set(item.user, (map.get(item.user) || 0) + 1))
+  return Array.from(map.entries()).map(([user, count]) => ({ user, count })).sort((a, b) => b.count - a.count).slice(0, 8)
 })
 
 async function fetchAnalyticsData() {
@@ -37,8 +28,7 @@ async function fetchAnalyticsData() {
     stats.value = overview.stats || []
     activities.value = recent || []
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to load analytics data.'
-    ElMessage.error(message)
+    ElMessage.error(err instanceof Error ? err.message : '加载分析视图失败')
     stats.value = []
     activities.value = []
   } finally {
@@ -50,81 +40,65 @@ onMounted(fetchAnalyticsData)
 </script>
 
 <template>
-  <div class="analytics-page">
-    <div class="page-header">
-      <span class="page-title">Analytics (Live)</span>
-      <el-button :icon="Refresh" @click="fetchAnalyticsData">Refresh</el-button>
+  <div>
+    <div class="wb-page-header">
+      <div>
+        <span class="wb-page-title">趋势与活跃度</span>
+        <span class="wb-page-subtitle">用轻量分析视图看清最近哪些业务最活跃、哪些用户最需要关注。</span>
+      </div>
+      <el-button :icon="Refresh" @click="fetchAnalyticsData">刷新</el-button>
     </div>
 
-    <el-row :gutter="16" class="overview-row">
-      <el-col v-for="item in stats" :key="item.label" :span="6">
-        <div class="stat-card">
-          <div class="stat-label">{{ item.label }}</div>
-          <div class="stat-value">{{ item.value }}<span class="stat-unit">{{ item.unit }}</span></div>
+    <div class="wb-metric-grid">
+      <div v-for="item in stats" :key="item.label" class="wb-metric-card">
+        <span class="wb-card-label">{{ item.label }}</span>
+        <div class="wb-card-value">{{ item.value }}<small>{{ item.unit }}</small></div>
+        <span class="wb-card-hint">用于判断整体运行热度</span>
+      </div>
+    </div>
+
+    <div class="wb-grid-2">
+      <div class="wb-panel">
+        <div class="wb-page-header" style="margin-bottom: 14px">
+          <div>
+            <span class="wb-page-title" style="font-size: 22px">活动类型分布</span>
+            <span class="wb-page-subtitle">先看近期哪类业务最频繁。</span>
+          </div>
         </div>
-      </el-col>
-    </el-row>
+        <el-table :data="activityByType" stripe v-loading="loading">
+          <el-table-column prop="type" label="类型" />
+          <el-table-column prop="count" label="次数" width="120" />
+        </el-table>
+      </div>
 
-    <el-row :gutter="16">
-      <el-col :span="12">
-        <el-card class="table-card">
-          <template #header>
-            <span>Activity Type Distribution</span>
-          </template>
-          <el-table :data="activityByType" stripe style="width: 100%" v-loading="loading">
-            <el-table-column prop="type" label="Type" min-width="180" />
-            <el-table-column prop="count" label="Count" width="120" />
-          </el-table>
-        </el-card>
-      </el-col>
+      <div class="wb-panel">
+        <div class="wb-page-header" style="margin-bottom: 14px">
+          <div>
+            <span class="wb-page-title" style="font-size: 22px">高活跃用户</span>
+            <span class="wb-page-subtitle">把最近动作最多的用户放在上面。</span>
+          </div>
+        </div>
+        <el-table :data="topUsers" stripe v-loading="loading">
+          <el-table-column prop="user" label="用户" />
+          <el-table-column prop="count" label="动作数" width="120" />
+        </el-table>
+      </div>
+    </div>
 
-      <el-col :span="12">
-        <el-card class="table-card">
-          <template #header>
-            <span>Top Active Users</span>
-          </template>
-          <el-table :data="topUsers" stripe style="width: 100%" v-loading="loading">
-            <el-table-column prop="user" label="User" min-width="180" />
-            <el-table-column prop="count" label="Actions" width="120" />
-          </el-table>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <el-card class="table-card" style="margin-top: 16px">
-      <template #header>
-        <span>Recent Activities</span>
-      </template>
-      <el-table :data="activities" stripe style="width: 100%" v-loading="loading">
+    <div class="wb-panel" style="margin-top: 20px">
+      <div class="wb-page-header" style="margin-bottom: 14px">
+        <div>
+          <span class="wb-page-title" style="font-size: 22px">最近活动明细</span>
+          <span class="wb-page-subtitle">保留一张可追踪的底表，方便继续下钻。</span>
+        </div>
+      </div>
+      <el-table :data="activities" stripe v-loading="loading">
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="type" label="Type" width="220" />
-        <el-table-column prop="user" label="User" width="140" />
-        <el-table-column prop="time" label="Time" min-width="180" />
-        <el-table-column prop="status" label="Status" width="120" />
+        <el-table-column prop="type" label="类型" width="220" />
+        <el-table-column prop="user" label="用户" width="140" />
+        <el-table-column prop="time" label="时间" />
+        <el-table-column prop="status" label="状态" width="120" />
       </el-table>
-    </el-card>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.analytics-page { max-width: 1200px; }
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-.page-title { font-size: 20px; font-weight: 600; color: #1a1a1a; }
-.overview-row { margin-bottom: 16px; }
-.stat-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  text-align: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-.stat-label { font-size: 13px; color: #888; margin-bottom: 8px; }
-.stat-value { font-size: 28px; font-weight: 700; color: #1a1a1a; line-height: 1.2; }
-.stat-unit { font-size: 14px; font-weight: 400; color: #666; margin-left: 4px; }
-.table-card { border-radius: 8px; }
-</style>

@@ -32,9 +32,32 @@ function normalizeDate(dateText, fieldName) {
   return value;
 }
 
+function normalizePage(value, fallback) {
+  const parsed = Number(value || fallback);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return fallback;
+  }
+  return parsed;
+}
+
+function paginate(list, page, pageSize) {
+  const total = list.length;
+  const offset = (page - 1) * pageSize;
+
+  return {
+    list: list.slice(offset, offset + pageSize),
+    total,
+    page,
+    pageSize,
+  };
+}
+
 const medicalReportService = {
   async list(userId, filters = {}) {
     const userIdNum = normalizePositiveInt(userId, 'userId');
+    const page = normalizePage(filters.page, 1);
+    const pageSize = Math.min(normalizePage(filters.pageSize, 10), 100);
+
     const normalizedFilters = {
       reportType: filters.reportType ? String(filters.reportType).trim() : null,
       startDate: normalizeDate(filters.startDate, 'startDate'),
@@ -53,7 +76,7 @@ const medicalReportService = {
 
       return {
         source: medicalApiService.getSourceTag(),
-        list: synced,
+        ...paginate(synced, page, pageSize),
       };
     } catch (error) {
       logThirdPartyError('medical-report', error, {
@@ -64,7 +87,7 @@ const medicalReportService = {
       if (localReports.length > 0) {
         return {
           source: 'cache',
-          list: localReports,
+          ...paginate(localReports, page, pageSize),
         };
       }
 

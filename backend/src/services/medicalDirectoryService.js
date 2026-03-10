@@ -19,11 +19,53 @@ function normalizePositiveInt(value, fieldName) {
   return parsed;
 }
 
+function normalizePage(value, fallback) {
+  const parsed = Number(value || fallback);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return fallback;
+  }
+  return parsed;
+}
+
 function rethrowAsServiceError(err, fallbackMessage) {
   if (err && (typeof err.code === 'number' || typeof err.statusCode === 'number')) {
     throw err;
   }
   throw createBizError(503, fallbackMessage, 503);
+}
+
+function filterDoctors(list, filters = {}) {
+  let filtered = Array.isArray(list) ? list : [];
+
+  if (filters.keyword) {
+    const keyword = String(filters.keyword).trim().toLowerCase();
+    filtered = filtered.filter((item) => {
+      const text = `${item.name || ''} ${item.title || ''} ${item.specialty || ''}`.toLowerCase();
+      return text.includes(keyword);
+    });
+  }
+
+  if (filters.hospitalId) {
+    filtered = filtered.filter((item) => Number(item.hospitalId) === Number(filters.hospitalId));
+  }
+
+  if (filters.departmentId) {
+    filtered = filtered.filter((item) => Number(item.departmentId) === Number(filters.departmentId));
+  }
+
+  return filtered;
+}
+
+function paginate(list, page, pageSize) {
+  const total = list.length;
+  const offset = (page - 1) * pageSize;
+
+  return {
+    list: list.slice(offset, offset + pageSize),
+    page,
+    pageSize,
+    total,
+  };
 }
 
 const medicalDirectoryService = {
@@ -76,23 +118,28 @@ const medicalDirectoryService = {
     }
   },
 
-  async getDoctors(departmentId) {
-    const departmentIdNum = normalizePositiveInt(departmentId, 'departmentId');
+  async getDoctors(query = {}) {
+    const departmentIdNum = normalizePositiveInt(query.departmentId, 'departmentId');
+    const page = normalizePage(query.page, 1);
+    const pageSize = Math.min(normalizePage(query.pageSize, 10), 100);
 
     const cached = await medicalDirectoryModel.getDoctors(departmentIdNum);
     if (cached.length > 0) {
+      const filtered = filterDoctors(cached, query);
       return {
         source: 'cache',
-        list: cached,
+        ...paginate(filtered, page, pageSize),
       };
     }
 
     try {
       const remote = await medicalApiService.fetchDoctors(departmentIdNum);
       await medicalDirectoryModel.refreshDoctors(departmentIdNum, remote);
+      const filtered = filterDoctors(remote, query);
+
       return {
         source: medicalApiService.getSourceTag(),
-        list: remote,
+        ...paginate(filtered, page, pageSize),
       };
     } catch (err) {
       logThirdPartyError('medical-directory', err, {
@@ -100,6 +147,38 @@ const medicalDirectoryService = {
         departmentId: departmentIdNum,
       });
       rethrowAsServiceError(err, 'Medical doctors service is temporarily unavailable.');
+    }
+  },
+
+  async getDoctorDetail(doctorId) {
+    const doctorIdNum = normalizePositiveInt(doctorId, 'doctorId');
+
+    const cached = await medicalDirectoryModel.findDoctorById(doctorIdNum);
+    if (cached) {
+      return {
+        source: 'cache',
+        doctor: cached,
+      };
+    }
+
+    try {
+      const remote = await medicalApiService.fetchDoctorDetail(doctorIdNum);
+      if (!remote) {
+        throw createBizError(404, 'Doctor not found.', 404);
+      }
+
+      await medicalDirectoryModel.upsertDoctor(remote);
+
+      return {
+        source: medicalApiService.getSourceTag(),
+        doctor: remote,
+      };
+    } catch (err) {
+      logThirdPartyError('medical-directory', err, {
+        operation: 'getDoctorDetail',
+        doctorId: doctorIdNum,
+      });
+      rethrowAsServiceError(err, 'Medical doctor detail service is temporarily unavailable.');
     }
   },
 };

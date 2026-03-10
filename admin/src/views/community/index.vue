@@ -1,227 +1,113 @@
 ﻿<script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
-import { Search, Plus, Refresh } from '@element-plus/icons-vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getCommunityStats, getCommunityActivities, createCommunityActivity } from '@/services'
-import type { CommunityStats, CommunityActivityItem } from '@/services'
+import { Plus, Refresh, Search } from '@element-plus/icons-vue'
+import { createCommunityActivity, getCommunityActivities, getCommunityStats } from '@/services'
+import type { CommunityActivityItem, CommunityStats } from '@/services'
 
 const loading = ref(false)
-const keyword = ref('')
 const stats = ref<CommunityStats | null>(null)
 const activities = ref<CommunityActivityItem[]>([])
 const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
-
+const keyword = ref('')
 const dialogVisible = ref(false)
 const submitLoading = ref(false)
-const form = reactive({
-  title: '',
-  content: '',
-  start_time: '',
-  end_time: '',
-  max_participants: null as number | null,
-})
+const form = reactive({ title: '', content: '', start_time: '', end_time: '', max_participants: null as number | null })
 
 async function fetchData() {
   loading.value = true
   try {
     const [statsData, activitiesData] = await Promise.all([
       getCommunityStats(),
-      getCommunityActivities({
-        page: page.value,
-        pageSize: pageSize.value,
-        keyword: keyword.value || undefined,
-      }),
+      getCommunityActivities({ page: page.value, pageSize: pageSize.value, keyword: keyword.value || undefined }),
     ])
-
     stats.value = statsData
     activities.value = activitiesData.list || []
     total.value = activitiesData.pagination?.total || 0
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to load community data.'
-    ElMessage.error(message)
-    stats.value = null
-    activities.value = []
-    total.value = 0
+    ElMessage.error(err instanceof Error ? err.message : '社区运营数据加载失败')
   } finally {
     loading.value = false
   }
 }
 
-function openCreateDialog() {
-  form.title = ''
-  form.content = ''
-  form.start_time = ''
-  form.end_time = ''
-  form.max_participants = null
-  dialogVisible.value = true
-}
-
 async function submitCreateActivity() {
   if (!form.title || !form.content || !form.start_time || !form.end_time) {
-    ElMessage.warning('Please fill all required fields.')
+    ElMessage.warning('请把活动名称、内容和时间补完整')
     return
   }
-
   submitLoading.value = true
   try {
-    await createCommunityActivity({
-      title: form.title,
-      content: form.content,
-      start_time: form.start_time,
-      end_time: form.end_time,
-      max_participants: form.max_participants,
-    })
-    ElMessage.success('Activity created.')
+    await createCommunityActivity(form)
     dialogVisible.value = false
-    page.value = 1
-    await fetchData()
+    ElMessage.success('活动已创建')
+    fetchData()
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Create activity failed.'
-    ElMessage.error(message)
+    ElMessage.error(err instanceof Error ? err.message : '创建活动失败')
   } finally {
     submitLoading.value = false
   }
 }
 
-watch(keyword, () => {
-  page.value = 1
-  fetchData()
-})
-
+watch(keyword, () => { page.value = 1; fetchData() })
 onMounted(fetchData)
 </script>
 
 <template>
-  <div class="community-page">
-    <div class="page-header">
-      <span class="page-title">Community Operations</span>
-      <div class="actions">
-        <el-button :icon="Refresh" @click="fetchData">Refresh</el-button>
-        <el-button type="primary" :icon="Plus" @click="openCreateDialog">Create Activity</el-button>
+  <div>
+    <div class="wb-page-header">
+      <div>
+        <span class="wb-page-title">社区运营</span>
+        <span class="wb-page-subtitle">活动、服务时长和在册人数收进一个运营视图。</span>
+      </div>
+      <div style="display:flex; gap:10px">
+        <el-button :icon="Refresh" @click="fetchData">刷新</el-button>
+        <el-button type="primary" :icon="Plus" @click="dialogVisible = true">创建活动</el-button>
       </div>
     </div>
 
-    <el-row :gutter="16" class="stats-row">
-      <el-col :span="6">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #01579b">{{ stats?.overview.active_elders ?? 0 }}</div>
-          <div class="stat-label">Active Elders</div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #2e7d32">{{ stats?.overview.volunteers ?? 0 }}</div>
-          <div class="stat-label">Volunteers</div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #e65100">{{ stats?.overview.total_orders ?? 0 }}</div>
-          <div class="stat-label">Service Orders</div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #6a1b9a">{{ stats?.overview.total_service_hours ?? 0 }}</div>
-          <div class="stat-label">Service Hours</div>
-        </div>
-      </el-col>
-    </el-row>
+    <div class="wb-metric-grid">
+      <div class="wb-metric-card"><span class="wb-card-label">活跃长辈</span><div class="wb-card-value">{{ stats?.overview.active_elders || 0 }}</div><span class="wb-card-hint">当前社区照护对象</span></div>
+      <div class="wb-metric-card"><span class="wb-card-label">志愿者</span><div class="wb-card-value">{{ stats?.overview.volunteers || 0 }}</div><span class="wb-card-hint">可调度服务力量</span></div>
+      <div class="wb-metric-card"><span class="wb-card-label">服务工单</span><div class="wb-card-value">{{ stats?.overview.total_orders || 0 }}</div><span class="wb-card-hint">本社区累计工单</span></div>
+      <div class="wb-metric-card"><span class="wb-card-label">服务时长</span><div class="wb-card-value">{{ stats?.overview.total_service_hours || 0 }}<small>小时</small></div><span class="wb-card-hint">累计服务投入</span></div>
+    </div>
 
-    <el-card class="filter-card">
-      <el-row :gutter="12" align="middle">
-        <el-col :span="8">
-          <el-input
-            v-model="keyword"
-            placeholder="Search activities by title"
-            :prefix-icon="Search"
-            clearable
-          />
-        </el-col>
-      </el-row>
-    </el-card>
+    <div class="wb-filter-card">
+      <el-input v-model="keyword" :prefix-icon="Search" placeholder="搜索活动名称" clearable style="max-width:320px" />
+    </div>
 
-    <el-card class="table-card">
-      <el-table :data="activities" stripe style="width: 100%" v-loading="loading">
-        <el-table-column prop="title" label="Title" min-width="180" />
-        <el-table-column prop="content" label="Content" min-width="220" show-overflow-tooltip />
-        <el-table-column prop="start_time" label="Start Time" width="180" />
-        <el-table-column prop="end_time" label="End Time" width="180" />
-        <el-table-column prop="registered_count" label="Registered" width="110" />
-      </el-table>
-
-      <div class="table-pagination">
-        <el-pagination
-          v-model:current-page="page"
-          layout="total, prev, pager, next"
-          :total="total"
-          :page-size="pageSize"
-          @current-change="fetchData"
-        />
+    <div class="wb-panel">
+      <div class="wb-page-header" style="margin-bottom: 14px">
+        <div>
+          <span class="wb-page-title" style="font-size: 22px">社区活动</span>
+          <span class="wb-page-subtitle">保留运营最常用的一张活动表。</span>
+        </div>
       </div>
-    </el-card>
+      <el-table :data="activities" stripe v-loading="loading">
+        <el-table-column prop="title" label="活动名称" min-width="180" />
+        <el-table-column prop="content" label="活动内容" min-width="220" show-overflow-tooltip />
+        <el-table-column prop="start_time" label="开始时间" width="180" />
+        <el-table-column prop="end_time" label="结束时间" width="180" />
+        <el-table-column prop="registered_count" label="报名人数" width="110" />
+      </el-table>
+      <div style="display:flex; justify-content:flex-end; margin-top:16px"><el-pagination v-model:current-page="page" layout="total, prev, pager, next" :total="total" :page-size="pageSize" @current-change="fetchData" /></div>
+    </div>
 
-    <el-dialog v-model="dialogVisible" title="Create Activity" width="560px">
-      <el-form :model="form" label-width="130px">
-        <el-form-item label="Title">
-          <el-input v-model="form.title" placeholder="Enter activity title" />
-        </el-form-item>
-        <el-form-item label="Content">
-          <el-input v-model="form.content" type="textarea" :rows="4" placeholder="Enter activity details" />
-        </el-form-item>
-        <el-form-item label="Start Time">
-          <el-date-picker
-            v-model="form.start_time"
-            type="datetime"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            placeholder="Select start time"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="End Time">
-          <el-date-picker
-            v-model="form.end_time"
-            type="datetime"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            placeholder="Select end time"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="Max Participants">
-          <el-input-number v-model="form.max_participants" :min="1" :max="5000" style="width: 100%" />
-        </el-form-item>
+    <el-dialog v-model="dialogVisible" title="创建社区活动" width="560px">
+      <el-form :model="form" label-width="110px">
+        <el-form-item label="活动名称"><el-input v-model="form.title" /></el-form-item>
+        <el-form-item label="活动内容"><el-input v-model="form.content" type="textarea" :rows="4" /></el-form-item>
+        <el-form-item label="开始时间"><el-date-picker v-model="form.start_time" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" style="width:100%" /></el-form-item>
+        <el-form-item label="结束时间"><el-date-picker v-model="form.end_time" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" style="width:100%" /></el-form-item>
+        <el-form-item label="人数上限"><el-input-number v-model="form.max_participants" :min="1" :max="9999" style="width:100%" /></el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">Cancel</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="submitCreateActivity">Create</el-button>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="submitCreateActivity">创建</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
-
-<style scoped>
-.community-page { max-width: 1200px; }
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-.actions { display: flex; gap: 8px; }
-.page-title { font-size: 20px; font-weight: 600; color: #1a1a1a; }
-.stats-row { margin-bottom: 16px; }
-.stat-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  text-align: center;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-}
-.stat-num { font-size: 32px; font-weight: 700; line-height: 1.2; }
-.stat-label { font-size: 13px; color: #999; margin-top: 4px; }
-.filter-card { margin-bottom: 16px; border-radius: 8px; }
-.table-card { border-radius: 8px; }
-.table-pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
-</style>

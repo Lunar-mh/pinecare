@@ -1,6 +1,8 @@
-'use strict';
+﻿'use strict';
 
-const ENV_SCHEMA = [
+const { applyRuntimeModeEnv, isProductionLive } = require('./runtimeMode');
+
+const BASE_SCHEMA = [
   { key: 'PORT', defaultValue: '3000', type: 'number', required: false },
   { key: 'DB_HOST', defaultValue: 'localhost', type: 'string', required: false },
   { key: 'DB_PORT', defaultValue: '3306', type: 'number', required: false },
@@ -10,14 +12,17 @@ const ENV_SCHEMA = [
   { key: 'REDIS_HOST', defaultValue: 'localhost', type: 'string', required: false },
   { key: 'REDIS_PORT', defaultValue: '6379', type: 'number', required: false },
   { key: 'JWT_SECRET', defaultValue: '', type: 'string', required: true },
-  { key: 'WX_MSG_TEMPLATE_ID', defaultValue: '', type: 'string', required: false },
+  { key: 'JWT_REFRESH_SECRET', defaultValue: '', type: 'string', required: false },
+  { key: 'RUNTIME_MODE', defaultValue: 'COMPETITION_SANDBOX', type: 'string', required: false },
+  { key: 'PRODUCTION_LIVE', defaultValue: '0', type: 'string', required: false },
+  { key: 'COMPETITION_SANDBOX', defaultValue: '1', type: 'string', required: false },
 ];
 
 function castValue(raw, type, key) {
   if (type === 'number') {
     const value = Number(raw);
     if (!Number.isFinite(value) || Number.isNaN(value)) {
-      throw new Error(`${key} 必须为数字`);
+      throw new Error(`${key} must be a number.`);
     }
     return value;
   }
@@ -25,11 +30,11 @@ function castValue(raw, type, key) {
   return String(raw);
 }
 
-function validateEnv() {
+function validateRequiredVars(schema) {
   const missingRequired = [];
   const normalized = {};
 
-  for (const item of ENV_SCHEMA) {
+  for (const item of schema) {
     const raw = process.env[item.key];
     const hasValue = raw !== undefined && raw !== null && String(raw).trim() !== '';
 
@@ -46,8 +51,36 @@ function validateEnv() {
   }
 
   if (missingRequired.length > 0) {
-    throw new Error(`缺少必填环境变量: ${missingRequired.join(', ')}`);
+    throw new Error(`Missing required environment variables: ${missingRequired.join(', ')}`);
   }
+
+  return normalized;
+}
+
+function validateJwtSecretStrength() {
+  const secret = String(process.env.JWT_SECRET || '').trim();
+  if (!secret) {
+    throw new Error('JWT_SECRET is required.');
+  }
+
+  if (secret.length < 16 && isProductionLive()) {
+    throw new Error('JWT_SECRET must be at least 16 characters in PRODUCTION_LIVE mode.');
+  }
+
+  if (!process.env.JWT_REFRESH_SECRET) {
+    process.env.JWT_REFRESH_SECRET = secret;
+  }
+}
+
+function validateEnv() {
+  const normalized = validateRequiredVars(BASE_SCHEMA);
+
+  const mode = applyRuntimeModeEnv();
+  normalized.RUNTIME_MODE = mode;
+  normalized.PRODUCTION_LIVE = process.env.PRODUCTION_LIVE;
+  normalized.COMPETITION_SANDBOX = process.env.COMPETITION_SANDBOX;
+
+  validateJwtSecretStrength();
 
   return normalized;
 }

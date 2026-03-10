@@ -14,9 +14,17 @@ const pageSize = ref(10)
 const statusFilter = ref<FallEventStatus | ''>('')
 const sensitivity = ref<'high' | 'medium' | 'low'>('medium')
 
-const detectingCount = computed(() => events.value.filter((item) => item.status === 'detecting').length)
-const confirmedCount = computed(() => events.value.filter((item) => item.status === 'confirmed').length)
-const falseAlarmCount = computed(() => events.value.filter((item) => item.status === 'false_alarm').length)
+const detectingCount = computed(() => events.value.filter(item => item.status === 'detecting').length)
+const confirmedCount = computed(() => events.value.filter(item => item.status === 'confirmed').length)
+const falseAlarmCount = computed(() => events.value.filter(item => item.status === 'false_alarm').length)
+const unattendedCount = computed(() => total.value - confirmedCount.value)
+
+function statusLabel(status: FallEventStatus): string {
+  if (status === 'detecting') return '监测中'
+  if (status === 'confirmed') return '已确认'
+  if (status === 'cancelled') return '已取消'
+  return '误报'
+}
 
 function statusTagType(status: FallEventStatus): 'warning' | 'success' | 'info' {
   if (status === 'detecting') return 'warning'
@@ -24,11 +32,16 @@ function statusTagType(status: FallEventStatus): 'warning' | 'success' | 'info' 
   return 'info'
 }
 
+function sensitivityLabel(level: 'high' | 'medium' | 'low'): string {
+  if (level === 'high') return '高灵敏'
+  if (level === 'low') return '低灵敏'
+  return '标准'
+}
+
 function readMetric(sensorData: Record<string, unknown> | null, key: string): string {
   if (!sensorData) return '-'
   const value = sensorData[key]
-  if (typeof value === 'number') return String(value)
-  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'string') return String(value)
   return '-'
 }
 
@@ -43,8 +56,7 @@ async function fetchHistory() {
     events.value = data.list || []
     total.value = data.pagination?.total || 0
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to load fall history.'
-    ElMessage.error(message)
+    ElMessage.error(err instanceof Error ? err.message : '跌倒事件加载失败')
     events.value = []
     total.value = 0
   } finally {
@@ -56,8 +68,8 @@ async function fetchSettings() {
   try {
     const data = await getFallSettings()
     sensitivity.value = data.sensitivity
-  } catch (_err: unknown) {
-    // ignore settings load failure
+  } catch {
+    // ignore
   }
 }
 
@@ -66,10 +78,9 @@ async function saveSettings() {
   try {
     const data = await updateFallSettings(sensitivity.value)
     sensitivity.value = data.sensitivity
-    ElMessage.success('Sensitivity updated.')
+    ElMessage.success('灵敏度已更新')
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to update sensitivity.'
-    ElMessage.error(message)
+    ElMessage.error(err instanceof Error ? err.message : '灵敏度更新失败')
   } finally {
     settingsSaving.value = false
   }
@@ -86,76 +97,124 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="fall-page">
-    <div class="page-header">
-      <span class="page-title">Fall Detection</span>
-      <el-button :icon="Refresh" @click="fetchHistory">Refresh</el-button>
+  <div>
+    <div class="wb-page-header">
+      <div>
+        <span class="wb-page-title">跌倒监测</span>
+        <span class="wb-page-subtitle">把监测事件、传感指标和灵敏度策略放在同一页，便于快速判断误报与真实风险。</span>
+      </div>
+      <el-button :icon="Refresh" @click="fetchHistory">刷新事件</el-button>
     </div>
 
-    <el-row :gutter="16" class="stats-row">
-      <el-col :span="8">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #f57c00">{{ detectingCount }}</div>
-          <div class="stat-label">Detecting</div>
-        </div>
-      </el-col>
-      <el-col :span="8">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #2e7d32">{{ confirmedCount }}</div>
-          <div class="stat-label">Confirmed</div>
-        </div>
-      </el-col>
-      <el-col :span="8">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #78909c">{{ falseAlarmCount }}</div>
-          <div class="stat-label">False Alarm</div>
-        </div>
-      </el-col>
-    </el-row>
+    <div class="wb-metric-grid">
+      <div class="wb-metric-card">
+        <span class="wb-card-label">当前页事件</span>
+        <div class="wb-card-value">{{ events.length }}</div>
+        <span class="wb-card-hint">当前筛选条件与页码下的结果</span>
+      </div>
+      <div class="wb-metric-card">
+        <span class="wb-card-label">监测中</span>
+        <div class="wb-card-value">{{ detectingCount }}</div>
+        <span class="wb-card-hint">建议优先人工回拨确认</span>
+      </div>
+      <div class="wb-metric-card">
+        <span class="wb-card-label">已确认跌倒</span>
+        <div class="wb-card-value">{{ confirmedCount }}</div>
+        <span class="wb-card-hint">需要跟进现场响应情况</span>
+      </div>
+      <div class="wb-metric-card">
+        <span class="wb-card-label">未闭环</span>
+        <div class="wb-card-value">{{ unattendedCount }}</div>
+        <span class="wb-card-hint">仍需持续追踪的监测结果</span>
+      </div>
+    </div>
 
-    <el-card class="settings-card">
-      <el-row :gutter="12" align="middle">
-        <el-col :span="6">
-          <el-select v-model="sensitivity" style="width: 100%">
-            <el-option label="High" value="high" />
-            <el-option label="Medium" value="medium" />
-            <el-option label="Low" value="low" />
-          </el-select>
-        </el-col>
-        <el-col :span="4">
-          <el-button type="primary" :loading="settingsSaving" @click="saveSettings">Save Sensitivity</el-button>
-        </el-col>
-        <el-col :span="5">
-          <el-select v-model="statusFilter" placeholder="Status" clearable style="width: 100%">
-            <el-option label="Detecting" value="detecting" />
-            <el-option label="Confirmed" value="confirmed" />
-            <el-option label="Cancelled" value="cancelled" />
-            <el-option label="False Alarm" value="false_alarm" />
-          </el-select>
-        </el-col>
-      </el-row>
-    </el-card>
+    <div class="wb-grid-2" style="margin-bottom: 20px">
+      <div class="wb-filter-card">
+        <div class="wb-page-header" style="margin-bottom: 10px">
+          <div>
+            <span class="wb-page-title" style="font-size: 22px">监测策略</span>
+            <span class="wb-page-subtitle">灵敏度越高，越容易触发预警，也越需要控制误报率。</span>
+          </div>
+        </div>
+        <el-row :gutter="12" align="middle">
+          <el-col :span="10">
+            <el-select v-model="sensitivity" style="width: 100%">
+              <el-option label="高灵敏" value="high" />
+              <el-option label="标准" value="medium" />
+              <el-option label="低灵敏" value="low" />
+            </el-select>
+          </el-col>
+          <el-col :span="7">
+            <span class="wb-chip">当前：{{ sensitivityLabel(sensitivity) }}</span>
+          </el-col>
+          <el-col :span="7" style="display: flex; justify-content: flex-end">
+            <el-button type="primary" :loading="settingsSaving" @click="saveSettings">保存策略</el-button>
+          </el-col>
+        </el-row>
+      </div>
 
-    <el-card class="table-card">
-      <el-table :data="events" stripe style="width: 100%" v-loading="loading">
-        <el-table-column prop="id" label="Event ID" width="100" />
-        <el-table-column label="Status" width="110">
+      <div class="wb-filter-card">
+        <div class="wb-page-header" style="margin-bottom: 10px">
+          <div>
+            <span class="wb-page-title" style="font-size: 22px">风险筛选</span>
+            <span class="wb-page-subtitle">按事件状态快速切换值班视角。</span>
+          </div>
+        </div>
+        <el-row :gutter="12" align="middle">
+          <el-col :span="12">
+            <el-select v-model="statusFilter" placeholder="事件状态" clearable style="width: 100%">
+              <el-option label="监测中" value="detecting" />
+              <el-option label="已确认" value="confirmed" />
+              <el-option label="已取消" value="cancelled" />
+              <el-option label="误报" value="false_alarm" />
+            </el-select>
+          </el-col>
+          <el-col :span="12" style="display: flex; justify-content: flex-end">
+            <span class="wb-chip">优先查看“监测中”与“已确认”</span>
+          </el-col>
+        </el-row>
+      </div>
+    </div>
+
+    <div class="wb-panel">
+      <div class="wb-page-header" style="margin-bottom: 14px">
+        <div>
+          <span class="wb-page-title" style="font-size: 22px">事件明细</span>
+          <span class="wb-page-subtitle">保留传感指标、对象信息和时间线，方便核查判定逻辑。</span>
+        </div>
+      </div>
+      <el-table :data="events" stripe v-loading="loading">
+        <template #empty>
+          <div style="padding: 28px; text-align: center; color: var(--wb-text-soft)">
+            {{ loading ? '加载中...' : '暂无跌倒事件' }}
+          </div>
+        </template>
+        <el-table-column prop="id" label="事件 ID" width="100" />
+        <el-table-column label="关注对象" min-width="150">
           <template #default="{ row }">
-            <el-tag :type="statusTagType(row.status)" size="small">{{ row.status }}</el-tag>
+            <div>{{ row.nickname || `用户 #${row.userId}` }}</div>
+            <div style="font-size: 12px; color: var(--wb-text-soft); margin-top: 4px">{{ row.phone || '未留手机号' }}</div>
           </template>
         </el-table-column>
-        <el-table-column prop="sensitivity" label="Sensitivity" width="120" />
-        <el-table-column label="Vertical Peak" width="130">
+        <el-table-column label="事件状态" width="120">
+          <template #default="{ row }">
+            <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="灵敏度" width="110">
+          <template #default="{ row }">{{ sensitivityLabel(row.sensitivity) }}</template>
+        </el-table-column>
+        <el-table-column label="垂直峰值" width="120">
           <template #default="{ row }">{{ readMetric(row.sensorData, 'verticalPeak') }}</template>
         </el-table-column>
-        <el-table-column label="Horizontal Rate" width="140">
+        <el-table-column label="水平变化率" width="130">
           <template #default="{ row }">{{ readMetric(row.sensorData, 'horizontalChangeRate') }}</template>
         </el-table-column>
-        <el-table-column prop="detectedAt" label="Detected At" min-width="170" />
-        <el-table-column prop="confirmedAt" label="Confirmed At" min-width="170" />
+        <el-table-column prop="detectedAt" label="触发时间" width="180" />
+        <el-table-column prop="confirmedAt" label="确认时间" width="180" />
       </el-table>
-
-      <div class="table-pagination">
+      <div style="display: flex; justify-content: flex-end; margin-top: 16px">
         <el-pagination
           v-model:current-page="page"
           layout="total, prev, pager, next"
@@ -164,30 +223,6 @@ onMounted(async () => {
           @current-change="fetchHistory"
         />
       </div>
-    </el-card>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.fall-page { max-width: 1200px; }
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-.page-title { font-size: 20px; font-weight: 600; color: #1a1a1a; }
-.stats-row { margin-bottom: 16px; }
-.stat-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  text-align: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-.stat-num { font-size: 32px; font-weight: 700; line-height: 1.2; }
-.stat-label { font-size: 13px; color: #999; margin-top: 4px; }
-.settings-card { margin-bottom: 16px; border-radius: 8px; }
-.table-card { border-radius: 8px; }
-.table-pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
-</style>

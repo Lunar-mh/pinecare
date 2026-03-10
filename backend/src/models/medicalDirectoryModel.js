@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { query } = require('../config/database');
 
@@ -22,10 +22,6 @@ CREATE TABLE IF NOT EXISTS medical_directory_cache (
 
 let tableReady = false;
 
-/**
- * 确保目录缓存表存在
- * 说明：015仅要求三张业务表迁移，此缓存表由模型按需懒加载创建。
- */
 async function ensureCacheTable() {
   if (tableReady) {
     return;
@@ -34,22 +30,10 @@ async function ensureCacheTable() {
   tableReady = true;
 }
 
-/**
- * 兼容 query 返回结构
- * @param {any} result
- * @returns {any}
- */
 function unwrap(result) {
   return Array.isArray(result) ? result[0] : result;
 }
 
-/**
- * 目录项写入前标准化
- * @param {'hospital'|'department'|'doctor'} directoryType
- * @param {Array<object>} items
- * @param {{hospitalId?:number|null,departmentId?:number|null}} scope
- * @returns {Array<object>}
- */
 function normalizeItems(directoryType, items, scope = {}) {
   if (!Array.isArray(items)) {
     return [];
@@ -59,7 +43,9 @@ function normalizeItems(directoryType, items, scope = {}) {
     .map((item, index) => {
       const id = item && (item.id || item.hospitalId || item.departmentId || item.doctorId);
       const businessKey = String(id || `${directoryType}_${index + 1}`);
-      const name = String((item && (item.name || item.hospitalName || item.departmentName || item.doctorName)) || '').trim();
+      const name = String(
+        (item && (item.name || item.hospitalName || item.departmentName || item.doctorName)) || ''
+      ).trim();
 
       if (!name) {
         return null;
@@ -87,10 +73,6 @@ function normalizeItems(directoryType, items, scope = {}) {
     .filter(Boolean);
 }
 
-/**
- * 批量插入目录缓存
- * @param {Array<object>} rows
- */
 async function insertRows(rows) {
   if (!rows.length) {
     return;
@@ -147,10 +129,6 @@ function parseRows(rows) {
 }
 
 const medicalDirectoryModel = {
-  /**
-   * 查询医院缓存
-   * @returns {Promise<Array<object>>}
-   */
   async getHospitals() {
     await ensureCacheTable();
     const rows = unwrap(
@@ -164,10 +142,6 @@ const medicalDirectoryModel = {
     return parseRows(rows);
   },
 
-  /**
-   * 刷新医院缓存
-   * @param {Array<object>} hospitals
-   */
   async refreshHospitals(hospitals) {
     await ensureCacheTable();
     await query(`DELETE FROM medical_directory_cache WHERE directory_type = 'hospital'`);
@@ -175,11 +149,6 @@ const medicalDirectoryModel = {
     await insertRows(rows);
   },
 
-  /**
-   * 查询科室缓存
-   * @param {number|string} hospitalId
-   * @returns {Promise<Array<object>>}
-   */
   async getDepartments(hospitalId) {
     await ensureCacheTable();
     const hospitalIdNum = Number(hospitalId);
@@ -196,11 +165,6 @@ const medicalDirectoryModel = {
     return parseRows(rows);
   },
 
-  /**
-   * 刷新科室缓存
-   * @param {number|string} hospitalId
-   * @param {Array<object>} departments
-   */
   async refreshDepartments(hospitalId, departments) {
     await ensureCacheTable();
     const hospitalIdNum = Number(hospitalId);
@@ -214,11 +178,6 @@ const medicalDirectoryModel = {
     await insertRows(rows);
   },
 
-  /**
-   * 查询医生缓存
-   * @param {number|string} departmentId
-   * @returns {Promise<Array<object>>}
-   */
   async getDoctors(departmentId) {
     await ensureCacheTable();
     const departmentIdNum = Number(departmentId);
@@ -235,11 +194,35 @@ const medicalDirectoryModel = {
     return parseRows(rows);
   },
 
-  /**
-   * 刷新医生缓存
-   * @param {number|string} departmentId
-   * @param {Array<object>} doctors
-   */
+  async findDoctorById(doctorId) {
+    await ensureCacheTable();
+    const rows = unwrap(
+      await query(
+        `SELECT business_key, name, hospital_id, department_id, payload, updated_at
+         FROM medical_directory_cache
+         WHERE directory_type = 'doctor'
+           AND business_key = ?
+         ORDER BY updated_at DESC, id DESC
+         LIMIT 1`,
+        [String(doctorId)]
+      )
+    );
+
+    const parsed = parseRows(rows);
+    return parsed[0] || null;
+  },
+
+  async upsertDoctor(doctor) {
+    await ensureCacheTable();
+
+    const rows = normalizeItems('doctor', [doctor], {
+      departmentId: doctor.departmentId || null,
+      hospitalId: doctor.hospitalId || null,
+    });
+
+    await insertRows(rows);
+  },
+
   async refreshDoctors(departmentId, doctors) {
     await ensureCacheTable();
     const departmentIdNum = Number(departmentId);

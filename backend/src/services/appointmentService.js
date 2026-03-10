@@ -1,8 +1,11 @@
-'use strict';
+﻿'use strict';
 
 const crypto = require('crypto');
 const appointmentModel = require('../models/appointmentModel');
 const medicalApiService = require('./medicalApiService');
+
+const CANCELLABLE_STATUS = new Set(['pending', 'confirmed']);
+const ALLOWED_STATUS_FILTER = new Set(['pending', 'confirmed', 'completed', 'cancelled']);
 
 function createBizError(code, message, statusCode) {
   const error = new Error(message);
@@ -14,7 +17,7 @@ function createBizError(code, message, statusCode) {
 function normalizePositiveInt(value, fieldName) {
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw createBizError(422, `${fieldName} 必须为正整数`, 422);
+    throw createBizError(422, `${fieldName} must be a positive integer.`, 422);
   }
   return parsed;
 }
@@ -22,7 +25,7 @@ function normalizePositiveInt(value, fieldName) {
 function normalizeDate(dateText) {
   const value = String(dateText || '').trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    throw createBizError(422, 'appointmentDate 格式必须为 YYYY-MM-DD', 422);
+    throw createBizError(422, 'appointmentDate must use YYYY-MM-DD format.', 422);
   }
   return value;
 }
@@ -30,7 +33,7 @@ function normalizeDate(dateText) {
 function normalizeTimeSlot(value) {
   const timeSlot = String(value || '').trim();
   if (!timeSlot) {
-    throw createBizError(422, 'timeSlot 不能为空', 422);
+    throw createBizError(422, 'timeSlot is required.', 422);
   }
   return timeSlot;
 }
@@ -38,19 +41,31 @@ function normalizeTimeSlot(value) {
 function normalizeDepartment(value) {
   const department = String(value || '').trim();
   if (!department) {
-    throw createBizError(422, 'department 不能为空', 422);
+    throw createBizError(422, 'department is required.', 422);
   }
   return department;
 }
 
-/**
- * 基于(user_id, doctor_id, appointment_date, time_slot)生成幂等键
- * @param {number} userId
- * @param {number} doctorId
- * @param {string} appointmentDate
- * @param {string} timeSlot
- * @returns {string}
- */
+function normalizeStatus(status) {
+  if (status === undefined || status === null || status === '') {
+    return null;
+  }
+
+  const value = String(status).trim().toLowerCase();
+  if (!ALLOWED_STATUS_FILTER.has(value)) {
+    throw createBizError(422, 'status must be pending/confirmed/completed/cancelled.', 422);
+  }
+  return value;
+}
+
+function normalizePage(value, fallback) {
+  const parsed = Number(value || fallback);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return fallback;
+  }
+  return parsed;
+}
+
 function buildIdempotencyKey(userId, doctorId, appointmentDate, timeSlot) {
   const raw = `${userId}:${doctorId}:${appointmentDate}:${timeSlot}`;
   return crypto.createHash('sha256').update(raw).digest('hex');
@@ -63,12 +78,6 @@ function isDuplicateKeyError(err) {
 const appointmentService = {
   buildIdempotencyKey,
 
-  /**
-   * 创建预约挂号（含幂等策略）
-   * @param {number} userId
-   * @param {object} payload
-   * @returns {Promise<object>}
-   */
   async create(userId, payload = {}) {
     const userIdNum = normalizePositiveInt(userId, 'userId');
     const hospitalId = normalizePositiveInt(payload.hospitalId, 'hospitalId');
@@ -130,17 +139,38 @@ const appointmentService = {
     }
   },
 
-  /**
-   * 查询用户预约列表
-   * @param {number} userId
-   * @param {any} limit
-   * @returns {Promise<Array<object>>}
-   */
-  async listByUser(userId, limit) {
+  async listByUser(userId, query = {}) {
     const userIdNum = normalizePositiveInt(userId, 'userId');
-    const limitNum = limit ? Number(limit) : 20;
+    const page = normalizePage(query.page, 1);
+    const pageSize = Math.min(normalizePage(query.pageSize, 10), 100);
+    const status = normalizeStatus(query.status);
 
-    return appointmentModel.listByUserId(userIdNum, Number.isInteger(limitNum) ? limitNum : 20);
+    return appointmentModel.listByUserId(userIdNum, {
+      status,
+      page,
+      pageSize,
+    });
+  },
+
+  async cancel(userId, appointmentId) {
+    const userIdNum = normalizePositiveInt(userId, 'userId');
+    const appointmentIdNum = normalizePositiveInt(appointmentId, 'appointmentId');
+
+    const appointment = await appointmentModel.findByIdAndUserId(appointmentIdNum, userIdNum);
+    if (!appointment) {
+      throw createBizError(404, 'Appointment not found.', 404);
+    }
+
+    if (!CANCELLABLE_STATUS.has(String(appointment.appointStatus).toLowerCase())) {
+      throw createBizError(409, 'Appointment is not cancellable.', 409);
+    }
+
+    await appointmentModel.updateStatus(appointmentIdNum, 'cancelled');
+    const latest = await appointmentModel.findByIdAndUserId(appointmentIdNum, userIdNum);
+
+    return {
+      appointment: latest,
+    };
   },
 };
 

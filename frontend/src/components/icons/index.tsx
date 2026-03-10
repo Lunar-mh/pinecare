@@ -1,5 +1,6 @@
 import { View } from '@tarojs/components'
 import {
+  configure,
   HeartFill,
   Health,
   Warning,
@@ -29,6 +30,12 @@ import {
   Transit,
   List,
 } from '@nutui/icons-react-taro'
+
+configure({
+  // WeChat miniprogram runtime has no built-in template for the HTML i tag.
+  // Force NutUI icons to render as view to avoid tmpl_0_i not found.
+  tag: 'view',
+})
 
 // Icon name types
 export type IconName =
@@ -71,8 +78,7 @@ interface IconProps {
   onClick?: () => void
 }
 
-// NutUI icon 映射表
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// NutUI icon 映射�?// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ICON_MAP: Record<IconName, React.ComponentType<any>> = {
   heart: HeartFill,
   pill: Health,
@@ -108,8 +114,8 @@ const ICON_MAP: Record<IconName, React.ComponentType<any>> = {
 }
 
 /**
- * Icon component — 基于 NutUI icons-react-taro
- * 不使用 <svg> 标签，避免微信小程序 tmpl_0_svg 编译错误
+ * Icon component �?基于 NutUI icons-react-taro
+ * 不使�?<svg> 标签，避免微信小程序 tmpl_0_svg 编译错误
  */
 export function Icon({ name, size = 24, color = 'currentColor', className = '', onClick }: IconProps) {
   const NutIcon = ICON_MAP[name]
@@ -163,3 +169,6 @@ export const SettingsIcon = (props: Omit<IconProps, 'name'>) => <Icon name="sett
 export const TransitIcon = (props: Omit<IconProps, 'name'>) => <Icon name="transit" {...props} />
 export const OrderIcon = (props: Omit<IconProps, 'name'>) => <Icon name="order" {...props} />
 export default Icon
+
+
+

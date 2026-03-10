@@ -6,6 +6,7 @@ const {
   isRetryableError,
   logThirdPartyError,
 } = require('../utils/thirdParty');
+const { isCompetitionSandbox, isProductionLive } = require('../config/runtimeMode');
 
 const API_TIMEOUT_MS = Number(process.env.MEDICAL_API_TIMEOUT_MS || 5000);
 const MAX_RETRY = Math.max(0, Number(process.env.MEDICAL_API_MAX_RETRY || 2));
@@ -33,7 +34,8 @@ class MedicalApiService {
     this.baseURL = process.env.MEDICAL_API_BASE_URL || '';
     this.apiKey = process.env.MEDICAL_API_KEY || '';
     this.allowStubFallback =
-      String(process.env.MEDICAL_API_ALLOW_STUB_FALLBACK || 'false').toLowerCase() === 'true';
+      String(process.env.MEDICAL_API_ALLOW_STUB_FALLBACK || '').toLowerCase() === 'true' ||
+      isCompetitionSandbox();
 
     this.client = axios.create({
       baseURL: this.baseURL || 'https://medical-api.example.com',
@@ -52,6 +54,11 @@ class MedicalApiService {
   isLiveMode() {
     if (this.mode === 'live') return true;
     if (this.mode === 'stub') return false;
+
+    if (isProductionLive()) {
+      return true;
+    }
+
     return this.hasLiveConfig();
   }
 
@@ -101,7 +108,7 @@ class MedicalApiService {
     try {
       return await liveFactory();
     } catch (err) {
-      if (this.allowStubFallback) {
+      if (this.allowStubFallback && isCompetitionSandbox()) {
         logThirdPartyError('medical-api', err, {
           operation,
           fallback: 'stub',
@@ -177,6 +184,26 @@ class MedicalApiService {
         const list = normalizeList(response.data, 'doctors');
         if (!list.length) throw createBizError(503, 'Empty doctors response.', 503);
         return list;
+      }
+    );
+  }
+
+  async fetchDoctorDetail(doctorId) {
+    return this.execute(
+      'fetchDoctorDetail',
+      () => {
+        const doctors = this.stubDoctors(2001);
+        return doctors.find((item) => Number(item.id) === Number(doctorId)) || null;
+      },
+      async () => {
+        const response = await this.requestWithRetry('fetchDoctorDetail', (client) =>
+          client.get(`/doctors/${doctorId}`)
+        );
+        const data = response.data || {};
+        if (!data.id) {
+          throw createBizError(404, 'Doctor not found.', 404);
+        }
+        return data;
       }
     );
   }

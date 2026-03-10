@@ -1,8 +1,8 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { getSosHistory, confirmSosEvent, resolveSosEvent } from '@/services'
+import { Refresh } from '@element-plus/icons-vue'
+import { confirmSosEvent, getSosHistory, resolveSosEvent } from '@/services'
 import type { SosEventItem, SosEventStatus } from '@/services'
 
 const loading = ref(false)
@@ -11,179 +11,34 @@ const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
 const statusFilter = ref<SosEventStatus | ''>('')
-
-const triggeredCount = computed(() => list.value.filter((item) => item.event_status === 'triggered').length)
-const confirmedCount = computed(() => list.value.filter((item) => item.event_status === 'confirmed').length)
-const resolvedCount = computed(() => list.value.filter((item) => item.event_status === 'resolved').length)
-
-function statusTagType(status: SosEventStatus): 'danger' | 'warning' | 'success' | 'info' {
-  if (status === 'triggered') return 'danger'
-  if (status === 'confirmed') return 'warning'
-  if (status === 'resolved') return 'success'
-  return 'info'
-}
+const triggeredCount = computed(() => list.value.filter(item => item.event_status === 'triggered').length)
+const confirmedCount = computed(() => list.value.filter(item => item.event_status === 'confirmed').length)
+const resolvedCount = computed(() => list.value.filter(item => item.event_status === 'resolved').length)
 
 async function fetchHistory() {
   loading.value = true
   try {
-    const data = await getSosHistory({
-      page: page.value,
-      pageSize: pageSize.value,
-      status: statusFilter.value || undefined,
-    })
+    const data = await getSosHistory({ page: page.value, pageSize: pageSize.value, status: statusFilter.value || undefined })
     list.value = data.list || []
     total.value = data.pagination?.total || 0
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to load SOS history.'
-    ElMessage.error(message)
-    list.value = []
-    total.value = 0
+    ElMessage.error(err instanceof Error ? err.message : 'SOS 记录加载失败')
   } finally {
     loading.value = false
   }
 }
 
-async function handleConfirm(row: SosEventItem) {
-  try {
-    await confirmSosEvent(row.event_id)
-    ElMessage.success('Event confirmed.')
-    await fetchHistory()
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Confirm failed.'
-    ElMessage.error(message)
-  }
-}
-
-async function handleResolve(row: SosEventItem) {
-  try {
-    await resolveSosEvent(row.event_id)
-    ElMessage.success('Event resolved.')
-    await fetchHistory()
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Resolve failed.'
-    ElMessage.error(message)
-  }
-}
-
-watch(statusFilter, () => {
-  page.value = 1
-  fetchHistory()
-})
-
+async function handleConfirm(row: SosEventItem) { try { await confirmSosEvent(row.event_id); ElMessage.success('事件已确认'); fetchHistory() } catch (err: unknown) { ElMessage.error(err instanceof Error ? err.message : '确认失败') } }
+async function handleResolve(row: SosEventItem) { try { await resolveSosEvent(row.event_id); ElMessage.success('事件已处理'); fetchHistory() } catch (err: unknown) { ElMessage.error(err instanceof Error ? err.message : '处理失败') } }
+watch(statusFilter, () => { page.value = 1; fetchHistory() })
 onMounted(fetchHistory)
 </script>
 
 <template>
-  <div class="sos-page">
-    <div class="page-header">
-      <span class="page-title">SOS Events</span>
-      <el-button :icon="Refresh" @click="fetchHistory">Refresh</el-button>
-    </div>
-
-    <el-row :gutter="16" class="stats-row">
-      <el-col :span="8">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #c62828">{{ triggeredCount }}</div>
-          <div class="stat-label">Triggered</div>
-        </div>
-      </el-col>
-      <el-col :span="8">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #f57c00">{{ confirmedCount }}</div>
-          <div class="stat-label">Confirmed</div>
-        </div>
-      </el-col>
-      <el-col :span="8">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #2e7d32">{{ resolvedCount }}</div>
-          <div class="stat-label">Resolved</div>
-        </div>
-      </el-col>
-    </el-row>
-
-    <el-card class="filter-card">
-      <el-row :gutter="12">
-        <el-col :span="5">
-          <el-select v-model="statusFilter" placeholder="Status" clearable style="width: 100%">
-            <el-option label="Triggered" value="triggered" />
-            <el-option label="Confirmed" value="confirmed" />
-            <el-option label="Resolved" value="resolved" />
-            <el-option label="Cancelled" value="cancelled" />
-          </el-select>
-        </el-col>
-      </el-row>
-    </el-card>
-
-    <el-card class="table-card">
-      <el-table :data="list" stripe style="width: 100%" v-loading="loading">
-        <el-table-column prop="event_id" label="Event ID" width="100" />
-        <el-table-column label="Status" width="110">
-          <template #default="{ row }">
-            <el-tag :type="statusTagType(row.event_status)" size="small">{{ row.event_status }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="trigger_type" label="Trigger" width="120" />
-        <el-table-column prop="address" label="Address" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="created_at" label="Created At" min-width="170" />
-        <el-table-column prop="confirmed_at" label="Confirmed At" min-width="170" />
-        <el-table-column prop="resolved_at" label="Resolved At" min-width="170" />
-        <el-table-column label="Actions" width="170" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              v-if="row.event_status === 'triggered'"
-              type="warning"
-              link
-              size="small"
-              @click="handleConfirm(row)"
-            >
-              Confirm
-            </el-button>
-            <el-button
-              v-if="row.event_status === 'triggered' || row.event_status === 'confirmed'"
-              type="success"
-              link
-              size="small"
-              @click="handleResolve(row)"
-            >
-              Resolve
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div class="table-pagination">
-        <el-pagination
-          v-model:current-page="page"
-          layout="total, prev, pager, next"
-          :total="total"
-          :page-size="pageSize"
-          @current-change="fetchHistory"
-        />
-      </div>
-    </el-card>
+  <div>
+    <div class="wb-page-header"><div><span class="wb-page-title">SOS 响应</span><span class="wb-page-subtitle">当前触发、已确认、已解决三类事件一屏查看。</span></div><el-button :icon="Refresh" @click="fetchHistory">刷新</el-button></div>
+    <div class="wb-metric-grid"><div class="wb-metric-card"><span class="wb-card-label">触发中</span><div class="wb-card-value">{{ triggeredCount }}</div><span class="wb-card-hint">优先响应</span></div><div class="wb-metric-card"><span class="wb-card-label">已确认</span><div class="wb-card-value">{{ confirmedCount }}</div><span class="wb-card-hint">等待闭环</span></div><div class="wb-metric-card"><span class="wb-card-label">已解决</span><div class="wb-card-value">{{ resolvedCount }}</div><span class="wb-card-hint">可做复盘</span></div></div>
+    <div class="wb-filter-card"><el-select v-model="statusFilter" placeholder="筛选状态" clearable style="width:200px"><el-option label="触发中" value="triggered" /><el-option label="已确认" value="confirmed" /><el-option label="已解决" value="resolved" /><el-option label="已取消" value="cancelled" /></el-select></div>
+    <div class="wb-panel"><el-table :data="list" stripe v-loading="loading"><el-table-column prop="event_id" label="事件ID" width="100" /><el-table-column label="状态" width="110"><template #default="{ row }"><el-tag :type="row.event_status === 'triggered' ? 'danger' : row.event_status === 'confirmed' ? 'warning' : row.event_status === 'resolved' ? 'success' : 'info'">{{ row.event_status }}</el-tag></template></el-table-column><el-table-column prop="trigger_type" label="触发方式" width="120" /><el-table-column prop="address" label="位置" min-width="200" show-overflow-tooltip /><el-table-column prop="created_at" label="触发时间" min-width="170" /><el-table-column prop="confirmed_at" label="确认时间" min-width="170" /><el-table-column prop="resolved_at" label="解决时间" min-width="170" /><el-table-column label="操作" width="170" fixed="right"><template #default="{ row }"><el-button v-if="row.event_status === 'triggered'" type="warning" link size="small" @click="handleConfirm(row)">确认</el-button><el-button v-if="row.event_status === 'triggered' || row.event_status === 'confirmed'" type="success" link size="small" @click="handleResolve(row)">解决</el-button></template></el-table-column></el-table><div style="display:flex; justify-content:flex-end; margin-top:16px"><el-pagination v-model:current-page="page" layout="total, prev, pager, next" :total="total" :page-size="pageSize" @current-change="fetchHistory" /></div></div>
   </div>
 </template>
-
-<style scoped>
-.sos-page { max-width: 1200px; }
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-.page-title { font-size: 20px; font-weight: 600; color: #1a1a1a; }
-.stats-row { margin-bottom: 16px; }
-.stat-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  text-align: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-.stat-num { font-size: 32px; font-weight: 700; line-height: 1.2; }
-.stat-label { font-size: 13px; color: #999; margin-top: 4px; }
-.filter-card { margin-bottom: 16px; border-radius: 8px; }
-.table-card { border-radius: 8px; }
-.table-pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
-</style>
