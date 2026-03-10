@@ -1,4 +1,5 @@
-﻿@use '../../../../styles/theme/variables.scss' as *;
-@use '../../../../styles/theme/detail-page.scss' as *;
+@use '@/styles/theme/detail-page.scss';
 
-.timebank-overview-page {}
+.timebank-moved-page {
+  min-height: 100vh;
+}

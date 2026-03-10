@@ -66,6 +66,23 @@ function normalizePage(value, fallback) {
   return parsed;
 }
 
+function normalizeIdempotencyKey(value) {
+  const key = String(value || '').trim();
+  if (!key) {
+    return '';
+  }
+
+  if (key.length > 100) {
+    throw createBizError(422, 'idempotencyKey length must be <= 100.', 422);
+  }
+
+  if (!/^[A-Za-z0-9._:-]+$/.test(key)) {
+    throw createBizError(422, 'idempotencyKey has invalid characters.', 422);
+  }
+
+  return key;
+}
+
 function buildIdempotencyKey(userId, doctorId, appointmentDate, timeSlot) {
   const raw = `${userId}:${doctorId}:${appointmentDate}:${timeSlot}`;
   return crypto.createHash('sha256').update(raw).digest('hex');
@@ -86,7 +103,9 @@ const appointmentService = {
     const appointmentDate = normalizeDate(payload.appointmentDate);
     const timeSlot = normalizeTimeSlot(payload.timeSlot);
 
-    const idempotencyKey = buildIdempotencyKey(userIdNum, doctorId, appointmentDate, timeSlot);
+    const providedKey = normalizeIdempotencyKey(payload.idempotencyKey || payload.requestId);
+    const idempotencyKey =
+      providedKey || buildIdempotencyKey(userIdNum, doctorId, appointmentDate, timeSlot);
 
     const existing = await appointmentModel.findByIdempotencyKey(idempotencyKey);
     if (existing) {
@@ -161,14 +180,28 @@ const appointmentService = {
       throw createBizError(404, 'Appointment not found.', 404);
     }
 
-    if (!CANCELLABLE_STATUS.has(String(appointment.appointStatus).toLowerCase())) {
+    const currentStatus = String(appointment.appointStatus || '').toLowerCase();
+    if (currentStatus === 'cancelled') {
+      return {
+        idempotent: true,
+        appointment,
+      };
+    }
+
+    if (!CANCELLABLE_STATUS.has(currentStatus)) {
       throw createBizError(409, 'Appointment is not cancellable.', 409);
     }
+
+    await medicalApiService.cancelAppointment({
+      appointmentId: appointmentIdNum,
+      thirdPartyAppointId: appointment.thirdPartyAppointId,
+    });
 
     await appointmentModel.updateStatus(appointmentIdNum, 'cancelled');
     const latest = await appointmentModel.findByIdAndUserId(appointmentIdNum, userIdNum);
 
     return {
+      idempotent: false,
       appointment: latest,
     };
   },

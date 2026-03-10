@@ -15,6 +15,10 @@ function handleError(res, err) {
   return fail(res, code, message, null, status);
 }
 
+function getIdempotencyKey(req) {
+  return req.headers['x-idempotency-key'] || req.headers['x-request-id'] || req.requestId || null;
+}
+
 async function create(req, res) {
   try {
     const data = await appointmentService.create(req.user.userId, {
@@ -23,6 +27,7 @@ async function create(req, res) {
       doctorId: req.body.doctorId,
       appointmentDate: req.body.appointmentDate,
       timeSlot: req.body.timeSlot,
+      idempotencyKey: getIdempotencyKey(req),
     });
 
     const message = data.duplicate ? 'idempotent replay' : 'created';
@@ -49,7 +54,8 @@ async function list(req, res) {
 async function cancel(req, res) {
   try {
     const data = await appointmentService.cancel(req.user.userId, req.params.appointmentId);
-    return ok(res, data, 'ok');
+    const message = data.idempotent ? 'idempotent replay' : 'cancelled';
+    return ok(res, data, message);
   } catch (err) {
     return handleError(res, err);
   }

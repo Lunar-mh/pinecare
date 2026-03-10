@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -55,7 +55,7 @@ onMounted(fetchVolunteers)
     <div class="wb-page-header">
       <div>
         <span class="wb-page-title">志愿者管理</span>
-        <span class="wb-page-subtitle">围绕角色、社区归属和加入时间管理志愿者资源。</span>
+        <span class="wb-page-subtitle">这里只保留花名册、审核与排班语义，不再承载志愿者个人执行工作台。</span>
       </div>
       <el-button type="primary" :icon="Refresh" round @click="fetchVolunteers">刷新列表</el-button>
     </div>
@@ -69,17 +69,17 @@ onMounted(fetchVolunteers)
       <div class="wb-metric-card">
         <span class="wb-card-label">管理员</span>
         <div class="wb-card-value">{{ adminCount }}</div>
-        <span class="wb-card-hint">负责配置与审批</span>
+        <span class="wb-card-hint">负责配置与审核</span>
       </div>
       <div class="wb-metric-card">
         <span class="wb-card-label">组长</span>
         <div class="wb-card-value">{{ leaderCount }}</div>
-        <span class="wb-card-hint">负责调度与跟进</span>
+        <span class="wb-card-hint">负责排班与任务协调</span>
       </div>
       <div class="wb-metric-card">
         <span class="wb-card-label">本页条目</span>
         <div class="wb-card-value">{{ pageCount }}</div>
-        <span class="wb-card-hint">方便快速核对加载结果</span>
+        <span class="wb-card-hint">便于快速核对加载结果</span>
       </div>
     </div>
 

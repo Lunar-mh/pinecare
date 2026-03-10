@@ -2,11 +2,40 @@
 
 const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
 
+function maskWithEdges(value, keepStart, keepEnd) {
+  const raw = String(value || '');
+  if (!raw) return raw;
+
+  const start = Math.max(0, Number(keepStart) || 0);
+  const end = Math.max(0, Number(keepEnd) || 0);
+  if (raw.length <= start + end) {
+    return '*'.repeat(Math.max(1, raw.length));
+  }
+
+  const stars = '*'.repeat(raw.length - start - end);
+  return `${raw.slice(0, start)}${stars}${raw.slice(raw.length - end)}`;
+}
+
+function maskPhone(value) {
+  const raw = String(value || '').trim();
+  if (!/^1\d{10}$/.test(raw)) return raw;
+  return `${raw.slice(0, 3)}****${raw.slice(7)}`;
+}
+
+function maskIdCard(value) {
+  const raw = String(value || '').trim();
+  if (!/^(\d{15}|\d{17}[\dXx])$/.test(raw)) return raw;
+  return maskWithEdges(raw, 3, 2);
+}
+
 function sanitizeText(input) {
   return String(input || '')
     .replace(/Bearer\s+[A-Za-z0-9._\-]+/gi, 'Bearer [REDACTED]')
     .replace(/(api[_-]?key|access[_-]?key|secret|token)=([^\s&]+)/gi, '$1=[REDACTED]')
-    .replace(/https?:\/\/[^\s)]+/gi, '[REDACTED_URL]');
+    .replace(/https?:\/\/[^\s)]+/gi, '[REDACTED_URL]')
+    .replace(/\b1\d{10}\b/g, (matched) => maskPhone(matched))
+    .replace(/\b\d{17}[\dXx]\b/g, (matched) => maskIdCard(matched))
+    .replace(/\b\d{15}\b/g, (matched) => maskIdCard(matched));
 }
 
 function sanitizeObject(value) {
@@ -18,6 +47,8 @@ function sanitizeObject(value) {
   const out = {};
   Object.keys(value).forEach((key) => {
     const lower = key.toLowerCase();
+    const itemValue = value[key];
+
     if (
       lower.includes('token') ||
       lower.includes('secret') ||
@@ -29,7 +60,23 @@ function sanitizeObject(value) {
       out[key] = '[REDACTED]';
       return;
     }
-    out[key] = sanitizeObject(value[key]);
+
+    if (
+      lower.includes('idcard') ||
+      lower.includes('id_card') ||
+      lower.includes('identity_card') ||
+      lower.includes('cert_no')
+    ) {
+      out[key] = maskIdCard(itemValue);
+      return;
+    }
+
+    if (lower.includes('phone') || lower.includes('mobile')) {
+      out[key] = maskPhone(itemValue);
+      return;
+    }
+
+    out[key] = sanitizeObject(itemValue);
   });
   return out;
 }
@@ -90,4 +137,6 @@ module.exports = {
   logThirdPartyError,
   sanitizeObject,
   sanitizeText,
+  maskPhone,
+  maskIdCard,
 };

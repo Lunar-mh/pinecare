@@ -4,10 +4,12 @@ const express = require('express');
 const cors = require('cors');
 const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
+const requestContext = require('./middleware/requestContext');
 const { startMedicationJobs } = require('./jobs');
 
 const app = express();
 
+app.use(requestContext);
 app.use(express.json({ limit: '10mb' }));
 app.use(cors());
 

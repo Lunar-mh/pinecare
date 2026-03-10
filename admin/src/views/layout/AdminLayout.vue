@@ -1,8 +1,9 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Bell, Search, SwitchButton } from '@element-plus/icons-vue'
 import { workbenchNavGroups, findWorkbenchItem } from '@/design/navigation'
+import { resolveWorkbenchRole } from '@/view-models/workbenchRoles'
 
 const router = useRouter()
 const route = useRoute()
@@ -10,7 +11,7 @@ const route = useRoute()
 const collapsed = ref(false)
 const searchText = ref('')
 const notificationCount = ref(3)
-
+const roleProfile = computed(() => resolveWorkbenchRole(localStorage.getItem('community_role')))
 const currentItem = computed(() => findWorkbenchItem(route.path))
 
 const filteredGroups = computed(() => {
@@ -48,11 +49,11 @@ function handleLogout() {
         <div class="brand-card__mark">银</div>
         <div v-if="!collapsed" class="brand-card__copy">
           <span class="brand-card__title">银伴社区工作台</span>
-          <span class="brand-card__subtitle">照护运营与风险响应中枢</span>
+          <span class="brand-card__subtitle">社区管理、风险响应与资源协调中心</span>
         </div>
       </div>
 
-      <div class="aside-search" v-if="!collapsed">
+      <div v-if="!collapsed" class="aside-search">
         <el-input v-model="searchText" :prefix-icon="Search" placeholder="搜索页面或功能" clearable @keyup.enter="handleSearch" />
       </div>
 
@@ -70,15 +71,15 @@ function handleLogout() {
       </div>
 
       <div class="aside-footer" @click="collapsed = !collapsed">
-        <span>{{ collapsed ? '展开' : '收起导航' }}</span>
+        <span>{{ collapsed ? '展开导航' : '收起导航' }}</span>
       </div>
     </el-aside>
 
     <el-container>
       <el-header class="workbench-layout__header">
         <div>
-          <div class="workbench-layout__eyebrow">{{ currentItem?.subtitle || '社区照护与运营管理' }}</div>
-          <div class="workbench-layout__title">{{ currentItem?.label || '银伴工作台' }}</div>
+          <div class="workbench-layout__eyebrow">{{ currentItem?.subtitle || roleProfile.subtitle }}</div>
+          <div class="workbench-layout__title">{{ currentItem?.label || '社区管理工作台' }}</div>
         </div>
         <div class="header-actions">
           <div class="wb-chip">
@@ -89,8 +90,8 @@ function handleLogout() {
             <div class="header-user">
               <div class="header-user__avatar">管</div>
               <div class="header-user__meta">
-                <span class="header-user__name">社区管理员</span>
-                <span class="header-user__role">今日值班中</span>
+                <span class="header-user__name">{{ roleProfile.label }}</span>
+                <span class="header-user__role">{{ roleProfile.shiftHint }}</span>
               </div>
             </div>
             <template #dropdown>

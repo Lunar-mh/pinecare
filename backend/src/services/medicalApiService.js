@@ -266,6 +266,40 @@ class MedicalApiService {
     );
   }
 
+  async cancelAppointment(payload = {}) {
+    const thirdPartyAppointId = payload.thirdPartyAppointId
+      ? String(payload.thirdPartyAppointId)
+      : '';
+
+    return this.execute(
+      'cancelAppointment',
+      () => ({
+        thirdPartyAppointId: thirdPartyAppointId || `cancel_${Date.now()}`,
+        appointStatus: 'cancelled',
+        cancelStatus: 'ok',
+      }),
+      async () => {
+        const targetId = thirdPartyAppointId || String(payload.appointmentId || '').trim();
+        if (!targetId) {
+          throw createBizError(422, 'appointmentId is required for cancellation.', 422);
+        }
+
+        const response = await this.requestWithRetry('cancelAppointment', (client) =>
+          client.post(`/appointments/${targetId}/cancel`, {
+            reason: payload.reason || 'user_cancelled',
+          })
+        );
+
+        const data = response.data || {};
+        return {
+          thirdPartyAppointId: data.thirdPartyAppointId || thirdPartyAppointId || targetId,
+          appointStatus: data.appointStatus || 'cancelled',
+          cancelStatus: data.cancelStatus || 'ok',
+        };
+      }
+    );
+  }
+
   async fetchMedicalReports(userId, filters = {}) {
     return this.execute(
       'fetchMedicalReports',
@@ -322,5 +356,3 @@ class MedicalApiService {
 }
 
 module.exports = new MedicalApiService();
-
-

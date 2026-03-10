@@ -1,0 +1,10 @@
+{
+  "name": "yinban-volunteer",
+  "private": true,
+  "version": "0.1.0",
+  "description": "银伴志愿者端轻量移动工作台",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "node scripts/typecheck.mjs"
+  }
+}

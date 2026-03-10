@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 describe('medicalApiService', () => {
   let originalEnv;
@@ -135,5 +135,45 @@ describe('medicalApiService', () => {
 
     expect(Array.isArray(list)).toBe(true);
     expect(list.length).toBeGreaterThan(0);
+  });
+
+  it('cancels appointment through live endpoint', async () => {
+    const post = jest
+      .fn()
+      .mockResolvedValue({ data: { appointStatus: 'cancelled', cancelStatus: 'ok' } });
+
+    const { service, mockClient } = loadService({
+      env: {
+        MEDICAL_API_MODE: 'live',
+        MEDICAL_API_BASE_URL: 'https://medical-api.example.com',
+        MEDICAL_API_KEY: 'test-key',
+      },
+      client: { post },
+    });
+
+    const result = await service.cancelAppointment({
+      appointmentId: 99,
+      thirdPartyAppointId: 'tp-99',
+    });
+
+    expect(result.appointStatus).toBe('cancelled');
+    expect(mockClient.post).toHaveBeenCalledWith('/appointments/tp-99/cancel', {
+      reason: 'user_cancelled',
+    });
+  });
+
+  it('cancel appointment throws 422 when target id missing in live mode', async () => {
+    const { service } = loadService({
+      env: {
+        MEDICAL_API_MODE: 'live',
+        MEDICAL_API_BASE_URL: 'https://medical-api.example.com',
+        MEDICAL_API_KEY: 'test-key',
+      },
+    });
+
+    await expect(service.cancelAppointment({})).rejects.toMatchObject({
+      code: 422,
+      statusCode: 422,
+    });
   });
 });

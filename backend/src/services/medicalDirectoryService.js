@@ -50,7 +50,9 @@ function filterDoctors(list, filters = {}) {
   }
 
   if (filters.departmentId) {
-    filtered = filtered.filter((item) => Number(item.departmentId) === Number(filters.departmentId));
+    filtered = filtered.filter(
+      (item) => Number(item.departmentId) === Number(filters.departmentId)
+    );
   }
 
   return filtered;
@@ -119,8 +121,7 @@ const medicalDirectoryService = {
   },
 
   async getDoctors(query = {}) {
-    const normalizedQuery =
-      query && typeof query === 'object' ? query : { departmentId: query };
+    const normalizedQuery = query && typeof query === 'object' ? query : { departmentId: query };
     const departmentIdNum = normalizePositiveInt(normalizedQuery.departmentId, 'departmentId');
     const page = normalizePage(normalizedQuery.page, 1);
     const pageSize = Math.min(normalizePage(normalizedQuery.pageSize, 10), 100);
@@ -186,4 +187,3 @@ const medicalDirectoryService = {
 };
 
 module.exports = medicalDirectoryService;
-

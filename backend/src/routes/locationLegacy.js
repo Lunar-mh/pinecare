@@ -48,7 +48,8 @@ router.get('/family', auth, async (req, res) => {
   try {
     const now = new Date();
     const endDate = req.query.endDate || now.toISOString();
-    const startDate = req.query.startDate || new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+    const startDate =
+      req.query.startDate || new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
 
     const data = await locationTrailService.getTrail(req.user.userId, {
       startDate,

@@ -3,7 +3,9 @@
     "dev:weapp": "npm --prefix frontend run dev:weapp",
     "build:weapp": "npm --prefix frontend run build:weapp",
     "typecheck:weapp": "npm --prefix frontend run typecheck",
-    "clean:weapp": "npm --prefix frontend run clean"
+    "clean:weapp": "npm --prefix frontend run clean",
+    "build:volunteer": "npm --prefix volunteer run build",
+    "typecheck:volunteer": "npm --prefix volunteer run typecheck"
   },
   "dependencies": {
     "opencode-antigravity-auth": "^1.6.0"

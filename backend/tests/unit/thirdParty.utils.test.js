@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const {
   sanitizeText,
@@ -6,6 +6,8 @@ const {
   createUpstreamError,
   isRetryableError,
   logThirdPartyError,
+  maskIdCard,
+  maskPhone,
 } = require('../../src/utils/thirdParty');
 
 describe('thirdParty utils', () => {
@@ -26,6 +28,14 @@ describe('thirdParty utils', () => {
     expect(output).toContain('[REDACTED_URL]');
   });
 
+  it('sanitizeText should mask phone and id card', () => {
+    const input = 'phone 13812345678 id 310101199901011234';
+    const output = sanitizeText(input);
+
+    expect(output).toContain('138****5678');
+    expect(output).toContain('310*************34');
+  });
+
   it('sanitizeObject should redact sensitive fields recursively', () => {
     const output = sanitizeObject({
       token: 't1',
@@ -40,6 +50,16 @@ describe('thirdParty utils', () => {
     expect(output.nested.accessKeyId).toBe('[REDACTED]');
     expect(output.nested.normal).toBe('ok');
     expect(output.array[0].authorization).toBe('[REDACTED]');
+  });
+
+  it('sanitizeObject should mask phone/idcard fields by key', () => {
+    const output = sanitizeObject({
+      phone: '13812345678',
+      id_card: '310101199901011234',
+    });
+
+    expect(output.phone).toBe('138****5678');
+    expect(output.id_card).toBe('310*************34');
   });
 
   it('createUpstreamError should map timeout to 504', () => {
@@ -90,5 +110,10 @@ describe('thirdParty utils', () => {
         message: expect.not.stringContaining('abc'),
       })
     );
+  });
+
+  it('mask helpers should keep expected edges', () => {
+    expect(maskPhone('13812345678')).toBe('138****5678');
+    expect(maskIdCard('310101199901011234')).toBe('310*************34');
   });
 });
