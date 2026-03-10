@@ -1,31 +1,26 @@
-'use strict';
+﻿'use strict';
 
 const axios = require('axios');
+const ossService = require('./ossService');
 
 const DASHSCOPE_BASE = 'https://dashscope.aliyuncs.com/api/v1';
 
-/**
- * 语音服务
- * ASR（语音识别）: 使用 Fun-ASR 录音文件识别（异步任务）
- * TTS（语音合成）: 使用 Qwen3-TTS-Flash（同步，返回音频URL）
- *
- * 重要约束:
- * - ASR 要求音频文件可公网访问的 URL，不支持直接上传 Base64
- *   生产环境需先将 Base64 音频上传至 OSS，获取公网URL后再调用 ASR
- *   本实现提供完整流程框架，uploadAudioToOSS 需接入实际 OSS 配置
- */
+function requireDashScopeKey() {
+  const key = process.env.DASHSCOPE_API_KEY;
+  if (!key) {
+    const err = new Error('DashScope API key is not configured.');
+    err.code = 503;
+    err.statusCode = 503;
+    throw err;
+  }
+  return key;
+}
+
 class VoiceService {
-  /**
-   * 语音识别（ASR）
-   * @param {string} audioBase64 - Base64 编码的音频数据
-   * @returns {Promise<string>} 识别文本
-   */
   async speechToText(audioBase64) {
-    // Step 1: 将 Base64 音频上传至可公网访问的临时存储
-    // 生产环境需替换为实际的 OSS 上传逻辑
+    const apiKey = requireDashScopeKey();
     const audioUrl = await this._uploadAudioToOSS(audioBase64);
 
-    // Step 2: 提交 ASR 异步任务
     const submitRes = await axios.post(
       `${DASHSCOPE_BASE}/services/audio/asr/transcription`,
       {
@@ -38,7 +33,7 @@ class VoiceService {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.DASHSCOPE_API_KEY}`,
+          Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
           'X-DashScope-Async': 'enable',
         },
@@ -46,93 +41,102 @@ class VoiceService {
       }
     );
 
-    const taskId = submitRes.data.output.task_id;
+    const taskId = submitRes.data?.output?.task_id;
+    if (!taskId) {
+      const err = new Error('ASR task submission failed.');
+      err.code = 502;
+      err.statusCode = 502;
+      throw err;
+    }
 
-    // Step 3: 轮询任务状态（最多等待30秒）
-    const transcription = await this._pollAsrTask(taskId);
-    return transcription;
+    return this._pollAsrTask(taskId, apiKey);
   }
 
-  /**
-   * 语音合成（TTS）
-   * @param {string} text - 要合成的文本
-   * @returns {Promise<string>} Base64 编码的音频数据
-   */
   async textToSpeech(text) {
+    const apiKey = requireDashScopeKey();
+
     const res = await axios.post(
       `${DASHSCOPE_BASE}/services/aigc/multimodal-generation/generation`,
       {
         model: 'qwen3-tts-flash',
         input: {
           text,
-          voice: 'Cherry',           // 温柔女声
+          voice: 'Cherry',
           language_type: 'Chinese',
         },
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.DASHSCOPE_API_KEY}`,
+          Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         timeout: 15000,
       }
     );
 
-    const audioUrl = res.data.output.audio.url;
+    const audioUrl = res.data?.output?.audio?.url;
+    if (!audioUrl) {
+      const err = new Error('TTS response does not contain audio url.');
+      err.code = 502;
+      err.statusCode = 502;
+      throw err;
+    }
 
-    // 下载音频并转换为 Base64（URL有效期24小时）
     const audioRes = await axios.get(audioUrl, { responseType: 'arraybuffer', timeout: 10000 });
-    const audioBase64 = Buffer.from(audioRes.data).toString('base64');
-    return audioBase64;
+    return Buffer.from(audioRes.data).toString('base64');
   }
 
-  /**
-   * 将 Base64 音频上传到 OSS，返回公网可访问 URL
-   * 生产环境需替换为实际 OSS 上传逻辑
-   * @private
-   */
   async _uploadAudioToOSS(audioBase64) {
-    // TODO: 接入阿里云 OSS SDK 实现实际上传
-    // const ossClient = new OSS({ ... });
-    // const buffer = Buffer.from(audioBase64, 'base64');
-    // const result = await ossClient.put(`voice/${Date.now()}.wav`, buffer);
-    // return result.url;
-    throw new Error('OSS 上传未配置，请在 voiceService._uploadAudioToOSS 中接入 OSS SDK');
+    if (!audioBase64 || typeof audioBase64 !== 'string') {
+      const err = new Error('audioData is required.');
+      err.code = 400;
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const buffer = Buffer.from(audioBase64, 'base64');
+    const key = `voice/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.wav`;
+    return ossService.uploadAudio(buffer, key);
   }
 
-  /**
-   * 轮询 ASR 任务状态
-   * @private
-   */
-  async _pollAsrTask(taskId, maxRetries = 30, intervalMs = 1000) {
-    for (let i = 0; i < maxRetries; i++) {
-      await new Promise((r) => setTimeout(r, intervalMs));
+  async _pollAsrTask(taskId, apiKey, maxRetries = 30, intervalMs = 1000) {
+    for (let i = 0; i < maxRetries; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
 
       const res = await axios.get(`${DASHSCOPE_BASE}/tasks/${taskId}`, {
-        headers: { Authorization: `Bearer ${process.env.DASHSCOPE_API_KEY}` },
+        headers: { Authorization: `Bearer ${apiKey}` },
         timeout: 10000,
       });
 
-      const status = res.data.output.task_status;
+      const status = res.data?.output?.task_status;
 
       if (status === 'SUCCEEDED') {
-        const transcriptionUrl = res.data.output.results[0].transcription_url;
+        const transcriptionUrl = res.data?.output?.results?.[0]?.transcription_url;
+        if (!transcriptionUrl) {
+          const err = new Error('ASR task finished without transcription url.');
+          err.code = 502;
+          err.statusCode = 502;
+          throw err;
+        }
+
         const transcRes = await axios.get(transcriptionUrl, { timeout: 10000 });
-        // 取第一段识别文字
-        const segments = transcRes.data.transcripts || [];
-        return segments.map((s) => s.text || s.transcript || '').join(' ').trim();
+        const segments = transcRes.data?.transcripts || [];
+        return segments.map((segment) => segment.text || segment.transcript || '').join(' ').trim();
       }
 
       if (status === 'FAILED') {
-        const errMsg =
-          res.data.output.results &&
-          res.data.output.results[0] &&
-          res.data.output.results[0].message;
-        throw new Error(`ASR 识别失败: ${errMsg || '未知错误'}`);
+        const errMsg = res.data?.output?.results?.[0]?.message || 'ASR task failed.';
+        const err = new Error(errMsg);
+        err.code = 502;
+        err.statusCode = 502;
+        throw err;
       }
     }
 
-    throw new Error('ASR 任务超时');
+    const timeoutError = new Error('ASR task timeout.');
+    timeoutError.code = 504;
+    timeoutError.statusCode = 504;
+    throw timeoutError;
   }
 }
 

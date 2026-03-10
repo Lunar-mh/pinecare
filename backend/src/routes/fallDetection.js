@@ -14,15 +14,13 @@ const {
 
 const router = express.Router();
 
-// 写接口限流：每分钟最多20次
 const writeLimiter = createRateLimiter({
   max: 20,
   windowSeconds: 60,
   keyPrefix: 'ratelimit:fall-write',
 });
 
-// 启动跌倒倒计时 worker（仅初始化一次）
-if (!global.__fallWorkerInitialized) {
+if (process.env.NODE_ENV !== 'test' && !global.__fallWorkerInitialized) {
   fallService.startCountdownWorker();
 
   const shutdown = () => {

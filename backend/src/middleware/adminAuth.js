@@ -1,21 +1,58 @@
-'use strict';
+﻿'use strict';
 
 const { query } = require('../config/db');
 const { fail } = require('../utils/response');
 
+function parsePositiveInt(value) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    return null;
+  }
+  return parsed;
+}
+
+function getRequestedCommunityId(req) {
+  const fromQuery = req.query && req.query.community_id;
+  const fromBody = req.body && req.body.community_id;
+  return fromQuery !== undefined ? fromQuery : fromBody;
+}
+
 /**
  * 社区管理权限中间件
- * 仅允许 admin/leader 角色访问，并注入 adminScope
+ * - 普通社区管理员：根据 community_admins 表校验并注入作用域
+ * - 全局 admin token：直接放行，并支持按 community_id 指定作用域
  */
 async function adminAuth(req, res, next) {
   try {
-    if (!req.user || !req.user.userId) {
-      return fail(res, 401, '未登录或登录态无效', null, 401);
+    if (!req.user) {
+      return fail(res, 401, 'Unauthorized.', null, 401);
+    }
+
+    const isGlobalAdmin = req.user.isAdmin === true || req.user.role === 'admin';
+    if (isGlobalAdmin) {
+      const fallbackCommunityId = Number(process.env.ADMIN_DEFAULT_COMMUNITY_ID || 1);
+      const requested = getRequestedCommunityId(req);
+      const scopeCommunityId = requested === undefined
+        ? fallbackCommunityId
+        : parsePositiveInt(requested);
+
+      if (!parsePositiveInt(scopeCommunityId)) {
+        return fail(res, 400, 'Invalid community_id.', null, 400);
+      }
+
+      req.adminScope = {
+        adminId: 0,
+        userId: Number(req.user.userId || 0),
+        communityId: Number(scopeCommunityId),
+        role: 'admin',
+        isGlobalAdmin: true,
+      };
+      return next();
     }
 
     const userId = Number(req.user.userId);
     if (!Number.isInteger(userId) || userId <= 0) {
-      return fail(res, 401, '用户身份无效', null, 401);
+      return fail(res, 401, 'Unauthorized.', null, 401);
     }
 
     const [rows] = await query(
@@ -29,7 +66,7 @@ async function adminAuth(req, res, next) {
     );
 
     if (!rows.length) {
-      return fail(res, 403, '无社区管理权限', null, 403);
+      return fail(res, 403, 'Forbidden.', null, 403);
     }
 
     const admin = rows[0];
@@ -38,6 +75,7 @@ async function adminAuth(req, res, next) {
       userId: Number(admin.user_id),
       communityId: Number(admin.community_id),
       role: admin.role,
+      isGlobalAdmin: false,
     };
 
     return next();

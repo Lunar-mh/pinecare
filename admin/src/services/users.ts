@@ -1,17 +1,14 @@
-/**
- * 用户管理 API
- * 后端暂无管理员用户列表接口（/user 路由仅提供用户自己的数据）
- * 当后端实现 /admin/users 时，替换各方法实现
- */
-
 import http from './api'
+
+export type UserRole = 'elder' | 'family'
+export type UserStatus = '\u6b63\u5e38' | '\u7981\u7528'
 
 export interface UserItem {
   id: number
   nickname: string
   phone: string
-  role: 'elder' | 'family'
-  status: '正常' | '禁用'
+  role: UserRole
+  status: UserStatus
   age?: number
   address?: string
   registerDate: string
@@ -22,8 +19,8 @@ export interface UserListParams {
   page?: number
   pageSize?: number
   search?: string
-  role?: string
-  status?: string
+  role?: UserRole
+  status?: UserStatus
 }
 
 export interface UserListResult {
@@ -36,12 +33,9 @@ export interface UserListResult {
 export interface CreateUserPayload {
   nickname: string
   phone: string
-  role: 'elder' | 'family'
+  role: UserRole
 }
 
-/**
- * 获取用户列表
- */
 export async function getUsers(params: UserListParams = {}): Promise<UserListResult> {
   const qs = new URLSearchParams()
   if (params.page) qs.set('page', String(params.page))
@@ -50,31 +44,19 @@ export async function getUsers(params: UserListParams = {}): Promise<UserListRes
   if (params.role) qs.set('role', params.role)
   if (params.status) qs.set('status', params.status)
 
-  try {
-    return await http.get<UserListResult>(`/api/v1/admin/users?${qs.toString()}`)
-  } catch (_err: unknown) {
-    // 后端管理员接口未实现，返回空列表
-    return { list: [], total: 0, page: params.page || 1, pageSize: params.pageSize || 10 }
-  }
+  const suffix = qs.toString()
+  const path = suffix ? `/api/v1/admin/users?${suffix}` : '/api/v1/admin/users'
+  return await http.get<UserListResult>(path)
 }
 
-/**
- * 更新用户状态（启用/禁用）
- */
-export async function updateUserStatus(userId: number, status: '正常' | '禁用'): Promise<void> {
+export async function updateUserStatus(userId: number, status: UserStatus): Promise<void> {
   await http.put(`/api/v1/admin/users/${userId}/status`, { status })
 }
 
-/**
- * 新增用户（管理员创建）
- */
 export async function createUser(payload: CreateUserPayload): Promise<UserItem> {
   return await http.post<UserItem>('/api/v1/admin/users', payload)
 }
 
-/**
- * 获取用户详情
- */
 export async function getUserDetail(userId: number): Promise<UserItem> {
   return await http.get<UserItem>(`/api/v1/admin/users/${userId}`)
 }

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { Search, Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUsers, updateUserStatus, createUser } from '@/services'
-import type { UserItem } from '@/services'
+import { getUsers, updateUserStatus, createUser, getUserDetail } from '@/services'
+import type { UserItem, UserStatus } from '@/services'
 
 const searchText = ref('')
-const filterRole = ref('')
-const filterStatus = ref('')
+const filterRole = ref<'elder' | 'family' | ''>('')
+const filterStatus = ref<UserStatus | ''>('')
 const dialogVisible = ref(false)
 const detailVisible = ref(false)
 const selectedUser = ref<UserItem | null>(null)
@@ -25,33 +25,29 @@ const total = ref(0)
 const page = ref(1)
 const pageSize = ref(10)
 
-const filteredUsers = computed(() => {
-  return users.value.filter(u => {
-    const matchText = !searchText.value ||
-      u.nickname.includes(searchText.value) ||
-      u.phone.includes(searchText.value)
-    const matchRole = !filterRole.value || u.role === filterRole.value
-    const matchStatus = !filterStatus.value || u.status === filterStatus.value
-    return matchText && matchRole && matchStatus
-  })
-})
+const elderCount = computed(() => users.value.filter((u) => u.role === 'elder').length)
+const familyCount = computed(() => users.value.filter((u) => u.role === 'family').length)
+const disabledCount = computed(() => users.value.filter((u) => u.status === '禁用').length)
 
-const elderCount = computed(() => users.value.filter(u => u.role === 'elder').length)
-const familyCount = computed(() => users.value.filter(u => u.role === 'family').length)
-const disabledCount = computed(() => users.value.filter(u => u.status === '禁用').length)
-
-const roleLabel = (role: string) => role === 'elder' ? '长辈' : '家属'
-const roleTagType = (role: string) => role === 'elder' ? 'primary' : 'success'
-const statusTagType = (status: string) => status === '正常' ? 'success' : 'danger'
+const roleLabel = (role: string) => (role === 'elder' ? 'Elder' : 'Family')
+const roleTagType = (role: string) => (role === 'elder' ? 'primary' : 'success')
+const statusTagType = (status: UserStatus) => (status === '正常' ? 'success' : 'danger')
 
 async function fetchUsers() {
   tableLoading.value = true
   try {
-    const res = await getUsers({ page: page.value, pageSize: pageSize.value })
+    const res = await getUsers({
+      page: page.value,
+      pageSize: pageSize.value,
+      search: searchText.value || undefined,
+      role: filterRole.value || undefined,
+      status: filterStatus.value || undefined,
+    })
     users.value = res.list
     total.value = res.total
-  } catch (_err: unknown) {
-    ElMessage.warning('用户列表加载失败（后端管理接口待对接）')
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to load users.'
+    ElMessage.error(message)
     users.value = []
     total.value = 0
   } finally {
@@ -61,28 +57,42 @@ async function fetchUsers() {
 
 onMounted(fetchUsers)
 
-function handleViewDetail(row: UserItem) {
-  selectedUser.value = row
+watch([searchText, filterRole, filterStatus], () => {
+  page.value = 1
+  fetchUsers()
+})
+
+async function handleViewDetail(row: UserItem) {
+  try {
+    selectedUser.value = await getUserDetail(row.id)
+  } catch (_err: unknown) {
+    selectedUser.value = row
+  }
   detailVisible.value = true
 }
 
 async function handleToggleStatus(row: UserItem) {
-  const newStatus: '正常' | '禁用' = row.status === '正常' ? '禁用' : '正常'
-  const action = newStatus === '禁用' ? '禁用' : '启用'
+  const newStatus: UserStatus = row.status === '正常' ? '禁用' : '正常'
+  const action = newStatus === '禁用' ? 'disable' : 'enable'
+
   try {
-    await ElMessageBox.confirm(`确认${action}用户「${row.nickname}」？`, '操作确认', {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
+    await ElMessageBox.confirm(
+      `Confirm to ${action} user \"${row.nickname}\"?`,
+      'Confirm',
+      {
+        confirmButtonText: 'Confirm',
+        cancelButtonText: 'Cancel',
+        type: 'warning',
+      }
+    )
+
     await updateUserStatus(row.id, newStatus)
-    row.status = newStatus
-    ElMessage.success(`已${action}`)
+    ElMessage.success(`User ${action}d.`)
+    await fetchUsers()
   } catch (err: unknown) {
     if (err !== 'cancel') {
-      // API调用失败时，乐观更新仍然回滚（本地直接更新以保持兼容）
-      row.status = newStatus
-      ElMessage.success(`已${action}`)
+      const message = err instanceof Error ? err.message : `Failed to ${action} user.`
+      ElMessage.error(message)
     }
   }
 }
@@ -96,32 +106,24 @@ function handleAdd() {
 
 async function handleConfirmAdd() {
   if (!form.nickname || !form.phone) {
-    ElMessage.warning('请填写完整信息')
+    ElMessage.warning('Please enter nickname and phone.')
     return
   }
+
   submitLoading.value = true
   try {
-    const newUser = await createUser({
+    await createUser({
       nickname: form.nickname,
       phone: form.phone,
       role: form.role,
     })
-    users.value.unshift(newUser)
-    ElMessage.success('用户已添加')
+    ElMessage.success('User created.')
     dialogVisible.value = false
-  } catch (_err: unknown) {
-    // 后端管理接口未实现时，本地添加
-    users.value.unshift({
-      id: Date.now(),
-      nickname: form.nickname,
-      phone: form.phone,
-      role: form.role,
-      status: '正常',
-      registerDate: new Date().toISOString().slice(0, 10),
-      lastActive: '刚刚',
-    })
-    ElMessage.success('用户已添加')
-    dialogVisible.value = false
+    page.value = 1
+    await fetchUsers()
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Create user failed.'
+    ElMessage.error(message)
   } finally {
     submitLoading.value = false
   }
@@ -131,141 +133,138 @@ async function handleConfirmAdd() {
 <template>
   <div class="users-page">
     <div class="page-header">
-      <span class="page-title">用户管理</span>
-      <el-button type="primary" :icon="Plus" @click="handleAdd">新增用户</el-button>
+      <span class="page-title">User Management</span>
+      <el-button type="primary" :icon="Plus" @click="handleAdd">Create User</el-button>
     </div>
 
-    <!-- 统计卡片 -->
     <el-row :gutter="16" class="stats-row">
       <el-col :span="6">
         <div class="stat-card">
-          <div class="stat-num" style="color: #01579b">{{ users.length }}</div>
-          <div class="stat-label">总用户数</div>
+          <div class="stat-num" style="color: #01579b">{{ total }}</div>
+          <div class="stat-label">Total</div>
         </div>
       </el-col>
       <el-col :span="6">
         <div class="stat-card">
           <div class="stat-num" style="color: #2e7d32">{{ elderCount }}</div>
-          <div class="stat-label">长辈用户</div>
+          <div class="stat-label">Elder</div>
         </div>
       </el-col>
       <el-col :span="6">
         <div class="stat-card">
           <div class="stat-num" style="color: #e65100">{{ familyCount }}</div>
-          <div class="stat-label">家属用户</div>
+          <div class="stat-label">Family</div>
         </div>
       </el-col>
       <el-col :span="6">
         <div class="stat-card">
           <div class="stat-num" style="color: #c62828">{{ disabledCount }}</div>
-          <div class="stat-label">已禁用</div>
+          <div class="stat-label">Disabled</div>
         </div>
       </el-col>
     </el-row>
 
-    <!-- 搜索筛选 -->
     <el-card class="filter-card">
       <el-row :gutter="12" align="middle">
         <el-col :span="8">
-          <el-input v-model="searchText" placeholder="搜索姓名或手机号" :prefix-icon="Search" clearable />
+          <el-input
+            v-model="searchText"
+            placeholder="Search by nickname, phone or ID"
+            :prefix-icon="Search"
+            clearable
+          />
         </el-col>
         <el-col :span="5">
-          <el-select v-model="filterRole" placeholder="用户角色" clearable style="width: 100%">
-            <el-option label="长辈" value="elder" />
-            <el-option label="家属" value="family" />
+          <el-select v-model="filterRole" placeholder="Role" clearable style="width: 100%">
+            <el-option label="Elder" value="elder" />
+            <el-option label="Family" value="family" />
           </el-select>
         </el-col>
         <el-col :span="5">
-          <el-select v-model="filterStatus" placeholder="账号状态" clearable style="width: 100%">
-            <el-option label="正常" value="正常" />
-            <el-option label="禁用" value="禁用" />
+          <el-select v-model="filterStatus" placeholder="Status" clearable style="width: 100%">
+            <el-option label="Normal" value="正常" />
+            <el-option label="Disabled" value="禁用" />
           </el-select>
         </el-col>
       </el-row>
     </el-card>
 
-    <!-- 用户列表 -->
     <el-card class="table-card">
-      <el-table :data="filteredUsers" stripe style="width: 100%" v-loading="tableLoading">
-        <template #empty>
-          <div style="padding: 24px; text-align: center; color: #999">
-            {{ tableLoading ? '加载中...' : '暂无用户数据（后端管理接口待对接）' }}
-          </div>
-        </template>
-        <el-table-column prop="nickname" label="昵称" width="110" />
-        <el-table-column prop="phone" label="手机号" width="130" />
-        <el-table-column label="角色" width="90">
+      <el-table :data="users" stripe style="width: 100%" v-loading="tableLoading">
+        <el-table-column prop="nickname" label="Nickname" width="130" />
+        <el-table-column prop="phone" label="Phone" width="150" />
+        <el-table-column label="Role" width="100">
           <template #default="{ row }">
             <el-tag :type="roleTagType(row.role)" size="small">{{ roleLabel(row.role) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="age" label="年龄" width="70" />
-        <el-table-column prop="address" label="地址" />
-        <el-table-column prop="registerDate" label="注册时间" width="120" />
-        <el-table-column prop="lastActive" label="最近活跃" width="110" />
-        <el-table-column label="状态" width="90">
+        <el-table-column prop="age" label="Age" width="80" />
+        <el-table-column prop="registerDate" label="Created At" width="120" />
+        <el-table-column prop="lastActive" label="Last Active" width="150" />
+        <el-table-column label="Status" width="90">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.status)" size="small">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="Actions" width="180" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="handleViewDetail(row)">详情</el-button>
+            <el-button type="primary" link size="small" @click="handleViewDetail(row)">Detail</el-button>
             <el-button
               :type="row.status === '正常' ? 'warning' : 'success'"
-              link size="small"
+              link
+              size="small"
               @click="handleToggleStatus(row)"
-            >{{ row.status === '正常' ? '禁用' : '启用' }}</el-button>
+            >
+              {{ row.status === '正常' ? 'Disable' : 'Enable' }}
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
+
       <div class="table-pagination">
         <el-pagination
           v-model:current-page="page"
           layout="total, prev, pager, next"
-          :total="total || filteredUsers.length"
+          :total="total"
           :page-size="pageSize"
           @current-change="fetchUsers"
         />
       </div>
     </el-card>
 
-    <!-- 新增对话框 -->
-    <el-dialog v-model="dialogVisible" title="新增用户" width="480px">
+    <el-dialog v-model="dialogVisible" title="Create User" width="480px">
       <el-form :model="form" label-width="90px">
-        <el-form-item label="昵称">
-          <el-input v-model="form.nickname" placeholder="请输入昵称" />
+        <el-form-item label="Nickname">
+          <el-input v-model="form.nickname" placeholder="Enter nickname" />
         </el-form-item>
-        <el-form-item label="手机号">
-          <el-input v-model="form.phone" placeholder="请输入手机号" />
+        <el-form-item label="Phone">
+          <el-input v-model="form.phone" placeholder="Enter phone" />
         </el-form-item>
-        <el-form-item label="角色">
+        <el-form-item label="Role">
           <el-radio-group v-model="form.role">
-            <el-radio value="elder">长辈</el-radio>
-            <el-radio value="family">家属</el-radio>
+            <el-radio value="elder">Elder</el-radio>
+            <el-radio value="family">Family</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleConfirmAdd">确认添加</el-button>
+        <el-button @click="dialogVisible = false">Cancel</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleConfirmAdd">Confirm</el-button>
       </template>
     </el-dialog>
 
-    <!-- 详情对话框 -->
-    <el-dialog v-model="detailVisible" title="用户详情" width="480px">
+    <el-dialog v-model="detailVisible" title="User Detail" width="520px">
       <el-descriptions :column="2" border v-if="selectedUser">
-        <el-descriptions-item label="昵称">{{ selectedUser.nickname }}</el-descriptions-item>
-        <el-descriptions-item label="手机号">{{ selectedUser.phone }}</el-descriptions-item>
-        <el-descriptions-item label="角色">{{ roleLabel(selectedUser.role) }}</el-descriptions-item>
-        <el-descriptions-item label="状态">{{ selectedUser.status }}</el-descriptions-item>
-        <el-descriptions-item label="年龄">{{ selectedUser.age ?? '未填写' }}</el-descriptions-item>
-        <el-descriptions-item label="注册时间">{{ selectedUser.registerDate }}</el-descriptions-item>
-        <el-descriptions-item label="地址" :span="2">{{ selectedUser.address ?? '未填写' }}</el-descriptions-item>
-        <el-descriptions-item label="最近活跃" :span="2">{{ selectedUser.lastActive }}</el-descriptions-item>
+        <el-descriptions-item label="Nickname">{{ selectedUser.nickname }}</el-descriptions-item>
+        <el-descriptions-item label="Phone">{{ selectedUser.phone }}</el-descriptions-item>
+        <el-descriptions-item label="Role">{{ roleLabel(selectedUser.role) }}</el-descriptions-item>
+        <el-descriptions-item label="Status">{{ selectedUser.status }}</el-descriptions-item>
+        <el-descriptions-item label="Age">{{ selectedUser.age ?? '-' }}</el-descriptions-item>
+        <el-descriptions-item label="Created At">{{ selectedUser.registerDate }}</el-descriptions-item>
+        <el-descriptions-item label="Last Active" :span="2">{{ selectedUser.lastActive }}</el-descriptions-item>
       </el-descriptions>
       <template #footer>
-        <el-button @click="detailVisible = false">关闭</el-button>
+        <el-button @click="detailVisible = false">Close</el-button>
       </template>
     </el-dialog>
   </div>

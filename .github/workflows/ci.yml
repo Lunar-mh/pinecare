@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   push:
@@ -15,25 +15,18 @@ env:
   REDIS_HOST: localhost
 
 jobs:
-  test:
+  backend-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18]
-    defaults:
-      run:
-        working-directory: backend
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 18
 
-      - name: Cache npm dependencies
+      - name: Cache backend npm dependencies
         uses: actions/cache@v4
         with:
           path: ~/.npm
@@ -41,10 +34,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-npm-
 
-      - name: Install dependencies
+      - name: Install backend dependencies
+        working-directory: backend
         run: npm ci
 
-      - name: Run tests
+      - name: Run backend tests
+        working-directory: backend
         run: npm test
         env:
           JWT_SECRET: ${{ env.JWT_SECRET }}
@@ -62,10 +57,68 @@ jobs:
           path: backend/coverage
           retention-days: 7
 
-  build:
+  admin-build:
     runs-on: ubuntu-latest
-    needs: test
-    if: false  # Optional: disable for now
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache admin npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('admin/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install admin dependencies
+        working-directory: admin
+        run: npm ci
+
+      - name: Build admin
+        working-directory: admin
+        run: npm run build
+
+  frontend-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache frontend npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run frontend typecheck
+        working-directory: frontend
+        run: npm run typecheck
+
+      - name: Build frontend weapp
+        working-directory: frontend
+        run: npm run build:weapp
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [backend-test, admin-build, frontend-checks]
+    if: false
 
     steps:
       - name: Checkout code

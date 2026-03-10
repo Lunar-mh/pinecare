@@ -1,15 +1,25 @@
-'use strict';
+﻿'use strict';
 
-/**
- * 全局错误处理中间件（4 参数，必须放在所有路由之后）
- * 统一响应格式: { code, message, data }
- */
+function sanitizeMessage(message) {
+  const raw = String(message || 'Internal server error.');
+
+  return raw
+    .replace(/Bearer\s+[A-Za-z0-9._\-]+/gi, 'Bearer [REDACTED]')
+    .replace(/(api[_-]?key|access[_-]?key|secret|token)=([^\s&]+)/gi, '$1=[REDACTED]')
+    .replace(/https?:\/\/[^\s)]+/gi, '[REDACTED_URL]');
+}
+
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
-  console.error('全局错误:', err);
-
   const statusCode = err.statusCode || err.status || 500;
-  const message = err.message || '服务器内部错误';
+  const message = sanitizeMessage(err.message || 'Internal server error.');
+
+  console.error('global_error', {
+    path: req.path,
+    method: req.method,
+    statusCode,
+    message,
+  });
 
   const response = {
     code: statusCode,
@@ -17,7 +27,6 @@ function errorHandler(err, req, res, next) {
     data: null,
   };
 
-  // 开发环境附带堆栈信息
   if (process.env.NODE_ENV !== 'production') {
     response.stack = err.stack;
   }

@@ -1,26 +1,28 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { User, Timer, TrendCharts, Odometer } from '@element-plus/icons-vue'
 import { getDashboardStats, getRecentActivities } from '@/services'
 import type { StatItem, ActivityItem } from '@/services'
 
-const stats = ref<StatItem[]>([
-  { label: '总用户数', value: '--', unit: '人', color: '#01579b', bg: '#e3f2fd', trend: '' },
-  { label: '今日活跃', value: '--', unit: '人', color: '#2e7d32', bg: '#e8f5e9', trend: '' },
-  { label: '志愿者人数', value: '--', unit: '人', color: '#e65100', bg: '#fff3e0', trend: '' },
-  { label: '累计服务时长', value: '--', unit: '小时', color: '#6a1b9a', bg: '#f3e5f5', trend: '' },
-])
+const defaultStats: StatItem[] = [
+  { label: 'Active Users', value: '--', unit: '', color: '#01579b', bg: '#e3f2fd', trend: '' },
+  { label: 'Today Records', value: '--', unit: '', color: '#2e7d32', bg: '#e8f5e9', trend: '' },
+  { label: 'Pending Orders', value: '--', unit: '', color: '#e65100', bg: '#fff3e0', trend: '' },
+  { label: 'Active SOS', value: '--', unit: '', color: '#6a1b9a', bg: '#f3e5f5', trend: '' },
+]
+
+const stats = ref<StatItem[]>(defaultStats)
 const recentActivities = ref<ActivityItem[]>([])
 const loading = ref(true)
-
 const statIcons = [User, Odometer, TrendCharts, Timer]
 
-const statusTagType = (status: string) => {
+function statusTagType(status: string): string {
   const map: Record<string, string> = {
-    '正常': 'success',
-    '已处理': 'info',
-    '待审核': 'warning',
-    '已完成': 'success',
+    正常: 'success',
+    已处理: 'info',
+    待审核: 'warning',
+    已完成: 'success',
+    完成: 'success',
   }
   return map[status] || 'info'
 }
@@ -32,10 +34,9 @@ onMounted(async () => {
       getDashboardStats(),
       getRecentActivities(10),
     ])
-    stats.value = dashData.stats.length > 0 ? dashData.stats : stats.value
-    recentActivities.value = activities
-  } catch (_err: unknown) {
-    // 保持占位数据
+
+    stats.value = dashData.stats?.length ? dashData.stats : defaultStats
+    recentActivities.value = activities || []
   } finally {
     loading.value = false
   }
@@ -44,9 +45,8 @@ onMounted(async () => {
 
 <template>
   <div class="dashboard-page">
-    <div class="page-title">数据概览</div>
+    <div class="page-title">Dashboard</div>
 
-    <!-- 统计卡片 -->
     <el-row :gutter="16" class="stats-row">
       <el-col v-for="(stat, idx) in stats" :key="stat.label" :span="6">
         <div class="stat-card">
@@ -68,28 +68,22 @@ onMounted(async () => {
       </el-col>
     </el-row>
 
-    <!-- 近期动态 -->
     <el-card class="activity-card">
       <template #header>
-        <span class="card-title">近期动态</span>
+        <span class="card-title">Recent Activities</span>
       </template>
       <el-table :data="recentActivities" stripe style="width: 100%" v-loading="loading">
         <template #empty>
           <div style="padding: 24px; text-align: center; color: #999">
-            {{ loading ? '加载中...' : '暂无数据（后端统计接口待对接）' }}
+            {{ loading ? 'Loading...' : 'No data' }}
           </div>
         </template>
-        <el-table-column prop="type" label="事件类型" width="140" />
-        <el-table-column prop="user" label="相关用户" width="120" />
-        <el-table-column prop="time" label="时间" />
-        <el-table-column label="状态" width="100">
+        <el-table-column prop="type" label="Type" width="180" />
+        <el-table-column prop="user" label="User" width="140" />
+        <el-table-column prop="time" label="Time" />
+        <el-table-column label="Status" width="120">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.status)" size="small">{{ row.status }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="80">
-          <template #default>
-            <el-button type="primary" link size="small">详情</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -98,21 +92,14 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.dashboard-page {
-  max-width: 1200px;
-}
-
+.dashboard-page { max-width: 1200px; }
 .page-title {
   font-size: 20px;
   font-weight: 600;
   color: #1a1a1a;
   margin-bottom: 20px;
 }
-
-.stats-row {
-  margin-bottom: 20px;
-}
-
+.stats-row { margin-bottom: 20px; }
 .stat-card {
   background: #fff;
   border-radius: 8px;
@@ -122,7 +109,6 @@ onMounted(async () => {
   gap: 16px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
-
 .stat-icon {
   width: 56px;
   height: 56px;
@@ -132,45 +118,31 @@ onMounted(async () => {
   justify-content: center;
   flex-shrink: 0;
 }
-
-.stat-info {
-  flex: 1;
-}
-
+.stat-info { flex: 1; }
 .stat-value {
   font-size: 24px;
   font-weight: 700;
   color: #1a1a1a;
   line-height: 1.2;
 }
-
-.loading-placeholder {
-  color: #ccc;
-}
-
+.loading-placeholder { color: #ccc; }
 .stat-unit {
   font-size: 14px;
   font-weight: 400;
   color: #666;
   margin-left: 2px;
 }
-
 .stat-label {
   font-size: 13px;
   color: #999;
   margin-top: 4px;
 }
-
 .stat-trend {
   font-size: 13px;
   font-weight: 600;
   flex-shrink: 0;
 }
-
-.activity-card {
-  border-radius: 8px;
-}
-
+.activity-card { border-radius: 8px; }
 .card-title {
   font-size: 16px;
   font-weight: 600;
