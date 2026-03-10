@@ -6,7 +6,7 @@ const {
   isRetryableError,
   logThirdPartyError,
 } = require('../utils/thirdParty');
-const { isCompetitionSandbox, isProductionLive } = require('../config/runtimeMode');
+const { isProductionLive } = require('../config/runtimeMode');
 
 const API_TIMEOUT_MS = Number(process.env.MEDICAL_API_TIMEOUT_MS || 5000);
 const MAX_RETRY = Math.max(0, Number(process.env.MEDICAL_API_MAX_RETRY || 2));
@@ -34,8 +34,7 @@ class MedicalApiService {
     this.baseURL = process.env.MEDICAL_API_BASE_URL || '';
     this.apiKey = process.env.MEDICAL_API_KEY || '';
     this.allowStubFallback =
-      String(process.env.MEDICAL_API_ALLOW_STUB_FALLBACK || '').toLowerCase() === 'true' ||
-      isCompetitionSandbox();
+      String(process.env.MEDICAL_API_ALLOW_STUB_FALLBACK || 'false').toLowerCase() === 'true';
 
     this.client = axios.create({
       baseURL: this.baseURL || 'https://medical-api.example.com',
@@ -108,7 +107,7 @@ class MedicalApiService {
     try {
       return await liveFactory();
     } catch (err) {
-      if (this.allowStubFallback && isCompetitionSandbox()) {
+      if (this.allowStubFallback && !isProductionLive()) {
         logThirdPartyError('medical-api', err, {
           operation,
           fallback: 'stub',
@@ -323,3 +322,5 @@ class MedicalApiService {
 }
 
 module.exports = new MedicalApiService();
+
+

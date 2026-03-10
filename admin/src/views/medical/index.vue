@@ -1,28 +1,16 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, Refresh } from '@element-plus/icons-vue'
-import {
-  getMedicalHospitals,
-  getMedicalDepartments,
-  getMedicalDoctors,
-  getAdminMedicalReports,
-} from '@/services'
-import type {
-  MedicalHospitalItem,
-  MedicalDepartmentItem,
-  MedicalDoctorItem,
-  MedicalReportItem,
-} from '@/services'
+import { Refresh, Search } from '@element-plus/icons-vue'
+import { getAdminMedicalReports, getMedicalDepartments, getMedicalDoctors, getMedicalHospitals } from '@/services'
+import type { MedicalDepartmentItem, MedicalDoctorItem, MedicalHospitalItem, MedicalReportItem } from '@/services'
 
 const loading = ref(false)
 const reportsLoading = ref(false)
 const activeTab = ref<'directory' | 'reports'>('directory')
-
 const hospitals = ref<MedicalHospitalItem[]>([])
 const departments = ref<MedicalDepartmentItem[]>([])
 const doctors = ref<MedicalDoctorItem[]>([])
-
 const reports = ref<MedicalReportItem[]>([])
 const reportSearch = ref('')
 const reportType = ref('')
@@ -31,26 +19,27 @@ const reportEndDate = ref('')
 const reportPage = ref(1)
 const reportPageSize = ref(10)
 const reportTotal = ref(0)
-
 const hospitalId = ref<number | null>(null)
 const departmentId = ref<number | null>(null)
 
-const directoryTotal = computed(
-  () => hospitals.value.length + departments.value.length + doctors.value.length
-)
+const directoryTotal = computed(() => hospitals.value.length + departments.value.length + doctors.value.length)
+const reportLinkedCount = computed(() => reports.value.filter(item => item.reportUrl).length)
+
+function syncTagType(value: string): 'success' | 'warning' | 'info' {
+  if (value.includes('success') || value.includes('completed')) return 'success'
+  if (value.includes('pending') || value.includes('queue')) return 'warning'
+  return 'info'
+}
 
 async function fetchHospitals() {
   try {
     const data = await getMedicalHospitals()
     hospitals.value = data.list || []
-
-    if (hospitals.value.length > 0 && !hospitalId.value) {
-      const firstId = Number(hospitals.value[0]?.id)
-      hospitalId.value = Number.isFinite(firstId) ? firstId : null
+    if (!hospitalId.value && hospitals.value.length > 0) {
+      hospitalId.value = Number(hospitals.value[0]?.id) || null
     }
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to load hospitals.'
-    ElMessage.error(message)
+    ElMessage.error(err instanceof Error ? err.message : '医院目录加载失败')
     hospitals.value = []
   }
 }
@@ -58,22 +47,15 @@ async function fetchHospitals() {
 async function fetchDepartments() {
   if (!hospitalId.value) {
     departments.value = []
+    departmentId.value = null
     return
   }
-
   try {
     const data = await getMedicalDepartments(hospitalId.value)
     departments.value = data.list || []
-
-    if (departments.value.length > 0) {
-      const firstId = Number(departments.value[0]?.id)
-      departmentId.value = Number.isFinite(firstId) ? firstId : null
-    } else {
-      departmentId.value = null
-    }
+    departmentId.value = departments.value.length > 0 ? Number(departments.value[0]?.id) || null : null
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to load departments.'
-    ElMessage.error(message)
+    ElMessage.error(err instanceof Error ? err.message : '科室目录加载失败')
     departments.value = []
     departmentId.value = null
   }
@@ -84,13 +66,11 @@ async function fetchDoctors() {
     doctors.value = []
     return
   }
-
   try {
     const data = await getMedicalDoctors(departmentId.value)
     doctors.value = data.list || []
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to load doctors.'
-    ElMessage.error(message)
+    ElMessage.error(err instanceof Error ? err.message : '医生目录加载失败')
     doctors.value = []
   }
 }
@@ -106,12 +86,10 @@ async function fetchReports() {
       startDate: reportStartDate.value || undefined,
       endDate: reportEndDate.value || undefined,
     })
-
     reports.value = data.list || []
     reportTotal.value = data.pagination?.total || 0
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to load reports.'
-    ElMessage.error(message)
+    ElMessage.error(err instanceof Error ? err.message : '医疗报告加载失败')
     reports.value = []
     reportTotal.value = 0
   } finally {
@@ -137,7 +115,6 @@ watch(hospitalId, async () => {
 })
 
 watch(departmentId, fetchDoctors)
-
 watch([reportSearch, reportType, reportStartDate, reportEndDate], () => {
   reportPage.value = 1
   fetchReports()
@@ -147,156 +124,148 @@ onMounted(fetchAll)
 </script>
 
 <template>
-  <div class="medical-page">
-    <div class="page-header">
-      <span class="page-title">Medical Resources</span>
-      <el-button :icon="Refresh" @click="fetchAll">Refresh</el-button>
+  <div>
+    <div class="wb-page-header">
+      <div>
+        <span class="wb-page-title">医疗资源</span>
+        <span class="wb-page-subtitle">把医疗目录、科室医生和同步报告收在同一个资源枢纽里，方便社区与医院协同。</span>
+      </div>
+      <el-button :icon="Refresh" @click="fetchAll">刷新资源</el-button>
     </div>
 
-    <el-row :gutter="16" class="stats-row">
-      <el-col :span="6">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #01579b">{{ hospitals.length }}</div>
-          <div class="stat-label">Hospitals</div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #2e7d32">{{ departments.length }}</div>
-          <div class="stat-label">Departments</div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #e65100">{{ doctors.length }}</div>
-          <div class="stat-label">Doctors</div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #6a1b9a">{{ reportTotal }}</div>
-          <div class="stat-label">Reports</div>
-        </div>
-      </el-col>
-    </el-row>
+    <div class="wb-metric-grid">
+      <div class="wb-metric-card">
+        <span class="wb-card-label">医院数</span>
+        <div class="wb-card-value">{{ hospitals.length }}</div>
+        <span class="wb-card-hint">当前医疗目录已接入的医院资源</span>
+      </div>
+      <div class="wb-metric-card">
+        <span class="wb-card-label">科室数</span>
+        <div class="wb-card-value">{{ departments.length }}</div>
+        <span class="wb-card-hint">随当前医院切换动态更新</span>
+      </div>
+      <div class="wb-metric-card">
+        <span class="wb-card-label">医生数</span>
+        <div class="wb-card-value">{{ doctors.length }}</div>
+        <span class="wb-card-hint">用于安排就诊与转诊连接</span>
+      </div>
+      <div class="wb-metric-card">
+        <span class="wb-card-label">报告数</span>
+        <div class="wb-card-value">{{ reportTotal }}</div>
+        <span class="wb-card-hint">同步过来的报告记录总量</span>
+      </div>
+    </div>
 
-    <el-tabs v-model="activeTab">
-      <el-tab-pane label="Directory" name="directory">
-        <el-card class="filter-card">
-          <el-row :gutter="12">
-            <el-col :span="8">
-              <el-select v-model="hospitalId" placeholder="Hospital" style="width: 100%" clearable>
-                <el-option
-                  v-for="item in hospitals"
-                  :key="String(item.id)"
-                  :label="item.name"
-                  :value="Number(item.id)"
-                />
-              </el-select>
-            </el-col>
-            <el-col :span="8">
-              <el-select v-model="departmentId" placeholder="Department" style="width: 100%" clearable>
-                <el-option
-                  v-for="item in departments"
-                  :key="String(item.id)"
-                  :label="item.name"
-                  :value="Number(item.id)"
-                />
-              </el-select>
-            </el-col>
-            <el-col :span="8" class="summary-text">Directory Rows: {{ directoryTotal }}</el-col>
-          </el-row>
-        </el-card>
+    <div class="wb-panel">
+      <el-tabs v-model="activeTab">
+        <el-tab-pane label="资源目录" name="directory">
+          <div class="wb-filter-card" style="margin-bottom: 16px">
+            <el-row :gutter="12" align="middle">
+              <el-col :span="8">
+                <el-select v-model="hospitalId" placeholder="选择医院" clearable style="width: 100%">
+                  <el-option v-for="item in hospitals" :key="String(item.id)" :label="item.name" :value="Number(item.id)" />
+                </el-select>
+              </el-col>
+              <el-col :span="8">
+                <el-select v-model="departmentId" placeholder="选择科室" clearable style="width: 100%">
+                  <el-option v-for="item in departments" :key="String(item.id)" :label="item.name" :value="Number(item.id)" />
+                </el-select>
+              </el-col>
+              <el-col :span="8" style="display: flex; justify-content: flex-end">
+                <span class="wb-chip">目录总项 {{ directoryTotal }}</span>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-card class="table-card" style="margin-bottom: 16px">
-          <template #header>
-            <span>Hospitals</span>
-          </template>
-          <el-table :data="hospitals" stripe style="width: 100%" v-loading="loading">
-            <el-table-column prop="id" label="ID" width="100" />
-            <el-table-column prop="name" label="Name" min-width="220" />
-            <el-table-column prop="level" label="Level" width="100" />
-            <el-table-column prop="city" label="City" width="120" />
-          </el-table>
-        </el-card>
+          <div class="wb-grid-2">
+            <div class="wb-panel">
+              <div class="wb-page-header" style="margin-bottom: 14px">
+                <div>
+                  <span class="wb-page-title" style="font-size: 22px">医院目录</span>
+                  <span class="wb-page-subtitle">从这里决定科室和医生的过滤上下文。</span>
+                </div>
+              </div>
+              <el-table :data="hospitals" stripe v-loading="loading" max-height="340">
+                <el-table-column prop="name" label="医院名称" min-width="200" />
+                <el-table-column prop="level" label="等级" width="100" />
+                <el-table-column prop="city" label="城市" width="120" />
+              </el-table>
+            </div>
 
-        <el-card class="table-card" style="margin-bottom: 16px">
-          <template #header>
-            <span>Departments</span>
-          </template>
-          <el-table :data="departments" stripe style="width: 100%" v-loading="loading">
-            <el-table-column prop="id" label="ID" width="100" />
-            <el-table-column prop="hospitalId" label="Hospital ID" width="120" />
-            <el-table-column prop="name" label="Name" min-width="220" />
-          </el-table>
-        </el-card>
+            <div class="wb-panel">
+              <div class="wb-page-header" style="margin-bottom: 14px">
+                <div>
+                  <span class="wb-page-title" style="font-size: 22px">医生目录</span>
+                  <span class="wb-page-subtitle">随所选科室更新，便于快速衔接服务。</span>
+                </div>
+              </div>
+              <el-table :data="doctors" stripe v-loading="loading" max-height="340">
+                <el-table-column prop="name" label="医生" min-width="160" />
+                <el-table-column prop="title" label="职称" width="180" />
+              </el-table>
+            </div>
+          </div>
 
-        <el-card class="table-card">
-          <template #header>
-            <span>Doctors</span>
-          </template>
-          <el-table :data="doctors" stripe style="width: 100%" v-loading="loading">
-            <el-table-column prop="id" label="ID" width="100" />
-            <el-table-column prop="departmentId" label="Department ID" width="140" />
-            <el-table-column prop="name" label="Name" min-width="220" />
-            <el-table-column prop="title" label="Title" width="200" />
-          </el-table>
-        </el-card>
-      </el-tab-pane>
+          <div class="wb-panel" style="margin-top: 20px">
+            <div class="wb-page-header" style="margin-bottom: 14px">
+              <div>
+                <span class="wb-page-title" style="font-size: 22px">科室目录</span>
+                <span class="wb-page-subtitle">保留完整的医院到科室映射，方便维护导流关系。</span>
+              </div>
+            </div>
+            <el-table :data="departments" stripe v-loading="loading">
+              <el-table-column prop="id" label="科室 ID" width="100" />
+              <el-table-column prop="hospitalId" label="医院 ID" width="110" />
+              <el-table-column prop="name" label="科室名称" min-width="220" />
+            </el-table>
+          </div>
+        </el-tab-pane>
 
-      <el-tab-pane label="Reports" name="reports">
-        <el-card class="filter-card">
-          <el-row :gutter="12">
-            <el-col :span="6">
-              <el-input
-                v-model="reportSearch"
-                placeholder="Search by user/phone/reportNo/id"
-                :prefix-icon="Search"
-                clearable
-              />
-            </el-col>
-            <el-col :span="4">
-              <el-input v-model="reportType" placeholder="Type" clearable />
-            </el-col>
-            <el-col :span="4">
-              <el-date-picker
-                v-model="reportStartDate"
-                type="date"
-                value-format="YYYY-MM-DD"
-                placeholder="Start date"
-                style="width: 100%"
-              />
-            </el-col>
-            <el-col :span="4">
-              <el-date-picker
-                v-model="reportEndDate"
-                type="date"
-                value-format="YYYY-MM-DD"
-                placeholder="End date"
-                style="width: 100%"
-              />
-            </el-col>
-          </el-row>
-        </el-card>
+        <el-tab-pane label="同步报告" name="reports">
+          <div class="wb-filter-card" style="margin-bottom: 16px">
+            <el-row :gutter="12" align="middle">
+              <el-col :span="6">
+                <el-input v-model="reportSearch" :prefix-icon="Search" placeholder="搜索用户、手机号、报告号" clearable />
+              </el-col>
+              <el-col :span="4">
+                <el-input v-model="reportType" placeholder="报告类型" clearable />
+              </el-col>
+              <el-col :span="4">
+                <el-date-picker v-model="reportStartDate" type="date" value-format="YYYY-MM-DD" placeholder="开始日期" style="width: 100%" />
+              </el-col>
+              <el-col :span="4">
+                <el-date-picker v-model="reportEndDate" type="date" value-format="YYYY-MM-DD" placeholder="结束日期" style="width: 100%" />
+              </el-col>
+              <el-col :span="6" style="display: flex; justify-content: flex-end">
+                <span class="wb-chip">含链接报告 {{ reportLinkedCount }}</span>
+              </el-col>
+            </el-row>
+          </div>
 
-        <el-card class="table-card">
-          <el-table :data="reports" stripe style="width: 100%" v-loading="reportsLoading">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="userName" label="User" width="120" />
-            <el-table-column prop="userPhone" label="Phone" width="150" />
-            <el-table-column prop="reportNo" label="Report No" width="180" />
-            <el-table-column prop="reportType" label="Type" width="120" />
-            <el-table-column prop="reportDate" label="Date" width="130" />
-            <el-table-column prop="syncStatus" label="Sync Status" width="120" />
-            <el-table-column label="Report URL" min-width="220">
+          <el-table :data="reports" stripe v-loading="reportsLoading">
+            <template #empty>
+              <div style="padding: 28px; text-align: center; color: var(--wb-text-soft)">
+                {{ reportsLoading ? '加载中...' : '暂无医疗报告' }}
+              </div>
+            </template>
+            <el-table-column prop="userName" label="用户" width="120" />
+            <el-table-column prop="userPhone" label="手机号" width="150" />
+            <el-table-column prop="reportNo" label="报告号" width="180" />
+            <el-table-column prop="reportType" label="类型" width="120" />
+            <el-table-column prop="reportDate" label="报告日期" width="130" />
+            <el-table-column label="同步状态" width="120">
               <template #default="{ row }">
-                <a v-if="row.reportUrl" :href="row.reportUrl" target="_blank" rel="noreferrer">{{ row.reportUrl }}</a>
+                <el-tag :type="syncTagType(row.syncStatus)">{{ row.syncStatus }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="报告链接" min-width="220">
+              <template #default="{ row }">
+                <a v-if="row.reportUrl" :href="row.reportUrl" target="_blank" rel="noreferrer">查看原始报告</a>
                 <span v-else>-</span>
               </template>
             </el-table-column>
           </el-table>
-
-          <div class="table-pagination">
+          <div style="display: flex; justify-content: flex-end; margin-top: 16px">
             <el-pagination
               v-model:current-page="reportPage"
               layout="total, prev, pager, next"
@@ -305,36 +274,8 @@ onMounted(fetchAll)
               @current-change="fetchReports"
             />
           </div>
-        </el-card>
-      </el-tab-pane>
-    </el-tabs>
+        </el-tab-pane>
+      </el-tabs>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.medical-page { max-width: 1200px; }
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-.page-title { font-size: 20px; font-weight: 600; color: #1a1a1a; }
-.stats-row { margin-bottom: 16px; }
-.stat-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  text-align: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-.stat-num { font-size: 32px; font-weight: 700; line-height: 1.2; }
-.stat-label { font-size: 13px; color: #999; margin-top: 4px; }
-.filter-card { margin-bottom: 16px; border-radius: 8px; }
-.table-card { border-radius: 8px; }
-.table-pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
-.summary-text {
-  line-height: 32px;
-  color: #666;
-}
-</style>

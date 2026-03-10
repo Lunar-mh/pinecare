@@ -57,6 +57,7 @@ const medicalReportService = {
     const userIdNum = normalizePositiveInt(userId, 'userId');
     const page = normalizePage(filters.page, 1);
     const pageSize = Math.min(normalizePage(filters.pageSize, 10), 100);
+    const includePagination = filters.page !== undefined || filters.pageSize !== undefined;
 
     const normalizedFilters = {
       reportType: filters.reportType ? String(filters.reportType).trim() : null,
@@ -74,9 +75,16 @@ const medicalReportService = {
       await medicalReportModel.batchUpsert(userIdNum, remoteReports);
       const synced = await medicalReportModel.listByUserId(userIdNum, normalizedFilters);
 
+      if (includePagination) {
+        return {
+          source: medicalApiService.getSourceTag(),
+          ...paginate(synced, page, pageSize),
+        };
+      }
+
       return {
         source: medicalApiService.getSourceTag(),
-        ...paginate(synced, page, pageSize),
+        list: synced,
       };
     } catch (error) {
       logThirdPartyError('medical-report', error, {
@@ -85,9 +93,16 @@ const medicalReportService = {
       });
 
       if (localReports.length > 0) {
+        if (includePagination) {
+          return {
+            source: 'cache',
+            ...paginate(localReports, page, pageSize),
+          };
+        }
+
         return {
           source: 'cache',
-          ...paginate(localReports, page, pageSize),
+          list: localReports,
         };
       }
 

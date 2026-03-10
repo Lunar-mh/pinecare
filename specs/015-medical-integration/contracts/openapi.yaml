@@ -1,34 +1,25 @@
-openapi: 3.0.3
+﻿openapi: 3.0.3
 info:
-  title: 银伴平台 - 医疗资源API
-  description: 银伴全域智慧照护平台医疗资源整合接口
-  version: 1.0.0
-
-servers:
-  - url: https://api.yinban.com/v1
-
-tags:
-  - name: 医疗资源
-    description: 医疗资源相关接口
+  title: 银伴平台 - 医疗资源整合 API
+  version: 1.1.0
 
 paths:
   /medical/hospitals:
     get:
-      tags:
-        - 医疗资源
-      summary: 医院列表
+      tags: [医疗]
+      summary: 获取医院列表
       responses:
         '200':
           description: 成功
 
   /medical/departments:
     get:
-      tags:
-        - 医疗资源
-      summary: 科室列表
+      tags: [医疗]
+      summary: 获取医院科室列表
       parameters:
-        - name: hospitalId
-          in: query
+        - in: query
+          name: hospitalId
+          required: true
           schema:
             type: integer
       responses:
@@ -37,23 +28,50 @@ paths:
 
   /medical/doctors:
     get:
-      tags:
-        - 医疗资源
-      summary: 医生列表
+      tags: [医疗]
+      summary: 获取医生列表（支持分页筛选）
       parameters:
-        - name: departmentId
-          in: query
+        - in: query
+          name: departmentId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: keyword
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: pageSize
           schema:
             type: integer
       responses:
         '200':
           description: 成功
 
+  /medical/doctors/{doctorId}:
+    get:
+      tags: [医疗]
+      summary: 获取医生详情
+      parameters:
+        - in: path
+          name: doctorId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 成功
+        '404':
+          description: 医生不存在
+
   /medical/consult/start:
     post:
-      tags:
-        - 医疗资源
-      summary: 发起问诊
+      tags: [医疗]
+      summary: 发起在线问诊
       security:
         - BearerAuth: []
       responses:
@@ -62,22 +80,81 @@ paths:
 
   /medical/appointment:
     post:
-      tags:
-        - 医疗资源
-      summary: 预约挂号
+      tags: [医疗]
+      summary: 创建预约
       security:
         - BearerAuth: []
+      responses:
+        '200':
+          description: 成功
+    get:
+      tags: [医疗]
+      summary: 获取我的预约列表
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, confirmed, completed, cancelled]
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 成功
+
+  /medical/appointment/{appointmentId}/cancel:
+    post:
+      tags: [医疗]
+      summary: 取消预约
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: appointmentId
+          required: true
+          schema:
+            type: integer
       responses:
         '200':
           description: 成功
 
   /medical/reports:
     get:
-      tags:
-        - 医疗资源
-      summary: 报告列表
+      tags: [医疗]
+      summary: 获取报告列表（支持分页筛选）
       security:
         - BearerAuth: []
+      parameters:
+        - in: query
+          name: reportType
+          schema:
+            type: string
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
       responses:
         '200':
           description: 成功

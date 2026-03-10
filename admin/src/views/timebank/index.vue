@@ -1,38 +1,38 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
-import {
-  getTimeBankLeaderboard,
-  getTimeBankServiceHistory,
-  confirmTimeBankService,
-  getTimeBankExchangeHistory,
-} from '@/services'
-import type {
-  TimeBankLeaderboardItem,
-  TimeBankServiceRecord,
-  TimeBankExchangeRecord,
-} from '@/services'
+import { Refresh, Search } from '@element-plus/icons-vue'
+import { confirmTimeBankService, getTimeBankExchangeHistory, getTimeBankLeaderboard, getTimeBankServiceHistory } from '@/services'
+import type { TimeBankExchangeRecord, TimeBankLeaderboardItem, TimeBankServiceRecord } from '@/services'
 
 const loading = ref(false)
 const activeTab = ref<'services' | 'exchange' | 'leaderboard'>('services')
-
 const serviceRecords = ref<TimeBankServiceRecord[]>([])
 const serviceTotal = ref(0)
 const servicePage = ref(1)
 const servicePageSize = ref(10)
-
+const serviceStatus = ref<'pending' | 'confirmed' | 'cancelled' | ''>('')
+const serviceSearch = ref('')
 const exchanges = ref<TimeBankExchangeRecord[]>([])
 const leaderboard = ref<TimeBankLeaderboardItem[]>([])
+const actionLoadingId = ref<number | null>(null)
 
-const pendingServiceCount = computed(
-  () => serviceRecords.value.filter((item) => item.status === 'pending').length
-)
-const confirmedServiceCoins = computed(() =>
-  serviceRecords.value
-    .filter((item) => item.status === 'confirmed')
-    .reduce((sum, item) => sum + Number(item.timeCoins || 0), 0)
-)
+const pendingServiceCount = computed(() => serviceRecords.value.filter(item => item.status === 'pending').length)
+const confirmedServiceCoins = computed(() => serviceRecords.value.filter(item => item.status === 'confirmed').reduce((sum, item) => sum + Number(item.timeCoins || 0), 0))
+const exchangeCount = computed(() => exchanges.value.length)
+const topBalance = computed(() => leaderboard.value[0]?.balance || 0)
+
+function statusLabel(value: string): string {
+  if (value === 'confirmed') return '已确认'
+  if (value === 'cancelled') return '已取消'
+  return '待审核'
+}
+
+function statusTagType(value: string): 'success' | 'warning' | 'info' {
+  if (value === 'confirmed') return 'success'
+  if (value === 'cancelled') return 'info'
+  return 'warning'
+}
 
 async function fetchServiceHistory() {
   loading.value = true
@@ -41,12 +41,13 @@ async function fetchServiceHistory() {
       page: servicePage.value,
       pageSize: servicePageSize.value,
       type: 'provided',
+      status: serviceStatus.value || undefined,
+      search: serviceSearch.value || undefined,
     })
     serviceRecords.value = data.list || []
     serviceTotal.value = data.pagination?.total || 0
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to load service history.'
-    ElMessage.error(message)
+    ElMessage.error(err instanceof Error ? err.message : '服务记录加载失败')
     serviceRecords.value = []
     serviceTotal.value = 0
   } finally {
@@ -58,8 +59,7 @@ async function fetchExchangeHistory() {
   try {
     exchanges.value = await getTimeBankExchangeHistory()
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to load exchange history.'
-    ElMessage.error(message)
+    ElMessage.error(err instanceof Error ? err.message : '兑换记录加载失败')
     exchanges.value = []
   }
 }
@@ -68,8 +68,7 @@ async function fetchLeaderboard() {
   try {
     leaderboard.value = await getTimeBankLeaderboard()
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to load leaderboard.'
-    ElMessage.error(message)
+    ElMessage.error(err instanceof Error ? err.message : '排行榜加载失败')
     leaderboard.value = []
   }
 }
@@ -78,98 +77,126 @@ async function fetchAll() {
   await Promise.all([fetchServiceHistory(), fetchExchangeHistory(), fetchLeaderboard()])
 }
 
-async function handleConfirm(row: TimeBankServiceRecord) {
+async function handleAction(record: TimeBankServiceRecord, action: 'confirm' | 'cancel') {
+  actionLoadingId.value = record.id
   try {
-    await confirmTimeBankService(row.id, 'confirm')
-    ElMessage.success('Service record confirmed.')
+    await confirmTimeBankService(record.id, action)
+    ElMessage.success(action === 'confirm' ? '服务记录已确认' : '服务记录已取消')
     await fetchServiceHistory()
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Confirm failed.'
-    ElMessage.error(message)
+    ElMessage.error(err instanceof Error ? err.message : '时间银行操作失败')
+  } finally {
+    actionLoadingId.value = null
   }
 }
 
-async function handleCancel(row: TimeBankServiceRecord) {
-  try {
-    await confirmTimeBankService(row.id, 'cancel')
-    ElMessage.success('Service record cancelled.')
-    await fetchServiceHistory()
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Cancel failed.'
-    ElMessage.error(message)
-  }
-}
+watch([serviceStatus, serviceSearch], () => {
+  servicePage.value = 1
+  fetchServiceHistory()
+})
 
-watch(activeTab, (tab) => {
-  if (tab === 'services') fetchServiceHistory()
-  if (tab === 'exchange') fetchExchangeHistory()
-  if (tab === 'leaderboard') fetchLeaderboard()
+watch(activeTab, (value) => {
+  if (value === 'services') fetchServiceHistory()
+  if (value === 'exchange') fetchExchangeHistory()
+  if (value === 'leaderboard') fetchLeaderboard()
 })
 
 onMounted(fetchAll)
 </script>
 
 <template>
-  <div class="timebank-page">
-    <div class="page-header">
-      <span class="page-title">Time Bank</span>
-      <el-button :icon="Refresh" @click="fetchAll">Refresh</el-button>
+  <div>
+    <div class="wb-page-header">
+      <div>
+        <span class="wb-page-title">时间银行</span>
+        <span class="wb-page-subtitle">把服务记录、兑换履约和贡献排名放在一套协同视图里，方便社区看清服务流转效率。</span>
+      </div>
+      <el-button :icon="Refresh" @click="fetchAll">刷新数据</el-button>
     </div>
 
-    <el-row :gutter="16" class="stats-row">
-      <el-col :span="8">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #01579b">{{ serviceTotal }}</div>
-          <div class="stat-label">Service Records</div>
-        </div>
-      </el-col>
-      <el-col :span="8">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #f57c00">{{ pendingServiceCount }}</div>
-          <div class="stat-label">Pending Review</div>
-        </div>
-      </el-col>
-      <el-col :span="8">
-        <div class="stat-card">
-          <div class="stat-num" style="color: #2e7d32">{{ confirmedServiceCoins }}</div>
-          <div class="stat-label">Confirmed Coins</div>
-        </div>
-      </el-col>
-    </el-row>
+    <div class="wb-metric-grid">
+      <div class="wb-metric-card">
+        <span class="wb-card-label">服务记录</span>
+        <div class="wb-card-value">{{ serviceTotal }}</div>
+        <span class="wb-card-hint">当前筛选下的服务履约记录</span>
+      </div>
+      <div class="wb-metric-card">
+        <span class="wb-card-label">待审核</span>
+        <div class="wb-card-value">{{ pendingServiceCount }}</div>
+        <span class="wb-card-hint">建议值班人员优先确认</span>
+      </div>
+      <div class="wb-metric-card">
+        <span class="wb-card-label">已确认时长币</span>
+        <div class="wb-card-value">{{ confirmedServiceCoins }}</div>
+        <span class="wb-card-hint">反映本期已沉淀服务贡献</span>
+      </div>
+      <div class="wb-metric-card">
+        <span class="wb-card-label">榜首余额</span>
+        <div class="wb-card-value">{{ topBalance }}</div>
+        <span class="wb-card-hint">用于观察激励强度</span>
+      </div>
+    </div>
 
-    <el-tabs v-model="activeTab">
-      <el-tab-pane label="Service Records" name="services">
-        <el-card class="table-card">
-          <el-table :data="serviceRecords" stripe style="width: 100%" v-loading="loading">
-            <el-table-column prop="id" label="Record ID" width="100" />
-            <el-table-column prop="providerId" label="Provider" width="110" />
-            <el-table-column prop="recipientId" label="Recipient" width="110" />
-            <el-table-column prop="serviceType" label="Service Type" min-width="140" />
-            <el-table-column prop="durationHours" label="Hours" width="90" />
-            <el-table-column prop="timeCoins" label="Coins" width="90" />
-            <el-table-column prop="startTime" label="Start" min-width="160" />
-            <el-table-column prop="endTime" label="End" min-width="160" />
-            <el-table-column label="Status" width="110">
+    <div class="wb-panel">
+      <el-tabs v-model="activeTab">
+        <el-tab-pane label="服务履约" name="services">
+          <div class="wb-filter-card" style="margin-bottom: 16px">
+            <el-row :gutter="12" align="middle">
+              <el-col :span="6">
+                <el-input v-model="serviceSearch" :prefix-icon="Search" placeholder="搜索服务人、被服务人或类型" clearable />
+              </el-col>
+              <el-col :span="4">
+                <el-select v-model="serviceStatus" placeholder="审核状态" clearable style="width: 100%">
+                  <el-option label="待审核" value="pending" />
+                  <el-option label="已确认" value="confirmed" />
+                  <el-option label="已取消" value="cancelled" />
+                </el-select>
+              </el-col>
+              <el-col :span="14" style="display: flex; justify-content: flex-end">
+                <span class="wb-chip">优先处理待审核记录，避免时长结算滞后</span>
+              </el-col>
+            </el-row>
+          </div>
+
+          <el-table :data="serviceRecords" stripe v-loading="loading">
+            <template #empty>
+              <div style="padding: 28px; text-align: center; color: var(--wb-text-soft)">
+                {{ loading ? '加载中...' : '暂无服务履约记录' }}
+              </div>
+            </template>
+            <el-table-column prop="id" label="记录 ID" width="100" />
+            <el-table-column label="服务提供者" min-width="150">
               <template #default="{ row }">
-                <el-tag
-                  :type="row.status === 'confirmed' ? 'success' : row.status === 'pending' ? 'warning' : 'info'"
-                  size="small"
-                >
-                  {{ row.status }}
-                </el-tag>
+                <div>{{ row.providerName || `用户 #${row.providerId}` }}</div>
+                <div style="font-size: 12px; color: var(--wb-text-soft); margin-top: 4px">提供者 ID {{ row.providerId }}</div>
               </template>
             </el-table-column>
-            <el-table-column label="Actions" width="150" fixed="right">
+            <el-table-column label="服务对象" min-width="150">
+              <template #default="{ row }">
+                <div>{{ row.recipientName || `用户 #${row.recipientId}` }}</div>
+                <div style="font-size: 12px; color: var(--wb-text-soft); margin-top: 4px">对象 ID {{ row.recipientId }}</div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="serviceType" label="服务类型" width="140" />
+            <el-table-column prop="durationHours" label="时长" width="90" />
+            <el-table-column prop="timeCoins" label="时长币" width="90" />
+            <el-table-column prop="startTime" label="开始时间" width="180" />
+            <el-table-column label="状态" width="110">
+              <template #default="{ row }">
+                <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="170" fixed="right">
               <template #default="{ row }">
                 <template v-if="row.status === 'pending'">
-                  <el-button type="success" link size="small" @click="handleConfirm(row)">Confirm</el-button>
-                  <el-button type="danger" link size="small" @click="handleCancel(row)">Cancel</el-button>
+                  <el-button type="success" link :loading="actionLoadingId === row.id" @click="handleAction(row, 'confirm')">确认</el-button>
+                  <el-button type="danger" link :loading="actionLoadingId === row.id" @click="handleAction(row, 'cancel')">取消</el-button>
                 </template>
+                <span v-else style="color: var(--wb-text-soft)">已处理</span>
               </template>
             </el-table-column>
           </el-table>
-
-          <div class="table-pagination">
+          <div style="display: flex; justify-content: flex-end; margin-top: 16px">
             <el-pagination
               v-model:current-page="servicePage"
               layout="total, prev, pager, next"
@@ -178,59 +205,38 @@ onMounted(fetchAll)
               @current-change="fetchServiceHistory"
             />
           </div>
-        </el-card>
-      </el-tab-pane>
+        </el-tab-pane>
 
-      <el-tab-pane label="Exchanges" name="exchange">
-        <el-card class="table-card">
-          <el-table :data="exchanges" stripe style="width: 100%" v-loading="loading">
-            <el-table-column prop="id" label="Exchange ID" width="110" />
-            <el-table-column prop="userId" label="User" width="100" />
-            <el-table-column prop="exchangeType" label="Type" width="120" />
-            <el-table-column prop="itemName" label="Item" min-width="180" />
-            <el-table-column prop="coinsRequired" label="Coins" width="90" />
-            <el-table-column prop="status" label="Status" width="110" />
-            <el-table-column prop="createdAt" label="Created At" min-width="170" />
-            <el-table-column prop="completedAt" label="Completed At" min-width="170" />
+        <el-tab-pane :label="`兑换记录 (${exchangeCount})`" name="exchange">
+          <el-table :data="exchanges" stripe>
+            <template #empty>
+              <div style="padding: 28px; text-align: center; color: var(--wb-text-soft)">暂无兑换记录</div>
+            </template>
+            <el-table-column prop="id" label="兑换 ID" width="100" />
+            <el-table-column prop="userId" label="用户 ID" width="100" />
+            <el-table-column prop="exchangeType" label="兑换类型" width="140" />
+            <el-table-column prop="itemName" label="兑换项" min-width="180" />
+            <el-table-column prop="coinsRequired" label="所需时长币" width="110" />
+            <el-table-column prop="status" label="状态" width="120" />
+            <el-table-column prop="createdAt" label="申请时间" width="180" />
+            <el-table-column prop="completedAt" label="完成时间" width="180" />
           </el-table>
-        </el-card>
-      </el-tab-pane>
+        </el-tab-pane>
 
-      <el-tab-pane label="Leaderboard" name="leaderboard">
-        <el-card class="table-card">
-          <el-table :data="leaderboard" stripe style="width: 100%" v-loading="loading">
-            <el-table-column prop="rank" label="Rank" width="80" />
-            <el-table-column prop="userId" label="User" width="100" />
-            <el-table-column prop="balance" label="Balance" width="110" />
-            <el-table-column prop="totalEarned" label="Total Earned" width="140" />
-            <el-table-column prop="creditScore" label="Credit Score" width="120" />
-            <el-table-column prop="creditLevel" label="Credit Level" width="120" />
+        <el-tab-pane label="贡献榜单" name="leaderboard">
+          <el-table :data="leaderboard" stripe>
+            <template #empty>
+              <div style="padding: 28px; text-align: center; color: var(--wb-text-soft)">暂无榜单数据</div>
+            </template>
+            <el-table-column prop="rank" label="名次" width="80" />
+            <el-table-column prop="userId" label="用户 ID" width="100" />
+            <el-table-column prop="balance" label="余额" width="110" />
+            <el-table-column prop="totalEarned" label="累计获得" width="130" />
+            <el-table-column prop="creditScore" label="信用分" width="110" />
+            <el-table-column prop="creditLevel" label="信用等级" width="120" />
           </el-table>
-        </el-card>
-      </el-tab-pane>
-    </el-tabs>
+        </el-tab-pane>
+      </el-tabs>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.timebank-page { max-width: 1200px; }
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-.page-title { font-size: 20px; font-weight: 600; color: #1a1a1a; }
-.stats-row { margin-bottom: 16px; }
-.stat-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  text-align: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-.stat-num { font-size: 32px; font-weight: 700; line-height: 1.2; }
-.stat-label { font-size: 13px; color: #999; margin-top: 4px; }
-.table-card { border-radius: 8px; }
-.table-pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
-</style>

@@ -17,7 +17,6 @@ const sensitivity = ref<'high' | 'medium' | 'low'>('medium')
 const detectingCount = computed(() => events.value.filter(item => item.status === 'detecting').length)
 const confirmedCount = computed(() => events.value.filter(item => item.status === 'confirmed').length)
 const falseAlarmCount = computed(() => events.value.filter(item => item.status === 'false_alarm').length)
-const unattendedCount = computed(() => total.value - confirmedCount.value)
 
 function statusLabel(status: FallEventStatus): string {
   if (status === 'detecting') return '监测中'
@@ -123,9 +122,9 @@ onMounted(async () => {
         <span class="wb-card-hint">需要跟进现场响应情况</span>
       </div>
       <div class="wb-metric-card">
-        <span class="wb-card-label">未闭环</span>
-        <div class="wb-card-value">{{ unattendedCount }}</div>
-        <span class="wb-card-hint">仍需持续追踪的监测结果</span>
+        <span class="wb-card-label">误报</span>
+        <div class="wb-card-value">{{ falseAlarmCount }}</div>
+        <span class="wb-card-hint">用于评估传感策略是否过敏</span>
       </div>
     </div>
 
@@ -226,3 +225,5 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+
+

@@ -29,33 +29,24 @@ safeUse('/admin/users', './adminUsers');
 safeUse('/admin', './adminOps');
 
 safeUse('/health-archive', './healthArchive');
-
 safeUse('/medication', './medication');
-
 safeUse('/sos', './sos');
-
 safeUse('/family', './family');
-
 safeUse('/voice', './voice');
-
 safeUse('/fall-detection', './fallDetection');
-
 safeUse('/ai-consult', './aiConsult');
-
 safeUse('/drug-interaction', './drugInteraction');
-
 safeUse('/time-bank', './timeBank');
-
 safeUse('/ai-companion', './aiCompanion');
-
 safeUse('/family-space', './familySpace');
-
 safeUse('/community', './community');
-
 safeUse('/gps', './gpsTracking');
-
 safeUse('/medical', './medicalIntegration');
-
 safeUse('/statistics', './statistics');
+
+// Legacy compatibility aliases (to be deprecated after one release cycle).
+safeUse('/timebank', './timeBankLegacy');
+safeUse('/location', './locationLegacy');
+safeUse('/companion', './companionLegacy');
 
 module.exports = router;

@@ -119,13 +119,15 @@ const medicalDirectoryService = {
   },
 
   async getDoctors(query = {}) {
-    const departmentIdNum = normalizePositiveInt(query.departmentId, 'departmentId');
-    const page = normalizePage(query.page, 1);
-    const pageSize = Math.min(normalizePage(query.pageSize, 10), 100);
+    const normalizedQuery =
+      query && typeof query === 'object' ? query : { departmentId: query };
+    const departmentIdNum = normalizePositiveInt(normalizedQuery.departmentId, 'departmentId');
+    const page = normalizePage(normalizedQuery.page, 1);
+    const pageSize = Math.min(normalizePage(normalizedQuery.pageSize, 10), 100);
 
     const cached = await medicalDirectoryModel.getDoctors(departmentIdNum);
     if (cached.length > 0) {
-      const filtered = filterDoctors(cached, query);
+      const filtered = filterDoctors(cached, normalizedQuery);
       return {
         source: 'cache',
         ...paginate(filtered, page, pageSize),
@@ -135,7 +137,7 @@ const medicalDirectoryService = {
     try {
       const remote = await medicalApiService.fetchDoctors(departmentIdNum);
       await medicalDirectoryModel.refreshDoctors(departmentIdNum, remote);
-      const filtered = filterDoctors(remote, query);
+      const filtered = filterDoctors(remote, normalizedQuery);
 
       return {
         source: medicalApiService.getSourceTag(),
@@ -184,3 +186,4 @@ const medicalDirectoryService = {
 };
 
 module.exports = medicalDirectoryService;
+

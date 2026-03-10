@@ -1,9 +1,4 @@
-# ==========================================
-# 银伴平台 - Docker Compose 配置
-# ==========================================
-
-services:
-  # 后端服务
+﻿services:
   backend:
     build:
       context: ./backend
@@ -25,18 +20,20 @@ services:
       - DB_NAME=${DB_NAME:-yinban}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - RUNTIME_MODE=${RUNTIME_MODE:-COMPETITION_SANDBOX}
+      - COMPETITION_SANDBOX=${COMPETITION_SANDBOX:-1}
+      - PRODUCTION_LIVE=${PRODUCTION_LIVE:-0}
     networks:
       - yinban-network
     restart: unless-stopped
 
-  # MySQL 数据库
   mysql:
     image: mysql:8.0
     ports:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
-      MYSQL_DATABASE: yinban
+      MYSQL_DATABASE: ${DB_NAME:-yinban}
       MYSQL_USER: ${DB_USER:-yinban}
       MYSQL_PASSWORD: ${DB_PASSWORD:-yinban_password}
     volumes:
@@ -51,7 +48,6 @@ services:
       - yinban-network
     restart: unless-stopped
 
-  # Redis 缓存
   redis:
     image: redis:7-alpine
     ports:
@@ -68,14 +64,12 @@ services:
       - yinban-network
     restart: unless-stopped
 
-# 数据卷
 volumes:
   mysql_data:
     driver: local
   redis_data:
     driver: local
 
-# 网络
 networks:
   yinban-network:
     driver: bridge
