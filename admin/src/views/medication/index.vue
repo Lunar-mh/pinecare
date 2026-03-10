@@ -1,126 +1,150 @@
-<script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Search } from '@element-plus/icons-vue'
+﻿<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Search, Refresh } from '@element-plus/icons-vue'
+import { getAdminMedicationLogs, updateAdminMedicationLogStatus } from '@/services'
+import type { AdminMedicationLogItem } from '@/services'
 
-interface MedRecord {
-  id: number
-  userName: string
-  drugName: string
-  dosage: string
-  frequency: string
-  nextTime: string
-  adherence: number
-  status: '已服药' | '待服药' | '已漏服'
-  startDate: string
+const loading = ref(false)
+const search = ref('')
+const status = ref<'' | 'pending' | 'taken' | 'skipped' | 'missed'>('')
+const page = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+const list = ref<AdminMedicationLogItem[]>([])
+
+const pendingCount = computed(() => list.value.filter((item) => item.status === 'pending').length)
+const takenCount = computed(() => list.value.filter((item) => item.status === 'taken').length)
+const missedCount = computed(() => list.value.filter((item) => item.status === 'missed').length)
+
+async function fetchAdminMedicationLogs() {
+  loading.value = true
+  try {
+    const data = await getAdminMedicationLogs({
+      page: page.value,
+      pageSize: pageSize.value,
+      search: search.value || undefined,
+      status: status.value || undefined,
+    })
+
+    list.value = data.list || []
+    total.value = data.pagination?.total || 0
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to load medication logs.'
+    ElMessage.error(message)
+    list.value = []
+    total.value = 0
+  } finally {
+    loading.value = false
+  }
 }
 
-const searchText = ref('')
-const filterStatus = ref('')
-
-const records = ref<MedRecord[]>([
-  { id: 1, userName: '王秀英', drugName: '硝苯地平缓释片', dosage: '30mg', frequency: '每日1次', nextTime: '今日 08:00', adherence: 95, status: '已服药', startDate: '2024-01-10' },
-  { id: 2, userName: '张建国', drugName: '二甲双胍', dosage: '500mg', frequency: '每日3次', nextTime: '今日 12:00', adherence: 78, status: '待服药', startDate: '2023-11-20' },
-  { id: 3, userName: '赵明远', drugName: '阿司匹林肠溶片', dosage: '100mg', frequency: '每日1次', nextTime: '今日 08:00', adherence: 42, status: '已漏服', startDate: '2023-08-15' },
-  { id: 4, userName: '吴桂兰', drugName: '苯磺酸氨氯地平', dosage: '5mg', frequency: '每日1次', nextTime: '明日 08:00', adherence: 88, status: '已服药', startDate: '2024-02-01' },
-  { id: 5, userName: '刘德华', drugName: '瑞舒伐他汀钙片', dosage: '10mg', frequency: '每晚1次', nextTime: '今日 21:00', adherence: 92, status: '待服药', startDate: '2024-01-25' },
-])
-
-const filtered = computed(() => records.value.filter(r => {
-  const matchText = !searchText.value || r.userName.includes(searchText.value) || r.drugName.includes(searchText.value)
-  const matchStatus = !filterStatus.value || r.status === filterStatus.value
-  return matchText && matchStatus
-}))
-
-const statusTagType = (s: string) => {
-  const map: Record<string, 'success' | 'warning' | 'danger'> = { '已服药': 'success', '待服药': 'warning', '已漏服': 'danger' }
-  return map[s] ?? 'info'
+async function updateStatus(row: AdminMedicationLogItem, nextStatus: 'taken' | 'skipped' | 'missed') {
+  try {
+    await updateAdminMedicationLogStatus(row.id, nextStatus)
+    ElMessage.success(`Log #${row.id} updated to ${nextStatus}.`)
+    await fetchAdminMedicationLogs()
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to update log status.'
+    ElMessage.error(message)
+  }
 }
 
-const adherenceColor = (v: number) => v >= 80 ? '#2e7d32' : v >= 60 ? '#fb8c00' : '#e53935'
+watch([search, status], () => {
+  page.value = 1
+  fetchAdminMedicationLogs()
+})
 
-function handleRemind(row: MedRecord) {
-  ElMessage.success(`已向 ${row.userName} 发送服药提醒`)
-}
+onMounted(fetchAdminMedicationLogs)
 </script>
 
 <template>
   <div class="medication-page">
     <div class="page-header">
-      <span class="page-title">用药提醒管理</span>
+      <span class="page-title">Medication Logs (Admin)</span>
+      <el-button :icon="Refresh" @click="fetchAdminMedicationLogs">Refresh</el-button>
     </div>
 
-    <!-- 汇总 -->
     <el-row :gutter="16" class="stats-row">
       <el-col :span="8">
-        <div class="stat-card" style="background: #e8f5e9">
-          <div class="stat-num" style="color: #2e7d32">{{ records.filter(r => r.status === '已服药').length }}</div>
-          <div class="stat-label">今日已服药</div>
+        <div class="stat-card">
+          <div class="stat-num" style="color: #f57c00">{{ pendingCount }}</div>
+          <div class="stat-label">Pending</div>
         </div>
       </el-col>
       <el-col :span="8">
-        <div class="stat-card" style="background: #fff8e1">
-          <div class="stat-num" style="color: #f57f17">{{ records.filter(r => r.status === '待服药').length }}</div>
-          <div class="stat-label">待服药</div>
+        <div class="stat-card">
+          <div class="stat-num" style="color: #2e7d32">{{ takenCount }}</div>
+          <div class="stat-label">Taken</div>
         </div>
       </el-col>
       <el-col :span="8">
-        <div class="stat-card" style="background: #ffebee">
-          <div class="stat-num" style="color: #c62828">{{ records.filter(r => r.status === '已漏服').length }}</div>
-          <div class="stat-label">已漏服</div>
+        <div class="stat-card">
+          <div class="stat-num" style="color: #c62828">{{ missedCount }}</div>
+          <div class="stat-label">Missed</div>
         </div>
       </el-col>
     </el-row>
 
-    <!-- 搜索 -->
     <el-card class="filter-card">
       <el-row :gutter="12" align="middle">
         <el-col :span="8">
-          <el-input v-model="searchText" placeholder="搜索姓名或药品名" :prefix-icon="Search" clearable />
+          <el-input
+            v-model="search"
+            placeholder="Search by user / phone / medication / log id"
+            :prefix-icon="Search"
+            clearable
+          />
         </el-col>
         <el-col :span="5">
-          <el-select v-model="filterStatus" placeholder="服药状态" clearable style="width: 100%">
-            <el-option label="已服药" value="已服药" />
-            <el-option label="待服药" value="待服药" />
-            <el-option label="已漏服" value="已漏服" />
+          <el-select v-model="status" placeholder="Status" clearable style="width: 100%">
+            <el-option label="Pending" value="pending" />
+            <el-option label="Taken" value="taken" />
+            <el-option label="Skipped" value="skipped" />
+            <el-option label="Missed" value="missed" />
           </el-select>
         </el-col>
       </el-row>
     </el-card>
 
-    <!-- 列表 -->
     <el-card class="table-card">
-      <el-table :data="filtered" stripe style="width: 100%">
-        <el-table-column prop="userName" label="用户" width="100" />
-        <el-table-column prop="drugName" label="药品名称" />
-        <el-table-column prop="dosage" label="剂量" width="90" />
-        <el-table-column prop="frequency" label="频率" width="110" />
-        <el-table-column prop="nextTime" label="下次服药" width="130" />
-        <el-table-column label="依从率" width="140">
+      <el-table :data="list" stripe style="width: 100%" v-loading="loading">
+        <el-table-column prop="id" label="Log ID" width="90" />
+        <el-table-column prop="nickname" label="User" width="120" />
+        <el-table-column prop="phone" label="Phone" width="150" />
+        <el-table-column prop="medicationName" label="Medication" min-width="150" />
+        <el-table-column prop="dosage" label="Dosage" width="100" />
+        <el-table-column prop="scheduledTime" label="Scheduled" min-width="160" />
+        <el-table-column prop="actualTime" label="Actual" min-width="160" />
+        <el-table-column label="Status" width="110">
           <template #default="{ row }">
-            <el-progress
-              :percentage="row.adherence"
-              :color="adherenceColor(row.adherence)"
-              :stroke-width="8"
-              :show-text="false"
-              style="width: 80px; display: inline-block; vertical-align: middle; margin-right: 8px"
-            />
-            <span :style="{ color: adherenceColor(row.adherence), fontWeight: 600 }">{{ row.adherence }}%</span>
+            <el-tag
+              :type="row.status === 'taken' ? 'success' : row.status === 'pending' ? 'warning' : 'info'"
+              size="small"
+            >
+              {{ row.status }}
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="90">
+        <el-table-column label="Actions" width="180" fixed="right">
           <template #default="{ row }">
-            <el-tag :type="statusTagType(row.status)" size="small">{{ row.status }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
-          <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="handleRemind(row)">发送提醒</el-button>
+            <template v-if="row.status === 'pending'">
+              <el-button type="success" link size="small" @click="updateStatus(row, 'taken')">Taken</el-button>
+              <el-button type="warning" link size="small" @click="updateStatus(row, 'skipped')">Skip</el-button>
+              <el-button type="danger" link size="small" @click="updateStatus(row, 'missed')">Miss</el-button>
+            </template>
           </template>
         </el-table-column>
       </el-table>
+
       <div class="table-pagination">
-        <el-pagination layout="total, prev, pager, next" :total="filtered.length" :page-size="10" />
+        <el-pagination
+          v-model:current-page="page"
+          layout="total, prev, pager, next"
+          :total="total"
+          :page-size="pageSize"
+          @current-change="fetchAdminMedicationLogs"
+        />
       </div>
     </el-card>
   </div>
@@ -128,12 +152,23 @@ function handleRemind(row: MedRecord) {
 
 <style scoped>
 .medication-page { max-width: 1200px; }
-.page-header { display: flex; align-items: center; margin-bottom: 20px; }
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
 .page-title { font-size: 20px; font-weight: 600; color: #1a1a1a; }
 .stats-row { margin-bottom: 16px; }
-.stat-card { border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-.stat-num { font-size: 32px; font-weight: 700; }
-.stat-label { font-size: 13px; color: #666; margin-top: 4px; }
+.stat-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+.stat-num { font-size: 32px; font-weight: 700; line-height: 1.2; }
+.stat-label { font-size: 13px; color: #999; margin-top: 4px; }
 .filter-card { margin-bottom: 16px; border-radius: 8px; }
 .table-card { border-radius: 8px; }
 .table-pagination { display: flex; justify-content: flex-end; margin-top: 16px; }

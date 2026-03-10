@@ -34,3 +34,92 @@ export type {
   CommunityActivityParams,
   CreateCommunityActivityPayload,
 } from './community'
+
+export { getAdminFamilyBindings } from './family'
+export type { FamilyBindingItem, AdminFamilyBindingsResult } from './family'
+
+export { getSosHistory, confirmSosEvent, resolveSosEvent } from './sos'
+export type { SosEventStatus, SosEventItem, SosHistoryResult, SosHistoryParams } from './sos'
+
+export { getFallHistory, getFallSettings, updateFallSettings } from './fall'
+export type { FallEventStatus, FallEventItem, FallHistoryResult, FallHistoryParams } from './fall'
+
+export { getDrugInteractionHistory, acknowledgeDrugInteraction } from './drug'
+export type { DrugRiskLevel, DrugRecordStatus, DrugInteractionRecord } from './drug'
+
+export {
+  getTimeBankLeaderboard,
+  getTimeBankServiceHistory,
+  confirmTimeBankService,
+  getTimeBankExchangeHistory,
+} from './timebank'
+export type {
+  TimeBankLeaderboardItem,
+  TimeBankServiceRecord,
+  TimeBankServiceHistoryResult,
+  TimeBankExchangeRecord,
+  TimeBankServiceHistoryParams,
+} from './timebank'
+
+export {
+  getMedicalHospitals,
+  getMedicalDepartments,
+  getMedicalDoctors,
+  getAdminMedicalReports,
+} from './medical'
+export type {
+  MedicalHospitalItem,
+  MedicalDepartmentItem,
+  MedicalDoctorItem,
+  MedicalReportItem,
+  AdminMedicalReportResult,
+} from './medical'
+
+export {
+  getHealthToday,
+  getLatestBloodPressure,
+  getLatestHeartRate,
+  getAdminHealthOverview,
+} from './health'
+export type {
+  HealthTodayResult,
+  HealthMetricItem,
+  HealthAlertItem,
+  LatestBloodPressure,
+  LatestHeartRate,
+  AdminHealthOverviewItem,
+  AdminHealthOverviewResult,
+} from './health'
+
+export {
+  getMedicationPlans,
+  getMedicationLogs,
+  confirmMedicationLog,
+  getMedicationSettings,
+  updateMedicationSettings,
+  getAdminMedicationLogs,
+  updateAdminMedicationLogStatus,
+} from './medication'
+export type {
+  MedicationPlanItem,
+  MedicationLogItem,
+  MedicationLogResult,
+  MedicationSettings,
+  AdminMedicationLogItem,
+  AdminMedicationLogResult,
+} from './medication'
+
+export {
+  getGpsCurrent,
+  getGpsTrail,
+  getAdminGpsCurrent,
+  getAdminGpsTrail,
+} from './gps'
+export type {
+  GpsCurrentLocation,
+  GpsTrailItem,
+  GpsTrailResult,
+  AdminGpsCurrentItem,
+  AdminGpsCurrentResult,
+  AdminGpsTrailResult,
+} from './gps'

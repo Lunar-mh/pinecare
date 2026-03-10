@@ -30,13 +30,21 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('backend/package-lock.json') }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('backend/package.json') }}
           restore-keys: |
             ${{ runner.os }}-npm-
 
       - name: Install backend dependencies
         working-directory: backend
-        run: npm ci
+        run: npm install
+
+      - name: Run backend lint
+        working-directory: backend
+        run: npm run lint
+
+      - name: Run backend format check
+        working-directory: backend
+        run: npm run format:check
 
       - name: Run backend tests
         working-directory: backend

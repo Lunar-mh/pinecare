@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const express = require('express');
 const { ok } = require('../utils/response');
@@ -26,6 +26,7 @@ safeUse('/auth', './auth');
 safeUse('/user', './user');
 
 safeUse('/admin/users', './adminUsers');
+safeUse('/admin', './adminOps');
 
 safeUse('/health-archive', './healthArchive');
 
@@ -58,4 +59,3 @@ safeUse('/medical', './medicalIntegration');
 safeUse('/statistics', './statistics');
 
 module.exports = router;
-

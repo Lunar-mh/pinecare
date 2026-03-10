@@ -1,178 +1,210 @@
-<script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Search } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+﻿<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import { Refresh } from '@element-plus/icons-vue'
+import {
+  getTimeBankLeaderboard,
+  getTimeBankServiceHistory,
+  confirmTimeBankService,
+  getTimeBankExchangeHistory,
+} from '@/services'
+import type {
+  TimeBankLeaderboardItem,
+  TimeBankServiceRecord,
+  TimeBankExchangeRecord,
+} from '@/services'
 
-interface ServiceRecord {
-  id: number
-  volunteerName: string
-  elderName: string
-  serviceType: string
-  hours: number
-  earnedPoints: number
-  serviceDate: string
-  status: '待审核' | '已通过' | '已拒绝'
+const loading = ref(false)
+const activeTab = ref<'services' | 'exchange' | 'leaderboard'>('services')
+
+const serviceRecords = ref<TimeBankServiceRecord[]>([])
+const serviceTotal = ref(0)
+const servicePage = ref(1)
+const servicePageSize = ref(10)
+
+const exchanges = ref<TimeBankExchangeRecord[]>([])
+const leaderboard = ref<TimeBankLeaderboardItem[]>([])
+
+const pendingServiceCount = computed(
+  () => serviceRecords.value.filter((item) => item.status === 'pending').length
+)
+const confirmedServiceCoins = computed(() =>
+  serviceRecords.value
+    .filter((item) => item.status === 'confirmed')
+    .reduce((sum, item) => sum + Number(item.timeCoins || 0), 0)
+)
+
+async function fetchServiceHistory() {
+  loading.value = true
+  try {
+    const data = await getTimeBankServiceHistory({
+      page: servicePage.value,
+      pageSize: servicePageSize.value,
+      type: 'provided',
+    })
+    serviceRecords.value = data.list || []
+    serviceTotal.value = data.pagination?.total || 0
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to load service history.'
+    ElMessage.error(message)
+    serviceRecords.value = []
+    serviceTotal.value = 0
+  } finally {
+    loading.value = false
+  }
 }
 
-interface Exchange {
-  id: number
-  userName: string
-  points: number
-  item: string
-  exchangeDate: string
-  status: '待发放' | '已发放'
+async function fetchExchangeHistory() {
+  try {
+    exchanges.value = await getTimeBankExchangeHistory()
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to load exchange history.'
+    ElMessage.error(message)
+    exchanges.value = []
+  }
 }
 
-const activeTab = ref('records')
-const searchText = ref('')
-const filterStatus = ref('')
-
-const records = ref<ServiceRecord[]>([
-  { id: 1, volunteerName: '张明', elderName: '王秀英', serviceType: '日常陪伴', hours: 2, earnedPoints: 20, serviceDate: '2024-03-09', status: '已通过' },
-  { id: 2, volunteerName: '李华', elderName: '赵明远', serviceType: '医疗护理', hours: 3, earnedPoints: 45, serviceDate: '2024-03-09', status: '待审核' },
-  { id: 3, volunteerName: '王芳', elderName: '吴桂兰', serviceType: '生活协助', hours: 1.5, earnedPoints: 15, serviceDate: '2024-03-08', status: '已通过' },
-  { id: 4, volunteerName: '赵强', elderName: '张建国', serviceType: '心理疏导', hours: 1, earnedPoints: 15, serviceDate: '2024-03-08', status: '已拒绝' },
-  { id: 5, volunteerName: '刘洋', elderName: '刘德华', serviceType: '医疗护理', hours: 2, earnedPoints: 30, serviceDate: '2024-03-07', status: '已通过' },
-])
-
-const exchanges = ref<Exchange[]>([
-  { id: 1, userName: '张明', points: 50, item: '米面粮油礼包', exchangeDate: '2024-03-08', status: '已发放' },
-  { id: 2, userName: '王芳', points: 30, item: '超市购物券', exchangeDate: '2024-03-09', status: '待发放' },
-  { id: 3, userName: '李华', points: 100, item: '按摩椅体验券', exchangeDate: '2024-03-07', status: '已发放' },
-])
-
-const filteredRecords = computed(() => records.value.filter(r => {
-  const matchText = !searchText.value || r.volunteerName.includes(searchText.value) || r.elderName.includes(searchText.value)
-  const matchStatus = !filterStatus.value || r.status === filterStatus.value
-  return matchText && matchStatus
-}))
-
-const statusTagType = (s: string) => {
-  const map: Record<string, 'warning' | 'success' | 'danger'> = { '待审核': 'warning', '已通过': 'success', '已拒绝': 'danger' }
-  return map[s] ?? 'info'
+async function fetchLeaderboard() {
+  try {
+    leaderboard.value = await getTimeBankLeaderboard()
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to load leaderboard.'
+    ElMessage.error(message)
+    leaderboard.value = []
+  }
 }
 
-const totalPoints = computed(() => records.value.filter(r => r.status === '已通过').reduce((s, r) => s + r.earnedPoints, 0))
-
-function handleApprove(row: ServiceRecord) {
-  ElMessageBox.confirm(`确认审核通过「${row.volunteerName}」的服务记录？`, '审核确认', {
-    confirmButtonText: '通过',
-    cancelButtonText: '取消',
-    type: 'success',
-  }).then(() => {
-    row.status = '已通过'
-    ElMessage.success('已审核通过，积分已发放')
-  }).catch(() => {})
+async function fetchAll() {
+  await Promise.all([fetchServiceHistory(), fetchExchangeHistory(), fetchLeaderboard()])
 }
 
-function handleReject(row: ServiceRecord) {
-  row.status = '已拒绝'
-  ElMessage.warning('已拒绝该服务记录')
+async function handleConfirm(row: TimeBankServiceRecord) {
+  try {
+    await confirmTimeBankService(row.id, 'confirm')
+    ElMessage.success('Service record confirmed.')
+    await fetchServiceHistory()
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Confirm failed.'
+    ElMessage.error(message)
+  }
 }
 
-function handleDeliver(row: Exchange) {
-  row.status = '已发放'
-  ElMessage.success('已标记为发放')
+async function handleCancel(row: TimeBankServiceRecord) {
+  try {
+    await confirmTimeBankService(row.id, 'cancel')
+    ElMessage.success('Service record cancelled.')
+    await fetchServiceHistory()
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Cancel failed.'
+    ElMessage.error(message)
+  }
 }
+
+watch(activeTab, (tab) => {
+  if (tab === 'services') fetchServiceHistory()
+  if (tab === 'exchange') fetchExchangeHistory()
+  if (tab === 'leaderboard') fetchLeaderboard()
+})
+
+onMounted(fetchAll)
 </script>
 
 <template>
   <div class="timebank-page">
     <div class="page-header">
-      <span class="page-title">时间银行管理</span>
+      <span class="page-title">Time Bank</span>
+      <el-button :icon="Refresh" @click="fetchAll">Refresh</el-button>
     </div>
 
-    <!-- 统计 -->
     <el-row :gutter="16" class="stats-row">
-      <el-col :span="6">
-        <div class="stat-card" style="background: #e3f2fd">
-          <div class="stat-num" style="color: #01579b">{{ records.length }}</div>
-          <div class="stat-label">总服务记录</div>
+      <el-col :span="8">
+        <div class="stat-card">
+          <div class="stat-num" style="color: #01579b">{{ serviceTotal }}</div>
+          <div class="stat-label">Service Records</div>
         </div>
       </el-col>
-      <el-col :span="6">
-        <div class="stat-card" style="background: #fff8e1">
-          <div class="stat-num" style="color: #f57f17">{{ records.filter(r => r.status === '待审核').length }}</div>
-          <div class="stat-label">待审核</div>
+      <el-col :span="8">
+        <div class="stat-card">
+          <div class="stat-num" style="color: #f57c00">{{ pendingServiceCount }}</div>
+          <div class="stat-label">Pending Review</div>
         </div>
       </el-col>
-      <el-col :span="6">
-        <div class="stat-card" style="background: #e8f5e9">
-          <div class="stat-num" style="color: #2e7d32">{{ totalPoints }}</div>
-          <div class="stat-label">累计发放积分</div>
-        </div>
-      </el-col>
-      <el-col :span="6">
-        <div class="stat-card" style="background: #f3e5f5">
-          <div class="stat-num" style="color: #6a1b9a">{{ exchanges.filter(e => e.status === '待发放').length }}</div>
-          <div class="stat-label">待发放兑换</div>
+      <el-col :span="8">
+        <div class="stat-card">
+          <div class="stat-num" style="color: #2e7d32">{{ confirmedServiceCoins }}</div>
+          <div class="stat-label">Confirmed Coins</div>
         </div>
       </el-col>
     </el-row>
 
     <el-tabs v-model="activeTab">
-      <el-tab-pane label="服务记录审核" name="records">
-        <!-- 搜索 -->
-        <el-card class="filter-card" style="margin-bottom: 16px">
-          <el-row :gutter="12" align="middle">
-            <el-col :span="8">
-              <el-input v-model="searchText" placeholder="搜索志愿者或长辈姓名" :prefix-icon="Search" clearable />
-            </el-col>
-            <el-col :span="5">
-              <el-select v-model="filterStatus" placeholder="审核状态" clearable style="width: 100%">
-                <el-option label="待审核" value="待审核" />
-                <el-option label="已通过" value="已通过" />
-                <el-option label="已拒绝" value="已拒绝" />
-              </el-select>
-            </el-col>
-          </el-row>
-        </el-card>
+      <el-tab-pane label="Service Records" name="services">
         <el-card class="table-card">
-          <el-table :data="filteredRecords" stripe style="width: 100%">
-            <el-table-column prop="volunteerName" label="志愿者" width="100" />
-            <el-table-column prop="elderName" label="服务长辈" width="100" />
-            <el-table-column prop="serviceType" label="服务类型" width="120" />
-            <el-table-column prop="hours" label="服务时长(h)" width="120" />
-            <el-table-column prop="earnedPoints" label="可获积分" width="100" />
-            <el-table-column prop="serviceDate" label="服务日期" width="120" />
-            <el-table-column label="状态" width="90">
+          <el-table :data="serviceRecords" stripe style="width: 100%" v-loading="loading">
+            <el-table-column prop="id" label="Record ID" width="100" />
+            <el-table-column prop="providerId" label="Provider" width="110" />
+            <el-table-column prop="recipientId" label="Recipient" width="110" />
+            <el-table-column prop="serviceType" label="Service Type" min-width="140" />
+            <el-table-column prop="durationHours" label="Hours" width="90" />
+            <el-table-column prop="timeCoins" label="Coins" width="90" />
+            <el-table-column prop="startTime" label="Start" min-width="160" />
+            <el-table-column prop="endTime" label="End" min-width="160" />
+            <el-table-column label="Status" width="110">
               <template #default="{ row }">
-                <el-tag :type="statusTagType(row.status)" size="small">{{ row.status }}</el-tag>
+                <el-tag
+                  :type="row.status === 'confirmed' ? 'success' : row.status === 'pending' ? 'warning' : 'info'"
+                  size="small"
+                >
+                  {{ row.status }}
+                </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="160" fixed="right">
+            <el-table-column label="Actions" width="150" fixed="right">
               <template #default="{ row }">
-                <template v-if="row.status === '待审核'">
-                  <el-button type="success" link size="small" @click="handleApprove(row)">通过</el-button>
-                  <el-button type="danger" link size="small" @click="handleReject(row)">拒绝</el-button>
+                <template v-if="row.status === 'pending'">
+                  <el-button type="success" link size="small" @click="handleConfirm(row)">Confirm</el-button>
+                  <el-button type="danger" link size="small" @click="handleCancel(row)">Cancel</el-button>
                 </template>
               </template>
             </el-table-column>
           </el-table>
+
+          <div class="table-pagination">
+            <el-pagination
+              v-model:current-page="servicePage"
+              layout="total, prev, pager, next"
+              :total="serviceTotal"
+              :page-size="servicePageSize"
+              @current-change="fetchServiceHistory"
+            />
+          </div>
         </el-card>
       </el-tab-pane>
 
-      <el-tab-pane label="积分兑换管理" name="exchange">
+      <el-tab-pane label="Exchanges" name="exchange">
         <el-card class="table-card">
-          <el-table :data="exchanges" stripe style="width: 100%">
-            <el-table-column prop="userName" label="兑换用户" width="120" />
-            <el-table-column prop="points" label="消耗积分" width="110" />
-            <el-table-column prop="item" label="兑换商品" />
-            <el-table-column prop="exchangeDate" label="兑换日期" width="130" />
-            <el-table-column label="状态" width="100">
-              <template #default="{ row }">
-                <el-tag :type="row.status === '已发放' ? 'success' : 'warning'" size="small">{{ row.status }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="100" fixed="right">
-              <template #default="{ row }">
-                <el-button
-                  v-if="row.status === '待发放'"
-                  type="primary" link size="small"
-                  @click="handleDeliver(row)"
-                >确认发放</el-button>
-              </template>
-            </el-table-column>
+          <el-table :data="exchanges" stripe style="width: 100%" v-loading="loading">
+            <el-table-column prop="id" label="Exchange ID" width="110" />
+            <el-table-column prop="userId" label="User" width="100" />
+            <el-table-column prop="exchangeType" label="Type" width="120" />
+            <el-table-column prop="itemName" label="Item" min-width="180" />
+            <el-table-column prop="coinsRequired" label="Coins" width="90" />
+            <el-table-column prop="status" label="Status" width="110" />
+            <el-table-column prop="createdAt" label="Created At" min-width="170" />
+            <el-table-column prop="completedAt" label="Completed At" min-width="170" />
+          </el-table>
+        </el-card>
+      </el-tab-pane>
+
+      <el-tab-pane label="Leaderboard" name="leaderboard">
+        <el-card class="table-card">
+          <el-table :data="leaderboard" stripe style="width: 100%" v-loading="loading">
+            <el-table-column prop="rank" label="Rank" width="80" />
+            <el-table-column prop="userId" label="User" width="100" />
+            <el-table-column prop="balance" label="Balance" width="110" />
+            <el-table-column prop="totalEarned" label="Total Earned" width="140" />
+            <el-table-column prop="creditScore" label="Credit Score" width="120" />
+            <el-table-column prop="creditLevel" label="Credit Level" width="120" />
           </el-table>
         </el-card>
       </el-tab-pane>
@@ -182,12 +214,23 @@ function handleDeliver(row: Exchange) {
 
 <style scoped>
 .timebank-page { max-width: 1200px; }
-.page-header { display: flex; align-items: center; margin-bottom: 20px; }
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
 .page-title { font-size: 20px; font-weight: 600; color: #1a1a1a; }
-.stats-row { margin-bottom: 20px; }
-.stat-card { border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-.stat-num { font-size: 32px; font-weight: 700; }
-.stat-label { font-size: 13px; color: #666; margin-top: 4px; }
-.filter-card { border-radius: 8px; }
+.stats-row { margin-bottom: 16px; }
+.stat-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+.stat-num { font-size: 32px; font-weight: 700; line-height: 1.2; }
+.stat-label { font-size: 13px; color: #999; margin-top: 4px; }
 .table-card { border-radius: 8px; }
+.table-pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
 </style>
