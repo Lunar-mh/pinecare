@@ -1,5 +1,4 @@
-@import '../../../../styles/theme/variables.scss';
-
+@use '../../../../styles/theme/variables.scss' as *;
 .voice-ai {
   display: flex;
   flex-direction: column;

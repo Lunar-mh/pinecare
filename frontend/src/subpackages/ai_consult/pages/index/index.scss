@@ -1,5 +1,4 @@
-@import '../../../../styles/theme/variables.scss';
-
+@use '../../../../styles/theme/variables.scss' as *;
 $consult-primary: #00695c;
 $consult-primary-light: #00897b;
 $consult-bg: #e0f2f1;

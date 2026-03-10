@@ -1,26 +1,27 @@
 /**
  * health.ts - 健康档案相关API
+ * 注意：后端路由挂载在 /health-archive，此处路径需与之对齐
  */
 
-import { get, post, put, del } from '../request';
-import type { 
-  HealthRecord, 
-  BloodPressureRecord, 
-  HeartRateRecord, 
+import { get, post, put } from '../request';
+import type {
+  HealthRecord,
+  BloodPressureRecord,
+  HeartRateRecord,
   HealthTrend,
-  PaginatedResult 
+  PaginatedResult
 } from '../types';
 
 // ==================== 血压记录 ====================
 
 // 获取血压记录列表
-export const getBloodPressureRecords = (params: { 
-  startDate?: string; 
-  endDate?: string; 
-  page?: number; 
+export const getBloodPressureRecords = (params: {
+  startDate?: string;
+  endDate?: string;
+  page?: number;
   pageSize?: number;
 }) =>
-  get<PaginatedResult<BloodPressureRecord>>('/health/blood-pressure', params);
+  get<PaginatedResult<BloodPressureRecord>>('/health-archive/blood-pressure', params);
 
 // 添加血压记录
 export const addBloodPressureRecord = (data: {
@@ -29,16 +30,17 @@ export const addBloodPressureRecord = (data: {
   pulse?: number;
   measuredAt?: string;
   note?: string;
-}) => post<BloodPressureRecord>('/health/blood-pressure', data);
+}) => post<BloodPressureRecord>('/health-archive/blood-pressure', data);
 
 // 获取最新血压
 export const getLatestBloodPressure = () =>
-  get<BloodPressureRecord | null>('/health/blood-pressure/latest');
+  get<BloodPressureRecord | null>('/health-archive/blood-pressure/latest');
 
 // 获取血压趋势
 export const getBloodPressureTrend = (days: number = 7) =>
-  get<{ dates: string[]; systolic: number[]; diastolic: number[] }>
-    ('/health/blood-pressure/trend', { days });
+  get<{ dates: string[]; systolic: number[]; diastolic: number[] }>(
+    '/health-archive/blood-pressure/trend', { days }
+  );
 
 // ==================== 心率记录 ====================
 
@@ -49,7 +51,7 @@ export const getHeartRateRecords = (params: {
   page?: number;
   pageSize?: number;
 }) =>
-  get<PaginatedResult<HeartRateRecord>>('/health/heart-rate', params);
+  get<PaginatedResult<HeartRateRecord>>('/health-archive/heart-rate', params);
 
 // 添加心率记录
 export const addHeartRateRecord = (data: {
@@ -57,15 +59,15 @@ export const addHeartRateRecord = (data: {
   measuredAt?: string;
   note?: string;
 }) =>
-  post<HeartRateRecord>('/health/heart-rate', data);
+  post<HeartRateRecord>('/health-archive/heart-rate', data);
 
 // 获取最新心率
 export const getLatestHeartRate = () =>
-  get<HeartRateRecord | null>('/health/heart-rate/latest');
+  get<HeartRateRecord | null>('/health-archive/heart-rate/latest');
 
 // 获取心率趋势
 export const getHeartRateTrend = (days: number = 7) =>
-  get<{ dates: string[]; values: number[] }>('/health/heart-rate/trend', { days });
+  get<{ dates: string[]; values: number[] }>('/health-archive/heart-rate/trend', { days });
 
 // ==================== 综合健康数据 ====================
 
@@ -76,14 +78,14 @@ export const getTodayHealthOverview = () =>
     heartRate?: HeartRateRecord;
     steps?: number;
     sleep?: { hours: number; quality: string };
-  }>('/health/today-overview');
+  }>('/health-archive/today-overview');
 
 // 获取健康统计
 export const getHealthStatistics = (period: 'week' | 'month' | 'year' = 'week') =>
   get<{
     bloodPressure: { avgSystolic: number; avgDiastolic: number; abnormalCount: number };
     heartRate: { avg: number; max: number; min: number };
-  }>('/health/statistics', { period });
+  }>('/health-archive/statistics', { period });
 
 // ==================== 健康预警 ====================
 
@@ -96,8 +98,8 @@ export const getHealthAlerts = () =>
     message: string;
     suggestion: string;
     createdAt: string;
-  }[]>('/health/alerts');
+  }[]>('/health-archive/alerts');
 
 // 忽略健康提醒
 export const dismissHealthAlert = (id: string) =>
-  put<void>(`/health/alerts/${id}/dismiss`);
+  put<void>(`/health-archive/alerts/${id}/dismiss`);

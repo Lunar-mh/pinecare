@@ -1,0 +1,81 @@
+'use strict';
+
+const communityAdminService = require('../services/communityAdminService');
+const { ok, fail } = require('../utils/response');
+
+/**
+ * 统一处理业务错误
+ * @param {Error} error
+ * @param {object} res
+ * @param {function} next
+ * @returns {any}
+ */
+function handleError(error, res, next) {
+  if (error && error.statusCode) {
+    return fail(res, error.code || error.statusCode, error.message || '请求失败', null, error.statusCode);
+  }
+  return next(error);
+}
+
+async function getVolunteers(req, res, next) {
+  try {
+    const data = await communityAdminService.getVolunteers(req.adminScope.communityId, req.query);
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function getOrders(req, res, next) {
+  try {
+    const data = await communityAdminService.getOrders(req.adminScope.communityId, req.query);
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function createOrder(req, res, next) {
+  try {
+    const data = await communityAdminService.createOrder(req.adminScope.communityId, req.body);
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function getActivities(req, res, next) {
+  try {
+    const data = await communityAdminService.getActivities(req.adminScope.communityId, req.query);
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function createActivity(req, res, next) {
+  try {
+    const data = await communityAdminService.createActivity(req.adminScope.communityId, req.body);
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function getStats(req, res, next) {
+  try {
+    const data = await communityAdminService.getStats(req.adminScope.communityId, req.query);
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+module.exports = {
+  getVolunteers,
+  getOrders,
+  createOrder,
+  getActivities,
+  createActivity,
+  getStats,
+};

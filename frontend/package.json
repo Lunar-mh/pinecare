@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "description": "银伴微信小程序前端（Taro 4 + React）",
   "scripts": {
-    "dev:weapp": "taro build --type weapp --watch",
-    "build:weapp": "taro build --type weapp",
-    "clean": "rimraf dist",
+    "dev:weapp": "npm run clean && taro build --type weapp --watch",
+    "build:weapp": "npm run clean && taro build --type weapp",
+    "clean": "node scripts/clean-dist.cjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

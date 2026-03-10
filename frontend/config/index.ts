@@ -24,7 +24,10 @@ const config: UserConfigExport = {
   },
   framework: 'react',
   compiler: {
-    type: 'webpack5'
+    type: 'webpack5',
+    prebundle: {
+      enable: false
+    }
   },
   mini: {
     postcss: {

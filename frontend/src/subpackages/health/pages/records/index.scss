@@ -1,5 +1,4 @@
-@import '../../../../styles/theme/variables.scss';
-
+@use '../../../../styles/theme/variables.scss' as *;
 .records-page {
   height: 100vh;
   display: flex;

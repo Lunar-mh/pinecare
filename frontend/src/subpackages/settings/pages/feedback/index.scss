@@ -1,0 +1,194 @@
+@use '../../../../styles/theme/variables.scss' as *;
+.feedback-page {
+  min-height: 100vh;
+  background-color: $bg-primary;
+  display: flex;
+  flex-direction: column;
+}
+
+.feedback-scroll {
+  flex: 1;
+  padding: $page-padding;
+  padding-bottom: calc(40px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+// ── Section card ──────────────────────────────────────────
+.section {
+  background-color: $bg-card;
+  border-radius: $radius-lg;
+  padding: 0 $space-md;
+  margin-bottom: $space-lg;
+  box-shadow: $shadow-card;
+  overflow: hidden;
+}
+
+.section-title {
+  font-size: $font-caption;
+  font-weight: $font-weight-semibold;
+  color: $text-secondary;
+  letter-spacing: 0.08em;
+  padding: $space-md $space-xs $space-sm;
+  border-bottom: 1px solid $border-light;
+}
+
+// ── FAQ list ──────────────────────────────────────────────
+.faq-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.faq-item {
+  border-bottom: 1px solid $border-light;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.faq-question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: $touch-target-primary;
+  padding: 0 $space-xs;
+  cursor: pointer;
+  transition: background-color $transition-fast $ease-default;
+
+  &:active {
+    background-color: $bg-hover;
+  }
+}
+
+.question-text {
+  font-size: $font-body;
+  color: $text-primary;
+  font-weight: $font-weight-medium;
+  flex: 1;
+  line-height: $line-height-normal;
+}
+
+// Chevron arrow
+.arrow {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid $text-secondary;
+  border-bottom: 2px solid $text-secondary;
+  margin-left: $space-md;
+  flex-shrink: 0;
+  transition: transform $transition-normal $ease-in-out;
+}
+
+.arrow-down {
+  transform: rotate(45deg) translateY(-2px);
+}
+
+.arrow-up {
+  transform: rotate(-135deg) translateY(2px);
+}
+
+.faq-answer {
+  padding: $space-xs $space-xs $space-md;
+  background: rgba($color-primary, 0.02);
+}
+
+.answer-text {
+  font-size: $font-caption;
+  color: $text-secondary;
+  line-height: $line-height-relaxed;
+}
+
+// ── Feedback form ─────────────────────────────────────────
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  padding: $space-md $space-xs;
+}
+
+.feedback-input {
+  width: 100%;
+  height: 160px;
+  background-color: $bg-primary;
+  border-radius: $radius-md;
+  padding: $space-md;
+  font-size: $font-body;
+  line-height: $line-height-normal;
+  color: $text-primary;
+  box-sizing: border-box;
+  margin-bottom: $space-xs;
+  border: 1.5px solid $border-light;
+}
+
+.word-count {
+  font-size: $font-caption;
+  color: $text-tertiary;
+  text-align: right;
+  margin-bottom: $space-lg;
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, $color-primary, $color-primary-light);
+  color: $text-white;
+  font-size: $font-body;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-lg;
+  min-height: $touch-target-primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 14px rgba(1, 87, 155, 0.3);
+  transition: opacity $transition-fast $ease-default;
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.submit-btn::after {
+  border: none;
+}
+
+.submit-btn[disabled] {
+  background: $text-disabled;
+  box-shadow: none;
+  color: $text-white;
+}
+
+// ── Contact section ───────────────────────────────────────
+.contact-section {
+  text-align: center;
+  padding: $space-xl $space-md;
+}
+
+.contact-tips {
+  font-size: $font-caption;
+  color: $text-secondary;
+  margin-bottom: $space-md;
+  display: block;
+  line-height: $line-height-relaxed;
+}
+
+.service-btn {
+  background-color: $bg-card;
+  color: $color-primary;
+  border: 1.5px solid $color-primary;
+  font-size: $font-body;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-lg;
+  min-height: $touch-target-primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.04em;
+  transition: all $transition-fast $ease-default;
+
+  &:active {
+    background-color: rgba($color-primary, 0.06);
+  }
+}
+
+.service-btn::after {
+  border: none;
+}

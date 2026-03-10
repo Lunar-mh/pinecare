@@ -21,62 +21,62 @@
 
 ## 阶段 1：初始化
 
-- [ ] T001 初始化后端依赖与脚本（express/mysql2/ioredis/dotenv/jsonwebtoken/swagger-jsdoc/swagger-ui-express，start/dev 脚本） in `backend/package.json`
-- [ ] T002 [P] 创建 MySQL 连接配置，导出连接池与 `query` 方法 in `backend/src/config/db.js`
-- [ ] T003 [P] 创建 Redis 连接配置，导出客户端与连接异常处理 in `backend/src/config/redis.js`
-- [ ] T004 创建服务启动入口，加载 dotenv、初始化 Express、挂载 family 路由并注册错误中间件 in `backend/server.js`
+- [X] T001 初始化后端依赖与脚本（express/mysql2/ioredis/dotenv/jsonwebtoken/swagger-jsdoc/swagger-ui-express，start/dev 脚本） in `backend/package.json`
+- [X] T002 [P] 创建 MySQL 连接配置，导出连接池与 `query` 方法 in `backend/src/config/db.js`
+- [X] T003 [P] 创建 Redis 连接配置，导出客户端与连接异常处理 in `backend/src/config/redis.js`
+- [X] T004 创建服务启动入口，加载 dotenv、初始化 Express、挂载 family 路由并注册错误中间件 in `backend/server.js`
 
 ---
 
 ## 阶段 2：基础设施
 
-- [ ] T005 [P] 实现 JWT Bearer 鉴权中间件，校验 token 并注入 `req.user.userId` in `backend/src/middleware/auth.js`
-- [ ] T006 [P] 实现统一错误处理中间件，标准化输出 `{ code, message, data }` in `backend/src/middleware/errorHandler.js`
-- [ ] T007 [P] 编写通知设置迁移脚本，创建 `notification_settings` 表、`user_id` 唯一索引与时间戳字段 in `backend/migrations/001_create_notification_settings.sql`
-- [ ] T008 [P] 创建 Family 数据访问基础方法（绑定关系查询、权限校验、通知设置查询入口） in `backend/src/models/family.js`
-- [ ] T009 创建 Family 服务层骨架，定义 bindings/health/settings 三类用例入口 in `backend/src/services/familyService.js`
-- [ ] T010 创建 Family 控制器骨架，封装 `success` 响应函数并预留 4 个处理器 in `backend/src/controllers/familyController.js`
-- [ ] T011 创建 Family 路由骨架，接入 auth 中间件并预留 4 个 API 路由位 in `backend/src/routes/family.js`
+- [X] T005 [P] 实现 JWT Bearer 鉴权中间件，校验 token 并注入 `req.user.userId` in `backend/src/middleware/auth.js`
+- [X] T006 [P] 实现统一错误处理中间件，标准化输出 `{ code, message, data }` in `backend/src/middleware/errorHandler.js`
+- [X] T007 [P] 编写通知设置迁移脚本，创建 `notification_settings` 表、`user_id` 唯一索引与时间戳字段 in `backend/migrations/001_create_notification_settings.sql`
+- [X] T008 [P] 创建 Family 数据访问基础方法（绑定关系查询、权限校验、通知设置查询入口） in `backend/src/models/family.js`
+- [X] T009 创建 Family 服务层骨架，定义 bindings/health/settings 三类用例入口 in `backend/src/services/familyService.js`
+- [X] T010 创建 Family 控制器骨架，封装 `success` 响应函数并预留 4 个处理器 in `backend/src/controllers/familyController.js`
+- [X] T011 创建 Family 路由骨架，接入 auth 中间件并预留 4 个 API 路由位 in `backend/src/routes/family.js`
 
 ---
 
 ## 阶段 3：用户故事 1 - 查看绑定家庭成员列表
 
-- [ ] T012 [US1] 实现绑定列表查询方法 `listBindingsByFamilyId(familyId)`，仅返回 `status='active'` 记录 in `backend/src/models/family.js`
-- [ ] T013 [US1] 实现服务方法 `getFamilyBindings(userId)`，组装家属绑定老人列表数据 in `backend/src/services/familyService.js`
-- [ ] T014 [US1] 实现控制器 `getBindings`，返回 `{ code: 0, message: "success", data: [...] }` in `backend/src/controllers/familyController.js`
-- [ ] T015 [US1] 注册 `GET /family/bindings` 路由并绑定 `getBindings` 处理器 in `backend/src/routes/family.js`
+- [X] T012 [US1] 实现绑定列表查询方法 `listBindingsByFamilyId(familyId)`，仅返回 `status='active'` 记录 in `backend/src/models/family.js`
+- [X] T013 [US1] 实现服务方法 `getFamilyBindings(userId)`，组装家属绑定老人列表数据 in `backend/src/services/familyService.js`
+- [X] T014 [US1] 实现控制器 `getBindings`，返回 `{ code: 0, message: "success", data: [...] }` in `backend/src/controllers/familyController.js`
+- [X] T015 [US1] 注册 `GET /family/bindings` 路由并绑定 `getBindings` 处理器 in `backend/src/routes/family.js`
 
 ---
 
 ## 阶段 4：用户故事 2 - 查看老人健康数据
 
-- [ ] T016 [US2] 实现权限校验方法 `checkFamilyBinding(familyId, elderId)`，拒绝未绑定访问 in `backend/src/models/family.js`
-- [ ] T017 [US2] 实现健康快照查询方法 `getLatestHealthSnapshot(elderId)`，读取 002 模块健康数据源 in `backend/src/models/family.js`
-- [ ] T018 [US2] 实现服务方法 `getElderHealth(userId, elderId)`，先鉴权再返回最新健康数据 in `backend/src/services/familyService.js`
-- [ ] T019 [US2] 实现控制器 `getHealthByElderId`，处理 403/404 业务错误并统一响应结构 in `backend/src/controllers/familyController.js`
-- [ ] T020 [US2] 注册 `GET /family/health/:elderId` 路由并校验 `elderId` 参数合法性 in `backend/src/routes/family.js`
+- [X] T016 [US2] 实现权限校验方法 `checkFamilyBinding(familyId, elderId)`，拒绝未绑定访问 in `backend/src/models/family.js`
+- [X] T017 [US2] 实现健康快照查询方法 `getLatestHealthSnapshot(elderId)`，读取 002 模块健康数据源 in `backend/src/models/family.js`
+- [X] T018 [US2] 实现服务方法 `getElderHealth(userId, elderId)`，先鉴权再返回最新健康数据 in `backend/src/services/familyService.js`
+- [X] T019 [US2] 实现控制器 `getHealthByElderId`，处理 403/404 业务错误并统一响应结构 in `backend/src/controllers/familyController.js`
+- [X] T020 [US2] 注册 `GET /family/health/:elderId` 路由并校验 `elderId` 参数合法性 in `backend/src/routes/family.js`
 
 ---
 
 ## 阶段 5：用户故事 3 - 通知设置管理
 
-- [ ] T021 [US3] 实现通知设置查询方法 `findNotificationSettingsByUserId(userId)` in `backend/src/models/family.js`
-- [ ] T022 [US3] 实现通知设置 upsert 方法 `upsertNotificationSettings(userId, payload)` in `backend/src/models/family.js`
-- [ ] T023 [US3] 实现服务方法 `getNotificationSettings(userId)`，无记录时返回默认开关值 in `backend/src/services/familyService.js`
-- [ ] T024 [US3] 实现服务方法 `updateNotificationSettings(userId, payload)`，执行字段白名单与布尔归一化 in `backend/src/services/familyService.js`
-- [ ] T025 [US3] 实现控制器 `getSettings` 与 `updateSettings`，统一返回 `message: "success"` in `backend/src/controllers/familyController.js`
-- [ ] T026 [US3] 注册 `GET /family/settings` 与 `PUT /family/settings` 路由 in `backend/src/routes/family.js`
+- [X] T021 [US3] 实现通知设置查询方法 `findNotificationSettingsByUserId(userId)` in `backend/src/models/family.js`
+- [X] T022 [US3] 实现通知设置 upsert 方法 `upsertNotificationSettings(userId, payload)` in `backend/src/models/family.js`
+- [X] T023 [US3] 实现服务方法 `getNotificationSettings(userId)`，无记录时返回默认开关值 in `backend/src/services/familyService.js`
+- [X] T024 [US3] 实现服务方法 `updateNotificationSettings(userId, payload)`，执行字段白名单与布尔归一化 in `backend/src/services/familyService.js`
+- [X] T025 [US3] 实现控制器 `getSettings` 与 `updateSettings`，统一返回 `message: "success"` in `backend/src/controllers/familyController.js`
+- [X] T026 [US3] 注册 `GET /family/settings` 与 `PUT /family/settings` 路由 in `backend/src/routes/family.js`
 
 ---
 
 ## 最终阶段：完善
 
-- [ ] T027 [P] 编写 Family 模块 Swagger 文档，覆盖 4 个接口、JWT 鉴权与统一响应 Schema in `backend/src/docs/familySwagger.js`
-- [ ] T028 在服务入口挂载 Swagger UI（`/api-docs`）并注册 Family OpenAPI 定义 in `backend/server.js`
-- [ ] T029 [P] 完善全局错误处理中间件，补齐 401/403/404/422/500 错误映射与兜底消息 in `backend/src/middleware/errorHandler.js`
-- [ ] T030 收敛控制器异常流到 `next(err)`，确保所有成功响应均为 `{ code: 0, message: "success", data }` in `backend/src/controllers/familyController.js`
-- [ ] T031 编写家属健康快照查询性能测试，GET /family/health/:elderId 在200并发下 p95 <200ms in `backend/tests/performance/family.health.perf.test.js`
+- [X] T027 [P] 编写 Family 模块 Swagger 文档，覆盖 4 个接口、JWT 鉴权与统一响应 Schema in `backend/src/docs/familySwagger.js`
+- [X] T028 在服务入口挂载 Swagger UI（`/api-docs`）并注册 Family OpenAPI 定义 in `backend/server.js`
+- [X] T029 [P] 完善全局错误处理中间件，补齐 401/403/404/422/500 错误映射与兜底消息 in `backend/src/middleware/errorHandler.js`
+- [X] T030 收敛控制器异常流到 `next(err)`，确保所有成功响应均为 `{ code: 0, message: "success", data }` in `backend/src/controllers/familyController.js`
+- [X] T031 编写家属健康快照查询性能测试，GET /family/health/:elderId 在200并发下 p95 <200ms in `backend/tests/performance/family.health.perf.test.js`
 
 ---
 

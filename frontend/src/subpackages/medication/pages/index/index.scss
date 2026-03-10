@@ -1,5 +1,4 @@
-@import '../../../../styles/theme/variables.scss';
-
+@use '../../../../styles/theme/variables.scss' as *;
 .medication-index {
   min-height: 100vh;
   background: $color-background;

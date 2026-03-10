@@ -1,5 +1,4 @@
-@import '../../../../styles/theme/variables.scss';
-
+@use '../../../../styles/theme/variables.scss' as *;
 $companion-primary: #ad1457;
 $companion-primary-light: #c2185b;
 $companion-bg: #fce4ec;

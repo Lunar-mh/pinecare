@@ -1,5 +1,4 @@
-@import '../../../../styles/theme/variables.scss';
-
+@use '../../../../styles/theme/variables.scss' as *;
 $drug-primary: #6a1b9a;
 $drug-primary-light: #7b1fa2;
 $drug-bg: #f3e5f5;

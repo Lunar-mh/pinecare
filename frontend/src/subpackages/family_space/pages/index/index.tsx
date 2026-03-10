@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Taro, { usePullDownRefresh } from '@tarojs/taro';
 import { View, Text, ScrollView, Image } from '@tarojs/components';
-import { User, Phone, Heart, Plus, Clock, Checked } from '@nutui/icons-react-taro';
+import { Icon } from '@/components/icons';
 import { SectionTitle } from '@/components/elderly';
 import {
   getFamilyMembers,
@@ -9,6 +9,7 @@ import {
   markMessageRead,
   getAlbumPhotos,
   getUnreadMessageCount,
+  uploadAlbumPhoto,
 } from '@/services/modules/family';
 import type { FamilyMember, VoiceMessage, AlbumPhoto } from '@/services/modules/family';
 import './index.scss';
@@ -117,8 +118,52 @@ export default function FamilySpaceIndex() {
       count: 9,
       sizeType: ['compressed'],
       sourceType: ['album', 'camera'],
-      success: () => {
-        Taro.showToast({ title: '上传功能开发中', icon: 'none' });
+      success: async (res) => {
+        const { tempFilePaths } = res;
+        setLoadingPhotos(true);
+        let successCount = 0;
+        let failCount = 0;
+        try {
+          for (const filePath of tempFilePaths) {
+            try {
+              const token = Taro.getStorageSync('token');
+              const uploadRes = await Taro.uploadFile({
+                url: 'http://localhost:3000/api/v1/family-space/album/upload-file',
+                filePath,
+                name: 'file',
+                header: {
+                  Authorization: `Bearer ${token}`
+                }
+              });
+              
+              const parsed = JSON.parse(uploadRes.data);
+              if (parsed.code === 0 && parsed.data) {
+                await uploadAlbumPhoto({ url: parsed.data.url });
+                successCount++;
+              } else {
+                await uploadAlbumPhoto({ url: filePath, description: '' });
+                successCount++;
+              }
+            } catch (_e: unknown) {
+              try {
+                await uploadAlbumPhoto({ url: filePath, description: '' });
+                successCount++;
+              } catch (_fallbackErr: unknown) {
+                failCount++;
+              }
+            }
+          }
+          await loadPhotos();
+          if (failCount === 0) {
+            Taro.showToast({ title: '上传成功', icon: 'success' });
+          } else {
+            Taro.showToast({ title: `成功${successCount}张，失败${failCount}张`, icon: 'none' });
+          }
+        } catch (_e: unknown) {
+          Taro.showToast({ title: '上传失败，请重试', icon: 'none' });
+        } finally {
+          setLoadingPhotos(false);
+        }
       }
     });
   };
@@ -197,7 +242,7 @@ export default function FamilySpaceIndex() {
             <SectionTitle title="家庭成员" />
             {members.length === 0 && !loadingMembers ? (
               <View className="empty-state">
-                <User size={56} color="#ccc" />
+                <Icon name="user" size={56} color="#ccc" />
                 <Text className="empty-state__text">暂无家庭成员</Text>
                 <Text className="empty-state__hint">请联系家人扫码绑定</Text>
               </View>
@@ -231,13 +276,13 @@ export default function FamilySpaceIndex() {
                         className="member-card__action-btn member-card__action-btn--call"
                         onClick={() => handleCall(member)}
                       >
-                        <Phone size={20} color="#fff" />
+                        <Icon name="phone" size={20} color="#fff" />
                       </View>
                       <View
                         className="member-card__action-btn member-card__action-btn--msg"
                         onClick={() => setActiveTab('voice')}
                       >
-                        <Heart size={18} color="#fff" />
+                        <Icon name="heart" size={18} color="#fff" />
                       </View>
                     </View>
                   </View>
@@ -253,7 +298,7 @@ export default function FamilySpaceIndex() {
             <SectionTitle title="语音留言" />
             {voiceMessages.length === 0 && !loadingVoice ? (
               <View className="empty-state">
-                <Heart size={56} color="#ccc" />
+                <Icon name="heart" size={56} color="#ccc" />
                 <Text className="empty-state__text">暂无语音留言</Text>
                 <Text className="empty-state__hint">家人可以给您发送语音留言</Text>
               </View>
@@ -292,7 +337,7 @@ export default function FamilySpaceIndex() {
                         </>
                       )}
                     </View>
-                    {msg.isRead && <Checked size={18} color="#43a047" />}
+                    {msg.isRead && <Icon name="check" size={18} color="#43a047" />}
                   </View>
                 ))}
               </View>
@@ -306,13 +351,18 @@ export default function FamilySpaceIndex() {
             <View className="album-header">
               <SectionTitle title="家庭相册" />
               <View className="album-upload-btn" onClick={handleUploadPhoto}>
-                <Plus size={16} color="#01579b" />
+                <Icon name="plus" size={16} color="#01579b" />
                 <Text className="album-upload-btn__text">上传</Text>
               </View>
             </View>
+            {loadingPhotos && (
+              <View className="loading-state" style={{ textAlign: 'center', padding: '20px' }}>
+                <Text style={{ color: '#999', fontSize: '14px' }}>上传中...</Text>
+              </View>
+            )}
             {photos.length === 0 && !loadingPhotos ? (
               <View className="empty-state">
-                <Heart size={56} color="#ccc" />
+              <Icon name="heart" size={56} color="#ccc" />
                 <Text className="empty-state__text">相册暂无照片</Text>
                 <Text className="empty-state__hint">点击上传按钮添加照片</Text>
               </View>

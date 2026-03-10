@@ -132,3 +132,22 @@ $color-border-light: $border-light;
 $shadow-sm: $shadow-card;
 
 $color-primary-dark: #014a80;
+
+
+// ========== 扩展变量（2026-03 UI 重设计）==========
+
+// 家属端主色
+$color-family-primary: #2e7d32;
+$color-family-light: #388e3c;
+
+// 老年人适配字体
+$font-elder-body: 22px;
+$font-elder-h3: 26px;
+
+// z-index 层级
+$z-float: 999;
+$z-modal: 1000;
+$z-toast: 1001;
+
+// 安全区域
+$safe-bottom: env(safe-area-inset-bottom);

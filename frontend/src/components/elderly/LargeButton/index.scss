@@ -1,5 +1,4 @@
-@import '../../../styles/theme/variables.scss';
-
+@use '../../../styles/theme/variables.scss' as *;
 .elderly-button {
   display: flex;
   align-items: center;

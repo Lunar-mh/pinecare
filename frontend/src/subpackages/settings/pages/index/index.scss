@@ -1,0 +1,108 @@
+@use '../../../../styles/theme/variables.scss' as *;
+.settings-page {
+  min-height: 100vh;
+  background-color: $bg-primary;
+  padding: $page-padding;
+  padding-bottom: calc(40px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+// ── Section card ──────────────────────────────────────────
+.settings-section {
+  background-color: $bg-card;
+  border-radius: $radius-lg;
+  padding: 0 $space-md;
+  margin-bottom: $space-lg;
+  box-shadow: $shadow-card;
+  overflow: hidden;
+}
+
+.settings-section-title {
+  font-size: $font-caption;
+  font-weight: $font-weight-semibold;
+  color: $text-secondary;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: $space-md $space-xs $space-sm;
+  border-bottom: 1px solid $border-light;
+}
+
+// ── Row item ──────────────────────────────────────────────
+.settings-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: $touch-target-primary;
+  border-bottom: 1px solid $border-light;
+  padding: 0 $space-xs;
+  transition: background-color $transition-fast $ease-default;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    background-color: $bg-hover;
+  }
+}
+
+.settings-item-label {
+  font-size: $font-body;
+  color: $text-primary;
+  font-weight: $font-weight-medium;
+}
+
+// ── Font-size radio group ──────────────────────────────────
+.font-size-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.radio-item {
+  display: flex;
+  align-items: center;
+  min-height: $touch-target-primary;
+  border-bottom: 1px solid $border-light;
+  padding: 0 $space-xs;
+  transition: background-color $transition-fast $ease-default;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    background-color: $bg-hover;
+  }
+}
+
+.radio-label {
+  font-size: $font-body;
+  color: $text-primary;
+  margin-left: $space-md;
+}
+
+// ── Clear-cache button ─────────────────────────────────────
+.clear-cache-btn {
+  background: linear-gradient(135deg, #e53935, #c62828);
+  color: $text-white;
+  font-size: $font-body;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-lg;
+  min-height: $touch-target-primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  width: 100%;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3);
+  transition: opacity $transition-fast $ease-default;
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.clear-cache-btn::after {
+  border: none;
+}

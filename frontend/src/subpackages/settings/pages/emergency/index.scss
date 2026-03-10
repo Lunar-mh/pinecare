@@ -1,0 +1,249 @@
+@use '../../../../styles/theme/variables.scss' as *;
+.emergency-page {
+  min-height: 100vh;
+  background-color: $bg-primary;
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-list {
+  flex: 1;
+  padding: $page-padding;
+  box-sizing: border-box;
+}
+
+// ── Contact card ──────────────────────────────────────────
+.contact-card {
+  background-color: $bg-card;
+  border-radius: $radius-lg;
+  padding: $space-lg;
+  margin-bottom: $space-md;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: $shadow-card;
+  overflow: hidden;
+  position: relative;
+
+  // Colored left accent (red = emergency)
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, $color-danger, #b71c1c);
+    border-radius: $radius-sm 0 0 $radius-sm;
+  }
+
+  padding-left: calc($space-lg + 4px);
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: $space-xs;
+}
+
+.contact-header {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+}
+
+.contact-name {
+  font-size: $font-h3;
+  font-weight: $font-weight-bold;
+  color: $text-primary;
+}
+
+.contact-relation {
+  font-size: $font-caption;
+  color: $color-primary;
+  background-color: rgba(1, 87, 155, 0.08);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: $font-weight-semibold;
+  border: 1px solid rgba(1, 87, 155, 0.15);
+}
+
+.contact-phone {
+  font-size: $font-body;
+  color: $text-secondary;
+  letter-spacing: 0.04em;
+}
+
+// ── Action buttons ────────────────────────────────────────
+.contact-actions {
+  display: flex;
+  flex-direction: column;
+  gap: $space-xs;
+  flex-shrink: 0;
+}
+
+.action-btn {
+  font-size: $font-caption;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-sm;
+  padding: 0 $space-md;
+  height: 44px;
+  line-height: 44px;
+  margin: 0;
+  min-width: 56px;
+  text-align: center;
+}
+
+.action-btn::after {
+  border: none;
+}
+
+.edit-btn {
+  background-color: rgba(1, 87, 155, 0.08);
+  color: $color-primary;
+  border: 1px solid rgba(1, 87, 155, 0.2);
+}
+
+.delete-btn {
+  background-color: rgba(229, 57, 53, 0.08);
+  color: $color-danger;
+  border: 1px solid rgba(229, 57, 53, 0.2);
+}
+
+// ── Empty state ───────────────────────────────────────────
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 240px;
+  gap: $space-md;
+}
+
+.empty-text {
+  font-size: $font-body;
+  color: $text-tertiary;
+  text-align: center;
+}
+
+// ── Bottom CTA ────────────────────────────────────────────
+.bottom-action {
+  padding: $page-padding;
+  background-color: $bg-card;
+  padding-bottom: calc($page-padding + env(safe-area-inset-bottom));
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.add-btn {
+  background: linear-gradient(135deg, $color-danger, #b71c1c);
+  color: $text-white;
+  font-size: $font-body;
+  font-weight: $font-weight-semibold;
+  border-radius: $radius-lg;
+  min-height: $touch-target-primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 14px rgba(229, 57, 53, 0.35);
+}
+
+.add-btn::after {
+  border: none;
+}
+
+// ── Modal ─────────────────────────────────────────────────
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: $z-modal;
+}
+
+.modal-content {
+  background-color: $bg-card;
+  width: 88%;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  padding: $space-lg $space-md $space-md;
+  text-align: center;
+  border-bottom: 1px solid $border-light;
+  background: linear-gradient(180deg, #fff5f5, $bg-card);
+}
+
+.modal-title {
+  font-size: $font-h3;
+  font-weight: $font-weight-bold;
+  color: $text-primary;
+}
+
+.modal-body {
+  padding: $space-lg $space-md;
+}
+
+.form-item {
+  margin-bottom: $space-lg;
+}
+
+.form-label {
+  display: block;
+  font-size: $font-caption;
+  font-weight: $font-weight-semibold;
+  color: $text-secondary;
+  margin-bottom: $space-xs;
+  letter-spacing: 0.04em;
+}
+
+.form-input {
+  background-color: $bg-primary;
+  height: 52px;
+  border-radius: $radius-md;
+  padding: 0 $space-md;
+  font-size: $font-body;
+  border: 1.5px solid $border-light;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modal-footer {
+  display: flex;
+  border-top: 1px solid $border-light;
+}
+
+.modal-btn {
+  flex: 1;
+  height: 60px;
+  line-height: 60px;
+  text-align: center;
+  font-size: $font-body;
+  background-color: transparent;
+  border-radius: 0;
+  margin: 0;
+  font-weight: $font-weight-medium;
+}
+
+.modal-btn::after {
+  border: none;
+}
+
+.cancel-btn {
+  color: $text-secondary;
+  border-right: 1px solid $border-light;
+}
+
+.confirm-btn {
+  color: $color-danger;
+  font-weight: $font-weight-bold;
+}

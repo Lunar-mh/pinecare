@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import Taro, { usePullDownRefresh } from '@tarojs/taro';
 import { View, Text, ScrollView, Switch } from '@tarojs/components';
-import { Plus, Checked, Success, Clock, Order, Warning } from '@nutui/icons-react-taro';
+import { Add, Checked, Check, Clock, List, Warning } from '@nutui/icons-react-taro';
 import { LargeButton, SectionTitle, AlertBanner } from '@/components/elderly';
 import {
   getTodayMedications,
   markMedicationTaken,
   skipMedication,
   getMedications,
-  toggleMedication,
+  updateMedication,
   deleteMedication,
 } from '@/services/modules/medication';
 import type { TodayMedication, Medication } from '@/services/types';
@@ -76,7 +76,7 @@ export default function MedicationIndex() {
 
   const handleTogglePlan = async (id: string, currentActive: boolean) => {
     try {
-      await toggleMedication(id, !currentActive);
+      await updateMedication(id, { isActive: !currentActive });
       setPlans(prev => prev.map(p => p.id === id ? { ...p, isActive: !currentActive } : p));
     } catch (_) {
       Taro.showToast({ title: '操作失败', icon: 'none' });
@@ -219,7 +219,7 @@ export default function MedicationIndex() {
                           </Text>
                         )}
                       </View>
-                      <Success size={28} color="#43a047" />
+                        <Check size={28} color="#43a047" />
                     </View>
                   ))}
                 </View>
@@ -270,7 +270,7 @@ export default function MedicationIndex() {
                     <View key={plan.id} className="plan-item">
                       <View className="plan-item__left">
                         <View className="plan-item__icon-wrap">
-                          <Order size={20} color="#01579b" />
+                          <List size={20} color="#01579b" />
                         </View>
                         <View className="plan-item__info">
                           <Text className="plan-item__name">{plan.name}</Text>
@@ -310,7 +310,7 @@ export default function MedicationIndex() {
                     <View key={plan.id} className="plan-item plan-item--inactive">
                       <View className="plan-item__left">
                         <View className="plan-item__icon-wrap plan-item__icon-wrap--inactive">
-                          <Order size={20} color="#999" />
+                          <List size={20} color="#999" />
                         </View>
                         <View className="plan-item__info">
                           <Text className="plan-item__name plan-item__name--inactive">{plan.name}</Text>
@@ -338,7 +338,7 @@ export default function MedicationIndex() {
 
             {plans.length === 0 && !loadingPlan && (
               <View className="empty-state">
-                <Order size={64} color="#ccc" />
+                <List size={64} color="#ccc" />
                 <Text className="empty-text">暂无用药计划</Text>
                 <Text className="empty-hint">点击下方按钮添加</Text>
               </View>
@@ -354,7 +354,7 @@ export default function MedicationIndex() {
         <LargeButton
           type="primary"
           size="medium"
-          icon={<Plus size={24} color="#fff" />}
+          icon={<Add size={24} color="#fff" />}
           onClick={handleAddPlan}
         >
           添加用药计划

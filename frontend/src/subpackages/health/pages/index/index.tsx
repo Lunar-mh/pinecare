@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Taro, { usePullDownRefresh } from '@tarojs/taro';
 import { View, Text, ScrollView } from '@tarojs/components';
-import { Transit, Heart, User, Order, Plus, Checked } from '@nutui/icons-react-taro';
+import { Icon } from '@/components/icons';
 import {
   MetricCard,
   AlertBanner,
@@ -103,7 +103,7 @@ export default function HealthIndex() {
           !loading && (
             <View className="health-index__alerts health-index__alerts--empty">
               <View className="empty-icon-wrapper">
-                <Checked size={24} color="#43a047" />
+                <Icon name="check" size={24} color="#43a047" />
               </View>
               <Text className="empty-text">今日健康状况良好，请继续保持</Text>
             </View>
@@ -131,15 +131,17 @@ export default function HealthIndex() {
             trend="stable"
             onClick={navigateToHeartRate}
           />
-          <MetricCard
-            title="今日步数"
-            loading={loading}
-            value={steps > 0 ? String(steps) : '--'}
-            unit="步"
-            subtitle="目标 5000 步"
-            status="normal"
-            trend={steps > 3000 ? 'up' : 'stable'}
-          />
+          <View className="health-index__metric--full">
+            <MetricCard
+              title="今日步数"
+              loading={loading}
+              value={steps > 0 ? String(steps) : '--'}
+              unit="步"
+              subtitle="目标 5000 步"
+              status="normal"
+              trend={steps > 3000 ? 'up' : 'stable'}
+            />
+        </View>
         </View>
 
         <SectionTitle
@@ -149,7 +151,7 @@ export default function HealthIndex() {
         />
         <View className="health-index__trend-card" onClick={navigateToTrend} role="button">
           <View className="trend-placeholder">
-            <Transit size={48} color="#01579b" />
+            <Icon name="transit" size={48} color="#01579b" />
             <Text className="trend-placeholder__text">查看近7天健康数据趋势</Text>
           </View>
         </View>
@@ -158,13 +160,13 @@ export default function HealthIndex() {
         <View className="health-index__actions">
           <View className="action-item" onClick={navigateToBloodPressure}>
             <View className="action-item__icon" style={{ background: '#E3F2FD' }}>
-              <Heart size={32} color="#01579b" />
+              <Icon name="heart" size={32} color="#01579b" />
             </View>
             <Text className="action-item__text">记录血压</Text>
           </View>
           <View className="action-item" onClick={navigateToHeartRate}>
             <View className="action-item__icon" style={{ background: '#FFF3E0' }}>
-              <User size={32} color="#F57C00" />
+              <Icon name="user" size={32} color="#F57C00" />
             </View>
             <Text className="action-item__text">记录心率</Text>
           </View>
@@ -173,7 +175,7 @@ export default function HealthIndex() {
             onClick={() => Taro.navigateTo({ url: '/subpackages/health/pages/records/index' })}
           >
             <View className="action-item__icon" style={{ background: '#F3E5F5' }}>
-              <Order size={32} color="#7B1FA2" />
+              <Icon name="order" size={32} color="#7B1FA2" />
             </View>
             <Text className="action-item__text">历史记录</Text>
           </View>
@@ -186,7 +188,7 @@ export default function HealthIndex() {
         <LargeButton
           type="primary"
           size="medium"
-          icon={<Plus size={24} color="#fff" />}
+          icon={<Icon name="plus" size={24} color="#fff" />}
           onClick={() => {
             Taro.showActionSheet({
               itemList: ['记录血压', '记录心率', '记录血糖', '记录体重'],

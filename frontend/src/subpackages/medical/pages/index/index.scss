@@ -1,5 +1,4 @@
-@import '../../../../styles/theme/variables.scss';
-
+@use '../../../../styles/theme/variables.scss' as *;
 .medical-page {
   min-height: 100vh;
   background: #f5f7fa;

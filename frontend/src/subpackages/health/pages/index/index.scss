@@ -1,5 +1,4 @@
-@import '../../../../styles/theme/variables.scss';
-
+@use '../../../../styles/theme/variables.scss' as *;
 .health-index {
   min-height: 100vh;
   background: $color-background;
@@ -47,10 +46,10 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
     margin-bottom: 8px;
+  }
 
-    & > *:nth-child(3) {
-      grid-column: span 2;
-    }
+  &__metric--full {
+    grid-column: span 2;
   }
 
   &__trend-card {

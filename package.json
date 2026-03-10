@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "dev:weapp": "npm --prefix frontend run dev:weapp",
+    "build:weapp": "npm --prefix frontend run build:weapp",
+    "typecheck:weapp": "npm --prefix frontend run typecheck",
+    "clean:weapp": "npm --prefix frontend run clean"
+  },
+  "dependencies": {
+    "opencode-antigravity-auth": "^1.6.0"
+  }
+}

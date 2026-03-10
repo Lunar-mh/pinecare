@@ -1,0 +1,46 @@
+@use '../../styles/theme/variables.scss' as *;
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+
+  &--clickable {
+    cursor: pointer;
+    transition: opacity $transition-fast;
+
+    &:active {
+      opacity: 0.7;
+    }
+  }
+
+  // Icon-specific colors for quick usage
+  &--heart {
+    color: $health-bp-systolic;
+  }
+
+  &--pill {
+    color: $color-warning;
+  }
+
+  &--sos {
+    color: $color-danger;
+  }
+
+  &--mic {
+    color: $color-primary;
+  }
+
+  &--robot {
+    color: #ad1457;
+  }
+
+  &--family {
+    color: $color-success;
+  }
+
+  &--stethoscope {
+    color: #00695c;
+  }
+}

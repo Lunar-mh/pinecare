@@ -1,5 +1,4 @@
-@import '../../../styles/theme/variables.scss';
-
+@use '../../../styles/theme/variables.scss' as *;
 /* AlertBanner 样式 */
 .alert-banner {
   width: 100%;

@@ -13,70 +13,70 @@
 
 ## 阶段 1：初始化
 
-- [ ] T001 初始化后端依赖与脚本（express/mysql2/ali-oss/multer/dotenv/jsonwebtoken，start/dev/test） in `backend/package.json`
-- [ ] T002 [P] 创建环境变量模板，补齐 `DB_*`、`JWT_SECRET`、`OSS_REGION`、`OSS_BUCKET`、`OSS_ACCESS_KEY_ID`、`OSS_ACCESS_KEY_SECRET`、`PORT` in `backend/.env.example`
-- [ ] T003 [P] 创建 MySQL 连接配置，导出连接池与 `query` 方法 in `backend/src/config/db.js`
-- [ ] T004 创建服务启动入口，加载 dotenv、初始化 Express、挂载 `/family` 路由并注册错误中间件 in `backend/server.js`
+- [X] T001 初始化后端依赖与脚本（express/mysql2/ali-oss/multer/dotenv/jsonwebtoken，start/dev/test） in `backend/package.json`
+- [X] T002 [P] 创建环境变量模板，补齐 `DB_*`、`JWT_SECRET`、`OSS_REGION`、`OSS_BUCKET`、`OSS_ACCESS_KEY_ID`、`OSS_ACCESS_KEY_SECRET`、`PORT` in `backend/.env.example`
+- [X] T003 [P] 创建 MySQL 连接配置，导出连接池与 `query` 方法 in `backend/src/config/db.js`
+- [X] T004 创建服务启动入口，加载 dotenv、初始化 Express、挂载 `/family` 路由并注册错误中间件 in `backend/server.js`
 
 ---
 
 ## 阶段 2：基础设施
 
-- [ ] T005 [P] 编写迁移脚本，创建 `voice_messages`、`family_albums`、`family_points` 三张表及查询索引 in `backend/migrations/001_create_family_space_tables.sql`
-- [ ] T006 [P] 实现 JWT Bearer 鉴权中间件，校验 token 并注入 `req.user.userId` in `backend/src/middleware/auth.js`
-- [ ] T007 [P] 实现全局错误处理中间件，统一输出 `{ code, message, data }` in `backend/src/middleware/errorHandler.js`
-- [ ] T008 [P] 实现上传中间件，分别配置音频/图片 `multer` 存储、类型白名单与大小限制 in `backend/src/middleware/upload.js`
-- [ ] T009 [P] 实现 OSS 客户端配置，读取环境变量并导出可复用实例 in `backend/src/config/oss.js`
-- [ ] T010 实现 OSS 服务层，封装 `uploadAudio`、`uploadImage`、`buildPublicUrl` 方法 in `backend/src/services/ossService.js`
-- [ ] T011 实现数据模型基础方法，封装用户家庭归属查询与跨家庭访问校验 in `backend/src/models/familySpace.js`
-- [ ] T012 实现家庭空间服务骨架，定义 message/album/points/leaderboard 用例入口 in `backend/src/services/familySpaceService.js`
-- [ ] T013 实现家庭空间控制器骨架，预留 6 个处理器并复用成功响应函数 in `backend/src/controllers/familySpaceController.js`
-- [ ] T014 实现家庭空间路由骨架，接入 auth 与 upload 中间件并注册 6 个 API 路由 in `backend/src/routes/familySpace.js`
+- [X] T005 [P] 编写迁移脚本，创建 `voice_messages`、`family_albums`、`family_points` 三张表及查询索引 in `backend/migrations/001_create_family_space_tables.sql`
+- [X] T006 [P] 实现 JWT Bearer 鉴权中间件，校验 token 并注入 `req.user.userId` in `backend/src/middleware/auth.js`
+- [X] T007 [P] 实现全局错误处理中间件，统一输出 `{ code, message, data }` in `backend/src/middleware/errorHandler.js`
+- [X] T008 [P] 实现上传中间件，分别配置音频/图片 `multer` 存储、类型白名单与大小限制 in `backend/src/middleware/upload.js`
+- [X] T009 [P] 实现 OSS 客户端配置，读取环境变量并导出可复用实例 in `backend/src/config/oss.js`
+- [X] T010 实现 OSS 服务层，封装 `uploadAudio`、`uploadImage`、`buildPublicUrl` 方法 in `backend/src/services/ossService.js`
+- [X] T011 实现数据模型基础方法，封装用户家庭归属查询与跨家庭访问校验 in `backend/src/models/familySpace.js`
+- [X] T012 实现家庭空间服务骨架，定义 message/album/points/leaderboard 用例入口 in `backend/src/services/familySpaceService.js`
+- [X] T013 实现家庭空间控制器骨架，预留 6 个处理器并复用成功响应函数 in `backend/src/controllers/familySpaceController.js`
+- [X] T014 实现家庭空间路由骨架，接入 auth 与 upload 中间件并注册 6 个 API 路由 in `backend/src/routes/familySpace.js`
 
 ---
 
 ## 阶段 3：用户故事 1 - 语音留言（发送/列表）
 
-- [ ] T015 [US1] 实现语音留言模型方法 `createVoiceMessage` 与 `listReceivedVoiceMessages` in `backend/src/models/familySpace.js`
-- [ ] T016 [US1] 实现发送语音留言服务：上传音频到 OSS、写入 `voice_messages`、返回 `audio_url` in `backend/src/services/familySpaceService.js`
-- [ ] T017 [US1] 实现留言列表服务：按当前用户查询收到的留言并返回播放状态 in `backend/src/services/familySpaceService.js`
-- [ ] T018 [US1] 实现控制器 `sendMessage` 与 `listMessages`，统一返回 `{ code: 0, message: "success", data }` in `backend/src/controllers/familySpaceController.js`
-- [ ] T019 [US1] 注册 `POST /family/message/send` 与 `GET /family/message/list` 路由并绑定控制器 in `backend/src/routes/familySpace.js`
-- [ ] T020 [US1] 编写语音留言集成测试，覆盖发送成功、文件格式错误、列表查询与排序 in `backend/tests/integration/family-space.message.test.js`
+- [X] T015 [US1] 实现语音留言模型方法 `createVoiceMessage` 与 `listReceivedVoiceMessages` in `backend/src/models/familySpace.js`
+- [X] T016 [US1] 实现发送语音留言服务：上传音频到 OSS、写入 `voice_messages`、返回 `audio_url` in `backend/src/services/familySpaceService.js`
+- [X] T017 [US1] 实现留言列表服务：按当前用户查询收到的留言并返回播放状态 in `backend/src/services/familySpaceService.js`
+- [X] T018 [US1] 实现控制器 `sendMessage` 与 `listMessages`，统一返回 `{ code: 0, message: "success", data }` in `backend/src/controllers/familySpaceController.js`
+- [X] T019 [US1] 注册 `POST /family/message/send` 与 `GET /family/message/list` 路由并绑定控制器 in `backend/src/routes/familySpace.js`
+- [X] T020 [US1] 编写语音留言集成测试，覆盖发送成功、文件格式错误、列表查询与排序 in `backend/tests/integration/family-space.message.test.js`
 
 ---
 
 ## 阶段 4：用户故事 2 - 电子相册（上传/列表）
 
-- [ ] T021 [US2] 实现相册与积分模型方法 `createAlbumPhoto`、`listAlbumByFamilyId`、`addFamilyPoints` in `backend/src/models/familySpace.js`
-- [ ] T022 [US2] 实现上传相册服务：上传图片到 OSS、写入 `family_albums` 并新增孝心值记录 in `backend/src/services/familySpaceService.js`
-- [ ] T023 [US2] 实现相册列表服务：按 `family_id` 查询并按 `created_at` 倒序返回 in `backend/src/services/familySpaceService.js`
-- [ ] T024 [US2] 实现控制器 `uploadAlbum` 与 `listAlbum`，处理参数校验失败与权限错误 in `backend/src/controllers/familySpaceController.js`
-- [ ] T025 [US2] 注册 `POST /family/album/upload` 与 `GET /family/album/list` 路由并绑定控制器 in `backend/src/routes/familySpace.js`
-- [ ] T026 [US2] 编写电子相册集成测试，覆盖上传成功、家庭隔离与积分累加 in `backend/tests/integration/family-space.album.test.js`
+- [X] T021 [US2] 实现相册与积分模型方法 `createAlbumPhoto`、`listAlbumByFamilyId`、`addFamilyPoints` in `backend/src/models/familySpace.js`
+- [X] T022 [US2] 实现上传相册服务：上传图片到 OSS、写入 `family_albums` 并新增孝心值记录 in `backend/src/services/familySpaceService.js`
+- [X] T023 [US2] 实现相册列表服务：按 `family_id` 查询并按 `created_at` 倒序返回 in `backend/src/services/familySpaceService.js`
+- [X] T024 [US2] 实现控制器 `uploadAlbum` 与 `listAlbum`，处理参数校验失败与权限错误 in `backend/src/controllers/familySpaceController.js`
+- [X] T025 [US2] 注册 `POST /family/album/upload` 与 `GET /family/album/list` 路由并绑定控制器 in `backend/src/routes/familySpace.js`
+- [X] T026 [US2] 编写电子相册集成测试，覆盖上传成功、家庭隔离与积分累加 in `backend/tests/integration/family-space.album.test.js`
 
 ---
 
 ## 阶段 5：用户故事 3 - 孝心值系统（查询/排行榜）
 
-- [ ] T027 [US3] 实现积分模型方法 `getUserPointsTotal`、`listUserPointsDetails`、`getFamilyLeaderboard` in `backend/src/models/familySpace.js`
-- [ ] T028 [US3] 实现孝心值查询服务：返回当前用户总分与明细列表 in `backend/src/services/familySpaceService.js`
-- [ ] T029 [US3] 实现排行榜服务：按 `family_id` 聚合积分并按总分降序返回 in `backend/src/services/familySpaceService.js`
-- [ ] T030 [US3] 实现控制器 `getPoints` 与 `getLeaderboard`，统一返回成功结构 in `backend/src/controllers/familySpaceController.js`
-- [ ] T031 [US3] 注册 `GET /family/points` 与 `GET /family/leaderboard` 路由并绑定控制器 in `backend/src/routes/familySpace.js`
-- [ ] T032 [US3] 编写孝心值与排行榜集成测试，覆盖空数据、并列分与分页参数 in `backend/tests/integration/family-space.points.test.js`
+- [X] T027 [US3] 实现积分模型方法 `getUserPointsTotal`、`listUserPointsDetails`、`getFamilyLeaderboard` in `backend/src/models/familySpace.js`
+- [X] T028 [US3] 实现孝心值查询服务：返回当前用户总分与明细列表 in `backend/src/services/familySpaceService.js`
+- [X] T029 [US3] 实现排行榜服务：按 `family_id` 聚合积分并按总分降序返回 in `backend/src/services/familySpaceService.js`
+- [X] T030 [US3] 实现控制器 `getPoints` 与 `getLeaderboard`，统一返回成功结构 in `backend/src/controllers/familySpaceController.js`
+- [X] T031 [US3] 注册 `GET /family/points` 与 `GET /family/leaderboard` 路由并绑定控制器 in `backend/src/routes/familySpace.js`
+- [X] T032 [US3] 编写孝心值与排行榜集成测试，覆盖空数据、并列分与分页参数 in `backend/tests/integration/family-space.points.test.js`
 
 ---
 
 ## 最终阶段：完善
 
-- [ ] T033 [P] 创建请求参数校验中间件，统一校验 `to_user_id`、`duration_seconds`、`family_id`、`page/pageSize` in `backend/src/middleware/validators.js`
-- [ ] T034 在家庭空间路由接入参数校验中间件，统一 400 错误返回结构 in `backend/src/routes/familySpace.js`
-- [ ] T035 [P] 创建启动环境校验模块，缺失 `DB/JWT/OSS` 关键配置时阻止启动 in `backend/src/config/env.js`
-- [ ] T036 在服务入口接入环境校验与优雅关闭（释放 MySQL 连接池） in `backend/server.js`
-- [ ] T037 [P] 编写家庭空间 OpenAPI/Swagger 文档，覆盖 6 个接口与 Bearer 鉴权 in `backend/src/docs/familySpaceSwagger.js`
-- [ ] T038 更新测试脚本，支持一键执行家庭空间集成测试 in `backend/package.json`
-- [ ] T039 编写家庭空间留言列表性能测试，GET /family/message/list 在200并发下 p95 <300ms in `backend/tests/performance/familySpace.messageList.perf.test.js`
+- [X] T033 [P] 创建请求参数校验中间件，统一校验 `to_user_id`、`duration_seconds`、`family_id`、`page/pageSize` in `backend/src/middleware/validators.js`
+- [X] T034 在家庭空间路由接入参数校验中间件，统一 400 错误返回结构 in `backend/src/routes/familySpace.js`
+- [X] T035 [P] 创建启动环境校验模块，缺失 `DB/JWT/OSS` 关键配置时阻止启动 in `backend/src/config/env.js`
+- [X] T036 在服务入口接入环境校验与优雅关闭（释放 MySQL 连接池） in `backend/server.js`
+- [X] T037 [P] 编写家庭空间 OpenAPI/Swagger 文档，覆盖 6 个接口与 Bearer 鉴权 in `backend/src/docs/familySpaceSwagger.js`
+- [X] T038 更新测试脚本，支持一键执行家庭空间集成测试 in `backend/package.json`
+- [X] T039 编写家庭空间留言列表性能测试，GET /family/message/list 在200并发下 p95 <300ms in `backend/tests/performance/familySpace.messageList.perf.test.js`
 
 ---
 

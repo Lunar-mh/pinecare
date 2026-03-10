@@ -1,5 +1,4 @@
-@import '../../../styles/theme/variables.scss';
-
+@use '../../../styles/theme/variables.scss' as *;
 /* ChartCard 样式 */
 .chart-card {
   background: #FFFFFF;

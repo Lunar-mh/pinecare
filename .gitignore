@@ -31,3 +31,6 @@ coverage/
 
 # Redis dump
 dump.rdb
+
+# Docker
+docker_data/

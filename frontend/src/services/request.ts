@@ -5,10 +5,29 @@
 
 import Taro from '@tarojs/taro';
 
+function getEnvVersion(): string {
+  try {
+    const info = Taro.getAccountInfoSync();
+    return info?.miniProgram?.envVersion || 'develop';
+  } catch (_) {
+    return 'develop';
+  }
+}
+
+function isDevtools(): boolean {
+  try {
+    const info = Taro.getSystemInfoSync();
+    return info?.platform === 'devtools';
+  } catch (_) {
+    return false;
+  }
+}
+
 // API基础配置
-const BASE_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:3000/api/v1'  // 开发环境
-  : 'https://api.yinban.com/api/v1'; // 生产环境（待核验）
+// 约定：release 才走线上域名，其它（develop/trial）一律走本地联调
+const BASE_URL = getEnvVersion() === 'release'
+  ? (isDevtools() ? 'http://localhost:3000/api/v1' : 'https://api.yinban.com/api/v1')
+  : 'http://localhost:3000/api/v1';
 
 const TIMEOUT = 15000; // 15秒超时
 
@@ -61,7 +80,8 @@ const responseInterceptor = <T>(response: Taro.request.SuccessCallbackResult<Api
   }
   
   // 业务错误处理
-  if (data.code !== 200) {
+  // 后端成功码为 0；部分网关/第三方可能使用 200
+  if (data.code !== 0 && data.code !== 200) {
     // Token过期
     if (data.code === 401) {
       Taro.removeStorageSync('token');
