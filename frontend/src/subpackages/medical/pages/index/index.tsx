@@ -1,139 +1,70 @@
-import { useState, useEffect, useCallback } from 'react';
-import Taro, { usePullDownRefresh } from '@tarojs/taro';
-import { View, Text, ScrollView, Image } from '@tarojs/components';
-import { Search, Star, Clock, Location, ArrowRight } from '@nutui/icons-react-taro';
-import { SectionTitle, LargeButton } from '@/components/elderly';
-import { searchDoctors, getMyAppointments } from '@/services/modules/medical';
-import type { Doctor, Appointment } from '@/services/types';
-import './index.scss';
+﻿import { useCallback, useEffect, useState } from 'react'
+import Taro, { usePullDownRefresh } from '@tarojs/taro'
+import { View, Text, ScrollView } from '@tarojs/components'
+import { Clock, Service, Star } from '@nutui/icons-react-taro'
+import { ActionGrid, DataPanel, EmptyState, HeroHeader, PageShell, SectionBlock, StickyPrimaryAction } from '@/components/shell'
+import { getMedicalReports, getMyAppointments, searchDoctors } from '@/services/modules/medical'
+import type { Appointment, Doctor, MedicalReport } from '@/services/types'
+import './index.scss'
 
 export default function MedicalIndex() {
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [doctors, setDoctors] = useState<Doctor[]>([])
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [reports, setReports] = useState<MedicalReport[]>([])
+  const [loading, setLoading] = useState(true)
 
   const loadData = useCallback(async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const [docRes, apptRes] = await Promise.all([
-        searchDoctors({ page: 1, pageSize: 5, isOnline: true }),
-        getMyAppointments({ status: 'pending', page: 1, pageSize: 2 })
-      ]);
-      setDoctors(docRes?.list || []);
-      setAppointments(apptRes?.list || []);
-    } catch (_) { /* noop */ } finally {
-      setLoading(false);
+      const [doctorRes, appointmentRes, reportRes] = await Promise.all([
+        searchDoctors({ page: 1, pageSize: 4, isOnline: true }),
+        getMyAppointments({ page: 1, pageSize: 3 }),
+        getMedicalReports({ page: 1, pageSize: 3 }),
+      ])
+      setDoctors(doctorRes?.list || [])
+      setAppointments(appointmentRes?.list || [])
+      setReports(reportRes?.list || [])
+    } catch (error) {
+      console.error('load medical page failed', error)
+      setDoctors([])
+      setAppointments([])
+      setReports([])
+    } finally {
+      setLoading(false)
     }
-  }, []);
+  }, [])
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  usePullDownRefresh(() => {
-    loadData().then(() => Taro.stopPullDownRefresh());
-  });
-
-  const handleBook = (id: string) => {
-    Taro.showToast({ title: '预约功能开发中', icon: 'none' });
-  };
+  useEffect(() => { loadData() }, [loadData])
+  usePullDownRefresh(() => { loadData().finally(() => Taro.stopPullDownRefresh()) })
 
   return (
-    <View className="medical-page">
-      <ScrollView className="medical-scroll" scrollY>
-        {/* 顶部搜索区 */}
-        <View className="search-header">
-          <View className="search-bar">
-            <Search size={18} color="#999" />
-            <Text className="search-placeholder">搜索医生、科室或医院</Text>
-          </View>
-        </View>
+    <PageShell roleTone="family" className="medical-overview-page">
+      <HeroHeader roleTone="family" eyebrow="医疗连接" title="医生、预约、报告放到一个医疗入口" subtitle="不再把线上医生、预约状态和报告入口拆散，家属也能更快代看。" />
+      <ScrollView className="detail-shell-scroll" scrollY>
+        <SectionBlock title="快捷入口" description="把高频动作前置，避免来回找。">
+          <ActionGrid columns={2} onSelect={() => Taro.showToast({ title: '下一阶段继续接入下钻流程', icon: 'none' })} items={[
+            { key: 'online', label: '线上问诊', description: '优先咨询在线医生', icon: <Service size={24} /> },
+            { key: 'offline', label: '线下预约', description: '安排门诊或复诊时间', icon: <Clock size={24} /> },
+            { key: 'report', label: '检查报告', description: '查看最近上传的报告', icon: <Star size={24} /> },
+            { key: 'history', label: '就诊记录', description: '回看既往预约和报告', icon: <Service size={24} /> },
+          ]} />
+        </SectionBlock>
 
-        {/* 快捷菜单 */}
-        <View className="medical-menu">
-          <View className="menu-item" onClick={() => Taro.showToast({ title: '开发中', icon: 'none' })}>
-            <View className="menu-icon menu-icon--online">💻</View>
-            <Text className="menu-text">在线问诊</Text>
-          </View>
-          <View className="menu-item" onClick={() => Taro.showToast({ title: '开发中', icon: 'none' })}>
-            <View className="menu-icon menu-icon--offline">🏥</View>
-            <Text className="menu-text">医院挂号</Text>
-          </View>
-          <View className="menu-item" onClick={() => Taro.showToast({ title: '开发中', icon: 'none' })}>
-            <View className="menu-icon menu-icon--report">📄</View>
-            <Text className="menu-text">查报告</Text>
-          </View>
-          <View className="menu-item" onClick={() => Taro.showToast({ title: '开发中', icon: 'none' })}>
-            <View className="menu-icon menu-icon--history">💊</View>
-            <Text className="menu-text">复诊配药</Text>
-          </View>
-        </View>
+        <SectionBlock title="最近预约" description="优先确认近期是否已经有待处理预约。">
+          {appointments.length === 0 ? <EmptyState title="暂时没有预约" description="可以从快捷入口开始新的线上或线下预约。" icon={<Clock size={28} />} /> : <View className="detail-stack">{appointments.map(item => <DataPanel key={item.id} tone={item.status === 'confirmed' ? 'success' : item.status === 'pending' ? 'warning' : 'info'}><Text className="detail-title">{item.doctorName}</Text><Text className="detail-text">{item.hospital} · {item.department}</Text><Text className="detail-meta">{new Date(item.scheduledAt).toLocaleString('zh-CN')} · {item.type === 'online' ? '线上' : '线下'} · {item.status}</Text></DataPanel>)}</View>}
+        </SectionBlock>
 
-        {/* 我的预约 */}
-        {appointments.length > 0 && (
-          <View className="appointments-section">
-            <SectionTitle title="我的预约" />
-            <View className="appointment-list">
-              {appointments.map(appt => (
-                <View key={appt.id} className="appointment-card">
-                  <View className="appointment-header">
-                    <Text className="appointment-type">{appt.type === 'online' ? '视频问诊' : '门诊预约'}</Text>
-                    <Text className="appointment-status">待就诊</Text>
-                  </View>
-                  <View className="appointment-body">
-                    <Text className="doctor-name">{appt.doctorName}</Text>
-                    <Text className="appt-detail">{appt.department} · {appt.hospital}</Text>
-                    <View className="appt-time">
-                      <Clock size={14} color="#01579b" />
-                      <Text>{new Date(appt.scheduledAt).toLocaleString('zh-CN')}</Text>
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
+        <SectionBlock title="在线医生" description="先展示可联系的医生，不做过重的搜索页。">
+          {loading ? <DataPanel tone="info"><Text className="detail-text">正在同步医生列表...</Text></DataPanel> : doctors.length === 0 ? <EmptyState title="当前没有在线医生" description="可以稍后再试，或先查看已有预约。" icon={<Service size={28} />} /> : <View className="detail-stack">{doctors.map(item => <DataPanel key={item.id} tone={item.isOnline ? 'success' : 'info'}><Text className="detail-title">{item.name} · {item.title}</Text><Text className="detail-text">{item.hospital} · {item.department}</Text><Text className="detail-meta">评分 {item.rating} · 费用 {item.consultationFee} 元</Text></DataPanel>)}</View>}
+        </SectionBlock>
 
-        {/* 推荐医生 */}
-        <View className="doctors-section">
-          <SectionTitle title="推荐名医" action="全部 >" />
-          <View className="doctor-list">
-            {doctors.map(doc => (
-              <View key={doc.id} className="doctor-card">
-                <Image className="doctor-avatar" src={doc.avatar || ''} mode="aspectFill" />
-                <View className="doctor-info">
-                  <View className="doctor-name-row">
-                    <Text className="doctor-name">{doc.name}</Text>
-                    <Text className="doctor-title">{doc.title}</Text>
-                  </View>
-                  <Text className="doctor-hospital">{doc.hospital} · {doc.department}</Text>
-                  <View className="doctor-tags">
-                    {doc.tags.slice(0, 3).map((tag, i) => (
-                      <Text key={i} className="doctor-tag">{tag}</Text>
-                    ))}
-                  </View>
-                  <View className="doctor-stats">
-                    <Star size={14} color="#ffb300" />
-                    <Text className="rating">{doc.rating}</Text>
-                    <Text className="consult-count">问诊量 1000+</Text>
-                  </View>
-                </View>
-                <View className="doctor-action">
-                  <View className="book-btn" onClick={() => handleBook(doc.id)}>
-                    <Text>预约</Text>
-                  </View>
-                </View>
-              </View>
-            ))}
-            {loading && <View className="loading-text"><Text>加载中...</Text></View>}
-            {!loading && doctors.length === 0 && (
-              <View className="empty-state">
-                <Text>暂无在线医生</Text>
-              </View>
-            )}
-          </View>
-        </View>
+        <SectionBlock title="最近报告" description="让家属和长辈都能从同一处回看最近检查。">
+          {reports.length === 0 ? <EmptyState title="暂无报告" description="后续上传的检查报告会出现在这里。" icon={<Star size={28} />} /> : <View className="detail-stack">{reports.map(item => <DataPanel key={item.id} tone="info"><Text className="detail-title">{item.title}</Text><Text className="detail-text">{item.hospital}</Text><Text className="detail-meta">{new Date(item.reportDate).toLocaleDateString('zh-CN')} · {item.type}</Text></DataPanel>)}</View>}
+        </SectionBlock>
+        <View className="detail-bottom-space" />
       </ScrollView>
-    </View>
+      <StickyPrimaryAction tone="family" label="发起一次医疗咨询" icon={<Service size={22} />} onClick={() => Taro.showToast({ title: '下一阶段补齐预约与咨询深链', icon: 'none' })} />
+    </PageShell>
   )
 }
+

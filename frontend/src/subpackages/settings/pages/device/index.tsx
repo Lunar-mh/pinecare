@@ -1,122 +1,66 @@
-import { View, Text, Button, ScrollView } from '@tarojs/components'
+﻿import { useEffect, useState } from 'react'
 import Taro from '@tarojs/taro'
-import { useState, useEffect } from 'react'
-import { get, post, del } from '@/services/request'
+import { View, Text, ScrollView } from '@tarojs/components'
+import { Link, Service } from '@nutui/icons-react-taro'
+import { DataPanel, EmptyState, HeroHeader, PageShell, SectionBlock, StickyPrimaryAction } from '@/components/shell'
+import { del, get, post } from '@/services/request'
 import './index.scss'
 
-interface Device {
-  id: string
-  name: string
-  type: string
-  status: string
-  bindTime: string
-}
+type DeviceItem = { id: string; name: string; type: string; status: string; bindTime: string }
 
 export default function DeviceBinding() {
-  const [devices, setDevices] = useState<Device[]>([])
+  const [devices, setDevices] = useState<DeviceItem[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetchDevices = async () => {
+  const loadDevices = async () => {
     setLoading(true)
     try {
-      const res = await get('/user/devices') as { data?: Device[] }
-      if (res && res.data) {
-        setDevices(res.data)
-      } else {
-        setDevices([])
-      }
-    } catch (e: unknown) {
-      console.error('Failed to fetch devices', e)
+      const response = (await get('/user/devices')) as { data?: DeviceItem[] }
+      setDevices(response?.data || [])
+    } catch (error) {
+      console.error('load devices failed', error)
       setDevices([])
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => {
-    fetchDevices()
-  }, [])
+  useEffect(() => { loadDevices() }, [])
 
-  const handleScanBind = async () => {
+  const handleBind = async () => {
     try {
-      const res = await Taro.scanCode({
-        onlyFromCamera: false,
-        scanType: ['qrCode', 'barCode']
-      })
-      
-      if (res.result) {
-        Taro.showLoading({ title: '绑定中...' })
-        try {
-          await post('/user/devices/bind', { code: res.result })
-          Taro.hideLoading()
-          Taro.showToast({ title: '绑定成功', icon: 'success' })
-          fetchDevices()
-        } catch (apiErr: unknown) {
-          Taro.hideLoading()
-          Taro.showToast({ title: '绑定失败', icon: 'error' })
-        }
-      }
-    } catch (e: unknown) {
-      console.error('Scan failed', e)
+      const result = await Taro.scanCode({ onlyFromCamera: false, scanType: ['qrCode', 'barCode'] })
+      if (!result.result) return
+      await post('/user/devices/bind', { code: result.result })
+      Taro.showToast({ title: '设备已绑定', icon: 'success' })
+      loadDevices()
+    } catch (error) {
+      console.error('bind device failed', error)
+      Taro.showToast({ title: '绑定失败，请重试', icon: 'none' })
     }
   }
 
-  const handleUnbind = (id: string, name: string) => {
-    Taro.showModal({
-      title: '解除绑定',
-      content: `确定要解除绑定设备"${name}"吗？`,
-      success: async (res) => {
-        if (res.confirm) {
-          Taro.showLoading({ title: '解绑中...' })
-          try {
-            await del(`/user/devices/${id}`)
-            Taro.hideLoading()
-            Taro.showToast({ title: '解绑成功', icon: 'success' })
-            fetchDevices()
-          } catch (e: unknown) {
-            Taro.hideLoading()
-            Taro.showToast({ title: '解绑失败', icon: 'error' })
-          }
-        }
-      }
-    })
+  const handleUnbind = async (id: string) => {
+    try {
+      await del(`/user/devices/${id}`)
+      Taro.showToast({ title: '已解除绑定', icon: 'success' })
+      loadDevices()
+    } catch (error) {
+      console.error('unbind device failed', error)
+      Taro.showToast({ title: '操作失败，请稍后再试', icon: 'none' })
+    }
   }
 
   return (
-    <View className="device-page">
-      <ScrollView scrollY className="device-list">
-        {loading ? (
-          <View className="empty-state">
-            <Text className="empty-text">加载中...</Text>
-          </View>
-        ) : devices.length > 0 ? (
-          devices.map(device => (
-            <View key={device.id} className="device-card">
-              <View className="device-info">
-                <Text className="device-name">{device.name}</Text>
-                <Text className="device-type">类型: {device.type}</Text>
-                <Text className="device-status">状态: {device.status}</Text>
-              </View>
-              <Button 
-                className="unbind-btn" 
-                onClick={() => handleUnbind(device.id, device.name)}
-              >
-                解绑
-              </Button>
-            </View>
-          ))
-        ) : (
-          <View className="empty-state">
-            <Text className="empty-text">暂未绑定设备</Text>
-          </View>
-        )}
+    <PageShell roleTone="family" className="settings-detail-page">
+      <HeroHeader roleTone="family" eyebrow="设备与定位" title="设备状态和绑定动作放在一起" subtitle="先看在线状态，再做扫码绑定或解除绑定。" />
+      <ScrollView className="detail-shell-scroll" scrollY>
+        <SectionBlock title="当前设备" description="只保留设备名称、状态和绑定时间。">
+          {loading ? <DataPanel tone="info"><Text className="detail-text">正在同步设备信息...</Text></DataPanel> : devices.length === 0 ? <EmptyState title="还没有绑定设备" description="可以直接使用底部按钮扫码绑定。" icon={<Link size={28} />} /> : <View className="detail-stack">{devices.map(item => <DataPanel key={item.id} tone={item.status.includes('在线') ? 'success' : 'info'}><Text className="detail-title">{item.name}</Text><Text className="detail-text">{item.type} · {item.status}</Text><Text className="detail-meta">绑定时间 {item.bindTime}</Text><View className="detail-actions"><View className="detail-button detail-button--danger" onClick={() => handleUnbind(item.id)}><Text>解除绑定</Text></View></View></DataPanel>)}</View>}
+        </SectionBlock>
+        <View className="detail-bottom-space" />
       </ScrollView>
-
-      <View className="bottom-action">
-        <Button className="bind-btn" onClick={handleScanBind}>
-          扫码绑定新设备
-        </Button>
-      </View>
-    </View>
+      <StickyPrimaryAction tone="family" label="扫码绑定设备" icon={<Link size={22} />} onClick={handleBind} />
+    </PageShell>
   )
 }

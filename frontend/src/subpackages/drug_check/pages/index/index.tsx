@@ -1,382 +1,87 @@
-import { useState, useEffect, useCallback } from 'react';
-import Taro from '@tarojs/taro';
-import { View, Text, ScrollView, Input } from '@tarojs/components';
-import { Warning, Checked, Plus, ArrowRight, Close } from '@nutui/icons-react-taro';
-import {
-  checkDrugInteraction,
-  getInteractionHistory,
-  acknowledgeRisk,
-  checkContraindication,
-  checkFoodInteraction,
-} from '@/services/modules/drug_interaction';
-import type {
-  DrugInteractionResult,
-  DrugInteractionRecord,
-  DrugInteractionLevel,
-  DrugContraindication,
-  DrugFoodInteraction,
-} from '@/services/types';
-import './index.scss';
+﻿import { useEffect, useState } from 'react'
+import { View, Text, ScrollView, Input } from '@tarojs/components'
+import { Search, ShieldCheck, Warning } from '@nutui/icons-react-taro'
+import { DataPanel, EmptyState, HeroHeader, PageShell, SectionBlock, StickyPrimaryAction } from '@/components/shell'
+import { acknowledgeRisk, checkContraindication, checkDrugInteraction, checkFoodInteraction, getInteractionHistory } from '@/services/modules/drug_interaction'
+import type { DrugContraindication, DrugFoodInteraction, DrugInteractionRecord, DrugInteractionResult } from '@/services/types'
+import './index.scss'
 
-type TabKey = 'check' | 'history' | 'contraindication';
-
-const LEVEL_CONFIG: Record<DrugInteractionLevel, { label: string; color: string; bg: string }> = {
-  X: { label: '禁止合用', color: '#fff', bg: '#e53935' },
-  D: { label: '避免合用', color: '#fff', bg: '#fb8c00' },
-  C: { label: '谨慎合用', color: '#1a1a1a', bg: '#f9a825' },
-  B: { label: '较安全', color: '#fff', bg: '#43a047' },
-  A: { label: '无明显影响', color: '#fff', bg: '#1e88e5' },
-};
+const levelToneMap: Record<string, 'danger' | 'warning' | 'info' | 'success'> = { X: 'danger', D: 'danger', C: 'warning', B: 'info', A: 'success' }
 
 export default function DrugCheckIndex() {
-  const [activeTab, setActiveTab] = useState<TabKey>('check');
-  const [drugInput, setDrugInput] = useState('');
-  const [drugList, setDrugList] = useState<string[]>([]);
-  const [checkResults, setCheckResults] = useState<DrugInteractionResult[]>([]);
-  const [history, setHistory] = useState<DrugInteractionRecord[]>([]);
-  const [checking, setChecking] = useState(false);
-  const [contraName, setContraName] = useState('');
-  const [contraResults, setContraResults] = useState<DrugContraindication[]>([]);
-  const [foodResults, setFoodResults] = useState<DrugFoodInteraction[]>([]);
-  const [contraChecking, setContraChecking] = useState(false);
+  const [drugInput, setDrugInput] = useState('')
+  const [drugList, setDrugList] = useState<string[]>([])
+  const [results, setResults] = useState<DrugInteractionResult[]>([])
+  const [history, setHistory] = useState<DrugInteractionRecord[]>([])
+  const [contra, setContra] = useState<DrugContraindication[]>([])
+  const [food, setFood] = useState<DrugFoodInteraction[]>([])
+  const [loading, setLoading] = useState(false)
 
-  const loadHistory = useCallback(async () => {
-    try {
-      const res = await getInteractionHistory();
-      if (res && Array.isArray(res)) {
-        setHistory(res as DrugInteractionRecord[]);
-      }
-    } catch (_) { /* noop */ }
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'history') {
-      loadHistory();
-    }
-  }, [activeTab, loadHistory]);
+  useEffect(() => { getInteractionHistory().then(setHistory).catch(() => setHistory([])) }, [])
 
   const handleAddDrug = () => {
-    const name = drugInput.trim();
-    if (!name) return;
-    if (drugList.includes(name)) {
-      Taro.showToast({ title: '已添加该药物', icon: 'none' });
-      return;
-    }
-    if (drugList.length >= 10) {
-      Taro.showToast({ title: '最多添加10种药物', icon: 'none' });
-      return;
-    }
-    setDrugList((prev) => [...prev, name]);
-    setDrugInput('');
-  };
-
-  const handleRemoveDrug = (name: string) => {
-    setDrugList((prev) => prev.filter((d) => d !== name));
-  };
+    const value = drugInput.trim()
+    if (!value || drugList.includes(value)) return
+    setDrugList(prev => [...prev, value])
+    setDrugInput('')
+  }
 
   const handleCheck = async () => {
-    if (drugList.length < 2) {
-      Taro.showToast({ title: '请至少添加2种药物', icon: 'none' });
-      return;
-    }
-    setChecking(true);
-    setCheckResults([]);
+    if (drugList.length < 2) return
+    setLoading(true)
     try {
-      const res = await checkDrugInteraction({ drugList });
-      if (res && Array.isArray(res)) {
-        setCheckResults(res as DrugInteractionResult[]);
-        if ((res as DrugInteractionResult[]).length === 0) {
-          Taro.showToast({ title: '未发现相互作用', icon: 'success' });
-        }
-      }
-    } catch (_) {
-      Taro.showToast({ title: '检查失败，请重试', icon: 'none' });
+      const [interaction, contraData, foodData] = await Promise.all([
+        checkDrugInteraction({ drugList }),
+        checkContraindication({ drugName: drugList[0] }),
+        checkFoodInteraction({ drugName: drugList[0] }),
+      ])
+      setResults(interaction || [])
+      setContra(contraData || [])
+      setFood(foodData || [])
+    } catch (error) {
+      console.error('drug interaction check failed', error)
+      setResults([])
+      setContra([])
+      setFood([])
     } finally {
-      setChecking(false);
+      setLoading(false)
     }
-  };
-
-  const handleAcknowledge = async (id: number) => {
-    try {
-      await acknowledgeRisk({ interactionId: id });
-      setHistory((prev) => prev.map((r) => r.id === id ? { ...r, status: 'acknowledged' as const } : r));
-      Taro.showToast({ title: '已确认知悉', icon: 'success' });
-    } catch (_) {
-      Taro.showToast({ title: '操作失败', icon: 'none' });
-    }
-  };
-
-  const handleContraCheck = async () => {
-    const name = contraName.trim();
-    if (!name) return;
-    setContraChecking(true);
-    setContraResults([]);
-    setFoodResults([]);
-    try {
-      const [contra, food] = await Promise.all([
-        checkContraindication({ drugName: name }),
-        checkFoodInteraction({ drugName: name }),
-      ]);
-      if (contra && Array.isArray(contra)) {
-        setContraResults(contra as DrugContraindication[]);
-      }
-      if (food && Array.isArray(food)) {
-        setFoodResults(food as DrugFoodInteraction[]);
-      }
-    } catch (_) {
-      Taro.showToast({ title: '查询失败，请重试', icon: 'none' });
-    } finally {
-      setContraChecking(false);
-    }
-  };
-
-  const severityLabel = (s: string) => {
-    if (s === 'high') return { label: '高风险', color: '#e53935' };
-    if (s === 'medium') return { label: '中风险', color: '#fb8c00' };
-    return { label: '低风险', color: '#43a047' };
-  };
+  }
 
   return (
-    <View className='drug-check'>
-      {/* 顶部 */}
-      <View className='drug-check__header'>
-        <View className='drug-check__header-info'>
-          <View className='drug-check__avatar'>
-            <Warning size={28} color='#fff' />
-          </View>
-          <View>
-            <Text className='drug-check__title'>用药安全检查</Text>
-            <Text className='drug-check__subtitle'>智能药物相互作用检测</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Tab导航 */}
-      <View className='drug-tabs'>
-        {(['check', 'history', 'contraindication'] as TabKey[]).map((tab) => (
-          <View
-            key={tab}
-            className={'drug-tab' + (activeTab === tab ? ' drug-tab--active' : '')}
-            onClick={() => setActiveTab(tab)}
-          >
-            <Text className='drug-tab__text'>
-              {tab === 'check' ? '联合用药' : tab === 'history' ? '历史记录' : '禁忌查询'}
-            </Text>
-          </View>
-        ))}
-      </View>
-
-      <ScrollView className='drug-check__content' scrollY>
-        {/* 联合用药检查 */}
-        {activeTab === 'check' && (
-          <View className='check-panel'>
-            <View className='drug-input-row'>
-              <Input
-                className='drug-input'
-                value={drugInput}
-                placeholder='输入药品名称...'
-                onInput={(e) => setDrugInput(e.detail.value)}
-                confirmType='done'
-                onConfirm={handleAddDrug}
-                maxlength={30}
-              />
-              <View className='drug-input-add' onClick={handleAddDrug}>
-                <Plus size={20} color='#fff' />
-              </View>
+    <PageShell roleTone="family" className="drug-page">
+      <HeroHeader roleTone="family" eyebrow="药物相互作用" title="先排除高风险，再决定怎么吃" subtitle="把联用风险、禁忌和食物提醒收在同一屏，不再拆成多个思路。" />
+      <ScrollView className="detail-shell-scroll" scrollY>
+        <SectionBlock title="快速检查" description="输入两种及以上药物名称，先做一轮基础筛查。">
+          <DataPanel tone="primary">
+            <Text className="detail-label">药物名称</Text>
+            <Input className="detail-input" value={drugInput} placeholder="输入药名后点击加入" onInput={e => setDrugInput(e.detail.value)} confirmType="done" onConfirm={handleAddDrug} />
+            <View className="detail-actions">
+              <View className="detail-button detail-button--family-primary" onClick={handleAddDrug}><Text>加入</Text></View>
+              <View className="detail-button detail-button--family" onClick={handleCheck}><Text>{loading ? '检查中...' : '开始检查'}</Text></View>
             </View>
+            <View className="detail-chip-row">{drugList.map(item => <View key={item} className="detail-chip detail-chip--family-active" onClick={() => setDrugList(prev => prev.filter(name => name !== item))}><Text>{item}</Text></View>)}</View>
+          </DataPanel>
+        </SectionBlock>
 
-            {drugList.length > 0 && (
-              <View className='drug-tags'>
-                {drugList.map((d) => (
-                  <View key={d} className='drug-tag'>
-                    <Text className='drug-tag__name'>{d}</Text>
-                    <View className='drug-tag__remove' onClick={() => handleRemoveDrug(d)}>
-                      <Close size={14} color='#6a1b9a' />
-                    </View>
-                  </View>
-                ))}
-              </View>
-            )}
+        <SectionBlock title="联用风险" description="优先显示最需要家属和长辈注意的组合。">
+          {results.length === 0 ? <EmptyState title="还没有联用结果" description="至少加入两种药物后才能开始判断相互作用。" icon={<Search size={28} />} /> : <View className="detail-stack">{results.map((item, index) => <DataPanel key={`${item.drugA}-${item.drugB}-${index}`} tone={levelToneMap[item.level] || 'info'}><Text className="detail-title">{item.drugA} + {item.drugB}</Text><Text className="detail-text">风险等级 {item.level}，{item.description || '建议进一步确认医生或药师意见。'}</Text><Text className="detail-meta">{item.mechanism || '当前接口未返回详细机制说明。'}</Text></DataPanel>)}</View>}
+        </SectionBlock>
 
-            <View
-              className={'check-btn' + (checking ? ' check-btn--loading' : '')}
-              onClick={handleCheck}
-            >
-              {checking ? (
-                <Text className='check-btn__text'>检查中...</Text>
-              ) : (
-                <>
-                  <Checked size={20} color='#fff' />
-                  <Text className='check-btn__text'>开始检查</Text>
-                </>
-              )}
-            </View>
-
-            {checkResults.length > 0 && (
-              <View className='results-section'>
-                <Text className='results-section__title'>检查结果（{checkResults.length}项）</Text>
-                {checkResults.map((r, i) => {
-                  const cfg = LEVEL_CONFIG[r.level];
-                  return (
-                    <View key={i} className='result-card' style={{ borderLeftColor: cfg.bg }}>
-                      <View className='result-card__header'>
-                        <Text className='result-card__drugs'>{r.drugA} + {r.drugB}</Text>
-                        <View className='result-level' style={{ background: cfg.bg }}>
-                          <Text className='result-level__text' style={{ color: cfg.color }}>
-                            {r.level} · {cfg.label}
-                          </Text>
-                        </View>
-                      </View>
-                      {r.description && (
-                        <Text className='result-card__desc'>{r.description}</Text>
-                      )}
-                      {r.mechanism && (
-                        <Text className='result-card__mechanism'>机制：{r.mechanism}</Text>
-                      )}
-                    </View>
-                  );
-                })}
-              </View>
-            )}
-
-            {checkResults.length === 0 && drugList.length >= 2 && !checking && (
-              <View className='empty-hint'>
-                <Text className='empty-hint__text'>点击「开始检查」检测药物相互作用</Text>
-              </View>
-            )}
-
-            {drugList.length < 2 && (
-              <View className='empty-hint'>
-                <Text className='empty-hint__text'>请添加至少2种药物进行检查</Text>
-              </View>
-            )}
+        <SectionBlock title="禁忌与食物提醒" description="默认以第一个药物为主做快速补充判断。">
+          <View className="detail-stack">
+            {contra.map((item, index) => <DataPanel key={`${item.drugName}-${index}`} tone={item.severity === 'high' ? 'danger' : item.severity === 'medium' ? 'warning' : 'info'}><Text className="detail-title">{item.drugName} · {item.diseaseName}</Text><Text className="detail-text">{item.description || '存在用药禁忌，请结合既往疾病史复核。'}</Text></DataPanel>)}
+            {food.map((item, index) => <DataPanel key={`${item.foodName}-${index}`} tone="warning"><Text className="detail-title">食物提醒：{item.foodName}</Text><Text className="detail-text">{item.description || item.suggestion || '建议避开同服。'}</Text></DataPanel>)}
+            {contra.length === 0 && food.length === 0 ? <EmptyState title="暂无禁忌补充结果" description="接口没有返回额外提醒时，会优先展示联用结果。" icon={<ShieldCheck size={28} />} /> : null}
           </View>
-        )}
+        </SectionBlock>
 
-        {/* 历史记录 */}
-        {activeTab === 'history' && (
-          <View className='history-panel'>
-            {history.length === 0 ? (
-              <View className='empty-hint'>
-                <Text className='empty-hint__text'>暂无历史检测记录</Text>
-              </View>
-            ) : (
-              history.map((rec) => {
-                const cfg = LEVEL_CONFIG[rec.level];
-                return (
-                  <View key={rec.id} className='history-card'>
-                    <View className='history-card__header'>
-                      <Text className='history-card__drugs'>{rec.drugA} + {rec.drugB}</Text>
-                      <View className='result-level' style={{ background: cfg.bg }}>
-                        <Text className='result-level__text' style={{ color: cfg.color }}>
-                          {rec.level} · {cfg.label}
-                        </Text>
-                      </View>
-                    </View>
-                    {rec.riskDescription && (
-                      <Text className='history-card__desc'>{rec.riskDescription}</Text>
-                    )}
-                    {rec.suggestion && (
-                      <Text className='history-card__suggestion'>建议：{rec.suggestion}</Text>
-                    )}
-                    <View className='history-card__footer'>
-                      <Text className='history-card__time'>{rec.detectedAt.slice(0, 10)}</Text>
-                      {rec.status === 'new' && (
-                        <View className='acknowledge-btn' onClick={() => handleAcknowledge(rec.id)}>
-                          <Checked size={16} color='#fff' />
-                          <Text className='acknowledge-btn__text'>确认知悉</Text>
-                        </View>
-                      )}
-                      {rec.status === 'acknowledged' && (
-                        <Text className='history-card__ack'>已确认</Text>
-                      )}
-                    </View>
-                  </View>
-                );
-              })
-            )}
-          </View>
-        )}
-
-        {/* 禁忌查询 */}
-        {activeTab === 'contraindication' && (
-          <View className='contra-panel'>
-            <View className='drug-input-row'>
-              <Input
-                className='drug-input'
-                value={contraName}
-                placeholder='输入药品名称查询禁忌...'
-                onInput={(e) => setContraName(e.detail.value)}
-                confirmType='search'
-                onConfirm={handleContraCheck}
-                maxlength={30}
-              />
-              <View className='drug-input-add' onClick={handleContraCheck}>
-                <ArrowRight size={20} color='#fff' />
-              </View>
-            </View>
-
-            {contraChecking && (
-              <View className='empty-hint'>
-                <Text className='empty-hint__text'>查询中...</Text>
-              </View>
-            )}
-
-            {contraResults.length > 0 && (
-              <View className='results-section'>
-                <Text className='results-section__title'>疾病禁忌（{contraResults.length}项）</Text>
-                {contraResults.map((c, i) => {
-                  const sv = severityLabel(c.severity);
-                  return (
-                    <View key={i} className='contra-card' style={{ borderLeftColor: sv.color }}>
-                      <View className='contra-card__header'>
-                        <Text className='contra-card__disease'>{c.diseaseName}</Text>
-                        <Text className='contra-card__severity' style={{ color: sv.color }}>{sv.label}</Text>
-                      </View>
-                      {c.description && (
-                        <Text className='contra-card__desc'>{c.description}</Text>
-                      )}
-                    </View>
-                  );
-                })}
-              </View>
-            )}
-
-            {foodResults.length > 0 && (
-              <View className='results-section'>
-                <Text className='results-section__title'>食物相互作用（{foodResults.length}项）</Text>
-                {foodResults.map((f, i) => (
-                  <View key={i} className='food-card'>
-                    <View className='food-card__header'>
-                      <Text className='food-card__name'>{f.foodName}</Text>
-                      <Text className='food-card__type'>{f.interactionType}</Text>
-                    </View>
-                    {f.description && (
-                      <Text className='food-card__desc'>{f.description}</Text>
-                    )}
-                    {f.suggestion && (
-                      <Text className='food-card__suggestion'>建议：{f.suggestion}</Text>
-                    )}
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {!contraChecking && contraResults.length === 0 && foodResults.length === 0 && contraName && (
-              <View className='empty-hint'>
-                <Text className='empty-hint__text'>输入药品名称后点击查询</Text>
-              </View>
-            )}
-
-            {!contraName && (
-              <View className='empty-hint'>
-                <Text className='empty-hint__text'>输入药品名称，查询禁忌症和食物相互作用</Text>
-              </View>
-            )}
-          </View>
-        )}
-        <View style={{ height: '32px' }} />
+        <SectionBlock title="最近处理记录" description="后台和小程序保持同样的风险处理闭环。">
+          {history.length === 0 ? <EmptyState title="还没有历史记录" description="完成一次检查后，记录会出现在这里。" icon={<Warning size={28} />} /> : <View className="detail-stack">{history.slice(0, 6).map(item => <DataPanel key={item.id} tone={item.level === 'X' || item.level === 'D' ? 'danger' : item.level === 'C' ? 'warning' : 'info'}><Text className="detail-title">{item.drugA} + {item.drugB}</Text><Text className="detail-text">等级 {item.level} · 状态 {item.status}</Text><View className="detail-actions">{item.status === 'new' ? <View className="detail-button detail-button--family-primary" onClick={() => acknowledgeRisk({ interactionId: item.id }).then(() => setHistory(prev => prev.map(row => row.id === item.id ? { ...row, status: 'acknowledged' } : row)))}><Text>标记已知晓</Text></View> : null}</View></DataPanel>)}</View>}
+        </SectionBlock>
+        <View className="detail-bottom-space" />
       </ScrollView>
-    </View>
-  );
+      <StickyPrimaryAction tone="family" label="开始药物筛查" icon={<Search size={22} />} onClick={handleCheck} />
+    </PageShell>
+  )
 }

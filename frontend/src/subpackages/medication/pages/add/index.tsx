@@ -1,287 +1,72 @@
-import { useState } from 'react';
-import Taro from '@tarojs/taro';
-import { View, Text, ScrollView, Switch } from '@tarojs/components';
-import { Plus, Close, Tips, Clock } from '@nutui/icons-react-taro';
-import { LargeInput, LargeButton, SectionTitle, AlertBanner } from '@/components/elderly';
-import { addMedication } from '@/services/modules/medication';
-import type { MedicationSchedule } from '@/services/types';
-import './index.scss';
-
-const FREQUENCY_OPTIONS = [
-  { label: '每日1次', value: '每日1次', times: 1 },
-  { label: '每日2次', value: '每日2次', times: 2 },
-  { label: '每日3次', value: '每日3次', times: 3 },
-  { label: '每日4次', value: '每日4次', times: 4 },
-  { label: '隔日1次', value: '隔日1次', times: 1 },
-  { label: '每周1次', value: '每周1次', times: 1 },
-];
-
-const REMINDER_OPTIONS = [
-  { label: '准时提醒', value: 0 },
-  { label: '提前5分钟', value: 5 },
-  { label: '提前10分钟', value: 10 },
-  { label: '提前15分钟', value: 15 },
-  { label: '提前30分钟', value: 30 },
-];
-
-const DEFAULT_TIMES = ['08:00', '12:00', '18:00', '22:00'];
+﻿import { useState } from 'react'
+import Taro from '@tarojs/taro'
+import { View, Text, ScrollView, Input, Switch } from '@tarojs/components'
+import { Add } from '@nutui/icons-react-taro'
+import { DataPanel, HeroHeader, PageShell, SectionBlock, StickyPrimaryAction } from '@/components/shell'
+import { addMedication } from '@/services/modules/medication'
+import type { MedicationSchedule } from '@/services/types'
+import './index.scss'
 
 export default function MedicationAddPage() {
-  const [name, setName] = useState('');
-  const [dosage, setDosage] = useState('');
-  const [frequency, setFrequency] = useState('每日1次');
-  const [schedule, setSchedule] = useState<MedicationSchedule[]>([{ time: '08:00', dosage: '1片' }]);
-  const [startDate, setStartDate] = useState(
-    new Date().toISOString().split('T')[0]
-  );
-  const [endDate, setEndDate] = useState('');
-  const [hasEndDate, setHasEndDate] = useState(false);
-  const [instructions, setInstructions] = useState('');
-  const [reminderTime, setReminderTime] = useState(10);
-  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState('')
+  const [dosage, setDosage] = useState('1片')
+  const [instructions, setInstructions] = useState('')
+  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10))
+  const [endDate, setEndDate] = useState('')
+  const [hasEndDate, setHasEndDate] = useState(false)
+  const [reminderTime, setReminderTime] = useState(10)
+  const [schedule, setSchedule] = useState<MedicationSchedule[]>([{ time: '08:00', dosage: '1片' }])
+  const [loading, setLoading] = useState(false)
 
-  const handleFrequencyChange = (freq: string) => {
-    const opt = FREQUENCY_OPTIONS.find(o => o.value === freq);
-    if (!opt) return;
-    setFrequency(freq);
-    // Rebuild schedule to match frequency
-    const newSchedule: MedicationSchedule[] = [];
-    for (let i = 0; i < opt.times; i++) {
-      newSchedule.push({
-        time: DEFAULT_TIMES[i] || '08:00',
-        dosage: dosage || '1片',
-      });
-    }
-    setSchedule(newSchedule);
-  };
-
-  const handleScheduleTimeChange = (index: number, time: string) => {
-    setSchedule(prev => prev.map((s, i) => i === index ? { ...s, time } : s));
-  };
-
-  const handleScheduleDosageChange = (index: number, d: string) => {
-    setSchedule(prev => prev.map((s, i) => i === index ? { ...s, dosage: d } : s));
-  };
-
-  const handleAddSchedule = () => {
-    if (schedule.length >= 6) return;
-    setSchedule(prev => [...prev, { time: DEFAULT_TIMES[prev.length] || '08:00', dosage: dosage || '1片' }]);
-  };
-
-  const handleRemoveSchedule = (index: number) => {
-    if (schedule.length <= 1) return;
-    setSchedule(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const validate = (): boolean => {
-    if (!name.trim()) {
-      Taro.showToast({ title: '请输入药品名称', icon: 'none' });
-      return false;
-    }
-    if (!dosage.trim()) {
-      Taro.showToast({ title: '请输入单次剂量', icon: 'none' });
-      return false;
-    }
-    if (schedule.some(s => !s.time || !s.dosage)) {
-      Taro.showToast({ title: '请完整填写用药时间和剂量', icon: 'none' });
-      return false;
-    }
-    if (!startDate) {
-      Taro.showToast({ title: '请选择开始日期', icon: 'none' });
-      return false;
-    }
-    if (hasEndDate && endDate && endDate <= startDate) {
-      Taro.showToast({ title: '结束日期必须晚于开始日期', icon: 'none' });
-      return false;
-    }
-    return true;
-  };
+  const updateSchedule = (index: number, patch: Partial<MedicationSchedule>) => {
+    setSchedule(prev => prev.map((item, current) => current === index ? { ...item, ...patch } : item))
+  }
 
   const handleSubmit = async () => {
-    if (!validate()) return;
-    setLoading(true);
+    if (!name.trim()) {
+      Taro.showToast({ title: '请先填写药物名称', icon: 'none' })
+      return
+    }
+    setLoading(true)
     try {
       await addMedication({
-        name: name.trim(),
-        dosage: dosage.trim(),
-        frequency,
+        name,
+        dosage,
+        frequency: `每日 ${schedule.length} 次`,
         schedule,
         startDate,
-        endDate: hasEndDate && endDate ? endDate : undefined,
-        instructions: instructions.trim() || undefined,
+        endDate: hasEndDate ? endDate : undefined,
+        instructions: instructions || undefined,
         reminderTime,
         isActive: true,
-      });
-      Taro.showToast({ title: '添加成功', icon: 'success' });
-      setTimeout(() => {
-        Taro.navigateBack();
-      }, 1200);
-    } catch (_) {
-      // showToast triggered by request interceptor
+      })
+      Taro.showToast({ title: '用药计划已保存', icon: 'success' })
+      setTimeout(() => Taro.navigateBack(), 800)
+    } catch (error) {
+      console.error('save medication plan failed', error)
+      Taro.showToast({ title: '保存失败，请稍后再试', icon: 'none' })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <View className="add-medication">
-      <ScrollView className="add-medication__scroll" scrollY>
-        {/* 提示 */}
-        <View className="add-medication__tip">
-          <Tips size={18} color="#01579b" />
-          <Text className="add-medication__tip-text">请遵医嘱填写用药信息，切勿随意更改剂量</Text>
-        </View>
-
-        {/* 基本信息 */}
-        <SectionTitle title="基本信息" />
-        <View className="add-medication__card">
-          <LargeInput
-            label="药品名称 *"
-            value={name}
-            onChange={setName}
-            placeholder="如：阿司匹林、降压药"
-            maxLength={30}
-          />
-          <LargeInput
-            label="单次剂量 *"
-            value={dosage}
-            onChange={setDosage}
-            placeholder="如：1片、2粒、5ml"
-            maxLength={20}
-          />
-          <LargeInput
-            label="服用说明（选填）"
-            value={instructions}
-            onChange={setInstructions}
-            placeholder="如：饭后服用、避免空腹"
-            maxLength={50}
-          />
-        </View>
-
-        {/* 用药频率 */}
-        <SectionTitle title="用药频率" />
-        <View className="add-medication__card">
-          <View className="frequency-grid">
-            {FREQUENCY_OPTIONS.map(opt => (
-              <View
-                key={opt.value}
-                className={`frequency-item ${frequency === opt.value ? 'frequency-item--active' : ''}`}
-                onClick={() => handleFrequencyChange(opt.value)}
-              >
-                <Text className="frequency-item__text">{opt.label}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* 用药时间安排 */}
-        <SectionTitle title="每日时间安排" />
-        <View className="add-medication__card">
-          {schedule.map((s, index) => (
-            <View key={index} className="schedule-row">
-              <View className="schedule-row__left">
-                <Clock size={18} color="#01579b" />
-                <Text className="schedule-row__label">第{index + 1}次</Text>
-              </View>
-              <View className="schedule-row__inputs">
-                <LargeInput
-                  label="时间"
-                  value={s.time}
-                  onChange={val => handleScheduleTimeChange(index, val)}
-                  placeholder="08:00"
-                  maxLength={5}
-                />
-                <LargeInput
-                  label="剂量"
-                  value={s.dosage}
-                  onChange={val => handleScheduleDosageChange(index, val)}
-                  placeholder="1片"
-                  maxLength={10}
-                />
-              </View>
-              {schedule.length > 1 && (
-                <View
-                  className="schedule-row__remove"
-                  onClick={() => handleRemoveSchedule(index)}
-                >
-                  <Close size={20} color="#e53935" />
-                </View>
-              )}
-            </View>
-          ))}
-          {schedule.length < 6 && (
-            <View className="schedule-add" onClick={handleAddSchedule}>
-              <Plus size={16} color="#01579b" />
-              <Text className="schedule-add__text">添加时间</Text>
-            </View>
-          )}
-        </View>
-
-        {/* 日期设置 */}
-        <SectionTitle title="用药周期" />
-        <View className="add-medication__card">
-          <LargeInput
-            label="开始日期 *"
-            value={startDate}
-            onChange={setStartDate}
-            placeholder="2024-01-01"
-            maxLength={10}
-          />
-          <View className="toggle-row">
-            <Text className="toggle-row__label">设置结束日期</Text>
-            <Switch
-              checked={hasEndDate}
-              onChange={() => setHasEndDate(prev => !prev)}
-              color="#01579b"
-            />
-          </View>
-          {hasEndDate && (
-            <LargeInput
-              label="结束日期"
-              value={endDate}
-              onChange={setEndDate}
-              placeholder="2024-12-31"
-              maxLength={10}
-            />
-          )}
-        </View>
-
-        {/* 提醒设置 */}
-        <SectionTitle title="提醒设置" />
-        <View className="add-medication__card">
-          <View className="reminder-grid">
-            {REMINDER_OPTIONS.map(opt => (
-              <View
-                key={opt.value}
-                className={`reminder-item ${reminderTime === opt.value ? 'reminder-item--active' : ''}`}
-                onClick={() => setReminderTime(opt.value)}
-              >
-                <Text className="reminder-item__text">{opt.label}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <AlertBanner
-          type="info"
-          title="温馨提示"
-          message="用药计划保存后将自动生成每日提醒，请确保已开启微信通知权限"
-        />
-
-        <View className="add-medication__submit">
-          <LargeButton
-            type="primary"
-            size="large"
-            block
-            loading={loading}
-            onClick={handleSubmit}
-          >
-            保存用药计划
-          </LargeButton>
-        </View>
-
-        <View className="add-medication__safe-area" />
+    <PageShell roleTone="elder" className="medication-form-page">
+      <HeroHeader roleTone="elder" eyebrow="新增用药计划" title="把一张药单拆成清楚的几步" subtitle="先填药名和剂量，再补充时间与提醒，不再被长表单压住。" />
+      <ScrollView className="detail-shell-scroll" scrollY>
+        <SectionBlock title="基本信息" description="先把药名、剂量和备注写清楚。">
+          <DataPanel tone="primary"><View className="detail-form"><View><Text className="detail-label">药物名称</Text><Input className="detail-input" value={name} onInput={e => setName(e.detail.value)} /></View><View><Text className="detail-label">常用剂量</Text><Input className="detail-input" value={dosage} onInput={e => setDosage(e.detail.value)} /></View><View><Text className="detail-label">服药说明</Text><Input className="detail-input" value={instructions} onInput={e => setInstructions(e.detail.value)} /></View></View></DataPanel>
+        </SectionBlock>
+        <SectionBlock title="服药时间" description="默认一条时间，可按需要继续增加。">
+          <View className="detail-stack">{schedule.map((item, index) => <DataPanel key={`${item.time}-${index}`} tone="warning"><Text className="detail-label">第 {index + 1} 次</Text><View className="detail-form"><Input className="detail-input" value={item.time} onInput={e => updateSchedule(index, { time: e.detail.value })} /><Input className="detail-input" value={item.dosage} onInput={e => updateSchedule(index, { dosage: e.detail.value })} /></View></DataPanel>)}</View>
+          <View className="detail-actions"><View className="detail-button" onClick={() => setSchedule(prev => [...prev, { time: '12:00', dosage }])}><Text>增加一个时间点</Text></View></View>
+        </SectionBlock>
+        <SectionBlock title="提醒设置" description="只保留开始日期、结束日期和提前提醒分钟数。">
+          <DataPanel tone="info"><View className="detail-form"><View><Text className="detail-label">开始日期</Text><Input className="detail-input" value={startDate} onInput={e => setStartDate(e.detail.value)} /></View><View><Text className="detail-label">启用结束日期</Text><Switch checked={hasEndDate} onChange={e => setHasEndDate(e.detail.value)} color="#2f6c5b" /></View>{hasEndDate ? <View><Text className="detail-label">结束日期</Text><Input className="detail-input" value={endDate} onInput={e => setEndDate(e.detail.value)} /></View> : null}<View><Text className="detail-label">提前提醒分钟</Text><View className="detail-chip-row">{[0,5,10,15,30].map(item => <View key={item} className={`detail-chip ${reminderTime === item ? 'is-active' : ''}`} onClick={() => setReminderTime(item)}><Text>{item === 0 ? '准点' : `${item} 分钟`}</Text></View>)}</View></View></View></DataPanel>
+        </SectionBlock>
+        <View className="detail-bottom-space" />
       </ScrollView>
-    </View>
-  );
+      <StickyPrimaryAction tone="elder" label={loading ? '保存中...' : '保存用药计划'} icon={<Add size={22} />} onClick={handleSubmit} />
+    </PageShell>
+  )
 }

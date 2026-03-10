@@ -1,0 +1,185 @@
+﻿@use './variables.scss' as *;
+
+.detail-shell-scroll {
+  max-height: calc(100vh - 220px);
+}
+
+.detail-card-grid,
+.detail-stack {
+  display: grid;
+  gap: $space-md;
+}
+
+.detail-tabs {
+  display: grid;
+  gap: $space-sm;
+  margin-bottom: $space-lg;
+}
+
+.detail-tabs--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.detail-tabs--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.detail-tab {
+  min-height: 50px;
+  border-radius: $radius-md;
+  background: rgba($bg-card, 0.88);
+  border: 1px solid rgba($border-light, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $text-secondary;
+  font-size: 16px;
+  font-weight: $font-weight-semibold;
+
+  &--active,
+  &.is-active {
+    color: $text-white;
+    background: linear-gradient(135deg, $color-primary, $color-primary-light);
+    box-shadow: $shadow-button;
+  }
+
+  &--family-active {
+    color: $text-white;
+    background: linear-gradient(135deg, $color-secondary, $color-secondary-light);
+    box-shadow: 0 12px 28px rgba(201, 123, 85, 0.26);
+  }
+}
+
+.detail-title,
+.detail-text,
+.detail-meta,
+.detail-badge {
+  display: block;
+}
+
+.detail-title {
+  font-size: 22px;
+  color: $text-primary;
+  font-weight: $font-weight-bold;
+}
+
+.detail-text,
+.detail-meta {
+  margin-top: 8px;
+  font-size: 16px;
+  color: $text-secondary;
+  line-height: $line-height-relaxed;
+}
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-sm;
+  margin-top: $space-md;
+}
+
+.detail-button {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba($color-primary, 0.12);
+  color: $color-primary;
+  font-size: 15px;
+  font-weight: $font-weight-semibold;
+
+  &--primary {
+    background: $color-primary;
+    color: $text-white;
+  }
+
+  &--family {
+    background: rgba($color-secondary, 0.12);
+    color: $color-secondary;
+  }
+
+  &--family-primary {
+    background: $color-secondary;
+    color: $text-white;
+  }
+
+  &--danger {
+    background: rgba($color-danger, 0.12);
+    color: $color-danger;
+  }
+}
+
+.detail-form {
+  display: grid;
+  gap: $space-md;
+}
+
+.detail-input,
+.detail-textarea {
+  width: 100%;
+  min-height: 54px;
+  padding: 0 18px;
+  border-radius: $radius-md;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba($border-light, 0.9);
+  color: $text-primary;
+  font-size: 18px;
+  box-sizing: border-box;
+}
+
+.detail-textarea {
+  min-height: 140px;
+  padding: 16px 18px;
+}
+
+.detail-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 16px;
+  color: $text-secondary;
+  font-weight: $font-weight-semibold;
+}
+
+.detail-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-sm;
+}
+
+.detail-chip {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($color-primary, 0.08);
+  color: $color-primary;
+  font-size: 15px;
+  font-weight: $font-weight-medium;
+  border: 1px solid transparent;
+
+  &--active,
+  &.is-active {
+    background: $color-primary;
+    color: $text-white;
+  }
+
+  &--family-active {
+    background: $color-secondary;
+    color: $text-white;
+  }
+}
+
+.detail-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: $space-md;
+}
+
+.detail-bottom-space {
+  height: 120px;
+}

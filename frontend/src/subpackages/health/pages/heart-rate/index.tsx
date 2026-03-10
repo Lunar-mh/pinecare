@@ -1,148 +1,38 @@
-import { useState } from 'react';
-import Taro from '@tarojs/taro';
-import { View, Text } from '@tarojs/components';
-import { Tips } from '@nutui/icons-react-taro';
-import { LargeInput, LargeButton, SectionTitle } from '@/components/elderly';
-import { addHeartRateRecord } from '@/services/modules/health';
-import './index.scss';
+﻿import { useCallback, useEffect, useState } from 'react'
+import { View, Text, ScrollView, Input } from '@tarojs/components'
+import Taro from '@tarojs/taro'
+import { Heart } from '@nutui/icons-react-taro'
+import { DataPanel, HeroHeader, PageShell, SectionBlock, StickyPrimaryAction } from '@/components/shell'
+import { addHeartRateRecord, getHeartRateRecords, getLatestHeartRate } from '@/services/modules/health'
+import type { HeartRateRecord } from '@/services/types'
+import './index.scss'
 
 export default function HeartRatePage() {
-  const [value, setValue] = useState('');
-  const [note, setNote] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [latest, setLatest] = useState<HeartRateRecord | null>(null)
+  const [records, setRecords] = useState<HeartRateRecord[]>([])
+  const [value, setValue] = useState('')
 
-  // 验证输入
-  const validateInput = () => {
-    const hr = parseInt(value);
-    
-    if (!value) {
-      Taro.showToast({ title: '请输入心率', icon: 'none' });
-      return false;
-    }
-    
-    if (isNaN(hr) || hr < 40 || hr > 200) {
-      Taro.showToast({ title: '心率范围: 40-200', icon: 'none' });
-      return false;
-    }
-    
-    return true;
-  };
-
-  // 提交记录
-  const handleSubmit = async () => {
-    if (!validateInput()) return;
-    
-    setLoading(true);
+  const loadData = useCallback(async () => {
     try {
-      await addHeartRateRecord({
-        value: parseInt(value),
-        note: note || undefined
-      });
-      
-      Taro.showToast({ title: '记录成功', icon: 'success' });
-      
-      // 清空表单
-      setValue('');
-      setNote('');
-      
-      // 返回上一页
-      setTimeout(() => {
-        Taro.navigateBack();
-      }, 1500);
+      const [latestData, recordRes] = await Promise.all([getLatestHeartRate(), getHeartRateRecords({ page: 1, pageSize: 5 })])
+      setLatest(latestData)
+      setRecords(recordRes.list || [])
     } catch (error) {
-      console.error('记录失败:', error);
-    } finally {
-      setLoading(false);
+      console.error('load heart rate page failed', error)
     }
-  };
+  }, [])
 
-  // 快速输入参考值
-  const quickValues = [
-    { value: 60, label: '静息心率', desc: '运动员' },
-    { value: 72, label: '正常心率', desc: '成年人' },
-    { value: 80, label: '正常心率', desc: '老年人' },
-  ];
+  useEffect(() => { loadData() }, [loadData])
+
+  const handleSave = async () => {
+    if (!value) return
+    await addHeartRateRecord({ value: Number(value) })
+    setValue('')
+    Taro.showToast({ title: '心率已记录', icon: 'success' })
+    loadData()
+  }
 
   return (
-    <View className="heart-rate-page">
-      {/* 参考标准说明 */}
-      <View className="reference-banner">
-        <Tips size={24} color="#01579b" />
-        <Text className="reference-text">正常静息心率：60-100 次/分钟</Text>
-      </View>
-
-      {/* 快速输入 */}
-      <SectionTitle title="快速输入" />
-      <View className="quick-input">
-        {quickValues.map((item, index) => (
-          <View 
-            key={index}
-            className="quick-input__item"
-            onClick={() => setValue(String(item.value))}
-          >
-            <Text className="quick-input__value">{item.value}</Text>
-            <Text className="quick-input__label">{item.label}</Text>
-            <Text className="quick-input__desc">{item.desc}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* 心率输入表单 */}
-      <SectionTitle title="手动录入" />
-      <View className="form-card">
-        <View className="input-group">
-          <LargeInput
-            label="心率"
-            value={value}
-            onChange={setValue}
-            type="digit"
-            placeholder="如：72"
-            maxLength={3}
-          />
-          <Text className="input-unit">次/分钟</Text>
-        </View>
-        
-        <LargeInput
-          label="备注（选填）"
-          value={note}
-          onChange={setNote}
-          placeholder="如：运动后、服药后等"
-        />
-      </View>
-
-      {/* 心率参考表 */}
-      <SectionTitle title="心率参考" />
-      <View className="reference-table">
-        <View className="reference-row reference-row--header">
-          <Text className="reference-col">状态</Text>
-          <Text className="reference-col">心率范围</Text>
-        </View>
-        <View className="reference-row">
-          <Text className="reference-col">心动过缓</Text>
-          <Text className="reference-col reference-col--danger">&lt; 60</Text>
-        </View>
-        <View className="reference-row">
-          <Text className="reference-col">正常</Text>
-          <Text className="reference-col reference-col--success">60-100</Text>
-        </View>
-        <View className="reference-row">
-          <Text className="reference-col">心动过速</Text>
-          <Text className="reference-col reference-col--danger">&gt; 100</Text>
-        </View>
-      </View>
-
-      {/* 提交按钮 */}
-      <View className="submit-area">
-        <LargeButton
-          type="primary"
-          size="large"
-          loading={loading}
-          block
-          onClick={handleSubmit}
-        >
-          保存记录
-        </LargeButton>
-      </View>
-    </View>
-  );
+    <PageShell roleTone="elder" className="health-detail-page"><HeroHeader roleTone="elder" eyebrow="心率记录" title="心率、状态、最近记录集中查看" subtitle="让记录页更像一张即时状态卡。" /><ScrollView className="detail-shell-scroll" scrollY><SectionBlock title="最近一次" description="先看当前值是不是需要继续观察。">{latest ? <DataPanel tone={latest.status === 'danger' ? 'danger' : latest.status === 'warning' ? 'warning' : 'primary'}><Text className="detail-title">{latest.value} bpm</Text><Text className="detail-text">{new Date(latest.measuredAt).toLocaleString('zh-CN')}</Text></DataPanel> : <DataPanel tone="info"><Text className="detail-text">还没有最近一次记录。</Text></DataPanel>}</SectionBlock><SectionBlock title="快速录入" description="这里只保留一个数值字段。"><DataPanel tone="primary"><Input className="detail-input" value={value} placeholder="输入心率，例如 72" onInput={e => setValue(e.detail.value)} /></DataPanel></SectionBlock><SectionBlock title="最近记录" description="用一致的卡片样式回看。"><View className="detail-stack">{records.map(item => <DataPanel key={item.id} tone={item.status === 'danger' ? 'danger' : item.status === 'warning' ? 'warning' : 'success'}><Text className="detail-title">{item.value} bpm</Text><Text className="detail-text">{new Date(item.measuredAt).toLocaleString('zh-CN')}</Text></DataPanel>)}</View></SectionBlock><View className="detail-bottom-space" /></ScrollView><StickyPrimaryAction tone="elder" label="保存本次心率" icon={<Heart size={22} />} onClick={handleSave} /></PageShell>
+  )
 }

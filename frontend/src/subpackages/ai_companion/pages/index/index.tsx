@@ -1,381 +1,104 @@
-import { useState, useEffect, useCallback } from 'react';
-import Taro from '@tarojs/taro';
-import { View, Text, ScrollView, Input } from '@tarojs/components';
-import { Heart, ArrowRight, Tips } from '@nutui/icons-react-taro';
-import {
-  sendCompanionMessage,
-  getCompanionGames,
-  getNostalgiaContent,
-} from '@/services/modules/companion';
-import type { CompanionGame, NostalgiaContent } from '@/services/types';
-import './index.scss';
+﻿import { useEffect, useMemo, useState } from 'react'
+import { View, Text, ScrollView, Input } from '@tarojs/components'
+import { Heart, Message, Service, Star } from '@nutui/icons-react-taro'
+import { ActionGrid, DataPanel, EmptyState, HeroHeader, PageShell, SectionBlock, StickyPrimaryAction } from '@/components/shell'
+import { getCompanionGames, getEmotionTrend, getNostalgiaContent, sendCompanionMessage } from '@/services/modules/companion'
+import type { ChatMessage, CompanionGame, EmotionTrend, NostalgiaContent } from '@/services/types'
+import './index.scss'
 
-type TabKey = 'chat' | 'games' | 'nostalgia';
+const TABS = ['chat', 'games', 'nostalgia'] as const
 
-const DECADES = ['50年代', '60年代', '70年代', '80年代'];
-
-interface LocalMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: string;
-}
+type TabKey = typeof TABS[number]
 
 export default function AiCompanionIndex() {
-  const [activeTab, setActiveTab] = useState<TabKey>('chat');
-  // Chat
-  const [messages, setMessages] = useState<LocalMessage[]>([]);
-  const [inputText, setInputText] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showInput, setShowInput] = useState(false);
-  // Games
-  const [games, setGames] = useState<CompanionGame[]>([]);
-  const [gamesLoading, setGamesLoading] = useState(false);
-  // Nostalgia
-  const [nostalgia, setNostalgia] = useState<NostalgiaContent[]>([]);
-  const [selectedDecade, setSelectedDecade] = useState('');
-  const [nostalgiaLoading, setNostalgiaLoading] = useState(false);
-
-  // Initialize chat
-  useEffect(() => {
-    setMessages([{
-      id: 'welcome',
-      role: 'assistant',
-      content: '您好！我是您的AI陪伴助手。我可以陪您聊天、玩游戏，还能为您推荐怀旧内容。有什么想聊的吗？😊',
-      timestamp: new Date().toISOString(),
-    }]);
-  }, []);
-
-  const loadGames = useCallback(async () => {
-    if (games.length > 0) return;
-    setGamesLoading(true);
-    try {
-      const res = await getCompanionGames();
-      if (res && Array.isArray(res)) {
-        setGames(res as CompanionGame[]);
-      } else {
-        // Fallback games
-        setGames([
-          { id: '1', type: 'memory', name: '记忆训练', description: '测试您的记忆力，找出匹配的图片', difficulty: 1, icon: '🧠' },
-          { id: '2', type: 'matching', name: '图形匹配', description: '将相同的图案两两配对', difficulty: 2, icon: '🎯' },
-          { id: '3', type: 'word', name: '词语接龙', description: '用汉字开头进行词语接龙', difficulty: 1, icon: '📝' },
-        ]);
-      }
-    } catch (_) {
-      setGames([
-        { id: '1', type: 'memory', name: '记忆训练', description: '测试您的记忆力，找出匹配的图片', difficulty: 1, icon: '🧠' },
-        { id: '2', type: 'matching', name: '图形匹配', description: '将相同的图案两两配对', difficulty: 2, icon: '🎯' },
-        { id: '3', type: 'word', name: '词语接龙', description: '用汉字开头进行词语接龙', difficulty: 1, icon: '📝' },
-      ]);
-    } finally {
-      setGamesLoading(false);
-    }
-  }, [games.length]);
-
-  const loadNostalgia = useCallback(async (decade?: string) => {
-    setNostalgiaLoading(true);
-    try {
-      const res = await getNostalgiaContent(decade ? { decade } : undefined);
-      if (res && Array.isArray(res)) {
-        setNostalgia(res as NostalgiaContent[]);
-      }
-    } catch (_) {
-      Taro.showToast({ title: '加载失败', icon: 'none' });
-    } finally {
-      setNostalgiaLoading(false);
-    }
-  }, []);
+  const [tab, setTab] = useState<TabKey>('chat')
+  const [messages, setMessages] = useState<ChatMessage[]>([{ id: 'welcome', role: 'assistant', content: '今天想聊点什么？也可以先选一个轻松入口。', timestamp: new Date().toISOString(), type: 'text' }])
+  const [games, setGames] = useState<CompanionGame[]>([])
+  const [nostalgia, setNostalgia] = useState<NostalgiaContent[]>([])
+  const [emotionTrend, setEmotionTrend] = useState<EmotionTrend[]>([])
+  const [inputText, setInputText] = useState('')
+  const [sending, setSending] = useState(false)
 
   useEffect(() => {
-    if (activeTab === 'games') {
-      loadGames();
-    } else if (activeTab === 'nostalgia' && nostalgia.length === 0) {
-      loadNostalgia();
-    }
-  }, [activeTab, loadGames, loadNostalgia, nostalgia.length]);
+    getCompanionGames().then(setGames).catch(() => setGames([]))
+    getNostalgiaContent().then(setNostalgia).catch(() => setNostalgia([]))
+    getEmotionTrend({ days: 7 }).then(setEmotionTrend).catch(() => setEmotionTrend([]))
+  }, [])
 
-  const handleDecadeSelect = (decade: string) => {
-    const next = selectedDecade === decade ? '' : decade;
-    setSelectedDecade(next);
-    loadNostalgia(next || undefined);
-  };
+  const quickItems = useMemo(() => [
+    { key: 'chat', label: '聊聊天', description: '来一句温和的陪伴', icon: <Message size={24} /> },
+    { key: 'games', label: '轻游戏', description: '做一个简单的小练习', icon: <Star size={24} /> },
+    { key: 'nostalgia', label: '回忆内容', description: '看看老歌和往事片段', icon: <Heart size={24} /> },
+    { key: 'comfort', label: '鼓励一句', description: '给我一句今天的鼓励', icon: <Service size={24} /> },
+  ], [])
 
-  const appendMessage = (msg: LocalMessage) => {
-    setMessages((prev) => [...prev, msg]);
-  };
-
-  const handleSendText = async (text: string) => {
-    if (!text.trim() || loading) return;
-    const content = text.trim();
-    setInputText('');
-    setShowInput(false);
-
-    const userMsg: LocalMessage = {
-      id: 'user-' + Date.now(),
-      role: 'user',
-      content,
-      timestamp: new Date().toISOString(),
-    };
-    appendMessage(userMsg);
-
-    setLoading(true);
+  const handleSend = async (raw?: string) => {
+    const content = (raw ?? inputText).trim()
+    if (!content || sending) return
+    const userMessage: ChatMessage = { id: `user-${Date.now()}`, role: 'user', content, timestamp: new Date().toISOString(), type: 'text' }
+    setMessages(prev => [...prev, userMessage])
+    setInputText('')
+    setSending(true)
     try {
-      const reply = await sendCompanionMessage({ message: content });
-      if (reply) {
-        appendMessage({
-          id: 'ai-' + Date.now(),
-          role: 'assistant',
-          content: (reply as { id: string; role: 'user' | 'assistant'; content: string; timestamp?: string }).content || '收到！',
-          timestamp: new Date().toISOString(),
-        });
-      }
-    } catch (_) {
-      appendMessage({
-        id: 'err-' + Date.now(),
-        role: 'assistant',
-        content: '抱歉，我暂时没法回复，请稍后再试。',
-        timestamp: new Date().toISOString(),
-      });
+      const reply = await sendCompanionMessage({ message: content })
+      setMessages(prev => [...prev, reply])
+    } catch (error) {
+      console.error('send companion message failed', error)
+      setMessages(prev => [...prev, { id: `assistant-${Date.now()}`, role: 'assistant', content: '我在这儿，我们换一句更短的话继续聊。', timestamp: new Date().toISOString(), type: 'text' }])
     } finally {
-      setLoading(false);
+      setSending(false)
     }
-  };
-
-  const handlePlayGame = (game: CompanionGame) => {
-    Taro.showToast({ title: '正在开启' + game.name + '...', icon: 'none', duration: 1500 });
-  };
-
-  const difficultyDots = (level: number) => {
-    return Array.from({ length: 3 }, (_, i) => i < level);
-  };
-
-  const formatTime = (timestamp: string) => {
-    const d = new Date(timestamp);
-    return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
-  };
-
-  const typeIcon = (type: string) => {
-    if (type === 'music') return '🎵';
-    if (type === 'story') return '📖';
-    return '🖼️';
-  };
-
-  const lastMsgId = messages.length > 0 ? 'msg-' + messages[messages.length - 1].id : undefined;
+  }
 
   return (
-    <View className='ai-companion'>
-      {/* 顶部 */}
-      <View className='ai-companion__header'>
-        <View className='ai-companion__header-info'>
-          <View className='ai-companion__avatar'>
-            <Heart size={28} color='#fff' />
-          </View>
-          <View>
-            <Text className='ai-companion__name'>AI陪伴</Text>
-            <Text className='ai-companion__status'>您的贴心伙伴</Text>
-          </View>
+    <PageShell roleTone="elder" className="companion-page">
+      <HeroHeader roleTone="elder" eyebrow="AI 伴聊" title="陪伴、轻松、不过载" subtitle="把陪伴聊天、怀旧内容和小活动收在同一页里，不再分散心智。" />
+      <ScrollView className="detail-shell-scroll" scrollY>
+        <SectionBlock title="轻松入口" description="先从最轻的一步开始。">
+          <ActionGrid items={quickItems} columns={2} onSelect={key => {
+            if (key === 'comfort') handleSend('请给我一句温和的鼓励。')
+            else setTab(key as TabKey)
+          }} />
+        </SectionBlock>
+
+        <View className="detail-tabs detail-tabs--3">
+          <View className={`detail-tab ${tab === 'chat' ? 'is-active' : ''}`} onClick={() => setTab('chat')}><Text>陪伴对话</Text></View>
+          <View className={`detail-tab ${tab === 'games' ? 'is-active' : ''}`} onClick={() => setTab('games')}><Text>轻练习</Text></View>
+          <View className={`detail-tab ${tab === 'nostalgia' ? 'is-active' : ''}`} onClick={() => setTab('nostalgia')}><Text>怀旧内容</Text></View>
         </View>
-      </View>
 
-      {/* Tab 导航 */}
-      <View className='companion-tabs'>
-        {(['chat', 'games', 'nostalgia'] as TabKey[]).map((tab) => (
-          <View
-            key={tab}
-            className={'companion-tab' + (activeTab === tab ? ' companion-tab--active' : '')}
-            onClick={() => setActiveTab(tab)}
-          >
-            <Text className='companion-tab__text'>
-              {tab === 'chat' ? '💬 聊天' : tab === 'games' ? '🎮 游戏' : '🎵 怀旧'}
-            </Text>
-          </View>
-        ))}
-      </View>
+        {tab === 'chat' ? (
+          <SectionBlock title="陪伴对话" description="统一和 AI 家族页的消息流样式。">
+            <View className="companion-page__messages">
+              {messages.map(item => <View key={item.id} className={`companion-page__message companion-page__message--${item.role}`}><Text className="companion-page__message-text">{item.content}</Text></View>)}
+              {sending ? <DataPanel tone="info"><Text className="detail-text">正在整理回复...</Text></DataPanel> : null}
+            </View>
+            <DataPanel tone="primary">
+              <Text className="detail-label">想聊什么</Text>
+              <Input className="detail-input" value={inputText} placeholder="例如：今天有点闷，陪我聊两句。" onInput={e => setInputText(e.detail.value)} confirmType="send" onConfirm={() => handleSend()} />
+              <View className="detail-actions"><View className="detail-button detail-button--primary" onClick={() => handleSend()}><Text>发送</Text></View></View>
+            </DataPanel>
+          </SectionBlock>
+        ) : null}
 
-      {/* 聊天 Tab */}
-      {activeTab === 'chat' && (
-        <>
-          <ScrollView
-            className='ai-companion__chat'
-            scrollY
-            scrollIntoView={lastMsgId}
-            scrollWithAnimation
-          >
-            {messages.map((msg) => (
-              <View
-                key={msg.id}
-                id={'msg-' + msg.id}
-                className={'bubble-row bubble-row--' + msg.role}
-              >
-                {msg.role === 'assistant' && (
-                  <View className='bubble-avatar bubble-avatar--ai'>
-                    <Heart size={18} color='#fff' />
-                  </View>
-                )}
-                <View className={'bubble bubble--' + msg.role}>
-                  <Text className='bubble__text'>{msg.content}</Text>
-                  <Text className='bubble__time'>{formatTime(msg.timestamp)}</Text>
-                </View>
-                {msg.role === 'user' && (
-                  <View className='bubble-avatar bubble-avatar--user'>
-                    <Text className='bubble-avatar__text'>我</Text>
-                  </View>
-                )}
-              </View>
-            ))}
-            {loading && (
-              <View className='bubble-row bubble-row--assistant'>
-                <View className='bubble-avatar bubble-avatar--ai'>
-                  <Heart size={18} color='#fff' />
-                </View>
-                <View className='bubble bubble--assistant bubble--loading'>
-                  <View className='typing-dots'>
-                    <View className='typing-dots__dot' />
-                    <View className='typing-dots__dot' />
-                    <View className='typing-dots__dot' />
-                  </View>
-                </View>
-              </View>
-            )}
-            <View style={{ height: '20px' }} />
-          </ScrollView>
+        {tab === 'games' ? (
+          <SectionBlock title="轻练习" description="不做复杂操作，只保留轻量入口。">
+            {games.length === 0 ? <EmptyState title="暂时没有练习内容" description="后续会继续扩展记忆、配对和词语练习。" icon={<Star size={28} />} /> : <View className="detail-stack">{games.map(game => <DataPanel key={game.id} tone="success"><Text className="detail-title">{game.name}</Text><Text className="detail-text">{game.description}</Text><Text className="detail-meta">难度 {game.difficulty}</Text><View className="detail-actions"><View className="detail-button detail-button--primary" onClick={() => handleSend(`我们来玩一下${game.name}。`)}><Text>开始</Text></View></View></DataPanel>)}</View>}
+          </SectionBlock>
+        ) : null}
 
-          <View className='ai-companion__controls'>
-            {showInput ? (
-              <View className='text-input-bar'>
-                <Input
-                  className='text-input-bar__input'
-                  value={inputText}
-                  placeholder='和我聊聊吧...'
-                  onInput={(e) => setInputText(e.detail.value)}
-                  confirmType='send'
-                  onConfirm={() => handleSendText(inputText)}
-                  maxlength={200}
-                />
-                <View className='text-input-bar__send' onClick={() => handleSendText(inputText)}>
-                  <ArrowRight size={20} color='#fff' />
-                </View>
-                <View className='text-input-bar__cancel' onClick={() => { setShowInput(false); setInputText(''); }}>
-                  <Text className='text-input-bar__cancel-text'>取消</Text>
-                </View>
-              </View>
-            ) : (
-              <View className='chat-quick-bar'>
-                <View className='chat-quick-btn' onClick={() => setShowInput(true)}>
-                  <Text className='chat-quick-btn__icon'>⌨️</Text>
-                  <Text className='chat-quick-btn__label'>发消息</Text>
-                </View>
-                <View className='chat-quick-btn' onClick={() => handleSendText('今天天气怎么样？')}>
-                  <Text className='chat-quick-btn__icon'>🌤️</Text>
-                  <Text className='chat-quick-btn__label'>聊天气</Text>
-                </View>
-                <View className='chat-quick-btn' onClick={() => handleSendText('给我讲个笑话吧')}>
-                  <Text className='chat-quick-btn__icon'>😄</Text>
-                  <Text className='chat-quick-btn__label'>讲笑话</Text>
-                </View>
-                <View className='chat-quick-btn' onClick={() => handleSendText('今天有什么养生小知识？')}>
-                  <Text className='chat-quick-btn__icon'>💡</Text>
-                  <Text className='chat-quick-btn__label'>养生知识</Text>
-                </View>
-              </View>
-            )}
-          </View>
-        </>
-      )}
-
-      {/* 游戏 Tab */}
-      {activeTab === 'games' && (
-        <ScrollView className='games-panel' scrollY>
-          {gamesLoading ? (
-            <View className='empty-hint'>
-              <Text className='empty-hint__text'>加载中...</Text>
+        {tab === 'nostalgia' ? (
+          <SectionBlock title="怀旧内容" description="图片、故事、老歌入口先统一成推荐卡。">
+            <View className="detail-stack">
+              {nostalgia.length === 0 ? <EmptyState title="暂时没有怀旧推荐" description="后续会根据年代偏好继续补充。" icon={<Heart size={28} />} /> : nostalgia.map((item, index) => <DataPanel key={item.id || index} tone="warning"><Text className="detail-title">{item.title || '怀旧推荐'}</Text><Text className="detail-text">{item.description || '适合陪长辈一起回忆和聊天。'}</Text></DataPanel>)}
+              <DataPanel tone="info"><Text className="detail-title">最近情绪趋势</Text><Text className="detail-text">近 7 天记录 {emotionTrend.length} 条，可继续在下一阶段接入更清晰的图表展示。</Text></DataPanel>
             </View>
-          ) : (
-            <View className='games-grid'>
-              {games.map((game) => (
-                <View key={game.id} className='game-card' onClick={() => handlePlayGame(game)}>
-                  <Text className='game-card__icon'>{game.icon}</Text>
-                  <Text className='game-card__name'>{game.name}</Text>
-                  <Text className='game-card__desc'>{game.description}</Text>
-                  <View className='game-card__difficulty'>
-                    {difficultyDots(game.difficulty).map((active, i) => (
-                      <View
-                        key={i}
-                        className={'difficulty-dot' + (active ? ' difficulty-dot--active' : '')}
-                      />
-                    ))}
-                  </View>
-                  <View className='game-card__play'>
-                    <Tips size={16} color='#fff' />
-                    <Text className='game-card__play-text'>开始游戏</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
-          <View style={{ height: '32px' }} />
-        </ScrollView>
-      )}
-
-      {/* 怀旧 Tab */}
-      {activeTab === 'nostalgia' && (
-        <ScrollView className='nostalgia-panel' scrollY>
-          {/* 年代筛选 */}
-          <ScrollView className='decade-filter' scrollX enableFlex>
-            <View
-              className={'decade-chip' + (!selectedDecade ? ' decade-chip--active' : '')}
-              onClick={() => handleDecadeSelect('')}
-            >
-              <Text className='decade-chip__text'>全部</Text>
-            </View>
-            {DECADES.map((decade) => (
-              <View
-                key={decade}
-                className={'decade-chip' + (selectedDecade === decade ? ' decade-chip--active' : '')}
-                onClick={() => handleDecadeSelect(decade)}
-              >
-                <Text className='decade-chip__text'>{decade}</Text>
-              </View>
-            ))}
-          </ScrollView>
-
-          {nostalgiaLoading ? (
-            <View className='empty-hint'>
-              <Text className='empty-hint__text'>加载中...</Text>
-            </View>
-          ) : nostalgia.length === 0 ? (
-            <View className='empty-hint'>
-              <Text className='empty-hint__text'>暂无怀旧内容</Text>
-            </View>
-          ) : (
-            <View className='nostalgia-list'>
-              {nostalgia.map((item) => (
-                <View key={item.id} className='nostalgia-card'>
-                  <View className='nostalgia-card__icon-wrap'>
-                    <Text className='nostalgia-card__type-icon'>{typeIcon(item.type)}</Text>
-                  </View>
-                  <View className='nostalgia-card__content'>
-                    <Text className='nostalgia-card__title'>{item.title}</Text>
-                    {item.description && (
-                      <Text className='nostalgia-card__desc'>{item.description}</Text>
-                    )}
-                    <View className='nostalgia-card__meta'>
-                      <Text className='nostalgia-card__decade'>{item.decade}</Text>
-                      <Text className='nostalgia-card__type-label'>
-                        {item.type === 'music' ? '音乐' : item.type === 'story' ? '故事' : '图片'}
-                      </Text>
-                    </View>
-                  </View>
-                  <View className='nostalgia-card__play'>
-                    <ArrowRight size={20} color='#ad1457' />
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
-          <View style={{ height: '32px' }} />
-        </ScrollView>
-      )}
-    </View>
-  );
+          </SectionBlock>
+        ) : null}
+        <View className="detail-bottom-space" />
+      </ScrollView>
+      <StickyPrimaryAction tone="elder" label="开始一段陪伴对话" icon={<Heart size={22} />} onClick={() => handleSend('陪我开始今天的聊天吧。')} />
+    </PageShell>
+  )
 }
+

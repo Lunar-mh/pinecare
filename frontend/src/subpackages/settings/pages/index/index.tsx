@@ -1,132 +1,33 @@
-import { View, Text, Switch, RadioGroup, Radio, Button } from '@tarojs/components'
-import Taro from '@tarojs/taro'
-import { useState, useEffect } from 'react'
+﻿import Taro from '@tarojs/taro'
+import { View, Text, ScrollView } from '@tarojs/components'
+import { Heart, Notice, Setting, Service } from '@nutui/icons-react-taro'
+import { HeroHeader, PageShell, SectionBlock, ActionGrid } from '@/components/shell'
 import './index.scss'
 
-export default function Settings() {
-  const [medicationReminder, setMedicationReminder] = useState(true)
-  const [sosAlert, setSosAlert] = useState(true)
-  const [healthWarning, setHealthWarning] = useState(true)
-  const [fontSize, setFontSize] = useState('medium')
+const items = [
+  { key: 'device', label: '设备与定位', description: '绑定设备、检查在线状态', icon: <Setting size={24} /> },
+  { key: 'emergency', label: '紧急联系人', description: '维护 SOS 联系方式', icon: <Notice size={24} /> },
+  { key: 'feedback', label: '帮助反馈', description: '问题反馈与常见帮助', icon: <Service size={24} /> },
+  { key: 'about', label: '关于应用', description: '版本、协议与更新说明', icon: <Heart size={24} /> },
+]
 
-  useEffect(() => {
-    try {
-      const med = Taro.getStorageSync('setting_medicationReminder')
-      if (med !== '') setMedicationReminder(med)
-      
-      const sos = Taro.getStorageSync('setting_sosAlert')
-      if (sos !== '') setSosAlert(sos)
-      
-      const health = Taro.getStorageSync('setting_healthWarning')
-      if (health !== '') setHealthWarning(health)
-      
-      const font = Taro.getStorageSync('fontSize')
-      if (font) setFontSize(font)
-    } catch (e: unknown) {
-      console.error('Failed to load settings', e)
-    }
-  }, [])
+const routeMap: Record<string, string> = {
+  device: '/subpackages/settings/pages/device/index',
+  emergency: '/subpackages/settings/pages/emergency/index',
+  feedback: '/subpackages/settings/pages/feedback/index',
+  about: '/subpackages/settings/pages/about/index',
+}
 
-  const handleSwitchChange = (key: string, value: boolean, setter: (val: boolean) => void) => {
-    setter(value)
-    try {
-      Taro.setStorageSync(`setting_${key}`, value)
-    } catch (e: unknown) {
-      console.error(`Failed to save ${key}`, e)
-    }
-  }
-
-  const handleFontSizeChange = (e: { detail: { value: string } }) => {
-    const val = e.detail.value
-    setFontSize(val)
-    try {
-      Taro.setStorageSync('fontSize', val)
-    } catch (err: unknown) {
-      console.error('Failed to save font size', err)
-    }
-  }
-
-  const handleClearCache = () => {
-    try {
-      Taro.clearStorageSync()
-      Taro.showToast({
-        title: '缓存已清除',
-        icon: 'success',
-        duration: 2000
-      })
-      // Restore default settings after clear
-      setMedicationReminder(true)
-      setSosAlert(true)
-      setHealthWarning(true)
-      setFontSize('medium')
-    } catch (e: unknown) {
-      Taro.showToast({
-        title: '清除失败',
-        icon: 'error'
-      })
-    }
-  }
-
+export default function SettingsPage() {
   return (
-    <View className="settings-page">
-      <View className="settings-section">
-        <View className="settings-section-title">
-          <Text>通知设置</Text>
-        </View>
-        
-        <View className="settings-item">
-          <Text className="settings-item-label">用药提醒</Text>
-          <Switch 
-            checked={medicationReminder} 
-            color="#01579b"
-            onChange={(e) => handleSwitchChange('medicationReminder', e.detail.value, setMedicationReminder)} 
-          />
-        </View>
-        
-        <View className="settings-item">
-          <Text className="settings-item-label">SOS告警</Text>
-          <Switch 
-            checked={sosAlert} 
-            color="#01579b"
-            onChange={(e) => handleSwitchChange('sosAlert', e.detail.value, setSosAlert)} 
-          />
-        </View>
-        
-        <View className="settings-item">
-          <Text className="settings-item-label">健康预警</Text>
-          <Switch 
-            checked={healthWarning} 
-            color="#01579b"
-            onChange={(e) => handleSwitchChange('healthWarning', e.detail.value, setHealthWarning)} 
-          />
-        </View>
-      </View>
-
-      <View className="settings-section">
-        <View className="settings-section-title">
-          <Text>字体大小</Text>
-        </View>
-        <RadioGroup className="font-size-group" onChange={handleFontSizeChange}>
-          <View className="radio-item">
-            <Radio value="small" checked={fontSize === 'small'} color="#01579b" />
-            <Text className="radio-label">小</Text>
-          </View>
-          <View className="radio-item">
-            <Radio value="medium" checked={fontSize === 'medium'} color="#01579b" />
-            <Text className="radio-label">中</Text>
-          </View>
-          <View className="radio-item">
-            <Radio value="large" checked={fontSize === 'large'} color="#01579b" />
-            <Text className="radio-label">大</Text>
-          </View>
-        </RadioGroup>
-      </View>
-
-      <View className="settings-section">
-        <Button className="clear-cache-btn" onClick={handleClearCache}>
-          清除缓存
-        </Button>
-      </View>
-    </View>
+    <PageShell roleTone="family" className="settings-hub-page">
+      <HeroHeader roleTone="family" eyebrow="设置中心" title="把分散设置收成四个清楚入口" subtitle="设备、紧急联系人、帮助反馈、关于应用统一从这里进入。" />
+      <ScrollView className="detail-shell-scroll" scrollY>
+        <SectionBlock title="设置分组" description="保留最少的入口词，减少找功能的时间。">
+          <ActionGrid items={items} columns={2} onSelect={key => Taro.navigateTo({ url: routeMap[key] })} />
+        </SectionBlock>
+      </ScrollView>
+    </PageShell>
   )
 }
+

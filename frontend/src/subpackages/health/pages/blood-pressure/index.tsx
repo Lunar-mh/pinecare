@@ -1,167 +1,41 @@
-import { useState } from 'react';
-import Taro from '@tarojs/taro';
-import { View, Text } from '@tarojs/components';
-import { Tips } from '@nutui/icons-react-taro';
-import { LargeInput, LargeButton, SectionTitle } from '@/components/elderly';
-import { addBloodPressureRecord } from '@/services/modules/health';
-import './index.scss';
+﻿import { useCallback, useEffect, useState } from 'react'
+import { View, Text, ScrollView, Input } from '@tarojs/components'
+import Taro from '@tarojs/taro'
+import { Health, Heart } from '@nutui/icons-react-taro'
+import { DataPanel, HeroHeader, PageShell, SectionBlock, StickyPrimaryAction } from '@/components/shell'
+import { addBloodPressureRecord, getBloodPressureRecords, getLatestBloodPressure } from '@/services/modules/health'
+import type { BloodPressureRecord } from '@/services/types'
+import './index.scss'
 
 export default function BloodPressurePage() {
-  const [systolic, setSystolic] = useState('');
-  const [diastolic, setDiastolic] = useState('');
-  const [pulse, setPulse] = useState('');
-  const [note, setNote] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [latest, setLatest] = useState<BloodPressureRecord | null>(null)
+  const [records, setRecords] = useState<BloodPressureRecord[]>([])
+  const [systolic, setSystolic] = useState('')
+  const [diastolic, setDiastolic] = useState('')
+  const [pulse, setPulse] = useState('')
 
-  // 验证输入
-  const validateInput = () => {
-    const sys = parseInt(systolic);
-    const dia = parseInt(diastolic);
-    
-    if (!systolic || !diastolic) {
-      Taro.showToast({ title: '请输入收缩压和舒张压', icon: 'none' });
-      return false;
-    }
-    
-    if (isNaN(sys) || sys < 60 || sys > 250) {
-      Taro.showToast({ title: '收缩压范围: 60-250', icon: 'none' });
-      return false;
-    }
-    
-    if (isNaN(dia) || dia < 40 || dia > 150) {
-      Taro.showToast({ title: '舒张压范围: 40-150', icon: 'none' });
-      return false;
-    }
-    
-    if (dia >= sys) {
-      Taro.showToast({ title: '舒张压应小于收缩压', icon: 'none' });
-      return false;
-    }
-    
-    return true;
-  };
-
-  // 提交记录
-  const handleSubmit = async () => {
-    if (!validateInput()) return;
-    
-    setLoading(true);
+  const loadData = useCallback(async () => {
     try {
-      await addBloodPressureRecord({
-        systolic: parseInt(systolic),
-        diastolic: parseInt(diastolic),
-        pulse: pulse ? parseInt(pulse) : undefined,
-        note: note || undefined
-      });
-      
-      Taro.showToast({ title: '记录成功', icon: 'success' });
-      
-      // 清空表单
-      setSystolic('');
-      setDiastolic('');
-      setPulse('');
-      setNote('');
-      
-      // 返回上一页
-      setTimeout(() => {
-        Taro.navigateBack();
-      }, 1500);
+      const [latestData, recordRes] = await Promise.all([getLatestBloodPressure(), getBloodPressureRecords({ page: 1, pageSize: 5 })])
+      setLatest(latestData)
+      setRecords(recordRes.list || [])
     } catch (error) {
-      console.error('记录失败:', error);
-    } finally {
-      setLoading(false);
+      console.error('load blood pressure page failed', error)
     }
-  };
+  }, [])
 
-  // 快速输入参考值
-  const quickValues = [
-    { sys: 120, dia: 80, label: '正常血压' },
-    { sys: 130, dia: 85, label: '正常高值' },
-  ];
+  useEffect(() => { loadData() }, [loadData])
+
+  const handleSave = async () => {
+    if (!systolic || !diastolic) return
+    await addBloodPressureRecord({ systolic: Number(systolic), diastolic: Number(diastolic), pulse: pulse ? Number(pulse) : undefined })
+    setSystolic(''); setDiastolic(''); setPulse('')
+    Taro.showToast({ title: '血压已记录', icon: 'success' })
+    loadData()
+  }
 
   return (
-    <View className="blood-pressure-page">
-      {/* 参考标准说明 */}
-      <View className="reference-banner">
-        <Tips size={24} color="#01579b" />
-        <Text className="reference-text">正常血压：收缩压 90-120 / 舒张压 60-80 mmHg</Text>
-      </View>
-
-      {/* 快速输入 */}
-      <SectionTitle title="快速输入" />
-      <View className="quick-input">
-        {quickValues.map((item, index) => (
-          <View 
-            key={index}
-            className="quick-input__item"
-            onClick={() => {
-              setSystolic(String(item.sys));
-              setDiastolic(String(item.dia));
-            }}
-          >
-            <Text className="quick-input__value">{item.sys}/{item.dia}</Text>
-            <Text className="quick-input__label">{item.label}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* 血压输入表单 */}
-      <SectionTitle title="手动录入" />
-      <View className="form-card">
-        <View className="input-row">
-          <View className="input-group">
-            <LargeInput
-              label="收缩压（高压）"
-              value={systolic}
-              onChange={setSystolic}
-              type="digit"
-              placeholder="如：120"
-              maxLength={3}
-            />
-            <Text className="input-unit">mmHg</Text>
-          </View>
-          <View className="input-group">
-            <LargeInput
-              label="舒张压（低压）"
-              value={diastolic}
-              onChange={setDiastolic}
-              type="digit"
-              placeholder="如：80"
-              maxLength={3}
-            />
-            <Text className="input-unit">mmHg</Text>
-          </View>
-        </View>
-        
-        <LargeInput
-          label="脉搏（选填）"
-          value={pulse}
-          onChange={setPulse}
-          type="digit"
-          placeholder="如：72"
-          maxLength={3}
-        />
-        
-        <LargeInput
-          label="备注（选填）"
-          value={note}
-          onChange={setNote}
-          placeholder="如：餐后测量、运动后等"
-        />
-      </View>
-
-      {/* 提交按钮 */}
-      <View className="submit-area">
-        <LargeButton
-          type="primary"
-          size="large"
-          loading={loading}
-          block
-          onClick={handleSubmit}
-        >
-          保存记录
-        </LargeButton>
-      </View>
-    </View>
-  );
+    <PageShell roleTone="elder" className="health-detail-page"><HeroHeader roleTone="elder" eyebrow="血压记录" title="记录一次就能看到最近变化" subtitle="当前值、快捷录入和最近几次记录在同一页里。" /><ScrollView className="detail-shell-scroll" scrollY><SectionBlock title="最近一次" description="先看当前状态，再决定要不要重新测。">{latest ? <DataPanel tone={latest.status === 'danger' ? 'danger' : latest.status === 'warning' ? 'warning' : 'primary'}><Text className="detail-title">{latest.systolic}/{latest.diastolic} mmHg</Text><Text className="detail-text">脉搏 {latest.pulse || '--'} · {new Date(latest.measuredAt).toLocaleString('zh-CN')}</Text></DataPanel> : <DataPanel tone="info"><Text className="detail-text">还没有最近一次记录。</Text></DataPanel>}</SectionBlock><SectionBlock title="快速录入" description="只保留必要字段，减少输入负担。"><DataPanel tone="primary"><View className="detail-form"><Input className="detail-input" value={systolic} placeholder="收缩压 120" onInput={e => setSystolic(e.detail.value)} /><Input className="detail-input" value={diastolic} placeholder="舒张压 80" onInput={e => setDiastolic(e.detail.value)} /><Input className="detail-input" value={pulse} placeholder="脉搏 72（选填）" onInput={e => setPulse(e.detail.value)} /></View></DataPanel></SectionBlock><SectionBlock title="最近记录" description="只看最近几次，避免列表太长。"><View className="detail-stack">{records.map(item => <DataPanel key={item.id} tone={item.status === 'danger' ? 'danger' : item.status === 'warning' ? 'warning' : 'success'}><Text className="detail-title">{item.systolic}/{item.diastolic} mmHg</Text><Text className="detail-text">{new Date(item.measuredAt).toLocaleString('zh-CN')}</Text></DataPanel>)}</View></SectionBlock><View className="detail-bottom-space" /></ScrollView><StickyPrimaryAction tone="elder" label="保存本次血压" icon={<Heart size={22} />} onClick={handleSave} /></PageShell>
+  )
 }
+
