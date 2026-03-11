@@ -5,11 +5,10 @@
 
 import { get, post, put } from '../request';
 import type {
-  HealthRecord,
   BloodPressureRecord,
   HeartRateRecord,
-  HealthTrend,
-  PaginatedResult
+  PaginatedResult,
+  TodayHealthOverview
 } from '../types';
 
 // ==================== 血压记录 ====================
@@ -72,13 +71,61 @@ export const getHeartRateTrend = (days: number = 7) =>
 // ==================== 综合健康数据 ====================
 
 // 获取今日健康概览
-export const getTodayHealthOverview = () =>
-  get<{
-    bloodPressure?: BloodPressureRecord;
-    heartRate?: HeartRateRecord;
-    steps?: number;
-    sleep?: { hours: number; quality: string };
-  }>('/health-archive/today-overview');
+export const getTodayHealthOverview = async (): Promise<TodayHealthOverview> => {
+  const data = await get<{
+    metrics?: Record<string, any>;
+    alerts?: Array<{
+      metricType?: string;
+      level?: 'warning' | 'danger';
+      message?: string;
+      measuredAt?: string;
+    }>;
+    recordsCount?: number;
+  }>('/health-archive/today');
+
+  const bloodPressureMetric = data?.metrics?.blood_pressure;
+  const heartRateMetric = data?.metrics?.heart_rate;
+  const stepsMetric = data?.metrics?.steps;
+  const bloodPressureStatus: BloodPressureRecord['status'] =
+    bloodPressureMetric && (Number(bloodPressureMetric.valueHigh ?? bloodPressureMetric.value_high ?? 0) > 140
+      || Number(bloodPressureMetric.valueLow ?? bloodPressureMetric.value_low ?? 0) > 90)
+      ? 'warning'
+      : 'normal';
+  const heartRateValue = heartRateMetric ? Number(heartRateMetric.value ?? 0) : undefined;
+  const heartRateStatus: HeartRateRecord['status'] =
+    heartRateValue != null && (heartRateValue < 60 || heartRateValue > 100)
+      ? 'warning'
+      : 'normal';
+
+  const bloodPressure = bloodPressureMetric ? {
+    id: String(bloodPressureMetric.id),
+    systolic: Number(bloodPressureMetric.valueHigh ?? bloodPressureMetric.value_high ?? 0),
+    diastolic: Number(bloodPressureMetric.valueLow ?? bloodPressureMetric.value_low ?? 0),
+    pulse: bloodPressureMetric.pulse != null ? Number(bloodPressureMetric.pulse) : undefined,
+    measuredAt: bloodPressureMetric.measuredAt ?? bloodPressureMetric.measured_at ?? '',
+    status: bloodPressureStatus,
+  } : undefined;
+
+  const heartRate = heartRateMetric ? {
+    id: String(heartRateMetric.id),
+    value: heartRateValue ?? 0,
+    measuredAt: heartRateMetric.measuredAt ?? heartRateMetric.measured_at ?? '',
+    status: heartRateStatus,
+  } : undefined;
+
+  return {
+    bloodPressure,
+    heartRate,
+    steps: stepsMetric ? Number(stepsMetric.value ?? 0) : 0,
+    alerts: (data?.alerts || []).map(item => ({
+      metricType: item.metricType || 'unknown',
+      level: item.level || 'warning',
+      message: item.message || '检测到健康异常',
+      measuredAt: item.measuredAt,
+    })),
+    recordsCount: Number(data?.recordsCount || 0),
+  };
+};
 
 // 获取健康统计
 export const getHealthStatistics = (period: 'week' | 'month' | 'year' = 'week') =>

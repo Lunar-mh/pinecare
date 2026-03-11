@@ -88,6 +88,22 @@ class SosEventModel {
     return rows;
   }
 
+  static async listActiveByUser(userId, limit = 3) {
+    const safeLimit = Math.min(20, Math.max(1, Number(limit) || 3));
+    const [rows] = await query(
+      `SELECT id, user_id, trigger_type, latitude, longitude, address,
+              event_status, created_at, confirmed_at, resolved_at, cancelled_at, updated_at
+       FROM sos_events
+       WHERE user_id = ?
+         AND event_status IN ('triggered', 'confirmed')
+       ORDER BY created_at DESC
+       LIMIT ?`,
+      [userId, safeLimit]
+    );
+
+    return rows;
+  }
+
   static async autoResolveTimeoutEvents(timeoutMinutes) {
     const safeTimeout = Math.max(1, Number(timeoutMinutes) || 30);
 

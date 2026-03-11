@@ -58,6 +58,19 @@ export interface HealthTrend {
   value: number | { systolic: number; diastolic: number };
 }
 
+export interface TodayHealthOverview {
+  bloodPressure?: BloodPressureRecord;
+  heartRate?: HeartRateRecord;
+  steps?: number;
+  alerts: Array<{
+    metricType: string;
+    level: 'warning' | 'danger';
+    message: string;
+    measuredAt?: string;
+  }>;
+  recordsCount: number;
+}
+
 // ==================== 用药提醒 ====================
 
 export interface Medication {
@@ -89,27 +102,30 @@ export interface MedicationRecord {
 }
 
 export interface TodayMedication {
+  logId?: string;
   medicationId: string;
   name: string;
   dosage: string;
   time: string;
-  status: 'pending' | 'taken' | 'missed';
+  status: 'pending' | 'taken' | 'missed' | 'skipped';
   takenAt?: string;
+  scheduledTime?: string;
 }
 
 // ==================== SOS紧急求助 ====================
 
 export interface SOSEvent {
   id: string;
-  userId: string;
+  userId?: string;
   type: 'manual' | 'fall' | 'abnormal_vital';
   location?: {
     latitude: number;
     longitude: number;
     address?: string;
   };
-  status: 'triggered' | 'responding' | 'resolved';
+  status: 'triggered' | 'confirmed' | 'resolved' | 'cancelled';
   triggeredAt: string;
+  confirmedAt?: string;
   resolvedAt?: string;
   responders?: SOSResponder[];
 }

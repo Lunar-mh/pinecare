@@ -1,4 +1,5 @@
-﻿import http from './api'
+import http from './api'
+import type { SosHistoryResult } from './sos'
 
 export interface StatItem {
   label: string
@@ -47,11 +48,34 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
 export async function getRecentActivities(limit = 20): Promise<ActivityItem[]> {
   try {
-    return await http.get<ActivityItem[]>(`/api/v1/statistics/activities?limit=${limit}`)
-  } catch (err: unknown) {
-    if (import.meta.env.DEV) {
-      return []
+    const sos = await http.get<SosHistoryResult>(`/api/v1/admin/sos/events?page=1&pageSize=${limit}`)
+    return (sos.list || []).map(item => ({
+      id: item.event_id,
+      type:
+        item.trigger_type === 'fall'
+          ? 'SOS 跌倒告警'
+          : item.trigger_type === 'abnormal_vital'
+            ? 'SOS 指标异常'
+            : 'SOS 手动求助',
+      user: item.user_name || item.user_phone || `用户${item.user_id || item.event_id}`,
+      time: item.created_at,
+      status:
+        item.event_status === 'triggered'
+          ? 'SOS触发中'
+          : item.event_status === 'confirmed'
+            ? 'SOS已确认'
+            : item.event_status === 'resolved'
+              ? '已完成'
+              : '已取消',
+    }))
+  } catch (_sosErr: unknown) {
+    try {
+      return await http.get<ActivityItem[]>(`/api/v1/statistics/activities?limit=${limit}`)
+    } catch (err: unknown) {
+      if (import.meta.env.DEV) {
+        return []
+      }
+      throw err
     }
-    throw err
   }
 }

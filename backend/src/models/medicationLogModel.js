@@ -127,6 +127,24 @@ const medicationLogModel = {
     return rows.map(mapLogRow);
   },
 
+  async listByUserAndDay(userId, dayStart, dayEndExclusive) {
+    const [rows] = await query(
+      `SELECT l.id, l.user_id, l.plan_id, p.medication_name, p.dosage,
+              l.scheduled_time, l.actual_time, l.status,
+              l.reminder_sent, l.second_reminder_sent, l.family_notified,
+              l.created_at, l.updated_at
+       FROM medication_logs l
+       LEFT JOIN medication_plans p ON p.id = l.plan_id
+       WHERE l.user_id = ?
+         AND l.scheduled_time >= ?
+         AND l.scheduled_time < ?
+       ORDER BY l.scheduled_time ASC, l.id ASC`,
+      [userId, dayStart, dayEndExclusive]
+    );
+
+    return rows.map(mapLogRow);
+  },
+
   async markFirstReminderSent(logId) {
     const [result] = await query(
       `UPDATE medication_logs
