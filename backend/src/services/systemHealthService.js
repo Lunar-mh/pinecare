@@ -4,6 +4,19 @@ const { query } = require('../config/database');
 const redis = require('../config/redis');
 const { getServerRole } = require('../config/http');
 const { resolveMode } = require('../config/runtimeMode');
+const { getRecentThirdPartyErrors } = require('../utils/thirdParty');
+const { getJobStatus } = require('../jobs');
+
+const KEY_TABLES = [
+  'users',
+  'health_records',
+  'medication_logs',
+  'sos_events',
+  'fall_events',
+  'location_records',
+  'medical_reports',
+  'audit_logs',
+];
 
 async function checkMysql() {
   try {
@@ -23,9 +36,48 @@ async function checkRedis() {
   }
 }
 
+async function checkKeyTables() {
+  try {
+    const placeholders = KEY_TABLES.map(() => '?').join(', ');
+    const [rows] = await query(
+      `SELECT table_name
+       FROM information_schema.tables
+       WHERE table_schema = DATABASE() AND table_name IN (${placeholders})`,
+      KEY_TABLES
+    );
+
+    const existing = new Set((rows || []).map((row) => String(row.table_name || row.TABLE_NAME || '')));
+    const missing = KEY_TABLES.filter((tableName) => !existing.has(tableName));
+
+    return {
+      status: missing.length === 0 ? 'ok' : 'error',
+      checked: KEY_TABLES,
+      missing,
+    };
+  } catch (err) {
+    return {
+      status: 'error',
+      checked: KEY_TABLES,
+      missing: KEY_TABLES,
+      detail: err.message,
+    };
+  }
+}
+
 async function getHealthStatus() {
-  const [mysql, redisState] = await Promise.all([checkMysql(), checkRedis()]);
-  const healthy = mysql.status === 'ok' && redisState.status === 'ok';
+  const [mysql, redisState, keyTables] = await Promise.all([
+    checkMysql(),
+    checkRedis(),
+    checkKeyTables(),
+  ]);
+  const jobs = getJobStatus();
+  const recentErrors = getRecentThirdPartyErrors(5);
+  const workerHealthy = jobs.serverRole !== 'worker' || !jobs.enabled || jobs.started;
+  const healthy =
+    mysql.status === 'ok' &&
+    redisState.status === 'ok' &&
+    keyTables.status === 'ok' &&
+    workerHealthy;
 
   return {
     healthy,
@@ -35,6 +87,12 @@ async function getHealthStatus() {
       serverRole: getServerRole(),
       mysql,
       redis: redisState,
+      keyTables,
+      jobs,
+      thirdPartyErrors: {
+        recentCount: recentErrors.length,
+        items: recentErrors,
+      },
     },
   };
 }
@@ -44,6 +102,7 @@ function getLivenessStatus() {
     status: 'ok',
     runtimeMode: resolveMode(),
     serverRole: getServerRole(),
+    jobs: getJobStatus(),
   };
 }
 
@@ -58,6 +117,7 @@ async function getReadinessStatus() {
 module.exports = {
   checkMysql,
   checkRedis,
+  checkKeyTables,
   getHealthStatus,
   getLivenessStatus,
   getReadinessStatus,

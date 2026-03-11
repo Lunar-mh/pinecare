@@ -2,6 +2,7 @@
 
 const axios = require('axios');
 const ConsultRecord = require('../models/consultRecord');
+const AuditLogModel = require('../models/auditLog');
 const healthContextService = require('./healthContextService');
 const { buildSystemPrompt } = require('../utils/promptTemplate');
 const {
@@ -42,15 +43,18 @@ function getModeStrategy() {
   });
 }
 
-function buildStubReply(message, profile) {
+function buildStubReply(message, profile, options = {}) {
   const prompt = String(message || '').trim() || 'current health question';
   const nickname = profile && profile.real_name ? String(profile.real_name) : 'User';
   const chronic = Array.isArray(profile && profile.chronicDiseases)
     ? profile.chronicDiseases.filter(Boolean)
     : [];
   const chronicText = chronic.length > 0 ? `Known conditions: ${chronic.join(', ')}. ` : '';
+  const fallbackText = options.fallbackUsed
+    ? 'The live consultation service is currently unavailable, so this is a controlled fallback reply. '
+    : 'This is a sandbox health-consult reply. ';
 
-  return `${nickname}, this is a sandbox health-consult reply. ${chronicText}For "${prompt}", please track symptom changes, rest regularly, and seek in-person care if symptoms continue.`;
+  return `${nickname}, ${fallbackText}${chronicText}For "${prompt}", please track symptom changes, rest regularly, and seek in-person care if symptoms continue.`;
 }
 
 function toConsultError(err) {
@@ -93,6 +97,18 @@ async function requestWithRetry(payload) {
   throw toConsultError(lastError);
 }
 
+async function writeAudit(action, details) {
+  try {
+    await AuditLogModel.create({
+      userId: details && details.userId ? Number(details.userId) : null,
+      action,
+      details,
+    });
+  } catch (err) {
+    console.error('ai_consult_audit_failed', { action, message: err.message });
+  }
+}
+
 class AIService {
   getCapabilityReport() {
     const strategy = getModeStrategy();
@@ -120,6 +136,7 @@ class AIService {
     const strategy = getModeStrategy();
     let reply;
     let tokens = null;
+    let diagnostics;
 
     if (strategy.effectiveMode === 'live') {
       const systemPrompt = buildSystemPrompt(profile);
@@ -130,45 +147,80 @@ class AIService {
         { role: 'user', content: message },
       ];
 
-      const response = await requestWithRetry({
-        model: 'qwen-turbo',
-        input: { messages },
-        parameters: { result_format: 'message' },
-      });
+      try {
+        const response = await requestWithRetry({
+          model: 'qwen-turbo',
+          input: { messages },
+          parameters: { result_format: 'message' },
+        });
 
-      const choice =
-        response.data && response.data.output && response.data.output.choices
-          ? response.data.output.choices[0]
-          : null;
+        const choice =
+          response.data && response.data.output && response.data.output.choices
+            ? response.data.output.choices[0]
+            : null;
 
-      reply =
-        choice &&
-        choice.message &&
-        typeof choice.message.content === 'string' &&
-        choice.message.content.trim()
-          ? choice.message.content.trim()
-          : null;
+        reply =
+          choice &&
+          choice.message &&
+          typeof choice.message.content === 'string' &&
+          choice.message.content.trim()
+            ? choice.message.content.trim()
+            : null;
 
-      if (!reply) {
-        throw createBizError('AI consult response is empty.', 503, 503);
+        if (!reply) {
+          throw createBizError('AI consult response is empty.', 503, 503);
+        }
+
+        tokens =
+          response.data && response.data.usage
+            ? (response.data.usage.input_tokens || 0) + (response.data.usage.output_tokens || 0)
+            : null;
+
+        diagnostics = {
+          mode: 'live',
+          source: 'dashscope_live',
+          fallbackUsed: false,
+          reason: 'live_response',
+        };
+      } catch (err) {
+        if (!strategy.fallbackAllowed) {
+          throw err;
+        }
+
+        reply = buildStubReply(message, profile, { fallbackUsed: true });
+        diagnostics = {
+          mode: 'stub',
+          source: 'ai_consult_stub',
+          fallbackUsed: true,
+          reason: 'live_error_fallback',
+        };
+
+        await writeAudit('ai_consult.fallback', {
+          userId,
+          sessionId,
+          requestedMode: strategy.requestedMode,
+          effectiveMode: strategy.effectiveMode,
+          fallbackReason: err.message,
+        });
       }
-
-      tokens =
-        response.data && response.data.usage
-          ? (response.data.usage.input_tokens || 0) + (response.data.usage.output_tokens || 0)
-          : null;
     } else {
       if (!strategy.stubAllowed) {
         throw createBizError('AI consult stub mode is disabled in PRODUCTION_LIVE mode.', 503, 503);
       }
 
       reply = buildStubReply(message, profile);
+      diagnostics = {
+        mode: 'stub',
+        source: 'ai_consult_stub',
+        fallbackUsed: false,
+        reason: 'sandbox_or_stub_mode',
+      };
     }
 
     await ConsultRecord.create({ userId, sessionId, role: 'user', content: message });
     await ConsultRecord.create({ userId, sessionId, role: 'assistant', content: reply, tokens });
 
-    return { reply, sessionId, tokens };
+    return { reply, sessionId, tokens, diagnostics };
   }
 }
 

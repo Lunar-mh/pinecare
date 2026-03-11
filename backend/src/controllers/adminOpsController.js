@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { ok } = require('../utils/response');
 const { sendControllerError } = require('../utils/controllerError');
@@ -48,6 +48,7 @@ module.exports = {
   ),
   integrationStatus: buildHandler(() => adminOpsService.getIntegrationStatus()),
   auditLogs: buildHandler((req) => adminOpsService.getAuditLogs(req.query || {})),
+  eventReplay: buildHandler((req) => adminOpsService.getEventReplay(req.query || {})),
   demoScenarios: buildHandler(() => adminOpsService.getDemoScenarios()),
   demoBootstrap: buildHandler((req) =>
     adminOpsService.bootstrapDemoScenario(req.body || {}, req.user || null)

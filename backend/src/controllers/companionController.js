@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const companionService = require('../services/companionService');
 const { ok, fail } = require('../utils/response');
@@ -11,15 +11,15 @@ function mapError(res, err) {
         ? err.statusCode
         : 500;
   const status = typeof err.statusCode === 'number' ? err.statusCode : code;
-  const message = err.message || 'AI陪伴服务处理失败';
-  return fail(res, code, message, null, status);
+  const message = err.message || 'AI companion service failed.';
+  return fail(res, code, message, err.data || null, status);
 }
 
 async function chat(req, res) {
   try {
     const userId = req.user.userId;
     const data = await companionService.chat(userId, req.body.message);
-    return ok(res, data, '对话成功');
+    return ok(res, data, 'chat ok');
   } catch (err) {
     return mapError(res, err);
   }
@@ -28,7 +28,7 @@ async function chat(req, res) {
 async function getGames(req, res) {
   try {
     const data = companionService.getGames();
-    return ok(res, data, '游戏列表获取成功');
+    return ok(res, data, 'games ok');
   } catch (err) {
     return mapError(res, err);
   }
@@ -38,7 +38,7 @@ async function recordGame(req, res) {
   try {
     const userId = req.user.userId;
     const data = await companionService.recordGame(userId, req.body || {});
-    return ok(res, data, '游戏成绩记录成功');
+    return ok(res, data, 'game record ok');
   } catch (err) {
     return mapError(res, err);
   }
@@ -48,7 +48,7 @@ async function getEmotion(req, res) {
   try {
     const userId = req.user.userId;
     const data = await companionService.getEmotionTrend(userId);
-    return ok(res, data, '情绪趋势获取成功');
+    return ok(res, data, 'emotion ok');
   } catch (err) {
     return mapError(res, err);
   }
@@ -58,7 +58,7 @@ async function getNostalgia(req, res) {
   try {
     const userId = req.user ? req.user.userId : null;
     const data = await companionService.getNostalgia(req.query.decade, userId);
-    return ok(res, data, '怀旧内容获取成功');
+    return ok(res, data, 'nostalgia ok');
   } catch (err) {
     return mapError(res, err);
   }

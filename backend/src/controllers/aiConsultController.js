@@ -26,6 +26,45 @@ function parseLimit(value) {
   return Math.min(raw, 100);
 }
 
+function buildSafetyPayload(safetyResult) {
+  return {
+    safe: Boolean(safetyResult && safetyResult.safe),
+    riskType: safetyResult ? safetyResult.riskType : null,
+    riskLevel: safetyResult ? safetyResult.riskLevel : null,
+    matchedKeyword: safetyResult ? safetyResult.matchedKeyword || null : null,
+    triage:
+      safetyResult && safetyResult.triage
+        ? {
+            allowResponse: Boolean(safetyResult.triage.allowResponse),
+            needsManualFollowup: Boolean(safetyResult.triage.needsManualFollowup),
+            recommendation: safetyResult.triage.recommendation || null,
+          }
+        : {
+            allowResponse: true,
+            needsManualFollowup: false,
+            recommendation: 'No additional manual follow-up is required.',
+          },
+  };
+}
+
+function enrichReply(reply, safetyResult) {
+  const safeReply = String(reply || '').trim();
+  const suffix =
+    safetyResult && safetyResult.triage && safetyResult.triage.responseSuffix
+      ? String(safetyResult.triage.responseSuffix).trim()
+      : '';
+
+  if (!suffix) {
+    return safeReply;
+  }
+
+  if (safeReply.includes(suffix)) {
+    return safeReply;
+  }
+
+  return `${safeReply}\n\n${suffix}`.trim();
+}
+
 async function sendChat(req, res) {
   try {
     const userId = req.user.userId;
@@ -39,8 +78,11 @@ async function sendChat(req, res) {
     const text = message.trim();
 
     const safetyResult = await contentSafetyService.check(text, userId);
-    if (!safetyResult.safe) {
-      return fail(res, 403, 'Message contains prohibited content.', null, 403);
+    if (!safetyResult.safe || !safetyResult.triage.allowResponse) {
+      return fail(res, 403, 'Message requires manual follow-up.', {
+        safety: buildSafetyPayload(safetyResult),
+        manualFollowupSuggested: true,
+      }, 403);
     }
 
     const result = await aiService.chat(userId, text, sessionId);
@@ -48,9 +90,12 @@ async function sendChat(req, res) {
     return ok(
       res,
       {
-        reply: result.reply,
+        reply: enrichReply(result.reply, safetyResult),
         sessionId: result.sessionId,
         tokens: result.tokens,
+        safety: buildSafetyPayload(safetyResult),
+        diagnostics: result.diagnostics,
+        manualFollowupSuggested: Boolean(safetyResult.triage.needsManualFollowup),
       },
       'success'
     );
@@ -99,15 +144,20 @@ async function voiceConsult(req, res) {
 
     const text = recognizedText.trim();
     const safetyResult = await contentSafetyService.check(text, userId);
-    if (!safetyResult.safe) {
-      return fail(res, 403, 'Message contains prohibited content.', null, 403);
+    if (!safetyResult.safe || !safetyResult.triage.allowResponse) {
+      return fail(res, 403, 'Message requires manual follow-up.', {
+        recognizedText: text,
+        safety: buildSafetyPayload(safetyResult),
+        manualFollowupSuggested: true,
+      }, 403);
     }
 
     const aiResult = await aiService.chat(userId, text, sessionId);
+    const enrichedReply = enrichReply(aiResult.reply, safetyResult);
 
     let replyAudio = null;
     try {
-      replyAudio = await voiceService.textToSpeech(aiResult.reply);
+      replyAudio = await voiceService.textToSpeech(enrichedReply);
     } catch (ttsErr) {
       console.error('voice_tts_failed', { message: ttsErr.message });
     }
@@ -115,10 +165,13 @@ async function voiceConsult(req, res) {
     return ok(
       res,
       {
-        reply: aiResult.reply,
+        reply: enrichedReply,
         audioData: replyAudio,
         sessionId: aiResult.sessionId,
         text,
+        safety: buildSafetyPayload(safetyResult),
+        diagnostics: aiResult.diagnostics,
+        manualFollowupSuggested: Boolean(safetyResult.triage.needsManualFollowup),
       },
       'success'
     );

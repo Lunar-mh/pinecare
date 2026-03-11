@@ -46,6 +46,8 @@ describe('backend architecture guardrails', () => {
       ['src/services/communityAdminService.js', 40],
       ['src/services/medicalApiService.js', 120],
       ['src/services/timeBankService.js', 60],
+      ['src/services/familyService.js', 180],
+      ['src/services/fallService.js', 280],
       ['src/services/adminOps/adminCareOverviewService.js', 650],
       ['src/services/adminOps/adminIncidentOpsService.js', 150],
       ['src/services/adminOps/adminDiagnosticsService.js', 300],
@@ -70,3 +72,4 @@ describe('backend architecture guardrails', () => {
     }
   });
 });
+

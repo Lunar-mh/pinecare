@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const express = require('express');
 const request = require('supertest');
@@ -26,6 +26,12 @@ jest.mock('../../src/services/aiService', () => ({
     reply: '建议保持规律监测，如持续不适请及时就医。',
     sessionId: 'session-001',
     tokens: 20,
+    diagnostics: {
+      mode: 'live',
+      source: 'dashscope_live',
+      fallbackUsed: false,
+      reason: 'live_response',
+    },
   }),
 }));
 
@@ -35,20 +41,27 @@ jest.mock('../../src/services/voiceService', () => ({
 }));
 
 jest.mock('../../src/services/contentSafetyService', () => ({
-  check: jest.fn().mockResolvedValue({ safe: true, riskType: null, riskLevel: null }),
+  check: jest.fn().mockResolvedValue({
+    safe: true,
+    riskType: null,
+    riskLevel: null,
+    matchedKeyword: null,
+    triage: {
+      allowResponse: true,
+      needsManualFollowup: false,
+      recommendation: 'No additional manual follow-up is required.',
+      responseSuffix: null,
+    },
+  }),
 }));
 
 jest.mock('../../src/models/consultRecord', () => ({
   findBySession: jest
     .fn()
-    .mockResolvedValue([
-      { role: 'user', content: '之前的问题', created_at: '2026-03-01 10:00:00' },
-    ]),
+    .mockResolvedValue([{ role: 'user', content: '之前的问题', created_at: '2026-03-01 10:00:00' }]),
   findByUser: jest
     .fn()
-    .mockResolvedValue([
-      { role: 'assistant', content: '历史回复', created_at: '2026-03-01 10:01:00' },
-    ]),
+    .mockResolvedValue([{ role: 'assistant', content: '历史回复', created_at: '2026-03-01 10:01:00' }]),
 }));
 
 jest.mock('../../src/models/healthProfile', () => ({
@@ -87,10 +100,27 @@ describe('ai-consult API contract', () => {
       reply: '建议保持规律监测，如持续不适请及时就医。',
       sessionId: 'session-001',
       tokens: 20,
+      diagnostics: {
+        mode: 'live',
+        source: 'dashscope_live',
+        fallbackUsed: false,
+        reason: 'live_response',
+      },
     });
     voiceService.speechToText.mockResolvedValue('我最近头晕想咨询一下');
     voiceService.textToSpeech.mockResolvedValue(Buffer.from('voice-reply').toString('base64'));
-    contentSafetyService.check.mockResolvedValue({ safe: true, riskType: null, riskLevel: null });
+    contentSafetyService.check.mockResolvedValue({
+      safe: true,
+      riskType: null,
+      riskLevel: null,
+      matchedKeyword: null,
+      triage: {
+        allowResponse: true,
+        needsManualFollowup: false,
+        recommendation: 'No additional manual follow-up is required.',
+        responseSuffix: null,
+      },
+    });
     ConsultRecord.findBySession.mockResolvedValue([
       { role: 'user', content: '之前的问题', created_at: '2026-03-01 10:00:00' },
     ]);
@@ -119,7 +149,14 @@ describe('ai-consult API contract', () => {
       reply: expect.any(String),
       sessionId: 'session-001',
       tokens: 20,
+      diagnostics: {
+        mode: 'live',
+        source: 'dashscope_live',
+        fallbackUsed: false,
+        reason: 'live_response',
+      },
     });
+    expect(res.body.data.safety.safe).toBe(true);
   });
 
   it('GET /ai-consult/history returns unified response', async () => {
@@ -152,6 +189,7 @@ describe('ai-consult API contract', () => {
       sessionId: 'session-001',
       text: '我最近头晕想咨询一下',
     });
+    expect(res.body.data.safety.safe).toBe(true);
   });
 
   it('GET /ai-consult/profile returns unified response', async () => {
@@ -184,11 +222,18 @@ describe('ai-consult API contract', () => {
     expect(HealthProfile.upsert).toHaveBeenCalled();
   });
 
-  it('POST /ai-consult/chat returns 403 when content is blocked', async () => {
+  it('POST /ai-consult/chat returns 403 with safety payload when content is blocked', async () => {
     contentSafetyService.check.mockResolvedValue({
       safe: false,
       riskType: 'self_harm',
       riskLevel: 'high',
+      matchedKeyword: '自杀',
+      triage: {
+        allowResponse: false,
+        needsManualFollowup: true,
+        recommendation: 'Immediately encourage offline support.',
+        responseSuffix: null,
+      },
     });
 
     const app = createApp();
@@ -200,7 +245,14 @@ describe('ai-consult API contract', () => {
     expect(res.status).toBe(403);
     expect(res.body).toMatchObject({
       code: 403,
-      data: null,
+      data: {
+        manualFollowupSuggested: true,
+        safety: {
+          safe: false,
+          riskType: 'self_harm',
+          riskLevel: 'high',
+        },
+      },
     });
   });
 

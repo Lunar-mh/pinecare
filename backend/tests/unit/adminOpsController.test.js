@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/services/adminOpsService', () => ({
   getHealthOverview: jest.fn(),
@@ -19,6 +19,7 @@ jest.mock('../../src/services/adminOpsService', () => ({
   getTimeBankLeaderboard: jest.fn(),
   getIntegrationStatus: jest.fn(),
   getAuditLogs: jest.fn(),
+  getEventReplay: jest.fn(),
   getDemoScenarios: jest.fn(),
   bootstrapDemoScenario: jest.fn(),
 }));
@@ -107,6 +108,7 @@ describe('adminOpsController', () => {
         { key: 'medical', healthy: true },
         { key: 'competition_seed', healthy: true, sqlReady: true },
       ],
+      readiness: { ready: true },
       recentErrors: [],
     });
 
@@ -119,7 +121,7 @@ describe('adminOpsController', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.code).toBe(0);
     expect(res.body.data.items[0].key).toBe('medical');
-    expect(res.body.data.items[1].key).toBe('competition_seed');
+    expect(res.body.data.readiness.ready).toBe(true);
   });
 
   it('returns paged audit logs for authorized admin requests', async () => {
@@ -138,6 +140,26 @@ describe('adminOpsController', () => {
     expect(adminOpsService.getAuditLogs).toHaveBeenCalledWith(req.query);
     expect(res.body.code).toBe(0);
     expect(res.body.data.list[0].action).toBe('admin.demo.bootstrap');
+  });
+
+  it('returns event replay timeline for authorized admin requests', async () => {
+    adminOpsService.getEventReplay.mockResolvedValue({
+      userId: 7,
+      summary: { totalTimelineItems: 3 },
+      timeline: [{ type: 'sos', title: 'SOS confirmed' }],
+    });
+
+    const req = {
+      query: { userId: '7', startDate: '2026-03-10', endDate: '2026-03-11' },
+    };
+    const res = createRes();
+
+    await adminOpsController.eventReplay(req, res);
+
+    expect(adminOpsService.getEventReplay).toHaveBeenCalledWith(req.query);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.code).toBe(0);
+    expect(res.body.data.summary.totalTimelineItems).toBe(3);
   });
 
   it('passes actor context into demo bootstrap', async () => {

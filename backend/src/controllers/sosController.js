@@ -5,8 +5,9 @@ const { ok, fail } = require('../utils/response');
 
 function mapError(res, err) {
   const code = typeof err.code === 'number' ? err.code : 500;
-  const statusCode = typeof err.statusCode === 'number' ? err.statusCode : (code >= 400 && code < 600 ? code : 500);
-  const message = err.message || '服务器内部错误';
+  const statusCode =
+    typeof err.statusCode === 'number' ? err.statusCode : code >= 400 && code < 600 ? code : 500;
+  const message = err.message || 'Internal server error.';
   const data = err.data || null;
   return fail(res, code, message, data, statusCode);
 }

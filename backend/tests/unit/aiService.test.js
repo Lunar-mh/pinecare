@@ -5,6 +5,10 @@ jest.mock('../../src/models/consultRecord', () => ({
   create: jest.fn(),
 }));
 
+jest.mock('../../src/models/auditLog', () => ({
+  create: jest.fn().mockResolvedValue(1),
+}));
+
 jest.mock('../../src/services/healthContextService', () => ({
   getContextForUser: jest.fn(),
 }));
@@ -18,6 +22,7 @@ describe('aiService', () => {
   let axios;
   let aiService;
   let ConsultRecord;
+  let AuditLogModel;
   let healthContextService;
 
   beforeEach(() => {
@@ -27,6 +32,7 @@ describe('aiService', () => {
 
     axios = require('axios');
     ConsultRecord = require('../../src/models/consultRecord');
+    AuditLogModel = require('../../src/models/auditLog');
     healthContextService = require('../../src/services/healthContextService');
 
     healthContextService.getContextForUser.mockResolvedValue({
@@ -61,6 +67,12 @@ describe('aiService', () => {
     expect(result.reply).toContain('Wang');
     expect(result.reply).toContain('dizzy recently');
     expect(result.tokens).toBeNull();
+    expect(result.diagnostics).toEqual({
+      mode: 'stub',
+      source: 'ai_consult_stub',
+      fallbackUsed: false,
+      reason: 'sandbox_or_stub_mode',
+    });
     expect(ConsultRecord.create).toHaveBeenCalledTimes(2);
   });
 
@@ -120,16 +132,49 @@ describe('aiService', () => {
 
     expect(result.reply).toBe('Please rest today and monitor your blood pressure.');
     expect(result.tokens).toBe(15);
+    expect(result.diagnostics).toEqual({
+      mode: 'live',
+      source: 'dashscope_live',
+      fallbackUsed: false,
+      reason: 'live_response',
+    });
     expect(axios.post).toHaveBeenCalledTimes(2);
   });
 
-  it('maps timeout to 504 in live mode', async () => {
+  it('falls back to controlled stub reply when live mode fails in sandbox', async () => {
+    axios.post = jest.fn().mockRejectedValue({ response: { status: 503 }, message: 'upstream down' });
+
+    const service = loadService({
+      AI_CONSULT_MODE: 'live',
+      DASHSCOPE_API_KEY: 'test-key',
+      AI_CONSULT_MAX_RETRY: '0',
+      PRODUCTION_LIVE: '0',
+      COMPETITION_SANDBOX: '1',
+    });
+
+    const result = await service.chat(1001, 'still dizzy', 'session-fallback');
+
+    expect(result.reply).toContain('controlled fallback reply');
+    expect(result.diagnostics).toEqual({
+      mode: 'stub',
+      source: 'ai_consult_stub',
+      fallbackUsed: true,
+      reason: 'live_error_fallback',
+    });
+    expect(AuditLogModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'ai_consult.fallback' })
+    );
+  });
+
+  it('maps timeout to 504 in live mode when fallback is not available', async () => {
     axios.post = jest.fn().mockRejectedValue({ code: 'ECONNABORTED', message: 'timeout' });
 
     const service = loadService({
       AI_CONSULT_MODE: 'live',
       DASHSCOPE_API_KEY: 'test-key',
       AI_CONSULT_MAX_RETRY: '0',
+      PRODUCTION_LIVE: '1',
+      COMPETITION_SANDBOX: '0',
     });
 
     await expect(service.chat(1001, 'test', 'session-4')).rejects.toMatchObject({

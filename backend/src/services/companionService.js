@@ -1,9 +1,12 @@
-'use strict';
+﻿'use strict';
 
 const redis = require('../config/redis');
 const CompanionModel = require('../models/companion');
+const AuditLogModel = require('../models/auditLog');
 const qwenService = require('./qwenService');
 const emotionService = require('./emotionService');
+const contentSafetyService = require('./contentSafetyService');
+const { resolveIntegrationMode } = require('../config/integrationMode');
 
 const CONTEXT_PREFIX = 'companion:context:';
 const CONTEXT_MAX_MESSAGES = 10;
@@ -79,7 +82,7 @@ const NOSTALGIA_LIBRARY = {
       { title: '庐山恋', year: 1980 },
     ],
     photos: [
-      { title: '老式搪瓷杯', description: '家家户户常用的生活用品。' },
+      { title: '老式搪瓷缸', description: '家家户户常用的生活用品。' },
       { title: '工厂车间照', description: '记录了奋斗年代的劳动场景。' },
     ],
   },
@@ -122,6 +125,21 @@ function createBizError(code, message, statusCode) {
   err.code = code;
   err.statusCode = statusCode || code;
   return err;
+}
+
+function getRequestedMode() {
+  return process.env.AI_COMPANION_MODE || process.env.DASHSCOPE_MODE || 'auto';
+}
+
+function hasLiveConfig() {
+  return Boolean(String(process.env.DASHSCOPE_API_KEY || '').trim());
+}
+
+function getModeStrategy() {
+  return resolveIntegrationMode({
+    requestedMode: getRequestedMode(),
+    liveConfigured: hasLiveConfig(),
+  });
 }
 
 function formatDate(dateObj) {
@@ -179,7 +197,7 @@ async function getContextMessages(userId) {
       .filter((item) => item && item.role && item.content)
       .map((item) => ({ role: item.role, content: String(item.content) }));
   } catch (err) {
-    console.error('读取陪伴上下文失败，将使用空上下文:', err.message);
+    console.error('companion_context_read_failed', { message: err.message });
     return [];
   }
 }
@@ -191,22 +209,72 @@ async function saveContextMessages(userId, messages) {
   try {
     await redis.set(key, JSON.stringify(finalMessages), 'EX', CONTEXT_EXPIRE_SECONDS);
   } catch (err) {
-    console.error('写入陪伴上下文失败:', err.message);
+    console.error('companion_context_write_failed', { message: err.message });
   }
 
   return finalMessages;
 }
 
+function buildFallbackReply(message, safetyResult) {
+  const prompt = String(message || '').trim();
+  const suffix =
+    safetyResult && safetyResult.triage && safetyResult.triage.responseSuffix
+      ? ` ${safetyResult.triage.responseSuffix}`
+      : '';
+
+  return `I am here with you. For "${prompt}", let's take it one step at a time. You can drink some water, slow your breathing, and talk with a family member or caregiver if you want company.${suffix}`.trim();
+}
+
+async function writeAudit(action, details) {
+  try {
+    await AuditLogModel.create({
+      userId: details && details.userId ? Number(details.userId) : null,
+      action,
+      details,
+    });
+  } catch (err) {
+    console.error('companion_audit_failed', { action, message: err.message });
+  }
+}
+
 class CompanionService {
+  getCapabilityReport() {
+    const strategy = getModeStrategy();
+    return {
+      requestedMode: strategy.requestedMode,
+      effectiveMode: strategy.effectiveMode,
+      liveConfigured: strategy.liveConfigured,
+      fallbackAllowed: strategy.fallbackAllowed,
+      runtimeMode: strategy.runtimeMode,
+    };
+  }
+
   async chat(userId, message) {
     const cleanMessage = String(message || '').trim();
     if (!cleanMessage) {
-      throw createBizError(422, 'message 不能为空', 422);
+      throw createBizError(422, 'message cannot be empty', 422);
+    }
+
+    const safetyResult = await contentSafetyService.check(cleanMessage, userId);
+    if (!safetyResult.safe || !safetyResult.triage.allowResponse) {
+      await writeAudit('companion.chat.blocked', {
+        userId,
+        riskType: safetyResult.riskType,
+        riskLevel: safetyResult.riskLevel,
+        matchedKeyword: safetyResult.matchedKeyword || null,
+      });
+
+      const err = createBizError(403, 'Message requires manual follow-up.', 403);
+      err.data = {
+        safety: safetyResult,
+        manualFollowupSuggested: true,
+      };
+      throw err;
     }
 
     const contextMessages = await getContextMessages(userId);
     const systemPrompt =
-      '你是银伴平台的温暖陪伴助手，请用简洁、友善、共情的中文回复老年用户，避免专业术语，必要时给予积极鼓励。';
+      '你是银伴平台的温暖陪伴助手，请用简洁、友善、有共情的中文回复老年用户，避免专业术语，必要时给予积极鼓励。';
 
     const qwenMessages = [
       { role: 'system', content: systemPrompt },
@@ -214,7 +282,44 @@ class CompanionService {
       { role: 'user', content: cleanMessage },
     ];
 
-    const qwenResult = await qwenService.chatWithQwen(qwenMessages, userId);
+    const strategy = getModeStrategy();
+    let qwenResult;
+    let fallbackUsed = false;
+
+    if (strategy.effectiveMode === 'live') {
+      try {
+        qwenResult = await qwenService.chatWithQwen(qwenMessages, userId);
+      } catch (err) {
+        if (!strategy.fallbackAllowed) {
+          throw err;
+        }
+
+        fallbackUsed = true;
+        qwenResult = {
+          reply: buildFallbackReply(cleanMessage, safetyResult),
+          model: 'companion-stub',
+          tokens: 0,
+        };
+
+        await writeAudit('companion.chat.fallback', {
+          userId,
+          requestedMode: strategy.requestedMode,
+          effectiveMode: strategy.effectiveMode,
+          fallbackReason: err.message,
+        });
+      }
+    } else {
+      if (!strategy.stubAllowed) {
+        throw createBizError(503, 'AI companion stub mode is disabled in PRODUCTION_LIVE mode.', 503);
+      }
+
+      qwenResult = {
+        reply: buildFallbackReply(cleanMessage, safetyResult),
+        model: 'companion-stub',
+        tokens: 0,
+      };
+    }
+
     const emotionScore = emotionService.analyzeDialogEmotion(cleanMessage, qwenResult.reply);
 
     const nextContext = await saveContextMessages(userId, [
@@ -239,6 +344,17 @@ class CompanionService {
       model: qwenResult.model,
       tokens: qwenResult.tokens,
       contextCount: nextContext.length,
+      safety: {
+        safe: safetyResult.safe,
+        riskType: safetyResult.riskType,
+        riskLevel: safetyResult.riskLevel,
+        triage: safetyResult.triage,
+      },
+      diagnostics: {
+        mode: fallbackUsed || strategy.effectiveMode !== 'live' ? 'stub' : 'live',
+        source: fallbackUsed ? 'companion_stub' : strategy.effectiveMode === 'live' ? 'dashscope_live' : 'companion_stub',
+        fallbackUsed,
+      },
     };
   }
 
@@ -254,19 +370,19 @@ class CompanionService {
 
     const gameTypes = GAME_LIST.map((item) => item.gameType);
     if (!gameTypes.includes(gameType)) {
-      throw createBizError(422, `gameType 仅支持: ${gameTypes.join(', ')}`, 422);
+      throw createBizError(422, `gameType only supports ${gameTypes.join(', ')}`, 422);
     }
 
     if (!Number.isFinite(score) || score < 0) {
-      throw createBizError(422, 'score 必须为大于等于 0 的数字', 422);
+      throw createBizError(422, 'score must be >= 0', 422);
     }
 
     if (!Number.isInteger(difficulty) || difficulty < 1 || difficulty > 5) {
-      throw createBizError(422, 'difficulty 必须为 1-5 的整数', 422);
+      throw createBizError(422, 'difficulty must be an integer between 1 and 5', 422);
     }
 
     if (!Number.isFinite(durationSeconds) || durationSeconds < 0) {
-      throw createBizError(422, 'durationSeconds 必须为大于等于 0 的数字', 422);
+      throw createBizError(422, 'durationSeconds must be >= 0', 422);
     }
 
     const recordId = await CompanionModel.createGameRecord(userId, {
