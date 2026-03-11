@@ -32,6 +32,7 @@
 9. `09-anti-drift-checklist.md`：防跑偏清单
 10. `10-delivery-roadmap-and-task-breakdown.md`：按端、按链路、按阶段的开发任务拆解
 11. `11-ai-execution-playbook.md`：后续 AI 执行工作流与交付标准
+12. `12-executable-issue-backlog.md`：按老人端、家属端、后台、志愿者端、后端拆开的可执行 issue 清单
 
 统一规则：
 

@@ -6,6 +6,7 @@ const medicationLogController = require('../controllers/medicationLogController'
 
 const router = express.Router();
 
+router.get('/today', auth, medicationLogController.today);
 router.get('/logs', auth, medicationLogController.list);
 router.post('/confirm', auth, medicationLogController.confirm);
 

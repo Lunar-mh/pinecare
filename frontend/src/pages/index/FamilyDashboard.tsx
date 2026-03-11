@@ -1,6 +1,6 @@
 ﻿import { useCallback, useMemo, useState } from 'react'
 import { View, Text } from '@tarojs/components'
-import Taro, { useLoad } from '@tarojs/taro'
+import Taro, { useDidShow, useLoad } from '@tarojs/taro'
 import { getElderlyOverview } from '@/services/modules/family'
 import type { ElderlyOverview } from '@/services/types'
 import { Icon, UserIcon, AlertIcon } from '@/components/icons'
@@ -30,6 +30,10 @@ export default function FamilyDashboard() {
   }, [])
 
   useLoad(() => {
+    loadData()
+  })
+
+  useDidShow(() => {
     loadData()
   })
 

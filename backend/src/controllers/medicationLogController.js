@@ -11,6 +11,18 @@ function handleError(res, err) {
 }
 
 const medicationLogController = {
+  async today(req, res) {
+    try {
+      const data = await medicationLogService.getTodaySchedule(
+        req.user.userId,
+        req.query && req.query.date
+      );
+      return ok(res, data, '获取今日用药安排成功');
+    } catch (err) {
+      return handleError(res, err);
+    }
+  },
+
   async list(req, res) {
     try {
       const data = await medicationLogService.getLogs(req.user.userId, req.query || {});

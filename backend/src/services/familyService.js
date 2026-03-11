@@ -1,6 +1,8 @@
 'use strict';
 
 const familyModel = require('../models/family');
+const SosEventModel = require('../models/sosEvent');
+const medicationLogService = require('./medicationLogService');
 
 const DEFAULT_NOTIFICATION_SETTINGS = {
   healthAlertEnabled: true,
@@ -60,6 +62,72 @@ function normalizeBoolean(value, fieldName) {
   throw createBizError(422, `${fieldName} 必须为布尔值`, 422);
 }
 
+function toIsoText(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
+function isRecentWithinHours(value, hours) {
+  if (!value) return false;
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) return false;
+  return Date.now() - time <= hours * 60 * 60 * 1000;
+}
+
+function pickLatestTime(values) {
+  return values
+    .map((item) => (item ? new Date(item).getTime() : NaN))
+    .filter((item) => !Number.isNaN(item))
+    .sort((a, b) => b - a)[0];
+}
+
+function getMedicationProgress(list) {
+  if (!Array.isArray(list) || list.length === 0) {
+    return 100;
+  }
+
+  const completed = list.filter((item) => item.status === 'taken').length;
+  return Math.round((completed / list.length) * 100);
+}
+
+function buildSosAlerts(events) {
+  const triggerTypeText = {
+    manual: '手动求助',
+    fall: '跌倒告警',
+    abnormal_vital: '指标异常',
+  };
+
+  return (events || []).map((event) => ({
+    id: `sos-${event.id}`,
+    type: 'sos',
+    title: event.event_status === 'triggered' ? 'SOS 紧急求助进行中' : 'SOS 事件等待处理闭环',
+    message: `${triggerTypeText[event.trigger_type] || '紧急求助'}${event.address ? ` · ${event.address}` : ''}`,
+    createdAt: toIsoText(event.created_at) || new Date().toISOString(),
+    isRead: false,
+  }));
+}
+
+function buildMedicationAlert(todayMeds) {
+  const pendingCount = (todayMeds || []).filter(
+    (item) => item.status === 'pending' || item.status === 'missed'
+  ).length;
+
+  if (pendingCount <= 0) {
+    return null;
+  }
+
+  return {
+    id: `medication-${new Date().toISOString().slice(0, 10)}`,
+    type: 'medication',
+    title: '今日用药仍待确认',
+    message: `还有 ${pendingCount} 次用药待确认，建议尽快联系长辈确认。`,
+    createdAt: new Date().toISOString(),
+    isRead: false,
+  };
+}
+
 const familyService = {
   /**
    * 获取家属绑定列表
@@ -84,13 +152,16 @@ const familyService = {
     const elderId = binding.elderId;
 
     // 获取健康快照
-    const snapshot = await familyModel.getLatestHealthSnapshot(elderId);
+    const [snapshot, todayMeds, activeSosEvents] = await Promise.all([
+      familyModel.getLatestHealthSnapshot(elderId),
+      medicationLogService.getTodaySchedule(elderId).catch(() => []),
+      SosEventModel.listActiveByUser(elderId, 3).catch(() => []),
+    ]);
     const latestRecords = snapshot ? snapshot.latestRecords : [];
 
     // 提取血压和心率
     let bloodPressure = null;
     let heartRate = null;
-    const medicationProgress = 0;
 
     for (const rec of latestRecords) {
       if (!bloodPressure && rec.metricType === 'blood_pressure') {
@@ -122,19 +193,35 @@ const familyService = {
       // GPS表可能不存在，默认返回 null
     }
 
+    const medicationProgress = getMedicationProgress(todayMeds);
+    const alerts = buildSosAlerts(activeSosEvents);
+    const medicationAlert = buildMedicationAlert(todayMeds);
+    if (medicationAlert) {
+      alerts.push(medicationAlert);
+    }
+
+    const latestActiveTime = pickLatestTime([
+      snapshot && snapshot.archive ? snapshot.archive.updatedAt : null,
+      location ? location.updatedAt : null,
+      activeSosEvents[0] ? activeSosEvents[0].created_at : null,
+    ]);
+    const lastActiveAt = Number.isFinite(latestActiveTime)
+      ? new Date(latestActiveTime).toISOString()
+      : null;
+
     return {
       elderlyId: String(elderId),
       name: binding.elderProfile.realName || binding.elderProfile.nickname || '未知用户',
       avatar: binding.elderProfile.avatarUrl || null,
-      isOnline: false,
-      lastActiveAt: snapshot && snapshot.archive ? snapshot.archive.updatedAt : null,
+      isOnline: isRecentWithinHours(lastActiveAt, 24),
+      lastActiveAt,
       location,
       todayHealth: {
         bloodPressure,
         heartRate,
         medicationProgress,
       },
-      alerts: [],
+      alerts,
     };
   },
 

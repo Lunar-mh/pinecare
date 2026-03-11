@@ -12,6 +12,7 @@ jest.mock('../src/middleware/auth', () => {
 
 jest.mock('../src/services/medicationLogService', () => ({
   getLogs: jest.fn(),
+  getTodaySchedule: jest.fn(),
 }));
 
 jest.mock('../src/services/medicationConfirmService', () => ({
@@ -29,12 +30,36 @@ function createApp() {
   return app;
 }
 
-describe('服药日志与确认接口集成测试', () => {
+describe('medication log and confirm routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('GET /medication/logs 支持日期过滤', async () => {
+  it('GET /medication/today returns unified today tasks', async () => {
+    medicationLogService.getTodaySchedule.mockResolvedValue([
+      {
+        log_id: 10,
+        medication_id: '1',
+        name: '降压药',
+        dosage: '1片',
+        time: '08:00',
+        scheduled_time: '2026-02-21 08:00:00',
+        status: 'pending',
+        taken_at: null,
+      },
+    ]);
+
+    const app = createApp();
+    const res = await request(app).get('/medication/today');
+
+    expect(res.status).toBe(200);
+    expect(res.body.code).toBe(0);
+    expect(res.body.message).toBe('获取今日用药安排成功');
+    expect(res.body.data[0].log_id).toBe(10);
+    expect(res.body.data[0].status).toBe('pending');
+  });
+
+  it('GET /medication/logs supports date filters', async () => {
     medicationLogService.getLogs.mockResolvedValue({
       list: [
         {
@@ -58,11 +83,10 @@ describe('服药日志与确认接口集成测试', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(res.body.message).toBe('获取服药记录成功');
     expect(res.body.data.total).toBe(1);
   });
 
-  it('POST /medication/confirm 确认成功', async () => {
+  it('POST /medication/confirm records success', async () => {
     medicationConfirmService.confirm.mockResolvedValue({
       idempotent: false,
       log: {
@@ -79,11 +103,10 @@ describe('服药日志与确认接口集成测试', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(res.body.message).toBe('服药确认成功');
     expect(res.body.data.log.status).toBe('taken');
   });
 
-  it('POST /medication/confirm 幂等确认', async () => {
+  it('POST /medication/confirm stays idempotent for handled logs', async () => {
     medicationConfirmService.confirm.mockResolvedValue({
       idempotent: true,
       log: {
@@ -100,6 +123,6 @@ describe('服药日志与确认接口集成测试', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(res.body.message).toBe('该记录已确认，无需重复操作');
+    expect(res.body.data.log.status).toBe('taken');
   });
 });

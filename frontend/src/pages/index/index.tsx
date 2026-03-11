@@ -1,8 +1,8 @@
 ﻿import { View, Text } from '@tarojs/components'
 import Taro, { useLoad } from '@tarojs/taro'
 import { useCallback, useMemo, useState } from 'react'
-import { getTodayMedications, getLatestBloodPressure, getLatestHeartRate } from '@/services'
-import type { BloodPressureRecord, HeartRateRecord, TodayMedication } from '@/services/types'
+import { getTodayHealthOverview, getTodayMedications } from '@/services'
+import type { TodayHealthOverview, TodayMedication } from '@/services/types'
 import { Icon, UserIcon, SosIcon } from '@/components/icons'
 import { ActionGrid, DataPanel, HeroHeader, PageShell, SectionBlock, StatusCard, StickyPrimaryAction } from '@/components/shell'
 import { homeQuickActionsByRole, serviceClustersByRole } from '@/design/navigation'
@@ -11,14 +11,9 @@ import { useRole } from '@/hooks/useRole'
 import FamilyDashboard from './FamilyDashboard'
 import './index.scss'
 
-interface HealthSummary {
-  bloodPressure?: BloodPressureRecord
-  heartRate?: HeartRateRecord
-}
-
 export default function IndexPage() {
   const { isFamily } = useRole()
-  const [health, setHealth] = useState<HealthSummary>({})
+  const [health, setHealth] = useState<TodayHealthOverview>({ alerts: [], recordsCount: 0 })
   const [todayMeds, setTodayMeds] = useState<TodayMedication[]>([])
   const [loading, setLoading] = useState(true)
   const [userInfo, setUserInfo] = useState<{ phone?: string; nickname?: string } | null>(null)
@@ -35,10 +30,9 @@ export default function IndexPage() {
     }
 
     try {
-      const [medsRes, bpRes, hrRes] = await Promise.allSettled([
+      const [medsRes, healthRes] = await Promise.allSettled([
         getTodayMedications(),
-        getLatestBloodPressure(),
-        getLatestHeartRate(),
+        getTodayHealthOverview(),
       ])
 
       if (medsRes.status === 'fulfilled') {
@@ -47,10 +41,7 @@ export default function IndexPage() {
         setTodayMeds([])
       }
 
-      setHealth({
-        bloodPressure: bpRes.status === 'fulfilled' ? bpRes.value ?? undefined : undefined,
-        heartRate: hrRes.status === 'fulfilled' ? hrRes.value ?? undefined : undefined,
-      })
+      setHealth(healthRes.status === 'fulfilled' ? healthRes.value : { alerts: [], recordsCount: 0 })
     } finally {
       setLoading(false)
     }

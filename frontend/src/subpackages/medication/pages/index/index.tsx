@@ -57,6 +57,7 @@ export default function MedicationIndex() {
   const pendingMeds = todayMeds.filter(item => item.status === 'pending')
   const takenMeds = todayMeds.filter(item => item.status === 'taken')
   const missedMeds = todayMeds.filter(item => item.status === 'missed')
+  const skippedMeds = todayMeds.filter(item => item.status === 'skipped')
   const activePlans = plans.filter(item => item.isActive)
 
   const progress = useMemo(() => {
@@ -65,8 +66,12 @@ export default function MedicationIndex() {
   }, [takenMeds.length, todayMeds.length])
 
   const handleTake = async (item: TodayMedication) => {
+    if (!item.logId) {
+      Taro.showToast({ title: '当前记录缺少日志标识', icon: 'none' })
+      return
+    }
     try {
-      await markMedicationTaken(item.medicationId, item.time)
+      await markMedicationTaken(item.logId)
       Taro.showToast({ title: '已记录服药', icon: 'success' })
       loadData()
     } catch (takeError) {
@@ -76,8 +81,12 @@ export default function MedicationIndex() {
   }
 
   const handleSkip = async (item: TodayMedication) => {
+    if (!item.logId) {
+      Taro.showToast({ title: '当前记录缺少日志标识', icon: 'none' })
+      return
+    }
     try {
-      await skipMedication(item.medicationId, item.time, '用户手动跳过')
+      await skipMedication(item.logId, '用户手动跳过')
       Taro.showToast({ title: '已标记跳过', icon: 'success' })
       loadData()
     } catch (skipError) {
@@ -175,6 +184,15 @@ export default function MedicationIndex() {
                   <DataPanel key={`${item.medicationId}-${item.time}-missed`} tone="danger">
                     <Text className="medication-overview-page__item-title">{item.time} {item.name}</Text>
                     <Text className="medication-overview-page__item-desc">这次提醒已经超时，建议尽快确认是否补服。</Text>
+                    <View className="medication-overview-page__actions">
+                      <View className="medication-overview-page__btn medication-overview-page__btn--primary" onClick={() => handleTake(item)}><Text>补记服药</Text></View>
+                    </View>
+                  </DataPanel>
+                ))}
+                {skippedMeds.map(item => (
+                  <DataPanel key={`${item.medicationId}-${item.time}-skipped`} tone="info">
+                    <Text className="medication-overview-page__item-title">{item.time} {item.name}</Text>
+                    <Text className="medication-overview-page__item-desc">这次提醒已被标记为稍后处理，可在需要时重新确认。</Text>
                     <View className="medication-overview-page__actions">
                       <View className="medication-overview-page__btn medication-overview-page__btn--primary" onClick={() => handleTake(item)}><Text>补记服药</Text></View>
                     </View>

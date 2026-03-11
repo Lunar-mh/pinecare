@@ -12,7 +12,6 @@ import { get, post, put, del } from '../request';
 import type {
   Medication,
   MedicationRecord,
-  MedicationSchedule,
   TodayMedication,
   PaginatedResult
 } from '../types';
@@ -41,29 +40,28 @@ export const deleteMedication = (id: string) =>
 
 // ==================== 用药记录 ====================
 
-// 获取今日用药（从计划列表构造，后端尚无 /today 专用接口）
-// 通过查询当日的用药计划和服药记录来组合
 export const getTodayMedications = async (): Promise<TodayMedication[]> => {
-  try {
-    const plans = await getMedications();
-    // 过滤今日有效计划，转换为 TodayMedication 格式
-    const today = new Date().toISOString().slice(0, 10);
-    return (plans || [])
-      .filter(p => p.isActive !== false)
-      .flatMap(p => {
-        const times = p.schedule?.map((s: MedicationSchedule) => s.time) || ['08:00'];
-        return times.map((time: string) => ({
-          medicationId: String(p.id),
-          name: p.name || '未知药品',
-          dosage: p.dosage || '',
-          time,
-          status: 'pending' as const,
-          planId: String(p.id),
-        }));
-      });
-  } catch (_) {
-    return [];
-  }
+  const list = await get<Array<{
+    log_id: number;
+    medication_id: string | number;
+    name: string;
+    dosage: string;
+    time: string;
+    scheduled_time?: string;
+    status: 'pending' | 'taken' | 'missed' | 'skipped';
+    taken_at?: string | null;
+  }>>('/medication/today');
+
+  return (list || []).map(item => ({
+    logId: String(item.log_id),
+    medicationId: String(item.medication_id),
+    name: item.name || '未知药品',
+    dosage: item.dosage || '',
+    time: item.time,
+    scheduledTime: item.scheduled_time,
+    status: item.status,
+    takenAt: item.taken_at || undefined,
+  }));
 };
 
 // 获取服药日志
@@ -76,20 +74,16 @@ export const getMedicationLogs = (params?: {
   get<any[]>('/medication/logs', params);
 
 // 确认服药（标记已服用）
-export const markMedicationTaken = (medicationId: string, time: string) =>
+export const markMedicationTaken = (logId: string) =>
   post<void>('/medication/confirm', {
-    planId: medicationId,
-    scheduledTime: time,
-    takenAt: new Date().toISOString(),
+    log_id: Number(logId),
     status: 'taken',
   });
 
 // 跳过用药
-export const skipMedication = (medicationId: string, time: string, reason?: string) =>
+export const skipMedication = (logId: string, reason?: string) =>
   post<void>('/medication/confirm', {
-    planId: medicationId,
-    scheduledTime: time,
-    skippedAt: new Date().toISOString(),
+    log_id: Number(logId),
     status: 'skipped',
     reason,
   });
