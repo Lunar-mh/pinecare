@@ -3,15 +3,13 @@
 const fs = require('fs');
 const path = require('path');
 const AuditLogModel = require('../../models/auditLog');
-const SosEventModel = require('../../models/sosEvent');
-const FallModel = require('../../models/fall');
-const locationRecordModel = require('../../models/locationRecordModel');
 const aiService = require('../aiService');
 const companionService = require('../companionService');
 const voiceService = require('../voiceService');
 const medicalApiService = require('../medicalApiService');
 const ossService = require('../ossService');
 const systemHealthService = require('../systemHealthService');
+const { getEventReplay } = require('./eventReplayService');
 const { DEMO_SCENARIOS, getDemoScenarioById } = require('../../config/demoScenarios');
 const { COMPETITION_SEED_MANIFEST } = require('../../data/competitionSeedManifest');
 const { COMPETITION_SEED_ASSETS } = require('../../data/competitionSeedAssets');
@@ -26,7 +24,6 @@ const {
   createBizError,
   isSchemaMissingError,
   normalizePagination,
-  parseDate,
   parsePositiveInt,
 } = require('./shared');
 
@@ -92,11 +89,7 @@ function buildIntegrationRows() {
       key: 'competition_seed',
       configured: competitionSeed.generated,
       mode: 'local',
-      effectiveMode: competitionSeed.sqlReady
-        ? 'ready'
-        : competitionSeed.generated
-          ? 'partial'
-          : 'missing',
+      effectiveMode: competitionSeed.sqlReady ? 'ready' : competitionSeed.generated ? 'partial' : 'missing',
       fallbackAllowed: false,
       source: 'local_generated_assets',
       missingConfig: [],
@@ -161,31 +154,8 @@ function buildIntegrationRows() {
   ].map((item) => ({
     ...item,
     configState: item.configured ? 'ready' : 'missing',
-    healthy:
-      item.effectiveMode === 'live' ? item.configured : item.fallbackAllowed || item.configured,
+    healthy: item.effectiveMode === 'live' ? item.configured : item.fallbackAllowed || item.configured,
   }));
-}
-
-function toDate(value) {
-  const date = value instanceof Date ? value : new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function isWithinRange(value, startDate, endDate) {
-  const date = toDate(value);
-  if (!date) {
-    return false;
-  }
-
-  return date.getTime() >= startDate.getTime() && date.getTime() <= endDate.getTime();
-}
-
-function sortTimeline(list) {
-  return list.sort((left, right) => {
-    const leftTime = toDate(left.occurredAt);
-    const rightTime = toDate(right.occurredAt);
-    return rightTime.getTime() - leftTime.getTime();
-  });
 }
 
 const adminDiagnosticsService = {
@@ -231,85 +201,7 @@ const adminDiagnosticsService = {
     }
   },
 
-  async getEventReplay(query = {}) {
-    const userId = parsePositiveInt(query.userId, 'userId');
-    const endDate = query.endDate ? parseDate(query.endDate, 'endDate') : new Date();
-    const startDate = query.startDate
-      ? parseDate(query.startDate, 'startDate')
-      : new Date(endDate.getTime() - 48 * 60 * 60 * 1000);
-    if (endDate.getTime() < startDate.getTime()) {
-      throw createBizError(400, 'endDate must not be earlier than startDate.', 400);
-    }
-
-    const locationLimit = Math.min(Math.max(Number(query.locationLimit) || 200, 1), 1000);
-    const auditLimit = Math.min(Math.max(Number(query.auditLimit) || 50, 1), 200);
-
-    const [locations, sosEvents, fallEvents, auditLogs] = await Promise.all([
-      locationRecordModel.getByTimeRange(userId, startDate, endDate, locationLimit),
-      SosEventModel.listByUser(userId, { page: 1, pageSize: 50 }),
-      FallModel.listHistory(userId, { page: 1, pageSize: 50 }),
-      AuditLogModel.list({ userId }, { page: 1, pageSize: auditLimit }),
-    ]);
-
-    const filteredSos = sosEvents.filter((item) =>
-      isWithinRange(item.updated_at || item.created_at, startDate, endDate)
-    );
-    const filteredFall = fallEvents.filter((item) =>
-      isWithinRange(item.detectedAt || item.createdAt, startDate, endDate)
-    );
-    const filteredAudit = auditLogs.filter((item) => isWithinRange(item.createdAt, startDate, endDate));
-
-    const timeline = sortTimeline([
-      ...locations.map((item) => ({
-        type: 'gps',
-        occurredAt: item.createdAt,
-        title: 'Location upload',
-        payload: item,
-      })),
-      ...filteredSos.map((item) => ({
-        type: 'sos',
-        occurredAt: item.updated_at || item.created_at,
-        title: `SOS ${item.event_status}`,
-        payload: item,
-      })),
-      ...filteredFall.map((item) => ({
-        type: 'fall',
-        occurredAt: item.detectedAt || item.createdAt,
-        title: `Fall ${item.status}`,
-        payload: item,
-      })),
-      ...filteredAudit.map((item) => ({
-        type: 'audit',
-        occurredAt: item.createdAt,
-        title: item.action,
-        payload: item,
-      })),
-    ]);
-
-    return {
-      userId,
-      range: {
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-      },
-      summary: {
-        gpsPoints: locations.length,
-        sosEvents: filteredSos.length,
-        fallEvents: filteredFall.length,
-        auditLogs: filteredAudit.length,
-        totalTimelineItems: timeline.length,
-      },
-      recommendations: [
-        filteredSos.some((item) => ['triggered', 'confirmed'].includes(item.event_status))
-          ? 'There are active SOS events in the replay window. Verify resolution and caregiver follow-up.'
-          : 'No active SOS event remains in the replay window.',
-        filteredFall.some((item) => item.status === 'confirmed')
-          ? 'Confirmed fall events exist. Review notification delivery and offline follow-up.'
-          : 'No confirmed fall event exists in the replay window.',
-      ],
-      timeline,
-    };
-  },
+  getEventReplay,
 
   async getDemoScenarios() {
     return {

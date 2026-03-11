@@ -1,8 +1,9 @@
-'use strict';
+﻿'use strict';
 
 const SosEventModel = require('../models/sosEvent');
 const SosNotificationModel = require('../models/sosNotification');
 const sosNotificationService = require('./sosNotificationService');
+const { recordCareEvent } = require('./eventTimelineService');
 const { assertTransition } = require('../utils/sosStateMachine');
 const { SOS_ERROR_CODES, SOS_ERROR_MESSAGES, createSosError } = require('../utils/errorCodes');
 
@@ -17,7 +18,7 @@ function ensureUserId(userId) {
 function ensureEventId(eventId) {
   const numericEventId = Number(eventId);
   if (!Number.isInteger(numericEventId) || numericEventId <= 0) {
-    throw createSosError(SOS_ERROR_CODES.PARAM_ERROR, 'event_id 必须为正整数', null, 400);
+    throw createSosError(SOS_ERROR_CODES.PARAM_ERROR, 'event_id is invalid.', null, 400);
   }
   return numericEventId;
 }
@@ -84,11 +85,25 @@ const sosService = {
       address: payload.address || null,
     });
 
+    await recordCareEvent('sos.triggered', {
+      userId: currentUserId,
+      entityType: 'sos',
+      entityId: event.id,
+      status: event.event_status,
+      occurredAt: event.created_at || new Date().toISOString(),
+      details: {
+        triggerType: event.trigger_type || payload.trigger_type || 'manual',
+        latitude,
+        longitude,
+        address: payload.address || null,
+      },
+    });
+
     setImmediate(async () => {
       try {
         await sosNotificationService.createAndDispatch(event);
       } catch (err) {
-        console.error('SOS 通知编排失败:', err.message);
+        console.error('sos_notification_dispatch_failed', err.message);
       }
     });
 
@@ -114,20 +129,15 @@ const sosService = {
       );
     }
 
-    try {
-      const now = Date.now();
-      const createdAt = new Date(event.created_at).getTime();
-      if (now - createdAt > 5000) throw new Error('取消窗口已超时');
-    } catch (err) {
-      if (err.message === '取消窗口已超时') {
-        throw createSosError(
-          SOS_ERROR_CODES.CANCEL_TIMEOUT,
-          SOS_ERROR_MESSAGES.CANCEL_TIMEOUT,
-          null,
-          408
-        );
-      }
-      throw err;
+    const now = Date.now();
+    const createdAt = new Date(event.created_at).getTime();
+    if (now - createdAt > 5000) {
+      throw createSosError(
+        SOS_ERROR_CODES.CANCEL_TIMEOUT,
+        SOS_ERROR_MESSAGES.CANCEL_TIMEOUT,
+        null,
+        408
+      );
     }
 
     const updated = await SosEventModel.transitionStatus(
@@ -144,6 +154,17 @@ const sosService = {
         409
       );
     }
+
+    await recordCareEvent('sos.cancelled', {
+      userId: currentUserId,
+      entityType: 'sos',
+      entityId: currentEventId,
+      status: 'cancelled',
+      details: {
+        statusFrom: 'triggered',
+        statusTo: 'cancelled',
+      },
+    });
 
     return {
       event_id: currentEventId,
@@ -173,6 +194,17 @@ const sosService = {
       );
     }
 
+    await recordCareEvent('sos.confirmed', {
+      userId: currentUserId,
+      entityType: 'sos',
+      entityId: currentEventId,
+      status: 'confirmed',
+      details: {
+        statusFrom: event.event_status,
+        statusTo: 'confirmed',
+      },
+    });
+
     return {
       event_id: currentEventId,
       event_status: 'confirmed',
@@ -200,6 +232,17 @@ const sosService = {
         409
       );
     }
+
+    await recordCareEvent('sos.resolved', {
+      userId: currentUserId,
+      entityType: 'sos',
+      entityId: currentEventId,
+      status: 'resolved',
+      details: {
+        statusFrom: event.event_status,
+        statusTo: 'resolved',
+      },
+    });
 
     return {
       event_id: currentEventId,

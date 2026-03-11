@@ -13,6 +13,14 @@ jest.mock('../../src/services/medicalApiService', () => ({
   createAppointment: jest.fn(),
   cancelAppointment: jest.fn(),
   getSourceTag: jest.fn(() => 'third_party_live'),
+  getCapabilityReport: jest.fn(() => ({
+    mode: 'auto',
+    effectiveMode: 'live',
+    liveConfigured: true,
+    fallbackAllowed: true,
+    circuitOpen: false,
+    missingConfig: [],
+  })),
 }));
 
 const appointmentModel = require('../../src/models/appointmentModel');
@@ -60,6 +68,12 @@ describe('appointmentService', () => {
       idempotencyKey: 'req-001',
       source: 'third_party_live',
       fallbackUsed: false,
+      diagnostics: {
+        requestedMode: 'auto',
+        effectiveMode: 'live',
+        reason: 'appointment_created',
+        configState: 'ready',
+      },
     });
   });
 
@@ -99,8 +113,41 @@ describe('appointmentService', () => {
       idempotencyKey: 'req-dup',
       source: 'local',
       appointment: { id: 9, appointStatus: 'confirmed' },
+      diagnostics: {
+        reason: 'idempotent_replay',
+      },
     });
     expect(medicalApiService.createAppointment).not.toHaveBeenCalled();
+  });
+
+  it('marks diagnostics as stub when upstream already fell back', async () => {
+    medicalApiService.getSourceTag.mockReturnValueOnce('third_party_stub');
+    medicalApiService.getCapabilityReport.mockReturnValueOnce({
+      mode: 'live',
+      effectiveMode: 'stub',
+      liveConfigured: true,
+      fallbackAllowed: true,
+      circuitOpen: false,
+      missingConfig: [],
+    });
+    appointmentModel.findByIdempotencyKey.mockResolvedValue(null);
+    medicalApiService.createAppointment.mockResolvedValue({
+      thirdPartyAppointId: 'tp-stub',
+      appointStatus: 'confirmed',
+    });
+    appointmentModel.create.mockResolvedValue({ id: 3, appointStatus: 'confirmed' });
+
+    const result = await appointmentService.create(3, validPayload);
+
+    expect(result).toMatchObject({
+      source: 'third_party_stub',
+      mode: 'stub',
+      diagnostics: {
+        requestedMode: 'live',
+        effectiveMode: 'stub',
+        reason: 'appointment_created',
+      },
+    });
   });
 
   it('lists appointments with local diagnostics envelope', async () => {
@@ -122,6 +169,9 @@ describe('appointmentService', () => {
       fallbackUsed: false,
       list: [{ id: 12, appointStatus: 'confirmed' }],
       total: 1,
+      diagnostics: {
+        reason: 'appointment_local_list',
+      },
     });
   });
 
@@ -134,6 +184,7 @@ describe('appointmentService', () => {
       idempotent: true,
       source: 'local',
       appointment: { id: 11, appointStatus: 'cancelled' },
+      diagnostics: { reason: 'cancel_idempotent_replay' },
     });
     expect(medicalApiService.cancelAppointment).not.toHaveBeenCalled();
   });
@@ -161,6 +212,7 @@ describe('appointmentService', () => {
       idempotent: false,
       source: 'third_party_live',
       appointment: { id: 12, appointStatus: 'cancelled', thirdPartyAppointId: 'tp-12' },
+      diagnostics: { reason: 'appointment_cancelled' },
     });
   });
 

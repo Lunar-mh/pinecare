@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 jest.mock('../../src/config/database', () => ({
   query: jest.fn(),
@@ -45,15 +45,23 @@ const KEY_TABLES = [
   'audit_logs',
 ];
 
+function mockHealthyQueries() {
+  query.mockImplementation(async (sql) => {
+    if (String(sql).includes('SELECT 1')) {
+      return [[{ ok: 1 }]];
+    }
+
+    return [KEY_TABLES.map((table_name) => ({ table_name }))];
+  });
+}
+
 describe('systemHealthService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('reports healthy when mysql, redis, key tables, and worker jobs are ready', async () => {
-    query
-      .mockResolvedValueOnce([[{ ok: 1 }]])
-      .mockResolvedValueOnce([KEY_TABLES.map((table_name) => ({ table_name }))]);
+    mockHealthyQueries();
     redis.ping.mockResolvedValueOnce('PONG');
 
     await expect(systemHealthService.getHealthStatus()).resolves.toEqual({
@@ -84,9 +92,13 @@ describe('systemHealthService', () => {
   });
 
   it('reports degraded status when dependencies or job readiness fail', async () => {
-    query
-      .mockRejectedValueOnce(new Error('mysql down'))
-      .mockRejectedValueOnce(new Error('schema unavailable'));
+    query.mockImplementation(async (sql) => {
+      if (String(sql).includes('SELECT 1')) {
+        throw new Error('mysql down');
+      }
+
+      throw new Error('schema unavailable');
+    });
     redis.ping.mockRejectedValueOnce(new Error('redis down'));
     getJobStatus.mockReturnValueOnce({
       serverRole: 'worker',
@@ -124,9 +136,7 @@ describe('systemHealthService', () => {
   });
 
   it('returns liveness and readiness payloads with job visibility', async () => {
-    query
-      .mockResolvedValueOnce([[{ ok: 1 }]])
-      .mockResolvedValueOnce([KEY_TABLES.map((table_name) => ({ table_name }))]);
+    mockHealthyQueries();
     redis.ping.mockResolvedValueOnce('PONG');
 
     expect(systemHealthService.getLivenessStatus()).toEqual({

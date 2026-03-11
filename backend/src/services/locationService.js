@@ -1,20 +1,14 @@
-'use strict';
+﻿'use strict';
 
 const locationRecordModel = require('../models/locationRecordModel');
 const geoFenceModel = require('../models/geoFenceModel');
 const fenceAlertModel = require('../models/fenceAlertModel');
 const locationCacheService = require('./locationCacheService');
+const { recordCareEvent } = require('./eventTimelineService');
 const { checkFenceViolation, isInsideFence } = require('../utils/geoFenceMath');
 
-const VALID_LOCATION_TYPES = ['gps', 'wifi', '基站'];
+const VALID_LOCATION_TYPES = ['gps', 'wifi', 'smart_band', 'é©è™¹ç¯'];
 
-/**
- * 创建业务错误
- * @param {number} code
- * @param {string} message
- * @param {number} [statusCode]
- * @returns {Error}
- */
 function createBizError(code, message, statusCode) {
   const err = new Error(message);
   err.code = code;
@@ -22,11 +16,6 @@ function createBizError(code, message, statusCode) {
   return err;
 }
 
-/**
- * 校验并标准化上传位置
- * @param {object} payload
- * @returns {{latitude:number, longitude:number, accuracy:number|null, locationType:string}}
- */
 function normalizeLocationPayload(payload) {
   const latitude = Number(payload.latitude);
   const longitude = Number(payload.longitude);
@@ -34,19 +23,19 @@ function normalizeLocationPayload(payload) {
   const locationType = payload.locationType ? String(payload.locationType) : 'gps';
 
   if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
-    throw createBizError(400, 'latitude 参数非法', 400);
+    throw createBizError(400, 'latitude is invalid.', 400);
   }
 
   if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
-    throw createBizError(400, 'longitude 参数非法', 400);
+    throw createBizError(400, 'longitude is invalid.', 400);
   }
 
   if (accuracy !== null && (!Number.isFinite(accuracy) || accuracy < 0)) {
-    throw createBizError(400, 'accuracy 参数非法', 400);
+    throw createBizError(400, 'accuracy is invalid.', 400);
   }
 
   if (!VALID_LOCATION_TYPES.includes(locationType)) {
-    throw createBizError(400, 'locationType 仅支持 gps/wifi/基站', 400);
+    throw createBizError(400, 'locationType must be one of gps/wifi/smart_band.', 400);
   }
 
   return {
@@ -57,13 +46,6 @@ function normalizeLocationPayload(payload) {
   };
 }
 
-/**
- * 基于上一位置计算围栏进出并落告警
- * @param {number} userId
- * @param {{latitude:number, longitude:number}} location
- * @param {{latitude:number, longitude:number}|null} previousLocation
- * @returns {Promise<object[]>}
- */
 async function handleFenceAlerts(userId, location, previousLocation) {
   const activeFences = await geoFenceModel.getActiveByUserId(userId);
 
@@ -95,19 +77,13 @@ async function handleFenceAlerts(userId, location, previousLocation) {
 }
 
 const locationService = {
-  /**
-   * 上传位置：写 MySQL + 写 Redis + 围栏检查
-   * @param {number} userId
-   * @param {object} payload
-   * @returns {Promise<object>}
-   */
   async upload(userId, payload) {
     const normalized = normalizeLocationPayload(payload || {});
 
     let previousLocation = null;
     try {
       previousLocation = await locationCacheService.getCurrentLocation(userId);
-    } catch (error) {
+    } catch (_error) {
       previousLocation = await locationRecordModel.getLatest(userId);
     }
 
@@ -127,11 +103,27 @@ const locationService = {
 
     try {
       await locationCacheService.setCurrentLocation(userId, currentLocation);
-    } catch (error) {
-      // 缓存失败时不阻断主链路
+    } catch (_error) {
+      // cache write is best-effort
     }
 
     const alerts = await handleFenceAlerts(userId, currentLocation, previousLocation);
+
+    await recordCareEvent('location.upload', {
+      userId,
+      entityType: 'location',
+      entityId: record.id,
+      status: 'uploaded',
+      occurredAt: record.createdAt,
+      details: {
+        latitude: record.latitude,
+        longitude: record.longitude,
+        accuracy: record.accuracy,
+        locationType: record.locationType,
+        alertsTriggered: alerts.length,
+        alertIds: alerts.map((item) => item.id).filter(Boolean),
+      },
+    });
 
     return {
       location: currentLocation,
@@ -139,19 +131,14 @@ const locationService = {
     };
   },
 
-  /**
-   * 查询当前位置：优先 Redis，失败回退 MySQL
-   * @param {number} userId
-   * @returns {Promise<object|null>}
-   */
   async getCurrent(userId) {
     try {
       const cached = await locationCacheService.getCurrentLocation(userId);
       if (cached) {
         return cached;
       }
-    } catch (error) {
-      // 缓存读取失败降级数据库
+    } catch (_error) {
+      // cache read is best-effort
     }
 
     const latest = await locationRecordModel.getLatest(userId);
@@ -170,8 +157,8 @@ const locationService = {
 
     try {
       await locationCacheService.setCurrentLocation(userId, currentLocation);
-    } catch (error) {
-      // 缓存写入失败不影响返回
+    } catch (_error) {
+      // cache write is best-effort
     }
 
     return currentLocation;
@@ -179,3 +166,4 @@ const locationService = {
 };
 
 module.exports = locationService;
+

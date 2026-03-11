@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const axios = require('axios');
 const ConsultRecord = require('../models/consultRecord');
@@ -225,3 +225,4 @@ class AIService {
 }
 
 module.exports = new AIService();
+

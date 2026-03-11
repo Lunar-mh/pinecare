@@ -14,6 +14,69 @@ const {
   toDateTimeText,
 } = require('./shared');
 
+function toNumberOrNull(value) {
+  return value === null || value === undefined ? null : Number(value);
+}
+
+function getCommunityId(query = {}) {
+  return query.communityId ? parsePositiveInt(query.communityId, 'communityId') : null;
+}
+
+function getSearch(query = {}) {
+  return String(query.search || '').trim();
+}
+
+function getUserLabel(row, field = 'nickname') {
+  return row[field] || `User${row.user_id}`;
+}
+
+function validateEnum(value, fieldName, allowedValues) {
+  if (!allowedValues.includes(value)) {
+    throw createBizError(400, `${fieldName} is invalid.`, 400);
+  }
+}
+
+function parseOptionalDateText(value, fieldName) {
+  if (!value) return null;
+  const text = String(value).trim();
+  if (Number.isNaN(new Date(text).getTime())) {
+    throw createBizError(400, `${fieldName} is invalid.`, 400);
+  }
+  return text;
+}
+
+async function withSchemaFallback(action, fallback) {
+  try {
+    return await action();
+  } catch (err) {
+    if (isSchemaMissingError(err)) {
+      return typeof fallback === 'function' ? fallback(err) : fallback;
+    }
+    throw err;
+  }
+}
+
+async function buildPagedQueryResult({
+  query = {},
+  loadRows,
+  loadTotal,
+  mapRow,
+  onSchemaMissing,
+}) {
+  const { page, pageSize, offset } = normalizePagination(query);
+  return withSchemaFallback(async () => {
+    const [rows, total] = await Promise.all([
+      loadRows({ page, pageSize, offset }),
+      loadTotal({ page, pageSize, offset }),
+    ]);
+
+    return {
+      list: rows.map(mapRow),
+      pagination: buildPagination(page, pageSize, total),
+    };
+  }, () => onSchemaMissing(page, pageSize));
+}
+
 function calcHealthRisk({ bpSystolic, bpDiastolic, heartRate, bloodSugar }) {
   const sys = Number(bpSystolic);
   const dia = Number(bpDiastolic);
@@ -25,7 +88,6 @@ function calcHealthRisk({ bpSystolic, bpDiastolic, heartRate, bloodSugar }) {
     (Number.isFinite(dia) && dia >= 100) ||
     (Number.isFinite(hr) && (hr < 55 || hr > 110)) ||
     (Number.isFinite(sugar) && sugar >= 11);
-
   if (danger) return 'danger';
 
   const warning =
@@ -33,131 +95,230 @@ function calcHealthRisk({ bpSystolic, bpDiastolic, heartRate, bloodSugar }) {
     (Number.isFinite(dia) && dia >= 90) ||
     (Number.isFinite(hr) && (hr < 60 || hr > 100)) ||
     (Number.isFinite(sugar) && sugar >= 7);
-
   return warning ? 'warning' : 'normal';
+}
+
+function mapHealthOverviewRow(row) {
+  const bpSystolic = toNumberOrNull(row.bp_systolic);
+  const bpDiastolic = toNumberOrNull(row.bp_diastolic);
+  const heartRate = toNumberOrNull(row.heart_rate);
+  const bloodSugar = toNumberOrNull(row.blood_sugar);
+
+  return {
+    userId: Number(row.user_id),
+    nickname: getUserLabel(row),
+    phone: row.phone || '',
+    age: toNumberOrNull(row.age),
+    bloodPressure:
+      bpSystolic !== null && bpDiastolic !== null ? `${bpSystolic}/${bpDiastolic}` : null,
+    heartRate,
+    bloodSugar,
+    riskLevel: calcHealthRisk({ bpSystolic, bpDiastolic, heartRate, bloodSugar }),
+    lastUpdate: toDateTimeText(row.last_update),
+  };
+}
+
+function mapMedicationLogRow(row) {
+  return {
+    id: Number(row.id),
+    userId: Number(row.user_id),
+    nickname: getUserLabel(row),
+    phone: row.phone || '',
+    planId: Number(row.plan_id),
+    medicationName: row.medication_name || '-',
+    dosage: row.dosage || '-',
+    scheduledTime: toDateTimeText(row.scheduled_time),
+    actualTime: toDateTimeText(row.actual_time),
+    status: row.status,
+    reminderSent: Number(row.reminder_sent || 0),
+    secondReminderSent: Number(row.second_reminder_sent || 0),
+    familyNotified: Number(row.family_notified || 0),
+  };
+}
+
+function mapGpsCurrentRow(row) {
+  return {
+    id: Number(row.id),
+    userId: Number(row.user_id),
+    nickname: getUserLabel(row),
+    phone: row.phone || '',
+    age: toNumberOrNull(row.age),
+    latitude: Number(row.latitude),
+    longitude: Number(row.longitude),
+    accuracy: toNumberOrNull(row.accuracy),
+    locationType: row.location_type,
+    updatedAt: toDateTimeText(row.created_at),
+  };
+}
+
+function mapGpsTrailRow(row) {
+  return {
+    id: Number(row.id),
+    userId: Number(row.user_id),
+    latitude: Number(row.latitude),
+    longitude: Number(row.longitude),
+    accuracy: toNumberOrNull(row.accuracy),
+    locationType: row.location_type,
+    createdAt: toDateTimeText(row.created_at),
+  };
+}
+
+function mapFamilyBindingRow(row) {
+  return {
+    bindingId: Number(row.id),
+    elderId: Number(row.elder_id),
+    familyId: Number(row.family_id),
+    status: row.status,
+    boundAt: row.binding_created_at,
+    elderProfile: {
+      nickname: row.elder_nickname || null,
+      realName: row.elder_name || null,
+      avatarUrl: row.elder_avatar || null,
+      gender: row.elder_gender || null,
+      age: toNumberOrNull(row.elder_age),
+    },
+    healthArchive: {
+      id: toNumberOrNull(row.health_archive_id),
+      updatedAt: row.health_updated_at || null,
+    },
+  };
+}
+
+function mapMedicalReportRow(row) {
+  return {
+    id: Number(row.id),
+    userId: Number(row.user_id),
+    userName: getUserLabel(row),
+    userPhone: row.phone || '',
+    reportNo: row.report_no,
+    reportType: row.report_type,
+    reportDate: row.report_date,
+    reportUrl: row.report_url || null,
+    reportData: row.report_data || null,
+    syncStatus: row.sync_status,
+    createdAt: row.created_at,
+  };
+}
+
+function mapFallEventRow(item) {
+  return {
+    id: Number(item.id),
+    userId: Number(item.user_id),
+    nickname: getUserLabel(item),
+    phone: item.phone || '',
+    status: item.status,
+    sensorData: parseSensorData(item.sensor_data),
+    sensitivity: item.sensitivity,
+    detectedAt: item.detected_at,
+    cancelledAt: item.cancelled_at,
+    confirmedAt: item.confirmed_at,
+    createdAt: item.created_at,
+  };
+}
+
+function mapDrugInteractionRow(item) {
+  return {
+    id: Number(item.id),
+    userId: Number(item.user_id),
+    userName: getUserLabel(item),
+    userPhone: item.phone || '',
+    drugA: item.drug_a,
+    drugB: item.drug_b,
+    level: item.level,
+    mechanism: item.mechanism || '',
+    riskDescription: item.risk_description || '',
+    suggestion: item.suggestion || '',
+    status: item.status,
+    checkBatchId: item.check_batch_id,
+    createdAt: item.created_at,
+  };
+}
+
+function mapTimeBankHistoryRow(item) {
+  return {
+    id: Number(item.id),
+    providerId: Number(item.provider_id),
+    providerName: item.provider_nickname || `User${item.provider_id}`,
+    recipientId: Number(item.recipient_id),
+    recipientName: item.recipient_nickname || `User${item.recipient_id}`,
+    serviceType: item.service_type,
+    startTime: item.start_time,
+    endTime: item.end_time,
+    durationHours: Number(item.duration_hours),
+    timeCoins: Number(item.time_coins),
+    status: item.status,
+    createdAt: item.created_at,
+  };
+}
+
+function mapTimeBankExchangeRow(item) {
+  return {
+    id: Number(item.id),
+    userId: Number(item.user_id),
+    exchangeType: item.exchange_type,
+    itemName: item.item_name,
+    coinsRequired: Number(item.coins_required),
+    status: item.status,
+    createdAt: item.created_at,
+    completedAt: item.completed_at,
+  };
+}
+
+function mapLeaderboardRow(item, index) {
+  return {
+    rank: index + 1,
+    userId: Number(item.user_id),
+    balance: Number(item.balance),
+    totalEarned: Number(item.total_earned),
+    creditScore: Number(item.credit_score),
+    creditLevel: item.credit_level,
+  };
 }
 
 const adminCareOverviewService = {
   async getHealthOverview(query = {}) {
-    const { page, pageSize, offset } = normalizePagination(query);
-    const search = String(query.search || '').trim();
-    const communityId = query.communityId
-      ? parsePositiveInt(query.communityId, 'communityId')
-      : null;
+    const search = getSearch(query);
+    const communityId = getCommunityId(query);
 
-    try {
-      const [rows, total] = await Promise.all([
+    return buildPagedQueryResult({
+      query,
+      loadRows: ({ pageSize, offset }) =>
         adminOpsModel.listHealthOverview({ search, communityId }, { pageSize, offset }),
-        adminOpsModel.countHealthOverview({ search, communityId }),
-      ]);
-
-      const list = rows.map((row) => {
-        const bpSystolic = row.bp_systolic !== null ? Number(row.bp_systolic) : null;
-        const bpDiastolic = row.bp_diastolic !== null ? Number(row.bp_diastolic) : null;
-        const heartRate = row.heart_rate !== null ? Number(row.heart_rate) : null;
-        const bloodSugar = row.blood_sugar !== null ? Number(row.blood_sugar) : null;
-
-        return {
-          userId: Number(row.user_id),
-          nickname: row.nickname || `User${row.user_id}`,
-          phone: row.phone || '',
-          age: row.age === null || row.age === undefined ? null : Number(row.age),
-          bloodPressure:
-            bpSystolic !== null && bpDiastolic !== null ? `${bpSystolic}/${bpDiastolic}` : null,
-          heartRate,
-          bloodSugar,
-          riskLevel: calcHealthRisk({ bpSystolic, bpDiastolic, heartRate, bloodSugar }),
-          lastUpdate: toDateTimeText(row.last_update),
-        };
-      });
-
-      return {
-        list,
-        pagination: buildPagination(page, pageSize, total),
-      };
-    } catch (err) {
-      if (isSchemaMissingError(err)) {
-        return buildEmptyPagedResult(page, pageSize);
-      }
-      throw err;
-    }
+      loadTotal: () => adminOpsModel.countHealthOverview({ search, communityId }),
+      mapRow: mapHealthOverviewRow,
+      onSchemaMissing: buildEmptyPagedResult,
+    });
   },
 
   async getMedicationLogs(query = {}) {
-    const { page, pageSize, offset } = normalizePagination(query);
-    const search = String(query.search || '').trim();
+    const search = getSearch(query);
     const status = String(query.status || '').trim();
-    const startDate = query.startDate ? String(query.startDate).trim() : null;
-    const endDate = query.endDate ? String(query.endDate).trim() : null;
-    const communityId = query.communityId
-      ? parsePositiveInt(query.communityId, 'communityId')
-      : null;
+    const startDate = parseOptionalDateText(query.startDate, 'startDate');
+    const endDate = parseOptionalDateText(query.endDate, 'endDate');
+    const communityId = getCommunityId(query);
 
-    const allowedStatus = ['', 'pending', 'taken', 'skipped', 'missed'];
-    if (!allowedStatus.includes(status)) {
-      throw createBizError(400, 'status is invalid.', 400);
-    }
+    validateEnum(status, 'status', ['', 'pending', 'taken', 'skipped', 'missed']);
 
-    if (startDate && Number.isNaN(new Date(startDate).getTime())) {
-      throw createBizError(400, 'startDate is invalid.', 400);
-    }
-
-    if (endDate && Number.isNaN(new Date(endDate).getTime())) {
-      throw createBizError(400, 'endDate is invalid.', 400);
-    }
-
-    try {
-      const [rows, total] = await Promise.all([
+    return buildPagedQueryResult({
+      query,
+      loadRows: ({ pageSize, offset }) =>
         adminOpsModel.listMedicationLogs(
-          {
-            search,
-            status,
-            startDate,
-            endDate,
-            communityId,
-          },
+          { search, status, startDate, endDate, communityId },
           { pageSize, offset }
         ),
+      loadTotal: () =>
         adminOpsModel.countMedicationLogs({ search, status, startDate, endDate, communityId }),
-      ]);
-
-      return {
-        list: rows.map((row) => ({
-          id: Number(row.id),
-          userId: Number(row.user_id),
-          nickname: row.nickname || `User${row.user_id}`,
-          phone: row.phone || '',
-          planId: Number(row.plan_id),
-          medicationName: row.medication_name || '-',
-          dosage: row.dosage || '-',
-          scheduledTime: toDateTimeText(row.scheduled_time),
-          actualTime: toDateTimeText(row.actual_time),
-          status: row.status,
-          reminderSent: Number(row.reminder_sent || 0),
-          secondReminderSent: Number(row.second_reminder_sent || 0),
-          familyNotified: Number(row.family_notified || 0),
-        })),
-        pagination: buildPagination(page, pageSize, total),
-      };
-    } catch (err) {
-      if (isSchemaMissingError(err)) {
-        return buildEmptyPagedResult(page, pageSize);
-      }
-      throw err;
-    }
+      mapRow: mapMedicationLogRow,
+      onSchemaMissing: buildEmptyPagedResult,
+    });
   },
 
   async updateMedicationLogStatus(logId, payload = {}) {
     const id = parsePositiveInt(logId, 'logId');
     const status = String(payload.status || '').trim();
-    const communityId = payload.communityId
-      ? parsePositiveInt(payload.communityId, 'communityId')
-      : null;
-    const allowed = ['pending', 'taken', 'skipped', 'missed'];
+    const communityId = payload.communityId ? parsePositiveInt(payload.communityId, 'communityId') : null;
 
-    if (!allowed.includes(status)) {
-      throw createBizError(400, 'status is invalid.', 400);
-    }
+    validateEnum(status, 'status', ['pending', 'taken', 'skipped', 'missed']);
 
     try {
       const current = await adminOpsModel.getMedicationLogById(id, communityId);
@@ -185,39 +346,17 @@ const adminCareOverviewService = {
   },
 
   async getGpsCurrent(query = {}) {
-    const { page, pageSize, offset } = normalizePagination(query);
-    const search = String(query.search || '').trim();
-    const communityId = query.communityId
-      ? parsePositiveInt(query.communityId, 'communityId')
-      : null;
+    const search = getSearch(query);
+    const communityId = getCommunityId(query);
 
-    try {
-      const [rows, total] = await Promise.all([
+    return buildPagedQueryResult({
+      query,
+      loadRows: ({ pageSize, offset }) =>
         adminOpsModel.listGpsCurrent({ search, communityId }, { pageSize, offset }),
-        adminOpsModel.countGpsCurrent({ search, communityId }),
-      ]);
-
-      return {
-        list: rows.map((row) => ({
-          id: Number(row.id),
-          userId: Number(row.user_id),
-          nickname: row.nickname || `User${row.user_id}`,
-          phone: row.phone || '',
-          age: row.age === null || row.age === undefined ? null : Number(row.age),
-          latitude: Number(row.latitude),
-          longitude: Number(row.longitude),
-          accuracy: row.accuracy !== null ? Number(row.accuracy) : null,
-          locationType: row.location_type,
-          updatedAt: toDateTimeText(row.created_at),
-        })),
-        pagination: buildPagination(page, pageSize, total),
-      };
-    } catch (err) {
-      if (isSchemaMissingError(err)) {
-        return buildEmptyPagedResult(page, pageSize);
-      }
-      throw err;
-    }
+      loadTotal: () => adminOpsModel.countGpsCurrent({ search, communityId }),
+      mapRow: mapGpsCurrentRow,
+      onSchemaMissing: buildEmptyPagedResult,
+    });
   },
 
   async getGpsTrail(query = {}) {
@@ -225,15 +364,13 @@ const adminCareOverviewService = {
     const startDate = parseDate(query.startDate, 'startDate');
     const endDate = parseDate(query.endDate, 'endDate');
     const limit = Math.min(Math.max(Number(query.limit) || 1000, 1), 5000);
-    const communityId = query.communityId
-      ? parsePositiveInt(query.communityId, 'communityId')
-      : null;
+    const communityId = getCommunityId(query);
 
     if (endDate.getTime() < startDate.getTime()) {
       throw createBizError(400, 'endDate must be >= startDate.', 400);
     }
 
-    try {
+    return withSchemaFallback(async () => {
       const rows = await adminOpsModel.listGpsTrail(userId, {
         startDate,
         endDate,
@@ -244,238 +381,91 @@ const adminCareOverviewService = {
       return {
         userId,
         total: rows.length,
-        list: rows.map((row) => ({
-          id: Number(row.id),
-          userId: Number(row.user_id),
-          latitude: Number(row.latitude),
-          longitude: Number(row.longitude),
-          accuracy: row.accuracy !== null ? Number(row.accuracy) : null,
-          locationType: row.location_type,
-          createdAt: toDateTimeText(row.created_at),
-        })),
+        list: rows.map(mapGpsTrailRow),
       };
-    } catch (err) {
-      if (isSchemaMissingError(err)) {
-        return {
-          userId,
-          total: 0,
-          list: [],
-        };
-      }
-      throw err;
-    }
+    }, () => ({ userId, total: 0, list: [] }));
   },
 
   async getFamilyBindings(query = {}) {
-    const { page, pageSize, offset } = normalizePagination(query);
-    const search = String(query.search || '').trim();
+    const search = getSearch(query);
     const status = String(query.status || '').trim();
-    const communityId = query.communityId
-      ? parsePositiveInt(query.communityId, 'communityId')
-      : null;
+    const communityId = getCommunityId(query);
 
-    try {
-      const [rows, total] = await Promise.all([
+    return buildPagedQueryResult({
+      query,
+      loadRows: ({ pageSize, offset }) =>
         adminOpsModel.listFamilyBindings({ search, status, communityId }, { pageSize, offset }),
-        adminOpsModel.countFamilyBindings({ search, status, communityId }),
-      ]);
-
-      return {
-        list: rows.map((row) => ({
-          bindingId: Number(row.id),
-          elderId: Number(row.elder_id),
-          familyId: Number(row.family_id),
-          status: row.status,
-          boundAt: row.binding_created_at,
-          elderProfile: {
-            nickname: row.elder_nickname || null,
-            realName: row.elder_name || null,
-            avatarUrl: row.elder_avatar || null,
-            gender: row.elder_gender || null,
-            age:
-              row.elder_age === null || row.elder_age === undefined ? null : Number(row.elder_age),
-          },
-          healthArchive: {
-            id:
-              row.health_archive_id === null || row.health_archive_id === undefined
-                ? null
-                : Number(row.health_archive_id),
-            updatedAt: row.health_updated_at || null,
-          },
-        })),
-        pagination: buildPagination(page, pageSize, total),
-      };
-    } catch (err) {
-      if (isSchemaMissingError(err)) {
-        return buildEmptyPagedResult(page, pageSize);
-      }
-      throw err;
-    }
+      loadTotal: () => adminOpsModel.countFamilyBindings({ search, status, communityId }),
+      mapRow: mapFamilyBindingRow,
+      onSchemaMissing: buildEmptyPagedResult,
+    });
   },
 
   async getMedicalReports(query = {}) {
-    const { page, pageSize, offset } = normalizePagination(query);
-    const search = String(query.search || '').trim();
+    const search = getSearch(query);
     const reportType = String(query.reportType || '').trim();
-    const startDate = query.startDate ? String(query.startDate).trim() : '';
-    const endDate = query.endDate ? String(query.endDate).trim() : '';
-    const communityId = query.communityId
-      ? parsePositiveInt(query.communityId, 'communityId')
-      : null;
+    const startDate = parseOptionalDateText(query.startDate, 'startDate');
+    const endDate = parseOptionalDateText(query.endDate, 'endDate');
+    const communityId = getCommunityId(query);
 
-    if (startDate && Number.isNaN(new Date(startDate).getTime())) {
-      throw createBizError(400, 'startDate is invalid.', 400);
-    }
-    if (endDate && Number.isNaN(new Date(endDate).getTime())) {
-      throw createBizError(400, 'endDate is invalid.', 400);
-    }
-
-    try {
-      const [rows, total] = await Promise.all([
+    return buildPagedQueryResult({
+      query,
+      loadRows: ({ pageSize, offset }) =>
         adminOpsModel.listMedicalReports(
-          {
-            search,
-            reportType,
-            startDate: startDate || null,
-            endDate: endDate || null,
-            communityId,
-          },
+          { search, reportType, startDate, endDate, communityId },
           { pageSize, offset }
         ),
-        adminOpsModel.countMedicalReports({
-          search,
-          reportType,
-          startDate: startDate || null,
-          endDate: endDate || null,
-          communityId,
-        }),
-      ]);
-
-      return {
+      loadTotal: () =>
+        adminOpsModel.countMedicalReports({ search, reportType, startDate, endDate, communityId }),
+      mapRow: mapMedicalReportRow,
+      onSchemaMissing: (page, pageSize) => ({
         source: 'admin',
-        list: rows.map((row) => ({
-          id: Number(row.id),
-          userId: Number(row.user_id),
-          userName: row.nickname || `User${row.user_id}`,
-          userPhone: row.phone || '',
-          reportNo: row.report_no,
-          reportType: row.report_type,
-          reportDate: row.report_date,
-          reportUrl: row.report_url || null,
-          reportData: row.report_data || null,
-          syncStatus: row.sync_status,
-          createdAt: row.created_at,
-        })),
-        pagination: buildPagination(page, pageSize, total),
-      };
-    } catch (err) {
-      if (isSchemaMissingError(err)) {
-        return {
-          source: 'admin',
-          list: [],
-          pagination: buildPagination(page, pageSize, 0),
-        };
-      }
-      throw err;
-    }
+        list: [],
+        pagination: buildPagination(page, pageSize, 0),
+      }),
+    }).then((result) => ({ ...result, source: 'admin' }));
   },
 
   async getFallEvents(query = {}) {
-    const { page, pageSize, offset } = normalizePagination(query);
-    const search = String(query.search || '').trim();
+    const search = getSearch(query);
     const status = String(query.status || '').trim();
-    const communityId = query.communityId
-      ? parsePositiveInt(query.communityId, 'communityId')
-      : null;
+    const communityId = getCommunityId(query);
 
-    const allowedStatus = ['', 'detecting', 'confirmed', 'cancelled', 'false_alarm'];
-    if (!allowedStatus.includes(status)) {
-      throw createBizError(400, 'status is invalid.', 400);
-    }
+    validateEnum(status, 'status', ['', 'detecting', 'confirmed', 'cancelled', 'false_alarm']);
 
-    try {
-      const [rows, total] = await Promise.all([
+    return buildPagedQueryResult({
+      query,
+      loadRows: ({ pageSize, offset }) =>
         adminOpsModel.listFallEvents({ search, status, communityId }, { pageSize, offset }),
-        adminOpsModel.countFallEvents({ search, status, communityId }),
-      ]);
-
-      return {
-        list: rows.map((item) => ({
-          id: Number(item.id),
-          userId: Number(item.user_id),
-          nickname: item.nickname || `User${item.user_id}`,
-          phone: item.phone || '',
-          status: item.status,
-          sensorData: parseSensorData(item.sensor_data),
-          sensitivity: item.sensitivity,
-          detectedAt: item.detected_at,
-          cancelledAt: item.cancelled_at,
-          confirmedAt: item.confirmed_at,
-          createdAt: item.created_at,
-        })),
-        pagination: buildPagination(page, pageSize, total),
-      };
-    } catch (err) {
-      if (isSchemaMissingError(err)) {
-        return buildEmptyPagedResult(page, pageSize);
-      }
-      throw err;
-    }
+      loadTotal: () => adminOpsModel.countFallEvents({ search, status, communityId }),
+      mapRow: mapFallEventRow,
+      onSchemaMissing: buildEmptyPagedResult,
+    });
   },
 
   async getDrugInteractions(query = {}) {
-    const search = String(query.search || '').trim();
+    const search = getSearch(query);
     const status = String(query.status || '').trim();
     const limit = Math.min(Math.max(Number(query.limit) || 500, 1), 1000);
-    const communityId = query.communityId
-      ? parsePositiveInt(query.communityId, 'communityId')
-      : null;
+    const communityId = getCommunityId(query);
 
-    const allowedStatus = ['', 'pending', 'acknowledged'];
-    if (!allowedStatus.includes(status)) {
-      throw createBizError(400, 'status is invalid.', 400);
-    }
+    validateEnum(status, 'status', ['', 'pending', 'acknowledged']);
 
-    try {
+    return withSchemaFallback(async () => {
       const rows = await adminOpsModel.listDrugInteractions(
         { search, status, communityId },
         { pageSize: limit, offset: 0 }
       );
-
-      return rows.map((item) => ({
-        id: Number(item.id),
-        userId: Number(item.user_id),
-        userName: item.nickname || `User${item.user_id}`,
-        userPhone: item.phone || '',
-        drugA: item.drug_a,
-        drugB: item.drug_b,
-        level: item.level,
-        mechanism: item.mechanism || '',
-        riskDescription: item.risk_description || '',
-        suggestion: item.suggestion || '',
-        status: item.status,
-        checkBatchId: item.check_batch_id,
-        createdAt: item.created_at,
-      }));
-    } catch (err) {
-      if (isSchemaMissingError(err)) {
-        return [];
-      }
-      throw err;
-    }
+      return rows.map(mapDrugInteractionRow);
+    }, []);
   },
 
   async updateDrugInteractionStatus(interactionId, payload = {}) {
     const id = parsePositiveInt(interactionId, 'interactionId');
     const status = String(payload.status || '').trim();
-    const communityId = payload.communityId
-      ? parsePositiveInt(payload.communityId, 'communityId')
-      : null;
-    const allowedStatus = ['pending', 'acknowledged'];
+    const communityId = payload.communityId ? parsePositiveInt(payload.communityId, 'communityId') : null;
 
-    if (!allowedStatus.includes(status)) {
-      throw createBizError(400, 'status is invalid.', 400);
-    }
+    validateEnum(status, 'status', ['pending', 'acknowledged']);
 
     const current = await adminOpsModel.getDrugInteractionById(id, communityId);
     if (!current) {
@@ -487,80 +477,42 @@ const adminCareOverviewService = {
       throw createBizError(409, 'Drug interaction status update failed.', 409);
     }
 
-    return {
-      id,
-      status,
-    };
+    return { id, status };
   },
 
   async getTimeBankServiceHistory(query = {}) {
-    const { page, pageSize, offset } = normalizePagination(query);
-    const search = String(query.search || '').trim();
+    const search = getSearch(query);
     const status = String(query.status || '').trim();
-    const communityId = query.communityId
-      ? parsePositiveInt(query.communityId, 'communityId')
-      : null;
+    const communityId = getCommunityId(query);
 
-    const allowedStatus = ['', 'pending', 'confirmed', 'cancelled'];
-    if (!allowedStatus.includes(status)) {
-      throw createBizError(400, 'status is invalid.', 400);
-    }
+    validateEnum(status, 'status', ['', 'pending', 'confirmed', 'cancelled']);
 
-    try {
-      const [rows, total] = await Promise.all([
-        adminOpsModel.listTimeBankServiceHistory(
-          { search, status, communityId },
-          { pageSize, offset }
-        ),
-        adminOpsModel.countTimeBankServiceHistory({ search, status, communityId }),
-      ]);
-
-      return {
-        list: rows.map((item) => ({
-          id: Number(item.id),
-          providerId: Number(item.provider_id),
-          providerName: item.provider_nickname || `User${item.provider_id}`,
-          recipientId: Number(item.recipient_id),
-          recipientName: item.recipient_nickname || `User${item.recipient_id}`,
-          serviceType: item.service_type,
-          startTime: item.start_time,
-          endTime: item.end_time,
-          durationHours: Number(item.duration_hours),
-          timeCoins: Number(item.time_coins),
-          status: item.status,
-          createdAt: item.created_at,
-        })),
-        pagination: buildPagination(page, pageSize, total),
-      };
-    } catch (err) {
-      if (isSchemaMissingError(err)) {
-        return buildEmptyPagedResult(page, pageSize);
-      }
-      throw err;
-    }
+    return buildPagedQueryResult({
+      query,
+      loadRows: ({ pageSize, offset }) =>
+        adminOpsModel.listTimeBankServiceHistory({ search, status, communityId }, { pageSize, offset }),
+      loadTotal: () => adminOpsModel.countTimeBankServiceHistory({ search, status, communityId }),
+      mapRow: mapTimeBankHistoryRow,
+      onSchemaMissing: buildEmptyPagedResult,
+    });
   },
 
   async confirmTimeBankService(payload = {}) {
     const recordId = parsePositiveInt(payload.recordId, 'recordId');
     const action = String(payload.action || '').trim();
-    const communityId = payload.communityId
-      ? parsePositiveInt(payload.communityId, 'communityId')
-      : null;
-    if (!['confirm', 'cancel'].includes(action)) {
-      throw createBizError(400, 'action is invalid.', 400);
-    }
+    const communityId = payload.communityId ? parsePositiveInt(payload.communityId, 'communityId') : null;
+
+    validateEnum(action, 'action', ['confirm', 'cancel']);
 
     const existing = await adminOpsModel.getTimeBankServiceRecordById(recordId, communityId);
     if (!existing) {
       throw createBizError(404, 'Service record not found.', 404);
     }
-
     if (existing.status !== 'pending') {
       throw createBizError(409, 'Only pending records can be settled.', 409);
     }
 
     await timeBankModel.settleServiceRecord(recordId, action);
-
     return {
       recordId,
       status: action === 'confirm' ? 'confirmed' : 'cancelled',
@@ -569,53 +521,24 @@ const adminCareOverviewService = {
 
   async getTimeBankExchangeHistory(query = {}) {
     const limit = Math.min(Math.max(Number(query.limit) || 200, 1), 1000);
-    const communityId = query.communityId
-      ? parsePositiveInt(query.communityId, 'communityId')
-      : null;
+    const communityId = getCommunityId(query);
 
-    try {
+    return withSchemaFallback(async () => {
       const rows = await adminOpsModel.listTimeBankExchangeHistory({ limit, communityId });
-      return rows.map((item) => ({
-        id: Number(item.id),
-        userId: Number(item.user_id),
-        exchangeType: item.exchange_type,
-        itemName: item.item_name,
-        coinsRequired: Number(item.coins_required),
-        status: item.status,
-        createdAt: item.created_at,
-        completedAt: item.completed_at,
-      }));
-    } catch (err) {
-      if (isSchemaMissingError(err)) {
-        return [];
-      }
-      throw err;
-    }
+      return rows.map(mapTimeBankExchangeRow);
+    }, []);
   },
 
   async getTimeBankLeaderboard(query = {}) {
     const limit = Math.min(Math.max(Number(query.limit) || 100, 1), 500);
-    const communityId = query.communityId
-      ? parsePositiveInt(query.communityId, 'communityId')
-      : null;
+    const communityId = getCommunityId(query);
 
-    try {
+    return withSchemaFallback(async () => {
       const rows = await adminOpsModel.listTimeBankLeaderboard({ communityId, limit });
-      return rows.map((item, index) => ({
-        rank: index + 1,
-        userId: Number(item.user_id),
-        balance: Number(item.balance),
-        totalEarned: Number(item.total_earned),
-        creditScore: Number(item.credit_score),
-        creditLevel: item.credit_level,
-      }));
-    } catch (err) {
-      if (isSchemaMissingError(err)) {
-        return [];
-      }
-      throw err;
-    }
+      return rows.map(mapLeaderboardRow);
+    }, []);
   },
 };
 
 module.exports = adminCareOverviewService;
+

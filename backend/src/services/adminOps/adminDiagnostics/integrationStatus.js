@@ -1,0 +1,171 @@
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const aiService = require('../../aiService');
+const companionService = require('../../companionService');
+const voiceService = require('../../voiceService');
+const medicalApiService = require('../../medicalApiService');
+const ossService = require('../../ossService');
+const { COMPETITION_SEED_ASSETS } = require('../../../data/competitionSeedAssets');
+const { resolveMode } = require('../../../config/runtimeMode');
+const wechatNotifier = require('../../../utils/wechatNotifier');
+const smsNotifyService = require('../../smsNotifyService');
+const wechatNotifyService = require('../../wechatNotifyService');
+
+function getCompetitionSeedAssetStatus() {
+  const outputDir = path.join(__dirname, '..', '..', '..', '..', 'generated', 'competition-seed');
+  const bootstrapSqlPath = path.join(outputDir, COMPETITION_SEED_ASSETS.files.bootstrapSql);
+  const summaryPath = path.join(outputDir, COMPETITION_SEED_ASSETS.files.summary);
+  const bootstrapSummaryPath = path.join(outputDir, COMPETITION_SEED_ASSETS.files.bootstrapSummary);
+
+  return {
+    outputDir: COMPETITION_SEED_ASSETS.outputDir,
+    generated: fs.existsSync(summaryPath) || fs.existsSync(bootstrapSummaryPath),
+    sqlReady: fs.existsSync(bootstrapSqlPath),
+    files: COMPETITION_SEED_ASSETS.files,
+    commands: COMPETITION_SEED_ASSETS.commands,
+  };
+}
+
+function resolveCapabilitySource(key, capability) {
+  const effectiveMode = capability ? capability.effectiveMode : 'stub';
+  if (key === 'ai_consult') {
+    return effectiveMode === 'live' ? 'dashscope_live' : 'ai_consult_stub';
+  }
+  if (key === 'ai_companion') {
+    return effectiveMode === 'live' ? 'ai_companion_live' : 'ai_companion_stub';
+  }
+  if (key === 'voice') {
+    return effectiveMode === 'live' ? 'voice_live' : 'voice_stub';
+  }
+  if (key === 'oss') {
+    return effectiveMode === 'live' ? 'oss_live' : 'oss_stub';
+  }
+  return null;
+}
+
+function buildCapabilityItem(key, capability, extra = {}) {
+  return {
+    key,
+    configured: Boolean(capability && capability.liveConfigured),
+    mode: capability ? capability.requestedMode || capability.mode : 'auto',
+    effectiveMode: capability ? capability.effectiveMode : 'stub',
+    fallbackAllowed: Boolean(capability && capability.fallbackAllowed),
+    runtimeMode: capability ? capability.runtimeMode || resolveMode() : resolveMode(),
+    source: extra.source || resolveCapabilitySource(key, capability),
+    missingConfig: Array.isArray(extra.missingConfig)
+      ? extra.missingConfig
+      : Array.isArray(capability && capability.missingConfig)
+        ? capability.missingConfig
+        : [],
+    circuitOpen: Boolean(extra.circuitOpen || (capability && capability.circuitOpen)),
+    notes: extra.notes || null,
+  };
+}
+
+function buildIntegrationRows() {
+  const aiCapability = aiService.getCapabilityReport();
+  const companionCapability = companionService.getCapabilityReport();
+  const voiceCapability = voiceService.getCapabilityReport();
+  const ossCapability = ossService.getCapabilityReport();
+  const medicalCapability =
+    typeof medicalApiService.getCapabilityReport === 'function'
+      ? medicalApiService.getCapabilityReport()
+      : null;
+  const medicalSource =
+    typeof medicalApiService.getSourceTag === 'function'
+      ? medicalApiService.getSourceTag()
+      : 'third_party_stub';
+  const wechatCapability = wechatNotifier.getCapabilityReport();
+  const sosSmsCapability = smsNotifyService.getCapabilityReport();
+  const sosWechatCapability = wechatNotifyService.getCapabilityReport();
+  const competitionSeed = getCompetitionSeedAssetStatus();
+  const runtimeMode = resolveMode();
+
+  return [
+    buildCapabilityItem('ai_consult', aiCapability),
+    buildCapabilityItem('ai_companion', companionCapability),
+    buildCapabilityItem('voice', voiceCapability),
+    buildCapabilityItem('oss', ossCapability),
+    {
+      key: 'competition_seed',
+      configured: competitionSeed.generated,
+      mode: 'local',
+      effectiveMode: competitionSeed.sqlReady
+        ? 'ready'
+        : competitionSeed.generated
+          ? 'partial'
+          : 'missing',
+      fallbackAllowed: false,
+      source: 'local_generated_assets',
+      missingConfig: [],
+      circuitOpen: false,
+      generated: competitionSeed.generated,
+      sqlReady: competitionSeed.sqlReady,
+      assetFiles: competitionSeed.files,
+      commands: competitionSeed.commands,
+      notes: competitionSeed.sqlReady
+        ? 'Competition seed SQL is ready for direct MySQL bootstrap.'
+        : competitionSeed.generated
+          ? 'Competition seed JSON assets exist but bootstrap.sql has not been generated yet.'
+          : 'Competition seed assets have not been generated in this workspace yet.',
+      runtimeMode,
+    },
+    {
+      ...buildCapabilityItem('medical', medicalCapability, {
+        source: medicalSource,
+        notes:
+          medicalSource === 'third_party_live'
+            ? 'Medical requests currently use the live upstream integration path.'
+            : 'Medical requests currently use curated dataset fallback or deterministic stub data for competition replay.',
+      }),
+      configured: Boolean(medicalCapability && medicalCapability.liveConfigured),
+      effectiveMode:
+        medicalCapability && medicalCapability.effectiveMode
+          ? medicalCapability.effectiveMode
+          : medicalSource === 'third_party_live'
+            ? 'live'
+            : 'stub',
+    },
+    buildCapabilityItem('wechat_notify', wechatCapability, {
+      source: 'wechat_template_api',
+      missingConfig: wechatCapability.missingConfig,
+      notes:
+        wechatCapability.effectiveMode === 'live'
+          ? 'WeChat template notify currently uses the live platform API path.'
+          : 'WeChat template notify currently uses deterministic mock responses for sandbox replay.',
+    }),
+    {
+      key: 'sos_sms_notify',
+      configured: sosSmsCapability.configured,
+      mode: sosSmsCapability.mode,
+      effectiveMode: sosSmsCapability.effectiveMode,
+      fallbackAllowed: sosSmsCapability.fallbackAllowed,
+      source: sosSmsCapability.source,
+      missingConfig: sosSmsCapability.missingConfig,
+      notes: sosSmsCapability.notes,
+      runtimeMode,
+    },
+    {
+      key: 'sos_wechat_notify',
+      configured: sosWechatCapability.configured,
+      mode: sosWechatCapability.mode,
+      effectiveMode: sosWechatCapability.effectiveMode,
+      fallbackAllowed: sosWechatCapability.fallbackAllowed,
+      source: sosWechatCapability.source,
+      missingConfig: sosWechatCapability.missingConfig,
+      notes: sosWechatCapability.notes,
+      runtimeMode,
+    },
+  ].map((item) => ({
+    ...item,
+    configState: item.configured ? 'ready' : 'missing',
+    healthy:
+      item.effectiveMode === 'live' ? item.configured : item.fallbackAllowed || item.configured,
+  }));
+}
+
+module.exports = {
+  buildIntegrationRows,
+};

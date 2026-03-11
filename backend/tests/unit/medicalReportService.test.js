@@ -3,6 +3,14 @@
 jest.mock('../../src/services/medicalApiService', () => ({
   fetchMedicalReports: jest.fn(),
   getSourceTag: jest.fn(() => 'third_party_live'),
+  getCapabilityReport: jest.fn(() => ({
+    mode: 'auto',
+    effectiveMode: 'live',
+    liveConfigured: true,
+    fallbackAllowed: true,
+    circuitOpen: false,
+    missingConfig: [],
+  })),
 }));
 
 jest.mock('../../src/models/medicalReportModel', () => ({
@@ -49,6 +57,12 @@ describe('medicalReportService', () => {
       source: 'third_party_live',
       fallbackUsed: false,
       list: [{ reportNo: 'R-1' }],
+      diagnostics: {
+        requestedMode: 'auto',
+        effectiveMode: 'live',
+        reason: 'report_sync_complete',
+        configState: 'ready',
+      },
     });
   });
 
@@ -63,6 +77,9 @@ describe('medicalReportService', () => {
       source: 'cache',
       fallbackUsed: true,
       list: local,
+      diagnostics: {
+        reason: 'local_cache_fallback',
+      },
     });
     expect(logThirdPartyError).toHaveBeenCalled();
   });
@@ -76,8 +93,38 @@ describe('medicalReportService', () => {
     expect(data).toMatchObject({
       source: 'competition_dataset_sample',
       fallbackUsed: true,
+      diagnostics: {
+        reason: 'sample_report_fallback',
+      },
     });
     expect(data.list.length).toBeGreaterThan(0);
+  });
+
+  it('exposes stub diagnostics when upstream service already downgraded mode', async () => {
+    medicalApiService.getSourceTag.mockReturnValueOnce('third_party_stub');
+    medicalApiService.getCapabilityReport.mockReturnValueOnce({
+      mode: 'live',
+      effectiveMode: 'stub',
+      liveConfigured: true,
+      fallbackAllowed: true,
+      circuitOpen: false,
+      missingConfig: [],
+    });
+    medicalReportModel.listByUserId
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ reportNo: 'R-STUB' }]);
+    medicalApiService.fetchMedicalReports.mockResolvedValueOnce([{ reportNo: 'R-STUB' }]);
+
+    const data = await medicalReportService.list(1002, {});
+
+    expect(data).toMatchObject({
+      source: 'third_party_stub',
+      mode: 'stub',
+      diagnostics: {
+        requestedMode: 'live',
+        effectiveMode: 'stub',
+      },
+    });
   });
 
   it('validates filter date format', async () => {

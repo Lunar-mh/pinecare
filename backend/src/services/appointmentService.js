@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const crypto = require('crypto');
 const appointmentModel = require('../models/appointmentModel');
@@ -164,6 +164,7 @@ const appointmentService = {
               ? medicalApiService.getSourceTag()
               : 'third_party_stub',
           reason: 'appointment_created',
+          detail: 'Appointment request has been persisted after upstream scheduling.',
         }
       );
     } catch (err) {
@@ -200,6 +201,7 @@ const appointmentService = {
     return withMeta('medical.appointment.list', result, {
       source: 'local',
       reason: 'appointment_local_list',
+      detail: 'Appointment records were served from local persistence.',
     });
   },
 
@@ -249,6 +251,7 @@ const appointmentService = {
             ? medicalApiService.getSourceTag()
             : 'third_party_stub',
         reason: 'appointment_cancelled',
+        detail: 'Appointment cancellation was synchronized with the upstream scheduler.',
       }
     );
   },

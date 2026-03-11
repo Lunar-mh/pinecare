@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const medicalApiService = require('./medicalApiService');
 const medicalReportModel = require('../models/medicalReportModel');
@@ -130,6 +130,7 @@ const medicalReportService = {
             ? medicalApiService.getSourceTag()
             : 'third_party_stub',
         reason: 'report_sync_complete',
+        detail: 'Medical reports were synchronized from upstream and refreshed in local cache.',
       });
     } catch (error) {
       logThirdPartyError('medical-report', error, {
@@ -145,6 +146,7 @@ const medicalReportService = {
           source: 'cache',
           fallbackUsed: true,
           reason: 'local_cache_fallback',
+          detail: 'Serving medical reports from local cache because upstream sync failed.',
         });
       }
 

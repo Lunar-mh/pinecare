@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const loadService = () => {
   jest.resetModules();
@@ -28,13 +28,17 @@ const loadService = () => {
     sendSms: jest.fn().mockResolvedValue(undefined),
     sendWechat: jest.fn().mockResolvedValue(undefined),
   };
+  const eventTimelineService = {
+    recordCareEvent: jest.fn().mockResolvedValue(undefined),
+  };
 
   jest.doMock('../../src/config/redis', () => redis);
   jest.doMock('../../src/models/fall', () => FallModel);
   jest.doMock('../../src/services/notificationService', () => notificationService);
+  jest.doMock('../../src/services/eventTimelineService', () => eventTimelineService);
 
   const service = require('../../src/services/fallService');
-  return { service, redis, FallModel, notificationService };
+  return { service, redis, FallModel, notificationService, eventTimelineService };
 };
 
 describe('fallService', () => {
@@ -58,28 +62,36 @@ describe('fallService', () => {
     expect(() => service.detectFall({}, 'weird')).toThrow();
   });
 
-  it('reports false alarms and detecting events', async () => {
+  it('reports false alarms and detecting events with unified audit', async () => {
     let loaded = loadService();
     loaded.redis.get.mockResolvedValueOnce(null);
     loaded.FallModel.getSensitivitySetting.mockResolvedValueOnce({ sensitivity: 'medium', updatedAt: 'u' });
     loaded.FallModel.createFalseAlarmEvent.mockResolvedValueOnce(5);
-    loaded.FallModel.findEventById.mockResolvedValueOnce({ id: 5, status: 'false_alarm' });
+    loaded.FallModel.findEventById.mockResolvedValueOnce({ id: 5, status: 'false_alarm', detectedAt: '2026-03-11T10:00:00.000Z' });
     await expect(loaded.service.reportFall(7, { verticalPeak: 1, horizontalChangeRate: 1 })).resolves.toEqual({
       detected: false,
       reason: 'no-fall',
-      event: { id: 5, status: 'false_alarm' },
+      event: { id: 5, status: 'false_alarm', detectedAt: '2026-03-11T10:00:00.000Z' },
       detection: expect.objectContaining({ isFall: false }),
     });
+    expect(loaded.eventTimelineService.recordCareEvent).toHaveBeenCalledWith(
+      'fall.false_alarm',
+      expect.objectContaining({ entityId: 5, status: 'false_alarm' })
+    );
 
     loaded = loadService();
     loaded.redis.get.mockResolvedValueOnce(JSON.stringify({ sensitivity: 'high', updatedAt: 'u' }));
     loaded.FallModel.createDetectingEvent.mockResolvedValueOnce(6);
-    loaded.FallModel.findEventById.mockResolvedValueOnce({ id: 6, status: 'detecting' });
+    loaded.FallModel.findEventById.mockResolvedValueOnce({ id: 6, status: 'detecting', detectedAt: '2026-03-11T10:01:00.000Z' });
     await expect(loaded.service.reportFall(7, { verticalPeak: 3, horizontalChangeRate: 2 })).resolves.toMatchObject({
       detected: true,
       event: { id: 6, status: 'detecting' },
       countdownSeconds: 15,
     });
+    expect(loaded.eventTimelineService.recordCareEvent).toHaveBeenCalledWith(
+      'fall.detected',
+      expect.objectContaining({ entityId: 6, status: 'detecting' })
+    );
     await expect(loaded.service.reportFall(null, {})).rejects.toMatchObject({ code: 401 });
   });
 
@@ -98,11 +110,15 @@ describe('fallService', () => {
     loaded = loadService();
     loaded.FallModel.findEventByIdAndUser.mockResolvedValueOnce({ id: 5, status: 'detecting' });
     loaded.FallModel.markCancelled.mockResolvedValueOnce(true);
-    loaded.FallModel.findEventByIdAndUser.mockResolvedValueOnce({ id: 5, status: 'cancelled' });
+    loaded.FallModel.findEventByIdAndUser.mockResolvedValueOnce({ id: 5, status: 'cancelled', cancelledAt: '2026-03-11T10:02:00.000Z' });
     await expect(loaded.service.cancelFall(7, 5)).resolves.toEqual({
-      event: { id: 5, status: 'cancelled' },
+      event: { id: 5, status: 'cancelled', cancelledAt: '2026-03-11T10:02:00.000Z' },
       cancelled: true,
     });
+    expect(loaded.eventTimelineService.recordCareEvent).toHaveBeenCalledWith(
+      'fall.cancelled',
+      expect.objectContaining({ entityId: 5, status: 'cancelled' })
+    );
   });
 
   it('processes pending falls and records notification outcomes', async () => {
@@ -125,7 +141,7 @@ describe('fallService', () => {
     loaded = loadService();
     loaded.FallModel.findEventById
       .mockResolvedValueOnce({ id: 5, status: 'detecting' })
-      .mockResolvedValueOnce({ id: 5, status: 'confirmed', userId: 7 });
+      .mockResolvedValueOnce({ id: 5, status: 'confirmed', userId: 7, confirmedAt: '2026-03-11T10:03:00.000Z' });
     loaded.FallModel.markConfirmed.mockResolvedValueOnce(true);
     loaded.FallModel.getNotificationContacts.mockResolvedValueOnce([
       { contactId: 1, notifyMethod: 'sms' },
@@ -140,9 +156,17 @@ describe('fallService', () => {
     loaded.notificationService.sendWechat.mockRejectedValueOnce(new Error('failed'));
     await expect(loaded.service.processPendingFall(5)).resolves.toEqual({
       processed: true,
-      event: { id: 5, status: 'confirmed', userId: 7 },
+      event: { id: 5, status: 'confirmed', userId: 7, confirmedAt: '2026-03-11T10:03:00.000Z' },
       notification: { total: 3, sent: 1, failed: 2 },
     });
+    expect(loaded.eventTimelineService.recordCareEvent).toHaveBeenCalledWith(
+      'fall.confirmed',
+      expect.objectContaining({
+        entityId: 5,
+        status: 'confirmed',
+        details: expect.objectContaining({ delivery: { total: 3, sent: 1, failed: 2 } }),
+      })
+    );
   });
 
   it('returns paged history and caches settings updates', async () => {

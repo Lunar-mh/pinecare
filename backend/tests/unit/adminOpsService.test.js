@@ -36,6 +36,7 @@ const loadService = () => {
   const AuditLogModel = { list: jest.fn(), count: jest.fn(), create: jest.fn() };
   const timeBankModel = { settleServiceRecord: jest.fn() };
   const aiService = { getCapabilityReport: jest.fn(() => ({ liveConfigured: true, requestedMode: 'auto', effectiveMode: 'stub', fallbackAllowed: true })) };
+  const companionService = { getCapabilityReport: jest.fn(() => ({ liveConfigured: false, requestedMode: 'auto', effectiveMode: 'stub', fallbackAllowed: true })) };
   const voiceService = { getCapabilityReport: jest.fn(() => ({ liveConfigured: false, requestedMode: 'auto', effectiveMode: 'mock', fallbackAllowed: true })) };
   const medicalApiService = {
     getCapabilityReport: jest.fn(() => ({ liveConfigured: false, mode: 'auto', effectiveMode: 'stub', fallbackAllowed: true, missingConfig: ['MEDICAL_API_KEY'], circuitOpen: false })),
@@ -45,9 +46,10 @@ const loadService = () => {
   const wechatNotifier = { getCapabilityReport: jest.fn(() => ({ liveConfigured: false, requestedMode: 'auto', effectiveMode: 'mock', fallbackAllowed: true, missingConfig: ['WECHAT_APP_ID'] })) };
   const smsNotifyService = { getCapabilityReport: jest.fn(() => ({ configured: true, mode: 'live', effectiveMode: 'live', fallbackAllowed: false, source: 'aliyun_sms', missingConfig: [], notes: 'ok', healthy: true })) };
   const wechatNotifyService = { getCapabilityReport: jest.fn(() => ({ configured: true, mode: 'live', effectiveMode: 'live', fallbackAllowed: false, source: 'wechat_subscribe_message', missingConfig: [], notes: 'ok', healthy: true })) };
+  const systemHealthService = { getReadinessStatus: jest.fn(async () => ({ ready: true, data: { status: 'ok' } })) };
   const runtimeMode = { resolveMode: jest.fn(() => 'COMPETITION_SANDBOX'), isProductionLive: jest.fn(() => false) };
   const thirdParty = { getRecentThirdPartyErrors: jest.fn(() => [{ code: '503' }]) };
-  const DEMO_SCENARIOS = [{ id: 'demo-1', title: 'Demo One', bootstrap: { tables: 1 }, modules: ['medical'], apiSequence: ['/a', '/b'], checklist: ['step1'], }];
+  const DEMO_SCENARIOS = [{ id: 'demo-1', title: 'Demo One', bootstrap: { tables: 1 }, modules: ['medical'], apiSequence: ['/a', '/b'], checklist: ['step1'] }];
   const getDemoScenarioById = jest.fn((id) => DEMO_SCENARIOS.find((item) => item.id === id) || null);
 
   jest.doMock('fs', () => ({ existsSync }));
@@ -55,9 +57,11 @@ const loadService = () => {
   jest.doMock('../../src/models/auditLog', () => AuditLogModel);
   jest.doMock('../../src/models/timeBank', () => timeBankModel);
   jest.doMock('../../src/services/aiService', () => aiService);
+  jest.doMock('../../src/services/companionService', () => companionService);
   jest.doMock('../../src/services/voiceService', () => voiceService);
   jest.doMock('../../src/services/medicalApiService', () => medicalApiService);
   jest.doMock('../../src/services/ossService', () => ossService);
+  jest.doMock('../../src/services/systemHealthService', () => systemHealthService);
   jest.doMock('../../src/config/demoScenarios', () => ({ DEMO_SCENARIOS, getDemoScenarioById }));
   jest.doMock('../../src/data/competitionSeedManifest', () => ({ COMPETITION_SEED_MANIFEST: { coverage: 'baseline' } }));
   jest.doMock('../../src/data/competitionSeedAssets', () => ({ COMPETITION_SEED_ASSETS: { outputDir: 'generated/competition-seed', files: { bootstrapSql: 'bootstrap.sql', summary: 'summary.json', bootstrapSummary: 'bootstrap-summary.json' }, commands: ['npm run seed'] } }));
@@ -68,7 +72,7 @@ const loadService = () => {
   jest.doMock('../../src/services/wechatNotifyService', () => wechatNotifyService);
 
   const service = require('../../src/services/adminOpsService');
-  return { service, existsSync, adminOpsModel, AuditLogModel, timeBankModel, getDemoScenarioById };
+  return { service, existsSync, adminOpsModel, AuditLogModel, timeBankModel, getDemoScenarioById, systemHealthService };
 };
 
 describe('adminOpsService', () => {
@@ -154,12 +158,10 @@ describe('adminOpsService', () => {
     loaded.adminOpsModel.listTimeBankServiceHistory.mockResolvedValueOnce([{ id: 1, provider_id: 7, provider_nickname: 'P', recipient_id: 8, recipient_nickname: 'R', service_type: 'escort', start_time: 's', end_time: 'e', duration_hours: '1', time_coins: '2', status: 'pending', created_at: 'c' }]);
     loaded.adminOpsModel.countTimeBankServiceHistory.mockResolvedValueOnce(1);
     loaded.adminOpsModel.getTimeBankServiceRecordById.mockResolvedValueOnce({ id: 1, status: 'pending' });
-    loaded.timeBankModel = undefined;
     await expect(loaded.service.getTimeBankServiceHistory({ status: 'pending' })).resolves.toMatchObject({ list: [expect.objectContaining({ id: 1, providerId: 7 })] });
 
     loaded = loadService();
     loaded.adminOpsModel.getTimeBankServiceRecordById.mockResolvedValueOnce({ id: 1, status: 'pending' });
-    loaded.timeBankModel = undefined;
     await expect(loaded.service.confirmTimeBankService({ recordId: 1, action: 'confirm' })).resolves.toEqual({ recordId: 1, status: 'confirmed' });
 
     loaded = loadService();
@@ -177,7 +179,10 @@ describe('adminOpsService', () => {
     loaded = loadService();
     loaded.existsSync.mockReturnValueOnce(false).mockReturnValueOnce(true).mockReturnValueOnce(false);
     loaded.AuditLogModel.create.mockResolvedValueOnce(1);
-    await expect(loaded.service.getIntegrationStatus()).resolves.toMatchObject({ summary: { totalCount: 8 }, recentErrors: [{ code: '503' }] });
+    await expect(loaded.service.getIntegrationStatus()).resolves.toMatchObject({
+      summary: { totalCount: 9, readiness: true },
+      recentErrors: [{ code: '503' }],
+    });
     await expect(loaded.service.getDemoScenarios()).resolves.toMatchObject({ scenarios: [expect.objectContaining({ id: 'demo-1', order: 1 })] });
     await expect(loaded.service.bootstrapDemoScenario({ scenarioId: 'demo-1' }, { userId: 7 })).resolves.toMatchObject({ scenarioId: 'demo-1', status: 'ready' });
   });

@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const onlineConsultationModel = require('../models/onlineConsultationModel');
 const medicalApiService = require('./medicalApiService');
@@ -89,6 +89,7 @@ const onlineConsultationService = {
             ? medicalApiService.getSourceTag()
             : 'third_party_stub',
         reason: 'consult_session_started',
+        detail: 'Consultation session was created via medical integration and saved locally.',
       }
     );
   },
@@ -117,7 +118,11 @@ const onlineConsultationService = {
     return withMeta(
       'medical.consult.update_status',
       { consultation },
-      { source: 'local', reason: 'consultation_status_updated' }
+      {
+        source: 'local',
+        reason: 'consultation_status_updated',
+        detail: 'Consultation status was updated in local persistence.',
+      }
     );
   },
 
@@ -132,7 +137,11 @@ const onlineConsultationService = {
     return withMeta(
       'medical.consult.list',
       { list },
-      { source: 'local', reason: 'consultation_local_list' }
+      {
+        source: 'local',
+        reason: 'consultation_local_list',
+        detail: 'Consultation history was served from local persistence.',
+      }
     );
   },
 };

@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 function inferMode(service, source) {
   if (service && typeof service.getModeTag === 'function') {
@@ -28,6 +28,7 @@ function inferCapability(service, source, mode) {
   return {
     source: source || 'third_party_stub',
     mode,
+    effectiveMode: mode,
     liveConfigured,
     fallbackAllowed:
       String(process.env.MEDICAL_API_ALLOW_STUB_FALLBACK || 'false').toLowerCase() === 'true',
@@ -48,22 +49,28 @@ function createMedicalMeta(service, operation, options = {}) {
     .toString(36)
     .slice(2, 8)}`;
   const capability = inferCapability(service, source, mode);
+  const requestedMode = capability.mode || mode;
+  const effectiveMode = capability.effectiveMode || mode;
+  const missingConfig = Array.isArray(capability.missingConfig) ? capability.missingConfig : [];
 
   return {
     source,
-    mode,
+    mode: effectiveMode,
     fallbackUsed,
     diagnosticId,
     diagnostics: {
       operation,
       source,
-      mode,
+      mode: effectiveMode,
+      requestedMode,
+      effectiveMode,
       fallbackUsed,
       reason: options.reason || 'ok',
       liveConfigured: Boolean(capability.liveConfigured),
       fallbackAllowed: Boolean(capability.fallbackAllowed),
       circuitOpen: Boolean(capability.circuitOpen),
-      missingConfig: Array.isArray(capability.missingConfig) ? capability.missingConfig : [],
+      missingConfig,
+      configState: capability.liveConfigured ? 'ready' : 'missing',
       generatedAt: new Date().toISOString(),
       detail: options.detail || null,
     },
