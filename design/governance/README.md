@@ -30,6 +30,8 @@
 7. `07-data-dictionary-and-permission-matrix.md`：数据字典、状态字典、权限矩阵
 8. `08-cross-end-acceptance-matrix.md`：跨端主链路验收矩阵
 9. `09-anti-drift-checklist.md`：防跑偏清单
+10. `10-delivery-roadmap-and-task-breakdown.md`：按端、按链路、按阶段的开发任务拆解
+11. `11-ai-execution-playbook.md`：后续 AI 执行工作流与交付标准
 
 统一规则：
 
@@ -37,4 +39,3 @@
 2. 不允许把设计稿、规格稿、stub 能力表述成真实大规模落地事实。
 3. 不允许新增自由角色、自由状态或无主链路归属的新模块。
 4. 新增功能前，必须先明确服务对象、所属端、依赖实体、接口范围和验收链路。
-
