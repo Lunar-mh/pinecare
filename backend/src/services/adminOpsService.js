@@ -7,6 +7,7 @@ const medicalApiService = require('./medicalApiService');
 const ossService = require('./ossService');
 const { DEMO_SCENARIOS, getDemoScenarioById } = require('../config/demoScenarios');
 const { COMPETITION_SEED_MANIFEST } = require('../data/competitionSeedManifest');
+const { COMPETITION_SEED_ASSETS } = require('../data/competitionSeedAssets');
 const { resolveMode, isProductionLive } = require('../config/runtimeMode');
 const { getRecentThirdPartyErrors } = require('../utils/thirdParty');
 
@@ -1052,6 +1053,11 @@ const adminOpsService = {
       runtimeMode: resolveMode(),
       generatedAt: new Date().toISOString(),
       seedManifest: COMPETITION_SEED_MANIFEST,
+      competitionDataAssets: {
+        outputDir: COMPETITION_SEED_ASSETS.outputDir,
+        commands: COMPETITION_SEED_ASSETS.commands,
+        files: COMPETITION_SEED_ASSETS.files,
+      },
       scenarios: DEMO_SCENARIOS.map((scenario, index) => ({
         ...scenario,
         order: index + 1,
@@ -1104,6 +1110,11 @@ const adminOpsService = {
       preparedData: scenario.bootstrap,
       seedManifest: COMPETITION_SEED_MANIFEST,
       baselineCoverage: COMPETITION_SEED_MANIFEST.coverage,
+      competitionDataAssets: {
+        outputDir: COMPETITION_SEED_ASSETS.outputDir,
+        commands: COMPETITION_SEED_ASSETS.commands,
+        files: COMPETITION_SEED_ASSETS.files,
+      },
       modules: scenario.modules,
       apiSequence: scenario.apiSequence,
       checklist: scenario.checklist,

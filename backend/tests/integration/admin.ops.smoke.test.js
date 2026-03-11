@@ -451,5 +451,6 @@ describe('admin ops smoke', () => {
     expect(res.body.data.scenarioId).toBe('medical-consultation');
     expect(res.body.data.status).toBe('ready');
     expect(Array.isArray(res.body.data.replayLog)).toBe(true);
+    expect(res.body.data.competitionDataAssets.commands).toContain('npm run seed:competition:sql');
   });
 });

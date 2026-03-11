@@ -11,6 +11,7 @@ describe('competitionSeedDataset', () => {
     expect(dataset.volunteers).toHaveLength(14);
     expect(dataset.elders).toHaveLength(36);
     expect(dataset.familyMembers).toHaveLength(36);
+    expect(dataset.emergencyContacts).toHaveLength(36);
     expect(dataset.familyBindings).toHaveLength(36);
     expect(dataset.healthArchives).toHaveLength(36);
     expect(dataset.medicationPlans).toHaveLength(58);
@@ -25,6 +26,7 @@ describe('competitionSeedDataset', () => {
     expect(dataset.consultations).toHaveLength(12);
     expect(dataset.appointments).toHaveLength(16);
     expect(dataset.medicalReports).toHaveLength(48);
+    expect(dataset.auditLogs).toHaveLength(45);
   });
 
   it('keeps D chain records relationally consistent', () => {
@@ -38,6 +40,20 @@ describe('competitionSeedDataset', () => {
       expect(elderIds.has(record.recipientId)).toBe(true);
       expect(volunteerIds.has(record.providerId)).toBe(true);
       expect(record.status).toBe('confirmed');
+      expect(record.recordHash).toHaveLength(64);
+    });
+  });
+
+  it('aligns medication plans and SOS data with database-friendly enums', () => {
+    const dataset = buildCompetitionSeedDataset();
+
+    dataset.medicationPlans.forEach((plan) => {
+      expect(plan.frequency).toBe('once_daily');
+      expect(plan.reminderTimes).toHaveLength(1);
+    });
+
+    dataset.sosEvents.forEach((event) => {
+      expect(['manual', 'auto']).toContain(event.triggerType);
     });
   });
 });

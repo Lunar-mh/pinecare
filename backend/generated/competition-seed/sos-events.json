@@ -3,180 +3,216 @@
     "id": 13001,
     "userId": 7001,
     "communityId": 101,
-    "triggerType": "button",
+    "triggerType": "auto",
     "status": "resolved",
     "createdAt": "2026-03-01T09:05:00Z",
     "latestStatusChangedAt": "2026-03-01T09:20:00Z",
-    "address": "101 Community Building 01"
+    "address": "101 Community Building 01",
+    "latitude": 31.19,
+    "longitude": 121.45
   },
   {
     "id": 13002,
     "userId": 7002,
     "communityId": 101,
-    "triggerType": "voice",
+    "triggerType": "manual",
     "status": "confirmed",
     "createdAt": "2026-03-02T09:05:00Z",
     "latestStatusChangedAt": "2026-03-02T09:20:00Z",
-    "address": "101 Community Building 02"
+    "address": "101 Community Building 02",
+    "latitude": 31.192,
+    "longitude": 121.452
   },
   {
     "id": 13003,
     "userId": 7003,
     "communityId": 101,
-    "triggerType": "button",
+    "triggerType": "manual",
     "status": "cancelled",
     "createdAt": "2026-03-03T09:05:00Z",
     "latestStatusChangedAt": "2026-03-03T09:20:00Z",
-    "address": "101 Community Building 03"
+    "address": "101 Community Building 03",
+    "latitude": 31.194,
+    "longitude": 121.454
   },
   {
     "id": 13004,
     "userId": 7004,
     "communityId": 101,
-    "triggerType": "voice",
+    "triggerType": "manual",
     "status": "resolved",
     "createdAt": "2026-03-04T09:05:00Z",
     "latestStatusChangedAt": "2026-03-04T09:20:00Z",
-    "address": "101 Community Building 04"
+    "address": "101 Community Building 04",
+    "latitude": 31.196,
+    "longitude": 121.456
   },
   {
     "id": 13005,
     "userId": 7005,
     "communityId": 101,
-    "triggerType": "button",
+    "triggerType": "auto",
     "status": "confirmed",
     "createdAt": "2026-03-05T09:05:00Z",
     "latestStatusChangedAt": "2026-03-05T09:20:00Z",
-    "address": "101 Community Building 05"
+    "address": "101 Community Building 05",
+    "latitude": 31.19,
+    "longitude": 121.458
   },
   {
     "id": 13006,
     "userId": 7006,
     "communityId": 101,
-    "triggerType": "voice",
+    "triggerType": "manual",
     "status": "cancelled",
     "createdAt": "2026-03-06T09:05:00Z",
     "latestStatusChangedAt": "2026-03-06T09:20:00Z",
-    "address": "101 Community Building 06"
+    "address": "101 Community Building 06",
+    "latitude": 31.192,
+    "longitude": 121.45
   },
   {
     "id": 13007,
     "userId": 7007,
     "communityId": 101,
-    "triggerType": "button",
+    "triggerType": "manual",
     "status": "resolved",
     "createdAt": "2026-03-07T09:05:00Z",
     "latestStatusChangedAt": "2026-03-07T09:20:00Z",
-    "address": "101 Community Building 07"
+    "address": "101 Community Building 07",
+    "latitude": 31.194,
+    "longitude": 121.452
   },
   {
     "id": 13008,
     "userId": 7008,
     "communityId": 101,
-    "triggerType": "voice",
+    "triggerType": "manual",
     "status": "confirmed",
     "createdAt": "2026-03-08T09:05:00Z",
     "latestStatusChangedAt": "2026-03-08T09:20:00Z",
-    "address": "101 Community Building 08"
+    "address": "101 Community Building 08",
+    "latitude": 31.196,
+    "longitude": 121.454
   },
   {
     "id": 13009,
     "userId": 7009,
     "communityId": 101,
-    "triggerType": "button",
+    "triggerType": "auto",
     "status": "cancelled",
     "createdAt": "2026-03-09T09:05:00Z",
     "latestStatusChangedAt": "2026-03-09T09:20:00Z",
-    "address": "101 Community Building 09"
+    "address": "101 Community Building 09",
+    "latitude": 31.19,
+    "longitude": 121.456
   },
   {
     "id": 13010,
     "userId": 7010,
     "communityId": 101,
-    "triggerType": "voice",
+    "triggerType": "manual",
     "status": "resolved",
     "createdAt": "2026-03-10T09:05:00Z",
     "latestStatusChangedAt": "2026-03-10T09:20:00Z",
-    "address": "101 Community Building 01"
+    "address": "101 Community Building 01",
+    "latitude": 31.192,
+    "longitude": 121.458
   },
   {
     "id": 13011,
     "userId": 7011,
     "communityId": 101,
-    "triggerType": "button",
+    "triggerType": "manual",
     "status": "confirmed",
     "createdAt": "2026-03-11T09:05:00Z",
     "latestStatusChangedAt": "2026-03-11T09:20:00Z",
-    "address": "101 Community Building 02"
+    "address": "101 Community Building 02",
+    "latitude": 31.194,
+    "longitude": 121.45
   },
   {
     "id": 13012,
     "userId": 7012,
     "communityId": 101,
-    "triggerType": "voice",
+    "triggerType": "manual",
     "status": "cancelled",
     "createdAt": "2026-03-12T09:05:00Z",
     "latestStatusChangedAt": "2026-03-12T09:20:00Z",
-    "address": "101 Community Building 03"
+    "address": "101 Community Building 03",
+    "latitude": 31.196,
+    "longitude": 121.452
   },
   {
     "id": 13013,
     "userId": 7013,
     "communityId": 101,
-    "triggerType": "button",
+    "triggerType": "auto",
     "status": "resolved",
     "createdAt": "2026-03-13T09:05:00Z",
     "latestStatusChangedAt": "2026-03-13T09:20:00Z",
-    "address": "101 Community Building 04"
+    "address": "101 Community Building 04",
+    "latitude": 31.19,
+    "longitude": 121.454
   },
   {
     "id": 13014,
     "userId": 7014,
     "communityId": 101,
-    "triggerType": "voice",
+    "triggerType": "manual",
     "status": "confirmed",
     "createdAt": "2026-03-14T09:05:00Z",
     "latestStatusChangedAt": "2026-03-14T09:20:00Z",
-    "address": "101 Community Building 05"
+    "address": "101 Community Building 05",
+    "latitude": 31.192,
+    "longitude": 121.456
   },
   {
     "id": 13015,
     "userId": 7015,
     "communityId": 102,
-    "triggerType": "button",
+    "triggerType": "manual",
     "status": "cancelled",
     "createdAt": "2026-03-15T09:05:00Z",
     "latestStatusChangedAt": "2026-03-15T09:20:00Z",
-    "address": "102 Community Building 06"
+    "address": "102 Community Building 06",
+    "latitude": 31.194,
+    "longitude": 121.458
   },
   {
     "id": 13016,
     "userId": 7016,
     "communityId": 102,
-    "triggerType": "voice",
+    "triggerType": "manual",
     "status": "resolved",
     "createdAt": "2026-03-16T09:05:00Z",
     "latestStatusChangedAt": "2026-03-16T09:20:00Z",
-    "address": "102 Community Building 07"
+    "address": "102 Community Building 07",
+    "latitude": 31.196,
+    "longitude": 121.45
   },
   {
     "id": 13017,
     "userId": 7017,
     "communityId": 102,
-    "triggerType": "button",
+    "triggerType": "auto",
     "status": "confirmed",
     "createdAt": "2026-03-17T09:05:00Z",
     "latestStatusChangedAt": "2026-03-17T09:20:00Z",
-    "address": "102 Community Building 08"
+    "address": "102 Community Building 08",
+    "latitude": 31.19,
+    "longitude": 121.452
   },
   {
     "id": 13018,
     "userId": 7018,
     "communityId": 102,
-    "triggerType": "voice",
+    "triggerType": "manual",
     "status": "cancelled",
     "createdAt": "2026-03-18T09:05:00Z",
     "latestStatusChangedAt": "2026-03-18T09:20:00Z",
-    "address": "102 Community Building 09"
+    "address": "102 Community Building 09",
+    "latitude": 31.192,
+    "longitude": 121.454
   }
 ]

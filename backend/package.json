@@ -15,7 +15,8 @@
     "format:check": "prettier --check eslint.config.js .prettierrc.json src/routes/adminOps.js src/controllers/adminOpsController.js src/controllers/medicationPlanController.js src/services/adminOpsService.js src/services/communityAdminService.js src/services/familySpaceService.js src/services/medicalApiService.js src/services/medicalDirectoryService.js src/services/medicalReportService.js src/services/medicationPlanService.js src/services/ossService.js src/utils/thirdParty.js tests/integration/admin.ops.smoke.test.js tests/medication.plans.test.js tests/performance/timeBank.perf.test.js tests/unit/communityAdminService.test.js tests/unit/familySpaceService.test.js tests/unit/medicalApiService.test.js tests/unit/medicalDirectoryService.test.js tests/unit/medicalReportService.test.js tests/unit/medicationPlanService.test.js tests/unit/ossService.test.js tests/unit/thirdParty.utils.test.js tests/unit/userController.test.js tests/unit/userService.test.js",
     "format:write": "prettier --write .",
     "seed:competition": "node scripts/seedCompetitionData.js",
-    "seed:competition:export": "node scripts/exportCompetitionSeed.js"
+    "seed:competition:export": "node scripts/exportCompetitionSeed.js",
+    "seed:competition:sql": "node scripts/exportCompetitionSeedSql.js"
   },
   "dependencies": {
     "axios": "^1.13.5",

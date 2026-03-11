@@ -7,7 +7,11 @@
     "department": "Cardiology",
     "appointmentDate": "2026-03-01",
     "timeSlot": "08:00-08:30",
-    "appointStatus": "cancelled"
+    "appointStatus": "cancelled",
+    "idempotencyKey": "appoint_20001",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-01T12:20:00Z"
   },
   {
     "id": 20002,
@@ -17,7 +21,11 @@
     "department": "Endocrinology",
     "appointmentDate": "2026-03-02",
     "timeSlot": "09:00-09:30",
-    "appointStatus": "confirmed"
+    "appointStatus": "confirmed",
+    "idempotencyKey": "appoint_20002",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-02T12:20:00Z"
   },
   {
     "id": 20003,
@@ -27,7 +35,11 @@
     "department": "Neurology",
     "appointmentDate": "2026-03-03",
     "timeSlot": "10:00-10:30",
-    "appointStatus": "confirmed"
+    "appointStatus": "confirmed",
+    "idempotencyKey": "appoint_20003",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-03T12:20:00Z"
   },
   {
     "id": 20004,
@@ -37,7 +49,11 @@
     "department": "Geriatrics",
     "appointmentDate": "2026-03-04",
     "timeSlot": "11:00-11:30",
-    "appointStatus": "confirmed"
+    "appointStatus": "confirmed",
+    "idempotencyKey": "appoint_20004",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-04T12:20:00Z"
   },
   {
     "id": 20005,
@@ -47,7 +63,11 @@
     "department": "Rehabilitation Medicine",
     "appointmentDate": "2026-03-05",
     "timeSlot": "12:00-12:30",
-    "appointStatus": "confirmed"
+    "appointStatus": "confirmed",
+    "idempotencyKey": "appoint_20005",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-05T12:20:00Z"
   },
   {
     "id": 20006,
@@ -57,7 +77,11 @@
     "department": "General Practice",
     "appointmentDate": "2026-03-06",
     "timeSlot": "13:00-13:30",
-    "appointStatus": "cancelled"
+    "appointStatus": "cancelled",
+    "idempotencyKey": "appoint_20006",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-06T12:20:00Z"
   },
   {
     "id": 20007,
@@ -67,7 +91,11 @@
     "department": "Cardiology",
     "appointmentDate": "2026-03-07",
     "timeSlot": "08:00-08:30",
-    "appointStatus": "confirmed"
+    "appointStatus": "confirmed",
+    "idempotencyKey": "appoint_20007",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-07T12:20:00Z"
   },
   {
     "id": 20008,
@@ -77,7 +105,11 @@
     "department": "Endocrinology",
     "appointmentDate": "2026-03-08",
     "timeSlot": "09:00-09:30",
-    "appointStatus": "confirmed"
+    "appointStatus": "confirmed",
+    "idempotencyKey": "appoint_20008",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-08T12:20:00Z"
   },
   {
     "id": 20009,
@@ -87,7 +119,11 @@
     "department": "Neurology",
     "appointmentDate": "2026-03-09",
     "timeSlot": "10:00-10:30",
-    "appointStatus": "confirmed"
+    "appointStatus": "confirmed",
+    "idempotencyKey": "appoint_20009",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-09T12:20:00Z"
   },
   {
     "id": 20010,
@@ -97,7 +133,11 @@
     "department": "Geriatrics",
     "appointmentDate": "2026-03-10",
     "timeSlot": "11:00-11:30",
-    "appointStatus": "confirmed"
+    "appointStatus": "confirmed",
+    "idempotencyKey": "appoint_20010",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-10T12:20:00Z"
   },
   {
     "id": 20011,
@@ -107,7 +147,11 @@
     "department": "Rehabilitation Medicine",
     "appointmentDate": "2026-03-11",
     "timeSlot": "12:00-12:30",
-    "appointStatus": "cancelled"
+    "appointStatus": "cancelled",
+    "idempotencyKey": "appoint_20011",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-11T12:20:00Z"
   },
   {
     "id": 20012,
@@ -117,7 +161,11 @@
     "department": "General Practice",
     "appointmentDate": "2026-03-12",
     "timeSlot": "13:00-13:30",
-    "appointStatus": "confirmed"
+    "appointStatus": "confirmed",
+    "idempotencyKey": "appoint_20012",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-12T12:20:00Z"
   },
   {
     "id": 20013,
@@ -127,7 +175,11 @@
     "department": "Cardiology",
     "appointmentDate": "2026-03-13",
     "timeSlot": "08:00-08:30",
-    "appointStatus": "confirmed"
+    "appointStatus": "confirmed",
+    "idempotencyKey": "appoint_20013",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-13T12:20:00Z"
   },
   {
     "id": 20014,
@@ -137,7 +189,11 @@
     "department": "Endocrinology",
     "appointmentDate": "2026-03-14",
     "timeSlot": "09:00-09:30",
-    "appointStatus": "confirmed"
+    "appointStatus": "confirmed",
+    "idempotencyKey": "appoint_20014",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-14T12:20:00Z"
   },
   {
     "id": 20015,
@@ -147,7 +203,11 @@
     "department": "Neurology",
     "appointmentDate": "2026-03-15",
     "timeSlot": "10:00-10:30",
-    "appointStatus": "confirmed"
+    "appointStatus": "confirmed",
+    "idempotencyKey": "appoint_20015",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-15T12:20:00Z"
   },
   {
     "id": 20016,
@@ -157,6 +217,10 @@
     "department": "Geriatrics",
     "appointmentDate": "2026-03-16",
     "timeSlot": "11:00-11:30",
-    "appointStatus": "cancelled"
+    "appointStatus": "cancelled",
+    "idempotencyKey": "appoint_20016",
+    "source": "public_directory_cache",
+    "mode": "cached_public",
+    "createdAt": "2026-03-16T12:20:00Z"
   }
 ]

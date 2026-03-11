@@ -5,13 +5,16 @@
     "communityId": 101,
     "medicationName": "Metformin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 19,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-01T06:50:00Z",
+    "updatedAt": "2026-03-01T06:55:00Z"
   },
   {
     "id": 10002,
@@ -19,12 +22,16 @@
     "communityId": 101,
     "medicationName": "Amlodipine",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 20,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-02T06:50:00Z",
+    "updatedAt": "2026-03-02T06:55:00Z"
   },
   {
     "id": 10003,
@@ -32,13 +39,16 @@
     "communityId": 101,
     "medicationName": "Atorvastatin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 21,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-02T06:50:00Z",
+    "updatedAt": "2026-03-02T06:55:00Z"
   },
   {
     "id": 10004,
@@ -46,12 +56,16 @@
     "communityId": 101,
     "medicationName": "Bisoprolol",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 22,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-03T06:50:00Z",
+    "updatedAt": "2026-03-03T06:55:00Z"
   },
   {
     "id": 10005,
@@ -59,13 +73,16 @@
     "communityId": 101,
     "medicationName": "Aspirin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 23,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-03T06:50:00Z",
+    "updatedAt": "2026-03-03T06:55:00Z"
   },
   {
     "id": 10006,
@@ -73,12 +90,16 @@
     "communityId": 101,
     "medicationName": "Metformin",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 24,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-04T06:50:00Z",
+    "updatedAt": "2026-03-04T06:55:00Z"
   },
   {
     "id": 10007,
@@ -86,13 +107,16 @@
     "communityId": 101,
     "medicationName": "Amlodipine",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 25,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-04T06:50:00Z",
+    "updatedAt": "2026-03-04T06:55:00Z"
   },
   {
     "id": 10008,
@@ -100,12 +124,16 @@
     "communityId": 101,
     "medicationName": "Atorvastatin",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 26,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-05T06:50:00Z",
+    "updatedAt": "2026-03-05T06:55:00Z"
   },
   {
     "id": 10009,
@@ -113,13 +141,16 @@
     "communityId": 101,
     "medicationName": "Bisoprolol",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 27,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-05T06:50:00Z",
+    "updatedAt": "2026-03-05T06:55:00Z"
   },
   {
     "id": 10010,
@@ -127,12 +158,16 @@
     "communityId": 101,
     "medicationName": "Aspirin",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 18,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-06T06:50:00Z",
+    "updatedAt": "2026-03-06T06:55:00Z"
   },
   {
     "id": 10011,
@@ -140,13 +175,16 @@
     "communityId": 101,
     "medicationName": "Metformin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 19,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-06T06:50:00Z",
+    "updatedAt": "2026-03-06T06:55:00Z"
   },
   {
     "id": 10012,
@@ -154,12 +192,16 @@
     "communityId": 101,
     "medicationName": "Amlodipine",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 20,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-07T06:50:00Z",
+    "updatedAt": "2026-03-07T06:55:00Z"
   },
   {
     "id": 10013,
@@ -167,13 +209,16 @@
     "communityId": 101,
     "medicationName": "Atorvastatin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 21,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-07T06:50:00Z",
+    "updatedAt": "2026-03-07T06:55:00Z"
   },
   {
     "id": 10014,
@@ -181,12 +226,16 @@
     "communityId": 101,
     "medicationName": "Bisoprolol",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 22,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-08T06:50:00Z",
+    "updatedAt": "2026-03-08T06:55:00Z"
   },
   {
     "id": 10015,
@@ -194,13 +243,16 @@
     "communityId": 101,
     "medicationName": "Aspirin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 23,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-08T06:50:00Z",
+    "updatedAt": "2026-03-08T06:55:00Z"
   },
   {
     "id": 10016,
@@ -208,12 +260,16 @@
     "communityId": 101,
     "medicationName": "Metformin",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 24,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-09T06:50:00Z",
+    "updatedAt": "2026-03-09T06:55:00Z"
   },
   {
     "id": 10017,
@@ -221,13 +277,16 @@
     "communityId": 101,
     "medicationName": "Amlodipine",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 25,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-09T06:50:00Z",
+    "updatedAt": "2026-03-09T06:55:00Z"
   },
   {
     "id": 10018,
@@ -235,12 +294,16 @@
     "communityId": 101,
     "medicationName": "Atorvastatin",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 26,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-10T06:50:00Z",
+    "updatedAt": "2026-03-10T06:55:00Z"
   },
   {
     "id": 10019,
@@ -248,13 +311,16 @@
     "communityId": 101,
     "medicationName": "Bisoprolol",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 27,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-10T06:50:00Z",
+    "updatedAt": "2026-03-10T06:55:00Z"
   },
   {
     "id": 10020,
@@ -262,12 +328,16 @@
     "communityId": 101,
     "medicationName": "Aspirin",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 18,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-01T06:50:00Z",
+    "updatedAt": "2026-03-01T06:55:00Z"
   },
   {
     "id": 10021,
@@ -275,13 +345,16 @@
     "communityId": 101,
     "medicationName": "Metformin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 19,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-01T06:50:00Z",
+    "updatedAt": "2026-03-01T06:55:00Z"
   },
   {
     "id": 10022,
@@ -289,12 +362,16 @@
     "communityId": 101,
     "medicationName": "Amlodipine",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 20,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-02T06:50:00Z",
+    "updatedAt": "2026-03-02T06:55:00Z"
   },
   {
     "id": 10023,
@@ -302,13 +379,16 @@
     "communityId": 101,
     "medicationName": "Atorvastatin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 21,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-02T06:50:00Z",
+    "updatedAt": "2026-03-02T06:55:00Z"
   },
   {
     "id": 10024,
@@ -316,12 +396,16 @@
     "communityId": 101,
     "medicationName": "Bisoprolol",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 22,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-03T06:50:00Z",
+    "updatedAt": "2026-03-03T06:55:00Z"
   },
   {
     "id": 10025,
@@ -329,13 +413,16 @@
     "communityId": 101,
     "medicationName": "Aspirin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 23,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-03T06:50:00Z",
+    "updatedAt": "2026-03-03T06:55:00Z"
   },
   {
     "id": 10026,
@@ -343,12 +430,16 @@
     "communityId": 101,
     "medicationName": "Metformin",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 24,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-04T06:50:00Z",
+    "updatedAt": "2026-03-04T06:55:00Z"
   },
   {
     "id": 10027,
@@ -356,13 +447,16 @@
     "communityId": 101,
     "medicationName": "Amlodipine",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 25,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-04T06:50:00Z",
+    "updatedAt": "2026-03-04T06:55:00Z"
   },
   {
     "id": 10028,
@@ -370,12 +464,16 @@
     "communityId": 101,
     "medicationName": "Atorvastatin",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 26,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-05T06:50:00Z",
+    "updatedAt": "2026-03-05T06:55:00Z"
   },
   {
     "id": 10029,
@@ -383,13 +481,16 @@
     "communityId": 102,
     "medicationName": "Bisoprolol",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 27,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-05T06:50:00Z",
+    "updatedAt": "2026-03-05T06:55:00Z"
   },
   {
     "id": 10030,
@@ -397,12 +498,16 @@
     "communityId": 102,
     "medicationName": "Aspirin",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 18,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-06T06:50:00Z",
+    "updatedAt": "2026-03-06T06:55:00Z"
   },
   {
     "id": 10031,
@@ -410,13 +515,16 @@
     "communityId": 102,
     "medicationName": "Metformin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 19,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-06T06:50:00Z",
+    "updatedAt": "2026-03-06T06:55:00Z"
   },
   {
     "id": 10032,
@@ -424,12 +532,16 @@
     "communityId": 102,
     "medicationName": "Amlodipine",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 20,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-07T06:50:00Z",
+    "updatedAt": "2026-03-07T06:55:00Z"
   },
   {
     "id": 10033,
@@ -437,13 +549,16 @@
     "communityId": 102,
     "medicationName": "Atorvastatin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 21,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-07T06:50:00Z",
+    "updatedAt": "2026-03-07T06:55:00Z"
   },
   {
     "id": 10034,
@@ -451,12 +566,16 @@
     "communityId": 102,
     "medicationName": "Bisoprolol",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 22,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-08T06:50:00Z",
+    "updatedAt": "2026-03-08T06:55:00Z"
   },
   {
     "id": 10035,
@@ -464,13 +583,16 @@
     "communityId": 102,
     "medicationName": "Aspirin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 23,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-08T06:50:00Z",
+    "updatedAt": "2026-03-08T06:55:00Z"
   },
   {
     "id": 10036,
@@ -478,12 +600,16 @@
     "communityId": 102,
     "medicationName": "Metformin",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 24,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-09T06:50:00Z",
+    "updatedAt": "2026-03-09T06:55:00Z"
   },
   {
     "id": 10037,
@@ -491,13 +617,16 @@
     "communityId": 102,
     "medicationName": "Amlodipine",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 25,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-09T06:50:00Z",
+    "updatedAt": "2026-03-09T06:55:00Z"
   },
   {
     "id": 10038,
@@ -505,12 +634,16 @@
     "communityId": 102,
     "medicationName": "Atorvastatin",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 26,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-10T06:50:00Z",
+    "updatedAt": "2026-03-10T06:55:00Z"
   },
   {
     "id": 10039,
@@ -518,13 +651,16 @@
     "communityId": 102,
     "medicationName": "Bisoprolol",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 27,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-10T06:50:00Z",
+    "updatedAt": "2026-03-10T06:55:00Z"
   },
   {
     "id": 10040,
@@ -532,12 +668,16 @@
     "communityId": 102,
     "medicationName": "Aspirin",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 18,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-01T06:50:00Z",
+    "updatedAt": "2026-03-01T06:55:00Z"
   },
   {
     "id": 10041,
@@ -545,13 +685,16 @@
     "communityId": 102,
     "medicationName": "Metformin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 19,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-01T06:50:00Z",
+    "updatedAt": "2026-03-01T06:55:00Z"
   },
   {
     "id": 10042,
@@ -559,12 +702,16 @@
     "communityId": 102,
     "medicationName": "Amlodipine",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 20,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-02T06:50:00Z",
+    "updatedAt": "2026-03-02T06:55:00Z"
   },
   {
     "id": 10043,
@@ -572,13 +719,16 @@
     "communityId": 102,
     "medicationName": "Atorvastatin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 21,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-02T06:50:00Z",
+    "updatedAt": "2026-03-02T06:55:00Z"
   },
   {
     "id": 10044,
@@ -586,12 +736,16 @@
     "communityId": 102,
     "medicationName": "Bisoprolol",
     "dosage": "2 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
       "09:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 22,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-03T06:50:00Z",
+    "updatedAt": "2026-03-03T06:55:00Z"
   },
   {
     "id": 10045,
@@ -599,13 +753,16 @@
     "communityId": 102,
     "medicationName": "Aspirin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 23,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-03T06:50:00Z",
+    "updatedAt": "2026-03-03T06:55:00Z"
   },
   {
     "id": 10046,
@@ -613,13 +770,16 @@
     "communityId": 102,
     "medicationName": "Metformin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 24,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-04T06:50:00Z",
+    "updatedAt": "2026-03-04T06:55:00Z"
   },
   {
     "id": 10047,
@@ -627,13 +787,16 @@
     "communityId": 102,
     "medicationName": "Amlodipine",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 25,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-05T06:50:00Z",
+    "updatedAt": "2026-03-05T06:55:00Z"
   },
   {
     "id": 10048,
@@ -641,13 +804,16 @@
     "communityId": 102,
     "medicationName": "Atorvastatin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 26,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-06T06:50:00Z",
+    "updatedAt": "2026-03-06T06:55:00Z"
   },
   {
     "id": 10049,
@@ -655,13 +821,16 @@
     "communityId": 103,
     "medicationName": "Bisoprolol",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 27,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-07T06:50:00Z",
+    "updatedAt": "2026-03-07T06:55:00Z"
   },
   {
     "id": 10050,
@@ -669,13 +838,16 @@
     "communityId": 103,
     "medicationName": "Aspirin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 18,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-08T06:50:00Z",
+    "updatedAt": "2026-03-08T06:55:00Z"
   },
   {
     "id": 10051,
@@ -683,13 +855,16 @@
     "communityId": 103,
     "medicationName": "Metformin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 19,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-09T06:50:00Z",
+    "updatedAt": "2026-03-09T06:55:00Z"
   },
   {
     "id": 10052,
@@ -697,13 +872,16 @@
     "communityId": 103,
     "medicationName": "Amlodipine",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 20,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-10T06:50:00Z",
+    "updatedAt": "2026-03-10T06:55:00Z"
   },
   {
     "id": 10053,
@@ -711,13 +889,16 @@
     "communityId": 103,
     "medicationName": "Atorvastatin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 21,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-01T06:50:00Z",
+    "updatedAt": "2026-03-01T06:55:00Z"
   },
   {
     "id": 10054,
@@ -725,13 +906,16 @@
     "communityId": 103,
     "medicationName": "Bisoprolol",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 22,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-02T06:50:00Z",
+    "updatedAt": "2026-03-02T06:55:00Z"
   },
   {
     "id": 10055,
@@ -739,13 +923,16 @@
     "communityId": 103,
     "medicationName": "Aspirin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 23,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-03T06:50:00Z",
+    "updatedAt": "2026-03-03T06:55:00Z"
   },
   {
     "id": 10056,
@@ -753,13 +940,16 @@
     "communityId": 103,
     "medicationName": "Metformin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 24,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-04T06:50:00Z",
+    "updatedAt": "2026-03-04T06:55:00Z"
   },
   {
     "id": 10057,
@@ -767,13 +957,16 @@
     "communityId": 103,
     "medicationName": "Amlodipine",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 25,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-05T06:50:00Z",
+    "updatedAt": "2026-03-05T06:55:00Z"
   },
   {
     "id": 10058,
@@ -781,12 +974,15 @@
     "communityId": 103,
     "medicationName": "Atorvastatin",
     "dosage": "1 tablet",
-    "frequency": "daily",
+    "frequency": "once_daily",
     "reminderTimes": [
-      "08:00",
-      "20:00"
+      "08:00"
     ],
     "startDate": "2026-03-01",
-    "endDate": "2026-03-30"
+    "endDate": "2026-03-30",
+    "remainingQuantity": 26,
+    "reminderThreshold": 3,
+    "createdAt": "2026-03-06T06:50:00Z",
+    "updatedAt": "2026-03-06T06:55:00Z"
   }
 ]

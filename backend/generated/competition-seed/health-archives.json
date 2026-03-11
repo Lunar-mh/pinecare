@@ -5,12 +5,13 @@
     "communityId": 101,
     "bloodType": "A",
     "chronicDiseases": [
-      "hypertension"
+      "diabetes"
     ],
     "allergies": [
       "penicillin"
     ],
     "emergencyRiskLevel": "high",
+    "createdAt": "2026-03-01T08:00:00Z",
     "updatedAt": "2026-03-01T08:30:00Z"
   },
   {
@@ -19,10 +20,11 @@
     "communityId": 101,
     "bloodType": "B",
     "chronicDiseases": [
-      "diabetes"
+      "coronary_heart_disease"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-02T08:00:00Z",
     "updatedAt": "2026-03-02T08:30:00Z"
   },
   {
@@ -31,10 +33,11 @@
     "communityId": 101,
     "bloodType": "AB",
     "chronicDiseases": [
-      "coronary_heart_disease"
+      "hypertension"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-03T08:00:00Z",
     "updatedAt": "2026-03-03T08:30:00Z"
   },
   {
@@ -43,10 +46,11 @@
     "communityId": 101,
     "bloodType": "O",
     "chronicDiseases": [
-      "hypertension"
+      "diabetes"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-04T08:00:00Z",
     "updatedAt": "2026-03-04T08:30:00Z"
   },
   {
@@ -55,12 +59,13 @@
     "communityId": 101,
     "bloodType": "A",
     "chronicDiseases": [
-      "diabetes"
+      "coronary_heart_disease"
     ],
     "allergies": [
       "penicillin"
     ],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-05T08:00:00Z",
     "updatedAt": "2026-03-05T08:30:00Z"
   },
   {
@@ -69,10 +74,11 @@
     "communityId": 101,
     "bloodType": "B",
     "chronicDiseases": [
-      "coronary_heart_disease"
+      "hypertension"
     ],
     "allergies": [],
     "emergencyRiskLevel": "high",
+    "createdAt": "2026-03-06T08:00:00Z",
     "updatedAt": "2026-03-06T08:30:00Z"
   },
   {
@@ -81,10 +87,11 @@
     "communityId": 101,
     "bloodType": "AB",
     "chronicDiseases": [
-      "hypertension"
+      "diabetes"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-07T08:00:00Z",
     "updatedAt": "2026-03-07T08:30:00Z"
   },
   {
@@ -93,10 +100,11 @@
     "communityId": 101,
     "bloodType": "O",
     "chronicDiseases": [
-      "diabetes"
+      "coronary_heart_disease"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-08T08:00:00Z",
     "updatedAt": "2026-03-08T08:30:00Z"
   },
   {
@@ -105,12 +113,13 @@
     "communityId": 101,
     "bloodType": "A",
     "chronicDiseases": [
-      "coronary_heart_disease"
+      "hypertension"
     ],
     "allergies": [
       "penicillin"
     ],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-09T08:00:00Z",
     "updatedAt": "2026-03-09T08:30:00Z"
   },
   {
@@ -119,10 +128,11 @@
     "communityId": 101,
     "bloodType": "B",
     "chronicDiseases": [
-      "hypertension"
+      "diabetes"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-10T08:00:00Z",
     "updatedAt": "2026-03-10T08:30:00Z"
   },
   {
@@ -131,10 +141,11 @@
     "communityId": 101,
     "bloodType": "AB",
     "chronicDiseases": [
-      "diabetes"
+      "coronary_heart_disease"
     ],
     "allergies": [],
     "emergencyRiskLevel": "high",
+    "createdAt": "2026-03-11T08:00:00Z",
     "updatedAt": "2026-03-11T08:30:00Z"
   },
   {
@@ -143,10 +154,11 @@
     "communityId": 101,
     "bloodType": "O",
     "chronicDiseases": [
-      "coronary_heart_disease"
+      "hypertension"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-12T08:00:00Z",
     "updatedAt": "2026-03-12T08:30:00Z"
   },
   {
@@ -155,12 +167,13 @@
     "communityId": 101,
     "bloodType": "A",
     "chronicDiseases": [
-      "hypertension"
+      "diabetes"
     ],
     "allergies": [
       "penicillin"
     ],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-13T08:00:00Z",
     "updatedAt": "2026-03-13T08:30:00Z"
   },
   {
@@ -169,10 +182,11 @@
     "communityId": 101,
     "bloodType": "B",
     "chronicDiseases": [
-      "diabetes"
+      "coronary_heart_disease"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-14T08:00:00Z",
     "updatedAt": "2026-03-14T08:30:00Z"
   },
   {
@@ -181,10 +195,11 @@
     "communityId": 102,
     "bloodType": "AB",
     "chronicDiseases": [
-      "coronary_heart_disease"
+      "hypertension"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-15T08:00:00Z",
     "updatedAt": "2026-03-15T08:30:00Z"
   },
   {
@@ -193,10 +208,11 @@
     "communityId": 102,
     "bloodType": "O",
     "chronicDiseases": [
-      "hypertension"
+      "diabetes"
     ],
     "allergies": [],
     "emergencyRiskLevel": "high",
+    "createdAt": "2026-03-16T08:00:00Z",
     "updatedAt": "2026-03-16T08:30:00Z"
   },
   {
@@ -205,12 +221,13 @@
     "communityId": 102,
     "bloodType": "A",
     "chronicDiseases": [
-      "diabetes"
+      "coronary_heart_disease"
     ],
     "allergies": [
       "penicillin"
     ],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-17T08:00:00Z",
     "updatedAt": "2026-03-17T08:30:00Z"
   },
   {
@@ -219,10 +236,11 @@
     "communityId": 102,
     "bloodType": "B",
     "chronicDiseases": [
-      "coronary_heart_disease"
+      "hypertension"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-18T08:00:00Z",
     "updatedAt": "2026-03-18T08:30:00Z"
   },
   {
@@ -231,10 +249,11 @@
     "communityId": 102,
     "bloodType": "AB",
     "chronicDiseases": [
-      "hypertension"
+      "diabetes"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-19T08:00:00Z",
     "updatedAt": "2026-03-19T08:30:00Z"
   },
   {
@@ -243,10 +262,11 @@
     "communityId": 102,
     "bloodType": "O",
     "chronicDiseases": [
-      "diabetes"
+      "coronary_heart_disease"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-20T08:00:00Z",
     "updatedAt": "2026-03-20T08:30:00Z"
   },
   {
@@ -255,12 +275,13 @@
     "communityId": 102,
     "bloodType": "A",
     "chronicDiseases": [
-      "coronary_heart_disease"
+      "hypertension"
     ],
     "allergies": [
       "penicillin"
     ],
     "emergencyRiskLevel": "high",
+    "createdAt": "2026-03-21T08:00:00Z",
     "updatedAt": "2026-03-21T08:30:00Z"
   },
   {
@@ -269,10 +290,11 @@
     "communityId": 102,
     "bloodType": "B",
     "chronicDiseases": [
-      "hypertension"
+      "diabetes"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-22T08:00:00Z",
     "updatedAt": "2026-03-22T08:30:00Z"
   },
   {
@@ -281,10 +303,11 @@
     "communityId": 102,
     "bloodType": "AB",
     "chronicDiseases": [
-      "diabetes"
+      "coronary_heart_disease"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-23T08:00:00Z",
     "updatedAt": "2026-03-23T08:30:00Z"
   },
   {
@@ -293,10 +316,11 @@
     "communityId": 102,
     "bloodType": "O",
     "chronicDiseases": [
-      "coronary_heart_disease"
+      "hypertension"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-24T08:00:00Z",
     "updatedAt": "2026-03-24T08:30:00Z"
   },
   {
@@ -305,12 +329,13 @@
     "communityId": 102,
     "bloodType": "A",
     "chronicDiseases": [
-      "hypertension"
+      "diabetes"
     ],
     "allergies": [
       "penicillin"
     ],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-25T08:00:00Z",
     "updatedAt": "2026-03-25T08:30:00Z"
   },
   {
@@ -319,10 +344,11 @@
     "communityId": 102,
     "bloodType": "B",
     "chronicDiseases": [
-      "diabetes"
+      "coronary_heart_disease"
     ],
     "allergies": [],
     "emergencyRiskLevel": "high",
+    "createdAt": "2026-03-26T08:00:00Z",
     "updatedAt": "2026-03-26T08:30:00Z"
   },
   {
@@ -331,10 +357,11 @@
     "communityId": 103,
     "bloodType": "AB",
     "chronicDiseases": [
-      "coronary_heart_disease"
+      "hypertension"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-27T08:00:00Z",
     "updatedAt": "2026-03-27T08:30:00Z"
   },
   {
@@ -343,10 +370,11 @@
     "communityId": 103,
     "bloodType": "O",
     "chronicDiseases": [
-      "hypertension"
+      "diabetes"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-28T08:00:00Z",
     "updatedAt": "2026-03-28T08:30:00Z"
   },
   {
@@ -355,12 +383,13 @@
     "communityId": 103,
     "bloodType": "A",
     "chronicDiseases": [
-      "diabetes"
+      "coronary_heart_disease"
     ],
     "allergies": [
       "penicillin"
     ],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-29T08:00:00Z",
     "updatedAt": "2026-03-29T08:30:00Z"
   },
   {
@@ -369,10 +398,11 @@
     "communityId": 103,
     "bloodType": "B",
     "chronicDiseases": [
-      "coronary_heart_disease"
+      "hypertension"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-30T08:00:00Z",
     "updatedAt": "2026-03-30T08:30:00Z"
   },
   {
@@ -381,10 +411,11 @@
     "communityId": 103,
     "bloodType": "AB",
     "chronicDiseases": [
-      "hypertension"
+      "diabetes"
     ],
     "allergies": [],
     "emergencyRiskLevel": "high",
+    "createdAt": "2026-03-01T08:00:00Z",
     "updatedAt": "2026-03-01T08:30:00Z"
   },
   {
@@ -393,10 +424,11 @@
     "communityId": 103,
     "bloodType": "O",
     "chronicDiseases": [
-      "diabetes"
+      "coronary_heart_disease"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-02T08:00:00Z",
     "updatedAt": "2026-03-02T08:30:00Z"
   },
   {
@@ -405,12 +437,13 @@
     "communityId": 103,
     "bloodType": "A",
     "chronicDiseases": [
-      "coronary_heart_disease"
+      "hypertension"
     ],
     "allergies": [
       "penicillin"
     ],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-03T08:00:00Z",
     "updatedAt": "2026-03-03T08:30:00Z"
   },
   {
@@ -419,10 +452,11 @@
     "communityId": 103,
     "bloodType": "B",
     "chronicDiseases": [
-      "hypertension"
+      "diabetes"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-04T08:00:00Z",
     "updatedAt": "2026-03-04T08:30:00Z"
   },
   {
@@ -431,10 +465,11 @@
     "communityId": 103,
     "bloodType": "AB",
     "chronicDiseases": [
-      "diabetes"
+      "coronary_heart_disease"
     ],
     "allergies": [],
     "emergencyRiskLevel": "medium",
+    "createdAt": "2026-03-05T08:00:00Z",
     "updatedAt": "2026-03-05T08:30:00Z"
   },
   {
@@ -443,10 +478,11 @@
     "communityId": 103,
     "bloodType": "O",
     "chronicDiseases": [
-      "coronary_heart_disease"
+      "hypertension"
     ],
     "allergies": [],
     "emergencyRiskLevel": "high",
+    "createdAt": "2026-03-06T08:00:00Z",
     "updatedAt": "2026-03-06T08:30:00Z"
   }
 ]

@@ -5,7 +5,9 @@
     "communityId": 101,
     "volunteerUserId": 6001,
     "checkInAt": "2026-03-01T09:10:00Z",
-    "checkOutAt": "2026-03-01T10:00:00Z"
+    "checkOutAt": "2026-03-01T10:00:00Z",
+    "createdAt": "2026-03-01T08:40:00Z",
+    "updatedAt": "2026-03-01T10:05:00Z"
   },
   {
     "id": 15002,
@@ -13,7 +15,9 @@
     "communityId": 101,
     "volunteerUserId": 6002,
     "checkInAt": "2026-03-02T09:10:00Z",
-    "checkOutAt": "2026-03-02T10:00:00Z"
+    "checkOutAt": "2026-03-02T10:00:00Z",
+    "createdAt": "2026-03-02T08:40:00Z",
+    "updatedAt": "2026-03-02T10:05:00Z"
   },
   {
     "id": 15003,
@@ -21,7 +25,9 @@
     "communityId": 101,
     "volunteerUserId": 6003,
     "checkInAt": "2026-03-03T09:10:00Z",
-    "checkOutAt": "2026-03-03T10:00:00Z"
+    "checkOutAt": "2026-03-03T10:00:00Z",
+    "createdAt": "2026-03-03T08:40:00Z",
+    "updatedAt": "2026-03-03T10:05:00Z"
   },
   {
     "id": 15004,
@@ -29,7 +35,9 @@
     "communityId": 101,
     "volunteerUserId": 6004,
     "checkInAt": "2026-03-04T09:10:00Z",
-    "checkOutAt": "2026-03-04T10:00:00Z"
+    "checkOutAt": "2026-03-04T10:00:00Z",
+    "createdAt": "2026-03-04T08:40:00Z",
+    "updatedAt": "2026-03-04T10:05:00Z"
   },
   {
     "id": 15005,
@@ -37,7 +45,9 @@
     "communityId": 101,
     "volunteerUserId": 6005,
     "checkInAt": "2026-03-05T09:10:00Z",
-    "checkOutAt": "2026-03-05T10:00:00Z"
+    "checkOutAt": "2026-03-05T10:00:00Z",
+    "createdAt": "2026-03-05T08:40:00Z",
+    "updatedAt": "2026-03-05T10:05:00Z"
   },
   {
     "id": 15006,
@@ -45,7 +55,9 @@
     "communityId": 101,
     "volunteerUserId": 6001,
     "checkInAt": "2026-03-06T09:10:00Z",
-    "checkOutAt": "2026-03-06T10:00:00Z"
+    "checkOutAt": "2026-03-06T10:00:00Z",
+    "createdAt": "2026-03-06T08:40:00Z",
+    "updatedAt": "2026-03-06T10:05:00Z"
   },
   {
     "id": 15007,
@@ -53,7 +65,9 @@
     "communityId": 101,
     "volunteerUserId": 6002,
     "checkInAt": "2026-03-07T09:10:00Z",
-    "checkOutAt": "2026-03-07T10:00:00Z"
+    "checkOutAt": "2026-03-07T10:00:00Z",
+    "createdAt": "2026-03-07T08:40:00Z",
+    "updatedAt": "2026-03-07T10:05:00Z"
   },
   {
     "id": 15008,
@@ -61,7 +75,9 @@
     "communityId": 101,
     "volunteerUserId": 6003,
     "checkInAt": "2026-03-08T09:10:00Z",
-    "checkOutAt": "2026-03-08T10:00:00Z"
+    "checkOutAt": "2026-03-08T10:00:00Z",
+    "createdAt": "2026-03-08T08:40:00Z",
+    "updatedAt": "2026-03-08T10:05:00Z"
   },
   {
     "id": 15009,
@@ -69,7 +85,9 @@
     "communityId": 101,
     "volunteerUserId": 6004,
     "checkInAt": "2026-03-09T09:10:00Z",
-    "checkOutAt": "2026-03-09T10:00:00Z"
+    "checkOutAt": "2026-03-09T10:00:00Z",
+    "createdAt": "2026-03-09T08:40:00Z",
+    "updatedAt": "2026-03-09T10:05:00Z"
   },
   {
     "id": 15010,
@@ -77,7 +95,9 @@
     "communityId": 101,
     "volunteerUserId": 6005,
     "checkInAt": "2026-03-10T09:10:00Z",
-    "checkOutAt": "2026-03-10T10:00:00Z"
+    "checkOutAt": "2026-03-10T10:00:00Z",
+    "createdAt": "2026-03-10T08:40:00Z",
+    "updatedAt": "2026-03-10T10:05:00Z"
   },
   {
     "id": 15011,
@@ -85,7 +105,9 @@
     "communityId": 101,
     "volunteerUserId": 6001,
     "checkInAt": "2026-03-11T09:10:00Z",
-    "checkOutAt": "2026-03-11T10:00:00Z"
+    "checkOutAt": "2026-03-11T10:00:00Z",
+    "createdAt": "2026-03-11T08:40:00Z",
+    "updatedAt": "2026-03-11T10:05:00Z"
   },
   {
     "id": 15012,
@@ -93,7 +115,9 @@
     "communityId": 101,
     "volunteerUserId": 6002,
     "checkInAt": "2026-03-12T09:10:00Z",
-    "checkOutAt": "2026-03-12T10:00:00Z"
+    "checkOutAt": "2026-03-12T10:00:00Z",
+    "createdAt": "2026-03-12T08:40:00Z",
+    "updatedAt": "2026-03-12T10:05:00Z"
   },
   {
     "id": 15013,
@@ -101,7 +125,9 @@
     "communityId": 101,
     "volunteerUserId": 6003,
     "checkInAt": "2026-03-13T09:10:00Z",
-    "checkOutAt": "2026-03-13T10:00:00Z"
+    "checkOutAt": "2026-03-13T10:00:00Z",
+    "createdAt": "2026-03-13T08:40:00Z",
+    "updatedAt": "2026-03-13T10:05:00Z"
   },
   {
     "id": 15014,
@@ -109,7 +135,9 @@
     "communityId": 101,
     "volunteerUserId": 6004,
     "checkInAt": "2026-03-14T09:10:00Z",
-    "checkOutAt": "2026-03-14T10:00:00Z"
+    "checkOutAt": "2026-03-14T10:00:00Z",
+    "createdAt": "2026-03-14T08:40:00Z",
+    "updatedAt": "2026-03-14T10:05:00Z"
   },
   {
     "id": 15015,
@@ -117,7 +145,9 @@
     "communityId": 102,
     "volunteerUserId": 6008,
     "checkInAt": "2026-03-15T09:10:00Z",
-    "checkOutAt": "2026-03-15T10:00:00Z"
+    "checkOutAt": "2026-03-15T10:00:00Z",
+    "createdAt": "2026-03-15T08:40:00Z",
+    "updatedAt": "2026-03-15T10:05:00Z"
   },
   {
     "id": 15016,
@@ -125,7 +155,9 @@
     "communityId": 102,
     "volunteerUserId": 6009,
     "checkInAt": "2026-03-16T09:10:00Z",
-    "checkOutAt": "2026-03-16T10:00:00Z"
+    "checkOutAt": "2026-03-16T10:00:00Z",
+    "createdAt": "2026-03-16T08:40:00Z",
+    "updatedAt": "2026-03-16T10:05:00Z"
   },
   {
     "id": 15017,
@@ -133,7 +165,9 @@
     "communityId": 102,
     "volunteerUserId": 6006,
     "checkInAt": "2026-03-17T09:10:00Z",
-    "checkOutAt": "2026-03-17T10:00:00Z"
+    "checkOutAt": "2026-03-17T10:00:00Z",
+    "createdAt": "2026-03-17T08:40:00Z",
+    "updatedAt": "2026-03-17T10:05:00Z"
   },
   {
     "id": 15018,
@@ -141,7 +175,9 @@
     "communityId": 102,
     "volunteerUserId": 6007,
     "checkInAt": "2026-03-18T09:10:00Z",
-    "checkOutAt": "2026-03-18T10:00:00Z"
+    "checkOutAt": "2026-03-18T10:00:00Z",
+    "createdAt": "2026-03-18T08:40:00Z",
+    "updatedAt": "2026-03-18T10:05:00Z"
   },
   {
     "id": 15019,
@@ -149,7 +185,9 @@
     "communityId": 102,
     "volunteerUserId": 6008,
     "checkInAt": "2026-03-19T09:10:00Z",
-    "checkOutAt": "2026-03-19T10:00:00Z"
+    "checkOutAt": "2026-03-19T10:00:00Z",
+    "createdAt": "2026-03-19T08:40:00Z",
+    "updatedAt": "2026-03-19T10:05:00Z"
   },
   {
     "id": 15020,
@@ -157,7 +195,9 @@
     "communityId": 102,
     "volunteerUserId": 6009,
     "checkInAt": "2026-03-20T09:10:00Z",
-    "checkOutAt": "2026-03-20T10:00:00Z"
+    "checkOutAt": "2026-03-20T10:00:00Z",
+    "createdAt": "2026-03-20T08:40:00Z",
+    "updatedAt": "2026-03-20T10:05:00Z"
   },
   {
     "id": 15021,
@@ -165,7 +205,9 @@
     "communityId": 102,
     "volunteerUserId": 6006,
     "checkInAt": "2026-03-21T09:10:00Z",
-    "checkOutAt": "2026-03-21T10:00:00Z"
+    "checkOutAt": "2026-03-21T10:00:00Z",
+    "createdAt": "2026-03-21T08:40:00Z",
+    "updatedAt": "2026-03-21T10:05:00Z"
   },
   {
     "id": 15022,
@@ -173,7 +215,9 @@
     "communityId": 102,
     "volunteerUserId": 6007,
     "checkInAt": "2026-03-22T09:10:00Z",
-    "checkOutAt": "2026-03-22T10:00:00Z"
+    "checkOutAt": "2026-03-22T10:00:00Z",
+    "createdAt": "2026-03-22T08:40:00Z",
+    "updatedAt": "2026-03-22T10:05:00Z"
   },
   {
     "id": 15023,
@@ -181,7 +225,9 @@
     "communityId": 102,
     "volunteerUserId": 6008,
     "checkInAt": "2026-03-23T09:10:00Z",
-    "checkOutAt": "2026-03-23T10:00:00Z"
+    "checkOutAt": "2026-03-23T10:00:00Z",
+    "createdAt": "2026-03-23T08:40:00Z",
+    "updatedAt": "2026-03-23T10:05:00Z"
   },
   {
     "id": 15024,
@@ -189,7 +235,9 @@
     "communityId": 102,
     "volunteerUserId": 6009,
     "checkInAt": "2026-03-24T09:10:00Z",
-    "checkOutAt": "2026-03-24T10:00:00Z"
+    "checkOutAt": "2026-03-24T10:00:00Z",
+    "createdAt": "2026-03-24T08:40:00Z",
+    "updatedAt": "2026-03-24T10:05:00Z"
   },
   {
     "id": 15025,
@@ -197,7 +245,9 @@
     "communityId": 102,
     "volunteerUserId": 6006,
     "checkInAt": "2026-03-25T09:10:00Z",
-    "checkOutAt": "2026-03-25T10:00:00Z"
+    "checkOutAt": "2026-03-25T10:00:00Z",
+    "createdAt": "2026-03-25T08:40:00Z",
+    "updatedAt": "2026-03-25T10:05:00Z"
   },
   {
     "id": 15026,
@@ -205,7 +255,9 @@
     "communityId": 102,
     "volunteerUserId": 6007,
     "checkInAt": "2026-03-26T09:10:00Z",
-    "checkOutAt": "2026-03-26T10:00:00Z"
+    "checkOutAt": "2026-03-26T10:00:00Z",
+    "createdAt": "2026-03-26T08:40:00Z",
+    "updatedAt": "2026-03-26T10:05:00Z"
   },
   {
     "id": 15027,
@@ -213,7 +265,9 @@
     "communityId": 103,
     "volunteerUserId": 6011,
     "checkInAt": "2026-03-27T09:10:00Z",
-    "checkOutAt": null
+    "checkOutAt": null,
+    "createdAt": "2026-03-27T08:40:00Z",
+    "updatedAt": "2026-03-27T09:15:00Z"
   },
   {
     "id": 15028,
@@ -221,7 +275,9 @@
     "communityId": 103,
     "volunteerUserId": 6012,
     "checkInAt": "2026-03-28T09:10:00Z",
-    "checkOutAt": null
+    "checkOutAt": null,
+    "createdAt": "2026-03-28T08:40:00Z",
+    "updatedAt": "2026-03-28T09:15:00Z"
   },
   {
     "id": 15029,
@@ -229,7 +285,9 @@
     "communityId": 103,
     "volunteerUserId": 6013,
     "checkInAt": "2026-03-29T09:10:00Z",
-    "checkOutAt": null
+    "checkOutAt": null,
+    "createdAt": "2026-03-29T08:40:00Z",
+    "updatedAt": "2026-03-29T09:15:00Z"
   },
   {
     "id": 15030,
@@ -237,7 +295,9 @@
     "communityId": 103,
     "volunteerUserId": 6014,
     "checkInAt": "2026-03-30T09:10:00Z",
-    "checkOutAt": null
+    "checkOutAt": null,
+    "createdAt": "2026-03-30T08:40:00Z",
+    "updatedAt": "2026-03-30T09:15:00Z"
   },
   {
     "id": 15031,
@@ -245,7 +305,9 @@
     "communityId": 103,
     "volunteerUserId": 6010,
     "checkInAt": "2026-03-01T09:10:00Z",
-    "checkOutAt": null
+    "checkOutAt": null,
+    "createdAt": "2026-03-01T08:40:00Z",
+    "updatedAt": "2026-03-01T09:15:00Z"
   },
   {
     "id": 15032,
@@ -253,7 +315,9 @@
     "communityId": 103,
     "volunteerUserId": 6011,
     "checkInAt": "2026-03-02T09:10:00Z",
-    "checkOutAt": null
+    "checkOutAt": null,
+    "createdAt": "2026-03-02T08:40:00Z",
+    "updatedAt": "2026-03-02T09:15:00Z"
   },
   {
     "id": 15033,
@@ -261,7 +325,9 @@
     "communityId": 103,
     "volunteerUserId": 6012,
     "checkInAt": "2026-03-03T09:10:00Z",
-    "checkOutAt": null
+    "checkOutAt": null,
+    "createdAt": "2026-03-03T08:40:00Z",
+    "updatedAt": "2026-03-03T09:15:00Z"
   },
   {
     "id": 15034,
@@ -269,6 +335,8 @@
     "communityId": 103,
     "volunteerUserId": 6013,
     "checkInAt": "2026-03-04T09:10:00Z",
-    "checkOutAt": null
+    "checkOutAt": null,
+    "createdAt": "2026-03-04T08:40:00Z",
+    "updatedAt": "2026-03-04T09:15:00Z"
   }
 ]

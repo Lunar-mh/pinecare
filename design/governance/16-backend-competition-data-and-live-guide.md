@@ -127,3 +127,13 @@
 2. 再验证 A/B/C/D/E 五条链路都能从数据库跑出可回放证据。
 3. 再按资金情况逐步打开 OSS、短信、微信通知和医疗 live 接入。
 4. 每打开一个 live 能力，都要保证不破坏既有 frozen contract。
+
+## 导库与回放命令
+
+- 生成竞赛基线说明：`npm run seed:competition`
+- 导出 JSON 资产：`npm run seed:competition:export`
+- 生成 MySQL 初始化 SQL：`npm run seed:competition:sql`
+- SQL 文件输出位置：`backend/generated/competition-seed/bootstrap.sql`
+- 导库说明输出位置：`backend/generated/competition-seed/bootstrap-readme.md`
+
+如果后续要做答辩回放，建议先执行 SQL 导库，再调用 `POST /admin/system/demo/bootstrap` 获取 replay context 和审计证据。

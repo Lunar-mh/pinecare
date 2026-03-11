@@ -1,7 +1,7 @@
 ﻿'use strict';
 
 const COMPETITION_SEED_MANIFEST = {
-  version: '2026.03-competition-v1',
+  version: '2026.03-competition-v2',
   generatedAt: '2026-03-11T12:00:00.000Z',
   principles: {
     priority: ['desensitized_real_samples', 'public_curated_sources', 'high_confidence_synthetic'],
@@ -14,9 +14,10 @@ const COMPETITION_SEED_MANIFEST = {
   coverage: {
     communities: 3,
     elders: 36,
-    familyMembers: 24,
+    familyMembers: 36,
     volunteers: 14,
     communityAdmins: 3,
+    emergencyContacts: 36,
     healthArchives: 36,
     medicationPlans: 58,
     medicationLogs30d: 1740,
@@ -29,6 +30,7 @@ const COMPETITION_SEED_MANIFEST = {
     consultations: 12,
     appointments: 16,
     medicalReports: 48,
+    auditLogs: 45,
   },
   communities: [
     {

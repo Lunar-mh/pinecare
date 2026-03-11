@@ -1,11 +1,13 @@
 {
-  "generatedAt": "2026-03-11T07:13:17.127Z",
+  "generatedAt": "2026-03-11T07:33:51.199Z",
   "outputDir": "D:\\03_Study\\Desktop\\old\\backend\\generated\\competition-seed",
+  "recommendedNextCommand": "npm run seed:competition:sql",
   "files": {
     "manifest": "manifest.json",
     "reference": "reference-medical-directory.json",
     "communities": "communities.json",
     "users": "users.json",
+    "emergencyContacts": "emergency-contacts.json",
     "familyBindings": "family-bindings.json",
     "healthArchives": "health-archives.json",
     "medicationPlans": "medication-plans.json",
@@ -19,7 +21,9 @@
     "timeBankExchanges": "time-bank-exchanges.json",
     "consultations": "consultations.json",
     "appointments": "appointments.json",
-    "medicalReports": "medical-reports.json"
+    "medicalReports": "medical-reports.json",
+    "auditLogs": "audit-logs.json",
+    "summary": "summary.json"
   },
   "counts": {
     "communities": 3,
@@ -27,6 +31,7 @@
     "volunteers": 14,
     "elders": 36,
     "familyMembers": 36,
+    "emergencyContacts": 36,
     "familyBindings": 36,
     "healthArchives": 36,
     "medicationPlans": 58,
@@ -40,6 +45,7 @@
     "timeBankExchanges": 9,
     "consultations": 12,
     "appointments": 16,
-    "medicalReports": 48
+    "medicalReports": 48,
+    "auditLogs": 45
   }
 }

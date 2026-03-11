@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { buildCompetitionSeedDataset } = require('../src/data/competitionSeedDataset');
+const { COMPETITION_SEED_ASSETS } = require('../src/data/competitionSeedAssets');
 
 const OUTPUT_DIR = path.join(__dirname, '..', 'generated', 'competition-seed');
 
@@ -18,25 +19,29 @@ function buildSummary(dataset) {
   return {
     generatedAt: new Date().toISOString(),
     outputDir: OUTPUT_DIR,
+    recommendedNextCommand: COMPETITION_SEED_ASSETS.commands[2],
     files: {
-      manifest: 'manifest.json',
-      reference: 'reference-medical-directory.json',
-      communities: 'communities.json',
-      users: 'users.json',
-      familyBindings: 'family-bindings.json',
-      healthArchives: 'health-archives.json',
-      medicationPlans: 'medication-plans.json',
-      medicationLogs: 'medication-logs.json',
-      gpsTracks: 'gps-tracks.json',
-      sosEvents: 'sos-events.json',
-      serviceOrders: 'service-orders.json',
-      volunteerAttendanceLogs: 'volunteer-attendance-logs.json',
-      serviceRecords: 'service-records.json',
-      timeBankAccounts: 'time-bank-accounts.json',
-      timeBankExchanges: 'time-bank-exchanges.json',
-      consultations: 'consultations.json',
-      appointments: 'appointments.json',
-      medicalReports: 'medical-reports.json',
+      manifest: COMPETITION_SEED_ASSETS.files.manifest,
+      reference: COMPETITION_SEED_ASSETS.files.reference,
+      communities: COMPETITION_SEED_ASSETS.files.communities,
+      users: COMPETITION_SEED_ASSETS.files.users,
+      emergencyContacts: COMPETITION_SEED_ASSETS.files.emergencyContacts,
+      familyBindings: COMPETITION_SEED_ASSETS.files.familyBindings,
+      healthArchives: COMPETITION_SEED_ASSETS.files.healthArchives,
+      medicationPlans: COMPETITION_SEED_ASSETS.files.medicationPlans,
+      medicationLogs: COMPETITION_SEED_ASSETS.files.medicationLogs,
+      gpsTracks: COMPETITION_SEED_ASSETS.files.gpsTracks,
+      sosEvents: COMPETITION_SEED_ASSETS.files.sosEvents,
+      serviceOrders: COMPETITION_SEED_ASSETS.files.serviceOrders,
+      volunteerAttendanceLogs: COMPETITION_SEED_ASSETS.files.volunteerAttendanceLogs,
+      serviceRecords: COMPETITION_SEED_ASSETS.files.serviceRecords,
+      timeBankAccounts: COMPETITION_SEED_ASSETS.files.timeBankAccounts,
+      timeBankExchanges: COMPETITION_SEED_ASSETS.files.timeBankExchanges,
+      consultations: COMPETITION_SEED_ASSETS.files.consultations,
+      appointments: COMPETITION_SEED_ASSETS.files.appointments,
+      medicalReports: COMPETITION_SEED_ASSETS.files.medicalReports,
+      auditLogs: COMPETITION_SEED_ASSETS.files.auditLogs,
+      summary: COMPETITION_SEED_ASSETS.files.summary,
     },
     counts: {
       communities: dataset.communities.length,
@@ -44,6 +49,7 @@ function buildSummary(dataset) {
       volunteers: dataset.volunteers.length,
       elders: dataset.elders.length,
       familyMembers: dataset.familyMembers.length,
+      emergencyContacts: dataset.emergencyContacts.length,
       familyBindings: dataset.familyBindings.length,
       healthArchives: dataset.healthArchives.length,
       medicationPlans: dataset.medicationPlans.length,
@@ -58,6 +64,7 @@ function buildSummary(dataset) {
       consultations: dataset.consultations.length,
       appointments: dataset.appointments.length,
       medicalReports: dataset.medicalReports.length,
+      auditLogs: dataset.auditLogs.length,
     },
   };
 }
@@ -73,27 +80,29 @@ function main() {
     ...dataset.familyMembers,
   ];
 
-  writeJson('manifest.json', dataset.manifest);
-  writeJson('reference-medical-directory.json', dataset.reference);
-  writeJson('communities.json', dataset.communities);
-  writeJson('users.json', users);
-  writeJson('family-bindings.json', dataset.familyBindings);
-  writeJson('health-archives.json', dataset.healthArchives);
-  writeJson('medication-plans.json', dataset.medicationPlans);
-  writeJson('medication-logs.json', dataset.medicationLogs);
-  writeJson('gps-tracks.json', dataset.gpsTracks);
-  writeJson('sos-events.json', dataset.sosEvents);
-  writeJson('service-orders.json', dataset.serviceOrders);
-  writeJson('volunteer-attendance-logs.json', dataset.volunteerAttendanceLogs);
-  writeJson('service-records.json', dataset.serviceRecords);
-  writeJson('time-bank-accounts.json', dataset.timeBankAccounts);
-  writeJson('time-bank-exchanges.json', dataset.timeBankExchanges);
-  writeJson('consultations.json', dataset.consultations);
-  writeJson('appointments.json', dataset.appointments);
-  writeJson('medical-reports.json', dataset.medicalReports);
+  writeJson(COMPETITION_SEED_ASSETS.files.manifest, dataset.manifest);
+  writeJson(COMPETITION_SEED_ASSETS.files.reference, dataset.reference);
+  writeJson(COMPETITION_SEED_ASSETS.files.communities, dataset.communities);
+  writeJson(COMPETITION_SEED_ASSETS.files.users, users);
+  writeJson(COMPETITION_SEED_ASSETS.files.emergencyContacts, dataset.emergencyContacts);
+  writeJson(COMPETITION_SEED_ASSETS.files.familyBindings, dataset.familyBindings);
+  writeJson(COMPETITION_SEED_ASSETS.files.healthArchives, dataset.healthArchives);
+  writeJson(COMPETITION_SEED_ASSETS.files.medicationPlans, dataset.medicationPlans);
+  writeJson(COMPETITION_SEED_ASSETS.files.medicationLogs, dataset.medicationLogs);
+  writeJson(COMPETITION_SEED_ASSETS.files.gpsTracks, dataset.gpsTracks);
+  writeJson(COMPETITION_SEED_ASSETS.files.sosEvents, dataset.sosEvents);
+  writeJson(COMPETITION_SEED_ASSETS.files.serviceOrders, dataset.serviceOrders);
+  writeJson(COMPETITION_SEED_ASSETS.files.volunteerAttendanceLogs, dataset.volunteerAttendanceLogs);
+  writeJson(COMPETITION_SEED_ASSETS.files.serviceRecords, dataset.serviceRecords);
+  writeJson(COMPETITION_SEED_ASSETS.files.timeBankAccounts, dataset.timeBankAccounts);
+  writeJson(COMPETITION_SEED_ASSETS.files.timeBankExchanges, dataset.timeBankExchanges);
+  writeJson(COMPETITION_SEED_ASSETS.files.consultations, dataset.consultations);
+  writeJson(COMPETITION_SEED_ASSETS.files.appointments, dataset.appointments);
+  writeJson(COMPETITION_SEED_ASSETS.files.medicalReports, dataset.medicalReports);
+  writeJson(COMPETITION_SEED_ASSETS.files.auditLogs, dataset.auditLogs);
 
   const summary = buildSummary(dataset);
-  writeJson('summary.json', summary);
+  writeJson(COMPETITION_SEED_ASSETS.files.summary, summary);
   process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
 }
 

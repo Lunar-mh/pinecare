@@ -1,0 +1,566 @@
+[
+  {
+    "id": 22001,
+    "userId": 5001,
+    "action": "community.sos.resolve",
+    "details": {
+      "eventId": 13001,
+      "communityId": 101,
+      "eventStatus": "resolved",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-01T09:20:00Z"
+  },
+  {
+    "id": 22002,
+    "userId": 5001,
+    "action": "community.sos.confirm",
+    "details": {
+      "eventId": 13002,
+      "communityId": 101,
+      "eventStatus": "confirmed",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-02T09:20:00Z"
+  },
+  {
+    "id": 22003,
+    "userId": 5001,
+    "action": "community.sos.cancel",
+    "details": {
+      "eventId": 13003,
+      "communityId": 101,
+      "eventStatus": "cancelled",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-03T09:20:00Z"
+  },
+  {
+    "id": 22004,
+    "userId": 5001,
+    "action": "community.sos.resolve",
+    "details": {
+      "eventId": 13004,
+      "communityId": 101,
+      "eventStatus": "resolved",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-04T09:20:00Z"
+  },
+  {
+    "id": 22005,
+    "userId": 5001,
+    "action": "community.sos.confirm",
+    "details": {
+      "eventId": 13005,
+      "communityId": 101,
+      "eventStatus": "confirmed",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-05T09:20:00Z"
+  },
+  {
+    "id": 22006,
+    "userId": 5001,
+    "action": "community.sos.cancel",
+    "details": {
+      "eventId": 13006,
+      "communityId": 101,
+      "eventStatus": "cancelled",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-06T09:20:00Z"
+  },
+  {
+    "id": 22007,
+    "userId": 5001,
+    "action": "community.sos.resolve",
+    "details": {
+      "eventId": 13007,
+      "communityId": 101,
+      "eventStatus": "resolved",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-07T09:20:00Z"
+  },
+  {
+    "id": 22008,
+    "userId": 5001,
+    "action": "community.sos.confirm",
+    "details": {
+      "eventId": 13008,
+      "communityId": 101,
+      "eventStatus": "confirmed",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-08T09:20:00Z"
+  },
+  {
+    "id": 22009,
+    "userId": 5001,
+    "action": "community.sos.cancel",
+    "details": {
+      "eventId": 13009,
+      "communityId": 101,
+      "eventStatus": "cancelled",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-09T09:20:00Z"
+  },
+  {
+    "id": 22010,
+    "userId": 5001,
+    "action": "community.sos.resolve",
+    "details": {
+      "eventId": 13010,
+      "communityId": 101,
+      "eventStatus": "resolved",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-10T09:20:00Z"
+  },
+  {
+    "id": 22011,
+    "userId": 5001,
+    "action": "community.sos.confirm",
+    "details": {
+      "eventId": 13011,
+      "communityId": 101,
+      "eventStatus": "confirmed",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-11T09:20:00Z"
+  },
+  {
+    "id": 22012,
+    "userId": 5001,
+    "action": "community.sos.cancel",
+    "details": {
+      "eventId": 13012,
+      "communityId": 101,
+      "eventStatus": "cancelled",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-12T09:20:00Z"
+  },
+  {
+    "id": 22013,
+    "userId": 5001,
+    "action": "community.sos.resolve",
+    "details": {
+      "eventId": 13013,
+      "communityId": 101,
+      "eventStatus": "resolved",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-13T09:20:00Z"
+  },
+  {
+    "id": 22014,
+    "userId": 5001,
+    "action": "community.sos.confirm",
+    "details": {
+      "eventId": 13014,
+      "communityId": 101,
+      "eventStatus": "confirmed",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-14T09:20:00Z"
+  },
+  {
+    "id": 22015,
+    "userId": 5002,
+    "action": "community.sos.cancel",
+    "details": {
+      "eventId": 13015,
+      "communityId": 102,
+      "eventStatus": "cancelled",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-15T09:20:00Z"
+  },
+  {
+    "id": 22016,
+    "userId": 5002,
+    "action": "community.sos.resolve",
+    "details": {
+      "eventId": 13016,
+      "communityId": 102,
+      "eventStatus": "resolved",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-16T09:20:00Z"
+  },
+  {
+    "id": 22017,
+    "userId": 5002,
+    "action": "community.sos.confirm",
+    "details": {
+      "eventId": 13017,
+      "communityId": 102,
+      "eventStatus": "confirmed",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-17T09:20:00Z"
+  },
+  {
+    "id": 22018,
+    "userId": 5002,
+    "action": "community.sos.cancel",
+    "details": {
+      "eventId": 13018,
+      "communityId": 102,
+      "eventStatus": "cancelled",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-18T09:20:00Z"
+  },
+  {
+    "id": 22101,
+    "userId": 6001,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14001,
+      "serviceRecordId": 16001,
+      "communityId": 101,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-01T10:05:00Z"
+  },
+  {
+    "id": 22102,
+    "userId": 6002,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14002,
+      "serviceRecordId": 16002,
+      "communityId": 101,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-02T10:05:00Z"
+  },
+  {
+    "id": 22103,
+    "userId": 6003,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14003,
+      "serviceRecordId": 16003,
+      "communityId": 101,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-03T10:05:00Z"
+  },
+  {
+    "id": 22104,
+    "userId": 6004,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14004,
+      "serviceRecordId": 16004,
+      "communityId": 101,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-04T10:05:00Z"
+  },
+  {
+    "id": 22105,
+    "userId": 6005,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14005,
+      "serviceRecordId": 16005,
+      "communityId": 101,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-05T10:05:00Z"
+  },
+  {
+    "id": 22106,
+    "userId": 6001,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14006,
+      "serviceRecordId": 16006,
+      "communityId": 101,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-06T10:05:00Z"
+  },
+  {
+    "id": 22107,
+    "userId": 6002,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14007,
+      "serviceRecordId": 16007,
+      "communityId": 101,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-07T10:05:00Z"
+  },
+  {
+    "id": 22108,
+    "userId": 6003,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14008,
+      "serviceRecordId": 16008,
+      "communityId": 101,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-08T10:05:00Z"
+  },
+  {
+    "id": 22109,
+    "userId": 6004,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14009,
+      "serviceRecordId": 16009,
+      "communityId": 101,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-09T10:05:00Z"
+  },
+  {
+    "id": 22110,
+    "userId": 6005,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14010,
+      "serviceRecordId": 16010,
+      "communityId": 101,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-10T10:05:00Z"
+  },
+  {
+    "id": 22111,
+    "userId": 6001,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14011,
+      "serviceRecordId": 16011,
+      "communityId": 101,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-11T10:05:00Z"
+  },
+  {
+    "id": 22112,
+    "userId": 6002,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14012,
+      "serviceRecordId": 16012,
+      "communityId": 101,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-12T10:05:00Z"
+  },
+  {
+    "id": 22113,
+    "userId": 6003,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14013,
+      "serviceRecordId": 16013,
+      "communityId": 101,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-13T10:05:00Z"
+  },
+  {
+    "id": 22114,
+    "userId": 6004,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14014,
+      "serviceRecordId": 16014,
+      "communityId": 101,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-14T10:05:00Z"
+  },
+  {
+    "id": 22115,
+    "userId": 6008,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14015,
+      "serviceRecordId": 16015,
+      "communityId": 102,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-15T10:05:00Z"
+  },
+  {
+    "id": 22116,
+    "userId": 6009,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14016,
+      "serviceRecordId": 16016,
+      "communityId": 102,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-16T10:05:00Z"
+  },
+  {
+    "id": 22117,
+    "userId": 6006,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14017,
+      "serviceRecordId": 16017,
+      "communityId": 102,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-17T10:05:00Z"
+  },
+  {
+    "id": 22118,
+    "userId": 6007,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14018,
+      "serviceRecordId": 16018,
+      "communityId": 102,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-18T10:05:00Z"
+  },
+  {
+    "id": 22119,
+    "userId": 6008,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14019,
+      "serviceRecordId": 16019,
+      "communityId": 102,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-19T10:05:00Z"
+  },
+  {
+    "id": 22120,
+    "userId": 6009,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14020,
+      "serviceRecordId": 16020,
+      "communityId": 102,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-20T10:05:00Z"
+  },
+  {
+    "id": 22121,
+    "userId": 6006,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14021,
+      "serviceRecordId": 16021,
+      "communityId": 102,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-21T10:05:00Z"
+  },
+  {
+    "id": 22122,
+    "userId": 6007,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14022,
+      "serviceRecordId": 16022,
+      "communityId": 102,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-22T10:05:00Z"
+  },
+  {
+    "id": 22123,
+    "userId": 6008,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14023,
+      "serviceRecordId": 16023,
+      "communityId": 102,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-23T10:05:00Z"
+  },
+  {
+    "id": 22124,
+    "userId": 6009,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14024,
+      "serviceRecordId": 16024,
+      "communityId": 102,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-24T10:05:00Z"
+  },
+  {
+    "id": 22125,
+    "userId": 6006,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14025,
+      "serviceRecordId": 16025,
+      "communityId": 102,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-25T10:05:00Z"
+  },
+  {
+    "id": 22126,
+    "userId": 6007,
+    "action": "volunteer.task.complete",
+    "details": {
+      "orderId": 14026,
+      "serviceRecordId": 16026,
+      "communityId": 102,
+      "timeCoins": 1,
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-26T10:05:00Z"
+  },
+  {
+    "id": 22999,
+    "userId": 5001,
+    "action": "admin.demo.bootstrap",
+    "details": {
+      "scenarioId": "competition-full-replay",
+      "source": "competition_seed"
+    },
+    "createdAt": "2026-03-30T18:00:00Z"
+  }
+]
