@@ -47,9 +47,4 @@ safeUse('/gps', './gpsTracking');
 safeUse('/medical', './medicalIntegration');
 safeUse('/statistics', './statistics');
 
-// Legacy compatibility aliases (to be deprecated after one release cycle).
-safeUse('/timebank', './timeBankLegacy');
-safeUse('/location', './locationLegacy');
-safeUse('/companion', './companionLegacy');
-
 module.exports = router;

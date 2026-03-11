@@ -3,12 +3,16 @@
 const express = require('express');
 const request = require('supertest');
 
-jest.mock('../../src/config/database', () => ({
-  query: jest.fn().mockResolvedValue([[{ ok: 1 }], []]),
-}));
-
-jest.mock('../../src/config/redis', () => ({
-  ping: jest.fn().mockResolvedValue('PONG'),
+jest.mock('../../src/services/systemHealthService', () => ({
+  getHealthStatus: jest.fn().mockResolvedValue({
+    healthy: true,
+    data: {
+      status: 'ok',
+      runtimeMode: 'COMPETITION_SANDBOX',
+      mysql: { status: 'ok' },
+      redis: { status: 'ok' },
+    },
+  }),
 }));
 
 jest.mock('../../src/middleware/auth', () => (req, _res, next) => {
@@ -43,6 +47,7 @@ jest.mock('../../src/services/deviceService', () => ({
   setPrimary: jest.fn(),
 }));
 
+const systemHealthService = require('../../src/services/systemHealthService');
 const healthArchiveService = require('../../src/services/healthArchiveService');
 const deviceService = require('../../src/services/deviceService');
 const healthRouter = require('../../src/routes/healthRoutes');
@@ -59,6 +64,15 @@ function createApp() {
 describe('health archive API contract', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    systemHealthService.getHealthStatus.mockResolvedValue({
+      healthy: true,
+      data: {
+        status: 'ok',
+        runtimeMode: 'COMPETITION_SANDBOX',
+        mysql: { status: 'ok' },
+        redis: { status: 'ok' },
+      },
+    });
   });
 
   it('GET /health keeps the infrastructure health check contract', async () => {

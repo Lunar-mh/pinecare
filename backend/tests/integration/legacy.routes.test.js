@@ -98,35 +98,26 @@ describe('legacy compatibility routes', () => {
     process.env.JWT_SECRET = 'legacy-routes-secret';
   });
 
-  it('GET /timebank/account keeps working with deprecation headers', async () => {
+  it('GET /timebank/account is no longer published', async () => {
     const res = await request(app)
       .get('/timebank/account')
       .set('Authorization', `Bearer ${createToken()}`);
 
-    expect(res.status).toBe(200);
-    expect(res.body.code).toBe(0);
-    expect(res.body.data.balance).toBe(88);
-    expectDeprecatedHeaders(res, '/time-bank');
+    expect(res.status).toBe(404);
   });
 
-  it('GET /location/current keeps working with deprecation headers', async () => {
+  it('GET /location/current is no longer published', async () => {
     const res = await request(app)
       .get('/location/current')
       .set('Authorization', `Bearer ${createToken()}`);
 
-    expect(res.status).toBe(200);
-    expect(res.body.code).toBe(0);
-    expect(res.body.data.latitude).toBe(31.23);
-    expectDeprecatedHeaders(res, '/gps');
+    expect(res.status).toBe(404);
   });
 
-  it('GET /companion/games keeps working with deprecation headers', async () => {
+  it('GET /companion/games is no longer published', async () => {
     const res = await request(app).get('/companion/games');
 
-    expect(res.status).toBe(200);
-    expect(res.body.code).toBe(0);
-    expect(res.body.data[0].id).toBe('memory-cards');
-    expectDeprecatedHeaders(res, '/ai-companion/companion');
+    expect(res.status).toBe(404);
   });
 
   it('GET /user/info keeps working with deprecation headers', async () => {

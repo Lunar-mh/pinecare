@@ -1,10 +1,10 @@
-﻿'use strict';
+'use strict';
 
-jest.mock('../../src/config/database', () => ({
-  query: jest.fn(),
+jest.mock('../../src/models/adminScopeModel', () => ({
+  findCommunityAdminScopeByUserId: jest.fn(),
 }));
 
-const { query } = require('../../src/config/database');
+const adminScopeModel = require('../../src/models/adminScopeModel');
 const adminAuth = require('../../src/middleware/adminAuth');
 
 function createRes() {
@@ -33,7 +33,7 @@ describe('adminAuth middleware', () => {
     expect(next).toHaveBeenCalledTimes(1);
     expect(req.adminScope.communityId).toBe(9);
     expect(req.adminScope.isGlobalAdmin).toBe(true);
-    expect(query).not.toHaveBeenCalled();
+    expect(adminScopeModel.findCommunityAdminScopeByUserId).not.toHaveBeenCalled();
   });
 
   it('rejects invalid community_id for global admin', async () => {
@@ -51,10 +51,14 @@ describe('adminAuth middleware', () => {
     expect(res.status).toHaveBeenCalledWith(400);
   });
 
-  it('allows scoped community admin from DB', async () => {
-    query.mockResolvedValueOnce([[
-      { id: 11, user_id: 1001, community_id: 3, role: 'admin' },
-    ]]);
+  it('allows scoped community admin from the model layer', async () => {
+    adminScopeModel.findCommunityAdminScopeByUserId.mockResolvedValueOnce({
+      adminId: 11,
+      userId: 1001,
+      communityId: 3,
+      role: 'admin',
+      isGlobalAdmin: false,
+    });
 
     const req = {
       user: { userId: 1001, role: 'user', isAdmin: false },

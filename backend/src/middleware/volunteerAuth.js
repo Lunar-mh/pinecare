@@ -1,6 +1,6 @@
 'use strict';
 
-const { query } = require('../config/database');
+const adminScopeModel = require('../models/adminScopeModel');
 const { fail } = require('../utils/response');
 
 async function volunteerAuth(req, res, next) {
@@ -14,31 +14,12 @@ async function volunteerAuth(req, res, next) {
       return fail(res, 401, 'Unauthorized.', null, 401);
     }
 
-    const [rows] = await query(
-      `SELECT ca.id, ca.user_id, ca.community_id, ca.role, u.name, u.phone
-       FROM community_admins ca
-       INNER JOIN users u ON u.id = ca.user_id
-       WHERE ca.user_id = ?
-         AND ca.role = 'volunteer'
-       ORDER BY ca.id ASC
-       LIMIT 1`,
-      [userId]
-    );
-
-    if (!rows.length) {
+    const scope = await adminScopeModel.findVolunteerScopeByUserId(userId);
+    if (!scope) {
       return fail(res, 403, 'Forbidden.', null, 403);
     }
 
-    const volunteer = rows[0];
-    req.volunteerScope = {
-      communityAdminId: Number(volunteer.id),
-      userId: Number(volunteer.user_id),
-      communityId: Number(volunteer.community_id),
-      role: volunteer.role,
-      name: volunteer.name,
-      phone: volunteer.phone,
-    };
-
+    req.volunteerScope = scope;
     return next();
   } catch (error) {
     return next(error);

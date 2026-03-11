@@ -1,0 +1,59 @@
+﻿{
+  "hospitals": [
+    {
+      "id": 51000001,
+      "name": "Shanghai Sixth People's Hospital",
+      "level": "3A",
+      "city": "Shanghai"
+    },
+    {
+      "id": 51000002,
+      "name": "Huashan Hospital, Fudan University",
+      "level": "3A",
+      "city": "Shanghai"
+    }
+  ],
+  "departments": [
+    {
+      "id": 52010001,
+      "hospitalId": 51000001,
+      "name": "Geriatrics"
+    },
+    {
+      "id": 52010002,
+      "hospitalId": 51000001,
+      "name": "Rehabilitation Medicine"
+    },
+    {
+      "id": 52010003,
+      "hospitalId": 51000002,
+      "name": "Neurology"
+    }
+  ],
+  "doctors": [
+    {
+      "id": 53010001,
+      "hospitalId": 51000001,
+      "departmentId": 52010001,
+      "name": "Dr. Zhao Ming",
+      "title": "Chief Physician",
+      "specialty": "Geriatric chronic disease management"
+    },
+    {
+      "id": 53010002,
+      "hospitalId": 51000001,
+      "departmentId": 52010002,
+      "name": "Dr. Sun Yu",
+      "title": "Associate Chief Physician",
+      "specialty": "Post-fall rehabilitation and mobility training"
+    },
+    {
+      "id": 53010003,
+      "hospitalId": 51000002,
+      "departmentId": 52010003,
+      "name": "Dr. Qian Lei",
+      "title": "Attending Physician",
+      "specialty": "Cognitive disorders and stroke follow-up"
+    }
+  ]
+}

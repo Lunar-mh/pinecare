@@ -4,16 +4,11 @@ const request = require('supertest');
 const express = require('express');
 const jwt = require('jsonwebtoken');
 
-jest.mock('../src/config/database', () => ({
-  query: jest.fn(),
+jest.mock('../src/services/systemHealthService', () => ({
+  getHealthStatus: jest.fn(),
 }));
 
-jest.mock('../src/config/redis', () => ({
-  ping: jest.fn(),
-}));
-
-const { query } = require('../src/config/database');
-const redis = require('../src/config/redis');
+const systemHealthService = require('../src/services/systemHealthService');
 const auth = require('../src/middleware/auth');
 const healthRoutes = require('../src/routes/healthRoutes');
 
@@ -58,8 +53,15 @@ describe('backend smoke tests', () => {
   });
 
   it('returns the unified health envelope', async () => {
-    query.mockResolvedValue([[{ ok: 1 }]]);
-    redis.ping.mockResolvedValue('PONG');
+    systemHealthService.getHealthStatus.mockResolvedValue({
+      healthy: true,
+      data: {
+        status: 'ok',
+        runtimeMode: 'COMPETITION_SANDBOX',
+        mysql: { status: 'ok' },
+        redis: { status: 'ok' },
+      },
+    });
 
     const app = createApp();
     const res = await request(app).get('/health');

@@ -1,6 +1,6 @@
-﻿'use strict';
+'use strict';
 
-const { query } = require('../config/database');
+const adminScopeModel = require('../models/adminScopeModel');
 const { fail } = require('../utils/response');
 
 function parsePositiveInt(value) {
@@ -17,11 +17,6 @@ function getRequestedCommunityId(req) {
   return fromQuery !== undefined ? fromQuery : fromBody;
 }
 
-/**
- * 社区管理权限中间件
- * - 普通社区管理员：根据 community_admins 表校验并注入作用域
- * - 全局 admin token：直接放行，并支持按 community_id 指定作用域
- */
 async function adminAuth(req, res, next) {
   try {
     if (!req.user) {
@@ -32,9 +27,7 @@ async function adminAuth(req, res, next) {
     if (isGlobalAdmin) {
       const fallbackCommunityId = Number(process.env.ADMIN_DEFAULT_COMMUNITY_ID || 1);
       const requested = getRequestedCommunityId(req);
-      const scopeCommunityId = requested === undefined
-        ? fallbackCommunityId
-        : parsePositiveInt(requested);
+      const scopeCommunityId = requested === undefined ? fallbackCommunityId : parsePositiveInt(requested);
 
       if (!parsePositiveInt(scopeCommunityId)) {
         return fail(res, 400, 'Invalid community_id.', null, 400);
@@ -55,29 +48,12 @@ async function adminAuth(req, res, next) {
       return fail(res, 401, 'Unauthorized.', null, 401);
     }
 
-    const [rows] = await query(
-      `SELECT id, user_id, community_id, role
-       FROM community_admins
-       WHERE user_id = ?
-         AND role IN ('admin', 'leader')
-       ORDER BY id ASC
-       LIMIT 1`,
-      [userId]
-    );
-
-    if (!rows.length) {
+    const scope = await adminScopeModel.findCommunityAdminScopeByUserId(userId);
+    if (!scope) {
       return fail(res, 403, 'Forbidden.', null, 403);
     }
 
-    const admin = rows[0];
-    req.adminScope = {
-      adminId: Number(admin.id),
-      userId: Number(admin.user_id),
-      communityId: Number(admin.community_id),
-      role: admin.role,
-      isGlobalAdmin: false,
-    };
-
+    req.adminScope = scope;
     return next();
   } catch (error) {
     return next(error);

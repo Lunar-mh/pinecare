@@ -1,19 +1,8 @@
-﻿'use strict';
+'use strict';
 
 const appointmentService = require('../services/appointmentService');
-const { ok, fail } = require('../utils/response');
-
-function handleError(res, err) {
-  const code =
-    typeof err.code === 'number'
-      ? err.code
-      : typeof err.statusCode === 'number'
-        ? err.statusCode
-        : 500;
-  const status = typeof err.statusCode === 'number' ? err.statusCode : code;
-  const message = err.message || 'Appointment request failed.';
-  return fail(res, code, message, null, status);
-}
+const { ok } = require('../utils/response');
+const { sendControllerError } = require('../utils/controllerError');
 
 function getIdempotencyKey(req) {
   return req.headers['x-idempotency-key'] || req.headers['x-request-id'] || req.requestId || null;
@@ -33,7 +22,7 @@ async function create(req, res) {
     const message = data.duplicate ? 'idempotent replay' : 'created';
     return ok(res, data, message);
   } catch (err) {
-    return handleError(res, err);
+    return sendControllerError(res, err, { defaultMessage: 'Appointment request failed.' });
   }
 }
 
@@ -47,7 +36,7 @@ async function list(req, res) {
 
     return ok(res, data, 'ok');
   } catch (err) {
-    return handleError(res, err);
+    return sendControllerError(res, err, { defaultMessage: 'Appointment request failed.' });
   }
 }
 
@@ -57,7 +46,7 @@ async function cancel(req, res) {
     const message = data.idempotent ? 'idempotent replay' : 'cancelled';
     return ok(res, data, message);
   } catch (err) {
-    return handleError(res, err);
+    return sendControllerError(res, err, { defaultMessage: 'Appointment request failed.' });
   }
 }
 

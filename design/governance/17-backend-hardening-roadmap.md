@@ -1,25 +1,25 @@
-﻿# Backend Hardening Roadmap
+# Backend Hardening Roadmap
 
 ## Verified baseline on 2026-03-11
 
 The following numbers are verified from the current repository state:
 
-- Backend test suites: 119 passed out of 119
-- Backend test cases: 470 passed out of 470
-- Contract test files: 10
-- Integration test files: 34
+- Backend test suites: 143 passed out of 143
+- Backend test cases: 569 passed out of 569
+- Contract test files: 11
+- Integration test files: 35
 - Performance test files: 15
 - Coverage summary from the latest full run:
-  - statements: 58.15%
-  - branches: 42.05%
-  - functions: 60.32%
-  - lines: 58.50%
+  - statements: 70.00%
+  - branches: 52.19%
+  - functions: 70.38%
+  - lines: 70.40%
 
 These numbers must be updated only after a fresh full test run.
 
 ## P0 goals
 
-P0 is about removing protocol drift and making production intent explicit.
+P0 is now focused on reducing maintenance surface while keeping published behavior stable.
 
 Done in this change set:
 
@@ -35,35 +35,37 @@ Done in this change set:
 - Unified WeChat notify diagnostics and environment validation onto the shared runtime mode policy
 - Added regression coverage for WeChat live-mode env validation and system integration diagnostics fields
 - Centralized admin-side controller error mapping to reduce duplicated error envelopes
-- Replaced garbled statistics response labels with stable Unicode-safe literals
 - Extended shared controller error handling to community-admin and volunteer backends
 - Added route-level regression coverage for coded volunteer and community-admin business failures
+- Removed the published legacy aliases for `/timebank`, `/location`, and `/companion`
+- Moved admin and volunteer scope lookups behind a dedicated model instead of querying in middleware
+- Moved `/health` dependency probing behind a dedicated service instead of querying in the route file
 
 P0 still required:
 
 - Publish one canonical path table for every backend module
-- Add deprecation headers for old compatibility routes that are no longer canonical
-- Freeze one global business error mapping policy
-- Decide whether remaining legacy admin entry points stay for one deprecation cycle or are retired immediately
+- Freeze one global business error mapping policy across the remaining controllers
+- Split the heaviest service aggregators before adding new feature code
+- Keep shrinking duplicate route/controller glue as compatibility paths are retired
 
 Definition of done for P0:
 
 - Every published OpenAPI path resolves in the running backend
 - Every compatibility path is documented as either canonical or deprecated
-- No production path silently falls back to mock or stub mode by default
+- No retired compatibility path remains mounted in runtime routes
 - Full test suite stays green
 
 ## P1 goals
 
-P1 is about making live integrations the default and reducing maintenance risk.
+P1 is about reducing backend weight while improving production intent.
 
 Required work:
 
-- Introduce a single runtime mode policy for live, stub, mock, and sandbox decisions
-- Make AI, voice, OSS, and medical integrations live-first
-- Add request id, timeout, retry, circuit-break, and audit data to external integrations
 - Split large aggregation services when they mix multiple bounded contexts
-- Raise coverage to at least 70% overall
+- Keep route files and middleware thin and data-access free
+- Continue replacing controller-local error mappers with the shared policy
+- Raise coverage to at least 75% overall without growing large files further
+- Push new work into small focused services instead of adding to all-in-one modules
 
 Definition of done for P1:
 
@@ -71,32 +73,7 @@ Definition of done for P1:
 - Diagnostics expose `configured`, `effectiveMode`, `fallbackAllowed`, `healthy`, and `source`
 - New code does not add another all-in-one service or controller
 - Core domains have dedicated regression tests for error paths and compatibility paths
-
-## P2 goals
-
-P2 is about award-grade polish and replayable demonstrations.
-
-Required work:
-
-- Prepare replayable competition datasets and scripts for all critical chains
-- Add more performance baselines for admin aggregation, SOS notification fan-out, medical sync, family overview aggregation, and voice polling
-- Push key domain coverage above 80% for auth, SOS, medication, time bank, and medical integration
-- Add operator-facing dashboards or diagnostics that can support live demos and post-demo troubleshooting
-
-Definition of done for P2:
-
-- Demo data can be restored and verified from scripts
-- Core chains are reproducible without manual database fixes
-- Performance thresholds are versioned and enforced in CI
-- No undocumented technical debt remains open for release candidates
-
-## Execution order
-
-1. Finish all remaining P0 drift fixes and document canonical paths.
-2. Unify runtime mode strategy before touching more feature code.
-3. Move external integrations to live-first with explicit diagnostics.
-4. Raise coverage and add performance baselines for the highest-risk chains.
-5. Freeze replay scripts and release checklists for competition and staging use.
+- Heaviest modules trend down in line count over time instead of up
 
 ## Guardrails
 
@@ -108,6 +85,7 @@ The following rules are mandatory for future backend changes:
 - Models are the only layer allowed to talk to the database adapter directly
 - New deprecated paths must be documented at the time they are introduced
 - New production flows must not default to stub, mock, or fake success paths
+- New feature work must prefer deleting or extracting duplicate code over stacking logic into large files
 
 ## Release gate
 
@@ -118,4 +96,4 @@ A backend release candidate is acceptable only when all checks below pass:
 - Compatibility routes are documented and intentionally retained
 - Integration diagnostics are truthful about data source and mode
 - No warning-only quality gate is ignored for release
-
+- No removed legacy path remains mounted in the running backend

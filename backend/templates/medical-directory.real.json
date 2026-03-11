@@ -1,0 +1,154 @@
+﻿{
+  "hospitals": [
+    {
+      "id": 61060001,
+      "name": "延安大学附属医院",
+      "level": "3A",
+      "city": "延安",
+      "sourceType": "official",
+      "sourceUrl": "https://yxy.yau.edu.cn/info/1027/1091_1.htm",
+      "verifiedAt": "2026-03-11"
+    },
+    {
+      "id": 61060002,
+      "name": "延安市中医医院（北京大学第三医院延安分院）",
+      "level": "3A",
+      "city": "延安",
+      "sourceType": "official",
+      "sourceUrl": "https://yaszyyy.com/xwzx/yydt/1970021341193060354.html",
+      "verifiedAt": "2026-03-11"
+    }
+  ],
+  "departments": [
+    {
+      "id": 62060001,
+      "hospitalId": 61060001,
+      "name": "神经内科",
+      "sourceType": "official",
+      "sourceUrl": "https://www.yau.edu.cn/info/1120/361497.htm",
+      "verifiedAt": "2026-03-11"
+    },
+    {
+      "id": 62060002,
+      "hospitalId": 61060001,
+      "name": "疼痛康复医学科",
+      "sourceType": "official",
+      "sourceUrl": "https://yxy.yau.edu.cn/info/2321/27861.htm",
+      "verifiedAt": "2026-03-11"
+    },
+    {
+      "id": 62060003,
+      "hospitalId": 61060002,
+      "name": "推拿康复科",
+      "sourceType": "official",
+      "sourceUrl": "https://www.yaszyyy.com/xwzx/yydt/1970021341193060354.html",
+      "verifiedAt": "2026-03-11"
+    },
+    {
+      "id": 62060004,
+      "hospitalId": 61060002,
+      "name": "脑病科",
+      "sourceType": "official",
+      "sourceUrl": "https://www.yaszyyy.com/xwzx/yydt/1996824677820940290.html",
+      "verifiedAt": "2026-03-11"
+    },
+    {
+      "id": 62060005,
+      "hospitalId": 61060002,
+      "name": "运动医学科",
+      "sourceType": "official",
+      "sourceUrl": "https://www.yaszyyy.com/xwzx/yydt/1968884415308251138.html",
+      "verifiedAt": "2026-03-11"
+    }
+  ],
+  "doctors": [
+    {
+      "id": 63060001,
+      "hospitalId": 61060001,
+      "departmentId": 62060001,
+      "name": "薛艺东",
+      "title": "教授",
+      "specialty": "脑血管病筛查与卒中防治",
+      "sourceType": "official",
+      "sourceUrl": "https://www.yau.edu.cn/info/1120/361497.htm",
+      "verifiedAt": "2026-03-11"
+    },
+    {
+      "id": 63060002,
+      "hospitalId": 61060001,
+      "departmentId": 62060001,
+      "name": "刘强",
+      "title": "主任医师",
+      "specialty": "神经内科常见病与脑血管病规范诊疗",
+      "sourceType": "official",
+      "sourceUrl": "https://www.yau.edu.cn/info/1120/361497.htm",
+      "verifiedAt": "2026-03-11"
+    },
+    {
+      "id": 63060003,
+      "hospitalId": 61060001,
+      "departmentId": 62060001,
+      "name": "李海军",
+      "title": "副主任医师",
+      "specialty": "神经内科随访管理与脑血管病健康教育",
+      "sourceType": "official",
+      "sourceUrl": "https://www.yau.edu.cn/info/1120/361497.htm",
+      "verifiedAt": "2026-03-11"
+    },
+    {
+      "id": 63060004,
+      "hospitalId": 61060001,
+      "departmentId": 62060002,
+      "name": "高东梅",
+      "title": "主任医师",
+      "specialty": "疼痛康复、社区康复与老年骨关节问题管理",
+      "sourceType": "official",
+      "sourceUrl": "https://yxy.yau.edu.cn/info/2321/27861.htm",
+      "verifiedAt": "2026-03-11"
+    },
+    {
+      "id": 63060005,
+      "hospitalId": 61060002,
+      "departmentId": 62060003,
+      "name": "拓庆银",
+      "title": "主任",
+      "specialty": "推拿康复与中西医结合康复干预",
+      "sourceType": "official",
+      "sourceUrl": "https://www.yaszyyy.com/xwzx/yydt/1970021341193060354.html",
+      "verifiedAt": "2026-03-11"
+    },
+    {
+      "id": 63060006,
+      "hospitalId": 61060002,
+      "departmentId": 62060004,
+      "name": "郭晓贤",
+      "title": "主任",
+      "specialty": "认知障碍与脑病诊疗",
+      "sourceType": "official",
+      "sourceUrl": "https://www.yaszyyy.com/xwzx/yydt/1996824677820940290.html",
+      "verifiedAt": "2026-03-11"
+    },
+    {
+      "id": 63060007,
+      "hospitalId": 61060002,
+      "departmentId": 62060005,
+      "name": "张志宇",
+      "title": "主任医师",
+      "specialty": "运动损伤、关节镜与骨关节康复",
+      "sourceType": "official",
+      "sourceUrl": "https://www.yaszyyy.com/xwzx/yydt/1968884415308251138.html",
+      "verifiedAt": "2026-03-11"
+    },
+    {
+      "id": 63060008,
+      "hospitalId": 61060002,
+      "departmentId": 62060005,
+      "name": "庞军",
+      "title": "主任医师",
+      "specialty": "运动损伤、骨关节疾病与老年关节保护",
+      "sourceType": "official",
+      "sourceUrl": "https://www.yaszyyy.com/jkjy/zykp/2004433958502154241.html",
+      "verifiedAt": "2026-03-11"
+    }
+  ]
+}

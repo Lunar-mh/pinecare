@@ -1,12 +1,13 @@
-﻿module.exports = {
+module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/*.test.js'],
   collectCoverageFrom: ['src/**/*.js', '!src/docs/**'],
   coverageThreshold: {
     global: {
-      branches: 37,
-      functions: 52,
-      lines: 54,
+      statements: 70,
+      branches: 52,
+      functions: 70,
+      lines: 70,
     },
   },
   testTimeout: 30000,
