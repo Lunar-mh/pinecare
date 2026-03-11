@@ -112,11 +112,13 @@ function isInsideFence(location, fence) {
   const lng = Number(location.longitude);
 
   if (fence.fenceType === 'circle' || fence.fence_type === 'circle') {
+    const centerLat = fence.centerLat ?? fence.center_lat;
+    const centerLng = fence.centerLng ?? fence.center_lng;
     return isInsideCircle(
       lat,
       lng,
-      Number(fence.centerLat || fence.center_lat),
-      Number(fence.centerLng || fence.center_lng),
+      Number(centerLat),
+      Number(centerLng),
       Number(fence.radius)
     );
   }

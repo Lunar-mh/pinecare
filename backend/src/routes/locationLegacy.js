@@ -6,8 +6,10 @@ const { ok, fail } = require('../utils/response');
 const locationService = require('../services/locationService');
 const locationTrailService = require('../services/locationTrailService');
 const fenceService = require('../services/fenceService');
+const { deprecatedRoute } = require('../utils/deprecation');
 
 const router = express.Router();
+router.use(deprecatedRoute('/gps'));
 
 function parsePositiveInt(value) {
   const parsed = Number.parseInt(value, 10);

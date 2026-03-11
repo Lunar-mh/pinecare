@@ -1,6 +1,8 @@
-﻿'use strict';
+'use strict';
 
 const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
+const RECENT_ERROR_LIMIT = 20;
+const recentThirdPartyErrors = [];
 
 function maskWithEdges(value, keepStart, keepEnd) {
   const raw = String(value || '');
@@ -121,6 +123,7 @@ function isRetryableError(err) {
 
 function logThirdPartyError(provider, err, extra = {}) {
   const payload = {
+    timestamp: new Date().toISOString(),
     provider,
     code: err && err.code ? err.code : undefined,
     status: err && err.response ? err.response.status : undefined,
@@ -128,13 +131,29 @@ function logThirdPartyError(provider, err, extra = {}) {
     response: sanitizeObject(err && err.response ? err.response.data : undefined),
     extra: sanitizeObject(extra),
   };
+
+  recentThirdPartyErrors.unshift(payload);
+  if (recentThirdPartyErrors.length > RECENT_ERROR_LIMIT) {
+    recentThirdPartyErrors.length = RECENT_ERROR_LIMIT;
+  }
+
   console.error('third_party_error', payload);
+}
+
+function getRecentThirdPartyErrors(limit = 10) {
+  return recentThirdPartyErrors.slice(0, Math.max(0, Number(limit) || 0));
+}
+
+function clearRecentThirdPartyErrors() {
+  recentThirdPartyErrors.length = 0;
 }
 
 module.exports = {
   createUpstreamError,
   isRetryableError,
   logThirdPartyError,
+  getRecentThirdPartyErrors,
+  clearRecentThirdPartyErrors,
   sanitizeObject,
   sanitizeText,
   maskPhone,

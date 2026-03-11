@@ -45,6 +45,15 @@ describe('appointmentService', () => {
     });
 
     expect(appointmentModel.findByIdempotencyKey).toHaveBeenCalledWith('req-001');
+    expect(medicalApiService.createAppointment).toHaveBeenCalledWith({
+      userId: 1,
+      hospitalId: 10,
+      doctorId: 88,
+      department: 'Cardiology',
+      appointmentDate: '2026-03-10',
+      timeSlot: '09:00-09:30',
+      requestId: 'req-001',
+    });
     expect(result.duplicate).toBe(false);
     expect(result.idempotencyKey).toBe('req-001');
   });
@@ -116,11 +125,42 @@ describe('appointmentService', () => {
     expect(medicalApiService.cancelAppointment).toHaveBeenCalledWith({
       appointmentId: 12,
       thirdPartyAppointId: 'tp-12',
+      requestId: 'cancel-12',
     });
     expect(appointmentModel.updateStatus).toHaveBeenCalledWith(12, 'cancelled');
     expect(result).toEqual({
       idempotent: false,
       appointment: { id: 12, appointStatus: 'cancelled', thirdPartyAppointId: 'tp-12' },
+    });
+  });
+
+  it('cancel passes appointment idempotency key when present', async () => {
+    appointmentModel.findByIdAndUserId
+      .mockResolvedValueOnce({
+        id: 22,
+        appointStatus: 'confirmed',
+        thirdPartyAppointId: 'tp-22',
+        idempotencyKey: 'req-22',
+      })
+      .mockResolvedValueOnce({
+        id: 22,
+        appointStatus: 'cancelled',
+        thirdPartyAppointId: 'tp-22',
+        idempotencyKey: 'req-22',
+      });
+    medicalApiService.cancelAppointment.mockResolvedValue({
+      thirdPartyAppointId: 'tp-22',
+      appointStatus: 'cancelled',
+      cancelStatus: 'ok',
+    });
+    appointmentModel.updateStatus.mockResolvedValue(true);
+
+    await appointmentService.cancel(1, 22);
+
+    expect(medicalApiService.cancelAppointment).toHaveBeenCalledWith({
+      appointmentId: 22,
+      thirdPartyAppointId: 'tp-22',
+      requestId: 'req-22',
     });
   });
 

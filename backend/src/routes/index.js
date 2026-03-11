@@ -11,10 +11,11 @@ router.get('/', (_req, res) => {
 
 function safeUse(path, routeFile) {
   try {
+    require.resolve(routeFile, { paths: [__dirname] });
     const routeModule = require(routeFile);
     router.use(path, routeModule);
   } catch (err) {
-    if (err.code === 'MODULE_NOT_FOUND') {
+    if (err.code === 'MODULE_NOT_FOUND' && String(err.message || '').includes(routeFile)) {
       console.warn(`[safeUse] skipped ${path}, missing route module: ${routeFile}`);
       return;
     }

@@ -123,6 +123,7 @@ const appointmentService = {
       department,
       appointmentDate,
       timeSlot,
+      requestId: idempotencyKey,
     });
 
     try {
@@ -195,6 +196,7 @@ const appointmentService = {
     await medicalApiService.cancelAppointment({
       appointmentId: appointmentIdNum,
       thirdPartyAppointId: appointment.thirdPartyAppointId,
+      requestId: appointment.idempotencyKey || `cancel-${appointmentIdNum}`,
     });
 
     await appointmentModel.updateStatus(appointmentIdNum, 'cancelled');

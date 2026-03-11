@@ -15,8 +15,10 @@ const {
   getEmotion,
   getNostalgia,
 } = require('../controllers/companionController');
+const { deprecatedRoute } = require('../utils/deprecation');
 
 const router = express.Router();
+router.use(deprecatedRoute('/ai-companion/companion'));
 
 // Backward-compatible legacy routes: /companion/*
 router.post('/chat', auth, companionChatRateLimiter, validateChat, chat);

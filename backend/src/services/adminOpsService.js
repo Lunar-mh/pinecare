@@ -1,7 +1,13 @@
 ﻿'use strict';
 
 const adminOpsModel = require('../models/adminOpsModel');
+const AuditLogModel = require('../models/auditLog');
 const timeBankModel = require('../models/timeBank');
+const medicalApiService = require('./medicalApiService');
+const ossService = require('./ossService');
+const { DEMO_SCENARIOS, getDemoScenarioById } = require('../config/demoScenarios');
+const { resolveMode, isProductionLive } = require('../config/runtimeMode');
+const { getRecentThirdPartyErrors } = require('../utils/thirdParty');
 
 function createBizError(code, message, statusCode) {
   const err = new Error(message);
@@ -74,6 +80,90 @@ function parseSensorData(value) {
   } catch (_err) {
     return null;
   }
+}
+
+function resolveServiceMode(key) {
+  return String(process.env[key] || 'auto')
+    .trim()
+    .toLowerCase();
+}
+
+function hasEnv(keys) {
+  return keys.every((key) => Boolean(String(process.env[key] || '').trim()));
+}
+
+function hasOssLiveConfig() {
+  return (
+    hasEnv(['OSS_UPLOAD_API_URL', 'OSS_UPLOAD_TOKEN']) ||
+    hasEnv(['OSS_ENDPOINT', 'OSS_ACCESS_KEY_ID', 'OSS_ACCESS_KEY_SECRET'])
+  );
+}
+
+function resolveAiEffectiveMode() {
+  const mode = resolveServiceMode('AI_CONSULT_MODE');
+  if (mode === 'live') return 'live';
+  if (mode === 'stub' || mode === 'mock') return 'stub';
+  return isProductionLive() || hasEnv(['DASHSCOPE_API_KEY']) ? 'live' : 'stub';
+}
+
+function resolveVoiceEffectiveMode() {
+  const mode = resolveServiceMode('VOICE_SERVICE_MODE');
+  if (mode === 'live') return 'live';
+  if (mode === 'stub' || mode === 'mock') return 'stub';
+  return isProductionLive() || hasEnv(['DASHSCOPE_API_KEY']) ? 'live' : 'stub';
+}
+
+function buildIntegrationRows() {
+  const productionLive = isProductionLive();
+  const medicalSource = medicalApiService.getSourceTag();
+
+  return [
+    {
+      key: 'ai_consult',
+      configured: hasEnv(['DASHSCOPE_API_KEY']),
+      mode: resolveServiceMode('AI_CONSULT_MODE'),
+      effectiveMode: resolveAiEffectiveMode(),
+      fallbackAllowed: !productionLive,
+    },
+    {
+      key: 'voice',
+      configured: hasEnv(['DASHSCOPE_API_KEY']),
+      mode: resolveServiceMode('VOICE_SERVICE_MODE'),
+      effectiveMode: resolveVoiceEffectiveMode(),
+      fallbackAllowed: !productionLive,
+    },
+    {
+      key: 'oss',
+      configured: hasOssLiveConfig(),
+      mode: resolveServiceMode('OSS_MODE'),
+      effectiveMode: ossService.isLiveMode() ? 'live' : 'stub',
+      fallbackAllowed: !productionLive,
+    },
+    {
+      key: 'medical',
+      configured: hasEnv(['MEDICAL_API_BASE_URL', 'MEDICAL_API_KEY']),
+      mode: resolveServiceMode('MEDICAL_API_MODE'),
+      effectiveMode: medicalSource === 'third_party_live' ? 'live' : 'stub',
+      fallbackAllowed:
+        !productionLive &&
+        String(process.env.MEDICAL_API_ALLOW_STUB_FALLBACK || 'false').toLowerCase() === 'true',
+    },
+    {
+      key: 'wechat_notify',
+      configured: hasEnv(['WX_ACCESS_TOKEN']) && hasEnv(['WX_MSG_TEMPLATE_ID']),
+      mode: productionLive ? 'live' : 'auto',
+      effectiveMode:
+        productionLive || String(process.env.WECHAT_NOTIFY_MOCK || '0').trim() !== '1'
+          ? 'live'
+          : 'stub',
+      fallbackAllowed: !productionLive,
+    },
+  ].map((item) => ({
+    ...item,
+    runtimeMode: resolveMode(),
+    healthy:
+      item.effectiveMode === 'live' ? item.configured : item.fallbackAllowed || item.configured,
+  }));
 }
 
 function formatSosNotificationSummary(summaryRows) {

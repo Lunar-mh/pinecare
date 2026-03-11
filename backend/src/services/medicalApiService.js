@@ -10,6 +10,14 @@ const { isProductionLive } = require('../config/runtimeMode');
 
 const API_TIMEOUT_MS = Number(process.env.MEDICAL_API_TIMEOUT_MS || 5000);
 const MAX_RETRY = Math.max(0, Number(process.env.MEDICAL_API_MAX_RETRY || 2));
+const CIRCUIT_BREAKER_THRESHOLD = Math.max(
+  1,
+  Number(process.env.MEDICAL_API_CIRCUIT_BREAKER_THRESHOLD || 3)
+);
+const CIRCUIT_BREAKER_COOLDOWN_MS = Math.max(
+  1000,
+  Number(process.env.MEDICAL_API_CIRCUIT_BREAKER_COOLDOWN_MS || 30000)
+);
 
 function createBizError(code, message, statusCode) {
   const error = new Error(message);
@@ -41,9 +49,28 @@ class MedicalApiService {
       timeout: API_TIMEOUT_MS,
       headers: {
         'Content-Type': 'application/json',
-        ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}),
+        ...this.buildAuthHeaders(),
       },
     });
+
+    this.failureCount = 0;
+    this.circuitOpenedAt = 0;
+  }
+
+  buildAuthHeaders() {
+    if (!this.apiKey) {
+      return {};
+    }
+
+    const authMode = String(process.env.MEDICAL_API_AUTH_MODE || 'bearer')
+      .trim()
+      .toLowerCase();
+
+    if (authMode === 'x-api-key') {
+      return { 'X-API-Key': this.apiKey };
+    }
+
+    return { Authorization: `Bearer ${this.apiKey}` };
   }
 
   hasLiveConfig() {
@@ -74,14 +101,52 @@ class MedicalApiService {
     });
   }
 
+  isCircuitOpen() {
+    if (!this.circuitOpenedAt) {
+      return false;
+    }
+
+    const elapsed = Date.now() - this.circuitOpenedAt;
+    if (elapsed >= CIRCUIT_BREAKER_COOLDOWN_MS) {
+      this.failureCount = 0;
+      this.circuitOpenedAt = 0;
+      return false;
+    }
+
+    return true;
+  }
+
+  recordSuccess() {
+    this.failureCount = 0;
+    this.circuitOpenedAt = 0;
+  }
+
+  recordFailure() {
+    this.failureCount += 1;
+    if (this.failureCount >= CIRCUIT_BREAKER_THRESHOLD) {
+      this.circuitOpenedAt = Date.now();
+    }
+  }
+
+  createCircuitOpenError() {
+    return createBizError(503, 'Medical API circuit breaker is open.', 503);
+  }
+
   async requestWithRetry(operation, requestFactory) {
+    if (this.isCircuitOpen()) {
+      throw this.createCircuitOpenError();
+    }
+
     let lastError = null;
 
     for (let attempt = 0; attempt <= MAX_RETRY; attempt += 1) {
       try {
-        return await requestFactory(this.client);
+        const response = await requestFactory(this.client);
+        this.recordSuccess();
+        return response;
       } catch (err) {
         lastError = err;
+        this.recordFailure();
         logThirdPartyError('medical-api', err, { operation, attempt: attempt + 1 });
 
         if (!isRetryableError(err) || attempt >= MAX_RETRY) {
@@ -116,6 +181,18 @@ class MedicalApiService {
       }
       throw err;
     }
+  }
+
+  buildRequestOptions(requestId) {
+    if (!requestId) {
+      return {};
+    }
+
+    return {
+      headers: {
+        'X-Request-Id': String(requestId),
+      },
+    };
   }
 
   stubHospitals() {
@@ -208,6 +285,8 @@ class MedicalApiService {
   }
 
   async createConsultSession(payload) {
+    const requestOptions = this.buildRequestOptions(payload.requestId);
+
     return this.execute(
       'createConsultSession',
       () => {
@@ -222,7 +301,7 @@ class MedicalApiService {
       },
       async () => {
         const response = await this.requestWithRetry('createConsultSession', (client) =>
-          client.post('/consult/sessions', payload)
+          client.post('/consult/sessions', payload, requestOptions)
         );
         const data = response.data || {};
         if (!data.thirdPartySessionId || !data.sessionUrl) {
@@ -240,6 +319,8 @@ class MedicalApiService {
   }
 
   async createAppointment(payload) {
+    const requestOptions = this.buildRequestOptions(payload.requestId);
+
     return this.execute(
       'createAppointment',
       () => ({
@@ -250,7 +331,7 @@ class MedicalApiService {
       }),
       async () => {
         const response = await this.requestWithRetry('createAppointment', (client) =>
-          client.post('/appointments', payload)
+          client.post('/appointments', payload, requestOptions)
         );
         const data = response.data || {};
         if (!data.thirdPartyAppointId) {
@@ -270,6 +351,7 @@ class MedicalApiService {
     const thirdPartyAppointId = payload.thirdPartyAppointId
       ? String(payload.thirdPartyAppointId)
       : '';
+    const requestOptions = this.buildRequestOptions(payload.requestId);
 
     return this.execute(
       'cancelAppointment',
@@ -287,7 +369,7 @@ class MedicalApiService {
         const response = await this.requestWithRetry('cancelAppointment', (client) =>
           client.post(`/appointments/${targetId}/cancel`, {
             reason: payload.reason || 'user_cancelled',
-          })
+          }, requestOptions)
         );
 
         const data = response.data || {};
@@ -301,6 +383,8 @@ class MedicalApiService {
   }
 
   async fetchMedicalReports(userId, filters = {}) {
+    const requestOptions = this.buildRequestOptions(filters.requestId);
+
     return this.execute(
       'fetchMedicalReports',
       () => {
@@ -338,6 +422,7 @@ class MedicalApiService {
               startDate: filters.startDate || undefined,
               endDate: filters.endDate || undefined,
             },
+            ...requestOptions,
           })
         );
 

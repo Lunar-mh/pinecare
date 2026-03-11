@@ -1,27 +1,44 @@
-﻿openapi: 3.0.3
+openapi: 3.0.3
 info:
-  title: 银伴平台 - 医疗资源整合 API
-  version: 1.2.0
+  title: Yinban Medical Integration API
+  description: Medical directory, online consultation, appointment, and report interfaces.
+  version: 1.3.0
 
 servers:
   - url: /api/v1
+    description: Standard API prefix
   - url: /
+    description: Mini-program compatibility prefix
+
+tags:
+  - name: Medical
+    description: Medical resource integration domain
 
 paths:
   /medical/hospitals:
     get:
-      tags: [医疗]
-      summary: 获取医院列表
+      tags: [Medical]
+      summary: List hospitals
+      operationId: listHospitals
       parameters:
         - $ref: '#/components/parameters/XRequestId'
       responses:
         '200':
-          description: 成功
+          description: Hospital list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HospitalListResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
 
   /medical/departments:
     get:
-      tags: [医疗]
-      summary: 获取医院科室列表
+      tags: [Medical]
+      summary: List departments by hospital
+      operationId: listDepartments
       parameters:
         - $ref: '#/components/parameters/XRequestId'
         - in: query
@@ -29,14 +46,26 @@ paths:
           required: true
           schema:
             type: integer
+            minimum: 1
       responses:
         '200':
-          description: 成功
+          description: Department list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartmentListResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
 
   /medical/doctors:
     get:
-      tags: [医疗]
-      summary: 获取医生列表（支持分页筛选）
+      tags: [Medical]
+      summary: List doctors with pagination and filters
+      operationId: listDoctors
       parameters:
         - $ref: '#/components/parameters/XRequestId'
         - in: query
@@ -44,26 +73,52 @@ paths:
           required: true
           schema:
             type: integer
+            minimum: 1
+        - in: query
+          name: hospitalId
+          required: false
+          schema:
+            type: integer
+            minimum: 1
         - in: query
           name: keyword
+          required: false
           schema:
             type: string
         - in: query
           name: page
+          required: false
           schema:
             type: integer
+            minimum: 1
+            default: 1
         - in: query
           name: pageSize
+          required: false
           schema:
             type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
       responses:
         '200':
-          description: 成功
+          description: Doctor page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorPageResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
 
   /medical/doctors/{doctorId}:
     get:
-      tags: [医疗]
-      summary: 获取医生详情
+      tags: [Medical]
+      summary: Get doctor detail
+      operationId: getDoctorDetail
       parameters:
         - $ref: '#/components/parameters/XRequestId'
         - in: path
@@ -71,72 +126,153 @@ paths:
           required: true
           schema:
             type: integer
+            minimum: 1
       responses:
         '200':
-          description: 成功
+          description: Doctor detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorDetailResponse'
         '404':
-          description: 医生不存在
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
 
   /medical/consult/start:
     post:
-      tags: [医疗]
-      summary: 发起在线问诊
+      tags: [Medical]
+      summary: Start online consultation
+      operationId: startConsultation
       security:
         - BearerAuth: []
       parameters:
         - $ref: '#/components/parameters/XRequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [doctorId, department]
+              properties:
+                doctorId:
+                  type: integer
+                  minimum: 1
+                department:
+                  type: string
       responses:
         '200':
-          description: 成功
+          description: Consultation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsultationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
 
   /medical/appointment:
     post:
-      tags: [医疗]
-      summary: 创建预约
+      tags: [Medical]
+      summary: Create appointment
+      operationId: createAppointment
       security:
         - BearerAuth: []
       parameters:
         - $ref: '#/components/parameters/XRequestId'
         - $ref: '#/components/parameters/XIdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hospitalId, department, doctorId, appointmentDate, timeSlot]
+              properties:
+                hospitalId:
+                  type: integer
+                  minimum: 1
+                department:
+                  type: string
+                doctorId:
+                  type: integer
+                  minimum: 1
+                appointmentDate:
+                  type: string
+                  format: date
+                timeSlot:
+                  type: string
       responses:
         '200':
-          description: 成功
+          description: Appointment created or idempotently replayed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentWriteResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '409':
-          description: 幂等重放或状态冲突
+          $ref: '#/components/responses/Conflict'
         '422':
-          description: 参数错误
+          $ref: '#/components/responses/ValidationError'
         '503':
-          description: 第三方服务不可用
+          $ref: '#/components/responses/ServiceUnavailable'
         '504':
-          description: 第三方服务超时
+          $ref: '#/components/responses/GatewayTimeout'
     get:
-      tags: [医疗]
-      summary: 获取我的预约列表
+      tags: [Medical]
+      summary: List my appointments
+      operationId: listAppointments
       security:
         - BearerAuth: []
       parameters:
         - $ref: '#/components/parameters/XRequestId'
         - in: query
           name: status
+          required: false
           schema:
             type: string
             enum: [pending, confirmed, completed, cancelled]
         - in: query
           name: page
+          required: false
           schema:
             type: integer
+            minimum: 1
         - in: query
           name: pageSize
+          required: false
           schema:
             type: integer
+            minimum: 1
+            maximum: 100
       responses:
         '200':
-          description: 成功
+          description: Appointment page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
 
   /medical/appointment/{appointmentId}/cancel:
     post:
-      tags: [医疗]
-      summary: 取消预约
+      tags: [Medical]
+      summary: Cancel appointment
+      operationId: cancelAppointment
       security:
         - BearerAuth: []
       parameters:
@@ -146,51 +282,81 @@ paths:
           required: true
           schema:
             type: integer
+            minimum: 1
       responses:
         '200':
-          description: 成功
+          description: Appointment cancelled or idempotently replayed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentWriteResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
-          description: 预约不存在
+          $ref: '#/components/responses/NotFound'
         '409':
-          description: 状态不允许取消
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '503':
-          description: 第三方服务不可用
+          $ref: '#/components/responses/ServiceUnavailable'
         '504':
-          description: 第三方服务超时
+          $ref: '#/components/responses/GatewayTimeout'
 
   /medical/reports:
     get:
-      tags: [医疗]
-      summary: 获取报告列表（支持分页筛选）
+      tags: [Medical]
+      summary: List medical reports
+      operationId: listMedicalReports
       security:
         - BearerAuth: []
       parameters:
         - $ref: '#/components/parameters/XRequestId'
         - in: query
           name: reportType
+          required: false
           schema:
             type: string
         - in: query
           name: startDate
+          required: false
           schema:
             type: string
             format: date
         - in: query
           name: endDate
+          required: false
           schema:
             type: string
             format: date
         - in: query
           name: page
+          required: false
           schema:
             type: integer
+            minimum: 1
         - in: query
           name: pageSize
+          required: false
           schema:
             type: integer
+            minimum: 1
+            maximum: 100
       responses:
         '200':
-          description: 成功
+          description: Report page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MedicalReportListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
 
 components:
   securitySchemes:
@@ -206,11 +372,353 @@ components:
       required: false
       schema:
         type: string
-      description: 客户端请求追踪 ID。服务端会原样回传；缺省时服务端自动生成。
+      description: Client request trace ID. The backend echoes it back when present.
     XIdempotencyKey:
       in: header
       name: x-idempotency-key
       required: false
       schema:
         type: string
-      description: 写接口幂等键，建议客户端在重试时复用同一值。
+      description: Recommended idempotency key for retried write requests.
+
+  schemas:
+    Envelope:
+      type: object
+      required: [code, message, data]
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: ok
+        data:
+          nullable: true
+
+    ErrorEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            code:
+              type: integer
+              example: 422
+            message:
+              type: string
+              example: validation failed
+            data:
+              nullable: true
+
+    Hospital:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        level:
+          type: string
+        city:
+          type: string
+
+    Department:
+      type: object
+      properties:
+        id:
+          type: integer
+        hospitalId:
+          type: integer
+        name:
+          type: string
+
+    Doctor:
+      type: object
+      properties:
+        id:
+          type: integer
+        hospitalId:
+          type: integer
+          nullable: true
+        departmentId:
+          type: integer
+          nullable: true
+        name:
+          type: string
+        title:
+          type: string
+          nullable: true
+        specialty:
+          type: string
+          nullable: true
+
+    Consultation:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        doctorId:
+          type: integer
+        department:
+          type: string
+        consultStatus:
+          type: string
+          enum: [pending, active, completed, cancelled]
+        sessionUrl:
+          type: string
+          nullable: true
+        thirdPartySessionId:
+          type: string
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        endedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        hospitalId:
+          type: integer
+        department:
+          type: string
+        doctorId:
+          type: integer
+        appointmentDate:
+          type: string
+          format: date
+        timeSlot:
+          type: string
+        appointStatus:
+          type: string
+          enum: [pending, confirmed, completed, cancelled]
+        thirdPartyAppointId:
+          type: string
+          nullable: true
+        idempotencyKey:
+          type: string
+          nullable: true
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+    MedicalReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        reportNo:
+          type: string
+        reportType:
+          type: string
+        reportDate:
+          type: string
+          format: date
+        reportUrl:
+          type: string
+          nullable: true
+        reportData:
+          type: object
+          nullable: true
+          additionalProperties: true
+        syncStatus:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    HospitalListResponse:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                source:
+                  type: string
+                list:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Hospital'
+
+    DepartmentListResponse:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                source:
+                  type: string
+                list:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Department'
+
+    DoctorPageResponse:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                source:
+                  type: string
+                list:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Doctor'
+                page:
+                  type: integer
+                pageSize:
+                  type: integer
+                total:
+                  type: integer
+
+    DoctorDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                source:
+                  type: string
+                doctor:
+                  $ref: '#/components/schemas/Doctor'
+
+    ConsultationResponse:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                consultation:
+                  $ref: '#/components/schemas/Consultation'
+                source:
+                  type: string
+
+    AppointmentWriteResponse:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                duplicate:
+                  type: boolean
+                  nullable: true
+                idempotent:
+                  type: boolean
+                  nullable: true
+                idempotencyKey:
+                  type: string
+                  nullable: true
+                appointment:
+                  $ref: '#/components/schemas/Appointment'
+
+    AppointmentListResponse:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                list:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Appointment'
+                total:
+                  type: integer
+                page:
+                  type: integer
+                pageSize:
+                  type: integer
+
+    MedicalReportListResponse:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                source:
+                  type: string
+                list:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/MedicalReport'
+                total:
+                  type: integer
+                page:
+                  type: integer
+                pageSize:
+                  type: integer
+
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Conflict:
+      description: Conflict or invalid state transition
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    ServiceUnavailable:
+      description: Upstream service unavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    GatewayTimeout:
+      description: Upstream service timeout
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'

@@ -1,6 +1,7 @@
 ﻿'use strict';
 
 const statisticsModel = require('../models/statisticsModel');
+const communityAdminModel = require('../models/communityAdmin');
 
 function isTableMissingError(err) {
   return Boolean(err && (err.code === 'ER_NO_SUCH_TABLE' || String(err.message || '').includes('doesn\'t exist')));
@@ -52,6 +53,26 @@ const statisticsService = {
       }
       throw err;
     }
+  },
+
+  async getCommunityDashboardStats(communityId) {
+    const data = await communityAdminModel.getStatsData(Number(communityId));
+
+    return {
+      overview: {
+        active_elders: Number(data.overview.active_elders || 0),
+        volunteers: Number(data.overview.volunteers || 0),
+        total_orders: Number(data.overview.total_orders || 0),
+        total_service_hours: Number(data.overview.total_service_hours || 0),
+      },
+      order_distribution: {
+        pending: Number(data.order_distribution.pending || 0),
+        assigned: Number(data.order_distribution.assigned || 0),
+        processing: Number(data.order_distribution.processing || 0),
+        completed: Number(data.order_distribution.completed || 0),
+        cancelled: Number(data.order_distribution.cancelled || 0),
+      },
+    };
   },
 };
 

@@ -34,6 +34,30 @@ function unwrap(result) {
   return Array.isArray(result) ? result[0] : result;
 }
 
+function resolveBusinessId(directoryType, item) {
+  if (!item) {
+    return null;
+  }
+
+  if (item.id !== undefined && item.id !== null && item.id !== '') {
+    return item.id;
+  }
+
+  if (directoryType === 'hospital') {
+    return item.hospitalId;
+  }
+
+  if (directoryType === 'department') {
+    return item.departmentId;
+  }
+
+  if (directoryType === 'doctor') {
+    return item.doctorId;
+  }
+
+  return item.hospitalId || item.departmentId || item.doctorId;
+}
+
 function normalizeItems(directoryType, items, scope = {}) {
   if (!Array.isArray(items)) {
     return [];
@@ -41,7 +65,7 @@ function normalizeItems(directoryType, items, scope = {}) {
 
   return items
     .map((item, index) => {
-      const id = item && (item.id || item.hospitalId || item.departmentId || item.doctorId);
+      const id = resolveBusinessId(directoryType, item);
       const businessKey = String(id || `${directoryType}_${index + 1}`);
       const name = String(
         (item && (item.name || item.hospitalName || item.departmentName || item.doctorName)) || ''

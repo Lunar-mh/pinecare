@@ -30,5 +30,9 @@ router.get('/time-bank/service/history', auth, adminOpsController.timeBankServic
 router.post('/time-bank/service/confirm', auth, adminOpsController.confirmTimeBankService);
 router.get('/time-bank/exchange/history', auth, adminOpsController.timeBankExchangeHistory);
 router.get('/time-bank/leaderboard', auth, adminOpsController.timeBankLeaderboard);
+router.get('/system/integrations', auth, adminOpsController.integrationStatus);
+router.get('/system/audit-logs', auth, adminOpsController.auditLogs);
+router.get('/system/demo/scenarios', auth, adminOpsController.demoScenarios);
+router.post('/system/demo/bootstrap', auth, adminOpsController.demoBootstrap);
 
 module.exports = router;

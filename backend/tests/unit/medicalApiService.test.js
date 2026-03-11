@@ -154,12 +154,21 @@ describe('medicalApiService', () => {
     const result = await service.cancelAppointment({
       appointmentId: 99,
       thirdPartyAppointId: 'tp-99',
+      requestId: 'req-medical-99',
     });
 
     expect(result.appointStatus).toBe('cancelled');
-    expect(mockClient.post).toHaveBeenCalledWith('/appointments/tp-99/cancel', {
-      reason: 'user_cancelled',
-    });
+    expect(mockClient.post).toHaveBeenCalledWith(
+      '/appointments/tp-99/cancel',
+      {
+        reason: 'user_cancelled',
+      },
+      {
+        headers: {
+          'X-Request-Id': 'req-medical-99',
+        },
+      }
+    );
   });
 
   it('cancel appointment throws 422 when target id missing in live mode', async () => {
@@ -174,6 +183,57 @@ describe('medicalApiService', () => {
     await expect(service.cancelAppointment({})).rejects.toMatchObject({
       code: 422,
       statusCode: 422,
+    });
+  });
+
+  it('supports x-api-key auth mode for live client', async () => {
+    const { service } = loadService({
+      env: {
+        MEDICAL_API_MODE: 'live',
+        MEDICAL_API_BASE_URL: 'https://medical-api.example.com',
+        MEDICAL_API_KEY: 'test-key',
+        MEDICAL_API_AUTH_MODE: 'x-api-key',
+      },
+      client: {
+        get: jest.fn().mockResolvedValue({ data: { hospitals: [{ id: 1, name: 'A' }] } }),
+      },
+    });
+
+    await service.fetchHospitals();
+
+    // eslint-disable-next-line global-require
+    const axios = require('axios');
+    expect(axios.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'X-API-Key': 'test-key',
+        }),
+      })
+    );
+  });
+
+  it('opens circuit breaker after repeated retryable failures', async () => {
+    const get = jest.fn().mockRejectedValue({ response: { status: 503 } });
+
+    const { service } = loadService({
+      env: {
+        MEDICAL_API_MODE: 'live',
+        MEDICAL_API_BASE_URL: 'https://medical-api.example.com',
+        MEDICAL_API_KEY: 'test-key',
+        MEDICAL_API_CIRCUIT_BREAKER_THRESHOLD: '2',
+      },
+      client: { get },
+    });
+
+    await expect(service.fetchHospitals()).rejects.toMatchObject({
+      code: 503,
+      statusCode: 503,
+    });
+
+    await expect(service.fetchHospitals()).rejects.toMatchObject({
+      code: 503,
+      statusCode: 503,
+      message: 'Medical API circuit breaker is open.',
     });
   });
 });

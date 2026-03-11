@@ -36,6 +36,12 @@ In `auto`, live mode is used when the required DashScope key exists; otherwise s
 
 When `PRODUCTION_LIVE=1`, startup validation blocks placeholder secrets and mock-only paths. Live integrations must provide their required env vars before the service can boot.
 
+Medical integration also supports:
+
+- `MEDICAL_API_AUTH_MODE=bearer|x-api-key`
+- `MEDICAL_API_CIRCUIT_BREAKER_THRESHOLD`
+- `MEDICAL_API_CIRCUIT_BREAKER_COOLDOWN_MS`
+
 ## Commands
 
 - `npm test`: run all tests with coverage

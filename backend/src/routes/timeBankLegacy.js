@@ -4,8 +4,10 @@ const express = require('express');
 const auth = require('../middleware/auth');
 const { ok, fail } = require('../utils/response');
 const timeBankService = require('../services/timeBankService');
+const { deprecatedRoute } = require('../utils/deprecation');
 
 const router = express.Router();
+router.use(deprecatedRoute('/time-bank'));
 
 function parsePositiveInt(value) {
   const parsed = Number.parseInt(value, 10);

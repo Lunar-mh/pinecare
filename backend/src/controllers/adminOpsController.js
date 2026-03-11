@@ -204,6 +204,50 @@ const adminOpsController = {
       return handleError(res, err);
     }
   },
+
+  async integrationStatus(req, res) {
+    if (!ensureAdmin(req, res)) return;
+
+    try {
+      const data = await adminOpsService.getIntegrationStatus();
+      return ok(res, data, 'ok');
+    } catch (err) {
+      return handleError(res, err);
+    }
+  },
+
+  async auditLogs(req, res) {
+    if (!ensureAdmin(req, res)) return;
+
+    try {
+      const data = await adminOpsService.getAuditLogs(req.query || {});
+      return ok(res, data, 'ok');
+    } catch (err) {
+      return handleError(res, err);
+    }
+  },
+
+  async demoScenarios(req, res) {
+    if (!ensureAdmin(req, res)) return;
+
+    try {
+      const data = await adminOpsService.getDemoScenarios();
+      return ok(res, data, 'ok');
+    } catch (err) {
+      return handleError(res, err);
+    }
+  },
+
+  async demoBootstrap(req, res) {
+    if (!ensureAdmin(req, res)) return;
+
+    try {
+      const data = await adminOpsService.bootstrapDemoScenario(req.body || {});
+      return ok(res, data, 'ok');
+    } catch (err) {
+      return handleError(res, err);
+    }
+  },
 };
 
 module.exports = adminOpsController;

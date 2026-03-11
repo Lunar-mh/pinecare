@@ -1,7 +1,7 @@
 'use strict';
 
 const communityAdminModel = require('../models/communityAdmin');
-const statsService = require('./statsService');
+const statisticsService = require('./statisticsService');
 
 const ORDER_STATUS_ENUM = ['pending', 'assigned', 'processing', 'completed', 'cancelled'];
 
@@ -274,7 +274,7 @@ const communityAdminService = {
       }
     }
 
-    return statsService.getCommunityDashboardStats(communityId);
+    return statisticsService.getCommunityDashboardStats(communityId);
   },
 };
 
