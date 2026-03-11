@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const axios = require('axios');
 const ConsultRecord = require('../models/consultRecord');
@@ -9,7 +9,7 @@ const {
   isRetryableError,
   logThirdPartyError,
 } = require('../utils/thirdParty');
-const { isCompetitionSandbox, isProductionLive } = require('../config/runtimeMode');
+const { resolveIntegrationMode } = require('../config/integrationMode');
 
 const DASHSCOPE_URL =
   'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
@@ -27,35 +27,30 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function resolveMode() {
-  return String(process.env.AI_CONSULT_MODE || process.env.DASHSCOPE_MODE || 'auto').toLowerCase();
+function getRequestedMode() {
+  return process.env.AI_CONSULT_MODE || process.env.DASHSCOPE_MODE || 'auto';
 }
 
 function hasLiveConfig() {
   return Boolean(String(process.env.DASHSCOPE_API_KEY || '').trim());
 }
 
-function isLiveMode() {
-  const mode = resolveMode();
-  if (mode === 'live') return true;
-  if (mode === 'stub' || mode === 'mock') return false;
-
-  if (isProductionLive()) {
-    return true;
-  }
-
-  return hasLiveConfig();
+function getModeStrategy() {
+  return resolveIntegrationMode({
+    requestedMode: getRequestedMode(),
+    liveConfigured: hasLiveConfig(),
+  });
 }
 
 function buildStubReply(message, profile) {
-  const prompt = String(message || '').trim();
-  const nickname = profile && profile.real_name ? String(profile.real_name) : '您';
+  const prompt = String(message || '').trim() || 'current health question';
+  const nickname = profile && profile.real_name ? String(profile.real_name) : 'User';
   const chronic = Array.isArray(profile && profile.chronicDiseases)
     ? profile.chronicDiseases.filter(Boolean)
     : [];
-  const chronicText = chronic.length > 0 ? `已结合您关注的${chronic.join('、')}情况，` : '';
+  const chronicText = chronic.length > 0 ? `Known conditions: ${chronic.join(', ')}. ` : '';
 
-  return `${nickname}，${chronicText}建议先记录症状变化、保持规律作息，如症状持续或加重请及时线下就医。`;
+  return `${nickname}, this is a sandbox health-consult reply. ${chronicText}For "${prompt}", please track symptom changes, rest regularly, and seek in-person care if symptoms continue.`;
 }
 
 function toConsultError(err) {
@@ -99,6 +94,21 @@ async function requestWithRetry(payload) {
 }
 
 class AIService {
+  getCapabilityReport() {
+    const strategy = getModeStrategy();
+    return {
+      requestedMode: strategy.requestedMode,
+      effectiveMode: strategy.effectiveMode,
+      liveConfigured: strategy.liveConfigured,
+      fallbackAllowed: strategy.fallbackAllowed,
+      runtimeMode: strategy.runtimeMode,
+    };
+  }
+
+  isLiveMode() {
+    return getModeStrategy().effectiveMode === 'live';
+  }
+
   async chat(userId, message, sessionId) {
     const { profile, contextMessages } = await healthContextService.getContextForUser(userId);
     const historyRows = await ConsultRecord.findBySession(userId, sessionId, 20);
@@ -107,10 +117,11 @@ class AIService {
       content: row.content,
     }));
 
+    const strategy = getModeStrategy();
     let reply;
     let tokens = null;
 
-    if (isLiveMode()) {
+    if (strategy.effectiveMode === 'live') {
       const systemPrompt = buildSystemPrompt(profile);
       const messages = [
         { role: 'system', content: systemPrompt },
@@ -147,7 +158,7 @@ class AIService {
           ? (response.data.usage.input_tokens || 0) + (response.data.usage.output_tokens || 0)
           : null;
     } else {
-      if (isProductionLive() && !isCompetitionSandbox()) {
+      if (!strategy.stubAllowed) {
         throw createBizError('AI consult stub mode is disabled in PRODUCTION_LIVE mode.', 503, 503);
       }
 

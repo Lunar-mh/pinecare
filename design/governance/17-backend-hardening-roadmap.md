@@ -1,19 +1,19 @@
-# Backend Hardening Roadmap
+﻿# Backend Hardening Roadmap
 
 ## Verified baseline on 2026-03-11
 
 The following numbers are verified from the current repository state:
 
 - Backend test suites: 116 passed out of 116
-- Backend test cases: 454 passed out of 454
+- Backend test cases: 457 passed out of 457
 - Contract test files: 10
 - Integration test files: 34
 - Performance test files: 15
 - Coverage summary from the latest full run:
-  - statements: 57.76%
-  - branches: 41.76%
-  - functions: 60.09%
-  - lines: 58.07%
+  - statements: 57.87%
+  - branches: 41.75%
+  - functions: 60.00%
+  - lines: 58.20%
 
 These numbers must be updated only after a fresh full test run.
 
@@ -112,3 +112,4 @@ A backend release candidate is acceptable only when all checks below pass:
 - Compatibility routes are documented and intentionally retained
 - Integration diagnostics are truthful about data source and mode
 - No warning-only quality gate is ignored for release
+

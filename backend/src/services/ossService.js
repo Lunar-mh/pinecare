@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const axios = require('axios');
 const ossConfig = require('../config/oss');
@@ -7,7 +7,7 @@ const {
   isRetryableError,
   logThirdPartyError,
 } = require('../utils/thirdParty');
-const { isCompetitionSandbox, isProductionLive } = require('../config/runtimeMode');
+const { resolveIntegrationMode } = require('../config/integrationMode');
 
 const MAX_RETRY = Math.max(0, Number(process.env.OSS_MAX_RETRY || 2));
 
@@ -59,16 +59,15 @@ function hasLiveConfig() {
   );
 }
 
-function isLiveMode() {
-  const mode = String(process.env.OSS_MODE || '').toLowerCase();
-  if (mode === 'live') return true;
-  if (mode === 'mock' || mode === 'stub') return false;
+function getRequestedMode() {
+  return process.env.OSS_MODE || 'auto';
+}
 
-  if (isProductionLive()) {
-    return true;
-  }
-
-  return hasLiveConfig();
+function getModeStrategy() {
+  return resolveIntegrationMode({
+    requestedMode: getRequestedMode(),
+    liveConfigured: hasLiveConfig(),
+  });
 }
 
 function getLiveHeaders() {
@@ -170,34 +169,43 @@ async function uploadWithLiveApi(kind, content, key, contentType) {
   return url;
 }
 
-async function uploadAudio(content, key) {
+async function uploadByKind(kind, content, key, contentType) {
   const safeKey = normalizeKey(key);
+  const strategy = getModeStrategy();
 
-  if (isLiveMode()) {
-    return uploadWithLiveApi('audio', content, safeKey, 'audio/wav');
+  if (strategy.effectiveMode === 'live') {
+    return uploadWithLiveApi(kind, content, safeKey, contentType);
   }
 
-  if (isProductionLive() && !isCompetitionSandbox()) {
+  if (!strategy.stubAllowed) {
     throw toOssError(new Error('OSS mock mode is disabled in PRODUCTION_LIVE mode.'));
   }
 
-  await simulateUpload('audio', safeKey, content);
+  await simulateUpload(kind, safeKey, content);
   return buildPublicUrl(ossConfig.bucket, safeKey);
 }
 
+async function uploadAudio(content, key) {
+  return uploadByKind('audio', content, key, 'audio/wav');
+}
+
 async function uploadImage(content, key) {
-  const safeKey = normalizeKey(key);
+  return uploadByKind('image', content, key, 'image/jpeg');
+}
 
-  if (isLiveMode()) {
-    return uploadWithLiveApi('image', content, safeKey, 'image/jpeg');
-  }
+function isLiveMode() {
+  return getModeStrategy().effectiveMode === 'live';
+}
 
-  if (isProductionLive() && !isCompetitionSandbox()) {
-    throw toOssError(new Error('OSS mock mode is disabled in PRODUCTION_LIVE mode.'));
-  }
-
-  await simulateUpload('image', safeKey, content);
-  return buildPublicUrl(ossConfig.bucket, safeKey);
+function getCapabilityReport() {
+  const strategy = getModeStrategy();
+  return {
+    requestedMode: strategy.requestedMode,
+    effectiveMode: strategy.effectiveMode,
+    liveConfigured: strategy.liveConfigured,
+    fallbackAllowed: strategy.fallbackAllowed,
+    runtimeMode: strategy.runtimeMode,
+  };
 }
 
 module.exports = {
@@ -205,4 +213,5 @@ module.exports = {
   uploadImage,
   buildPublicUrl,
   isLiveMode,
+  getCapabilityReport,
 };

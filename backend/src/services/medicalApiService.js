@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const axios = require('axios');
 const AuditLogModel = require('../models/auditLog');
@@ -8,6 +8,7 @@ const {
   logThirdPartyError,
 } = require('../utils/thirdParty');
 const { isProductionLive } = require('../config/runtimeMode');
+const { resolveIntegrationMode } = require('../config/integrationMode');
 
 const API_TIMEOUT_MS = Number(process.env.MEDICAL_API_TIMEOUT_MS || 5000);
 const MAX_RETRY = Math.max(0, Number(process.env.MEDICAL_API_MAX_RETRY || 2));
@@ -90,15 +91,15 @@ class MedicalApiService {
     return Boolean(this.baseURL) && Boolean(this.apiKey);
   }
 
+  getModeStrategy() {
+    return resolveIntegrationMode({
+      requestedMode: this.mode,
+      liveConfigured: this.hasLiveConfig(),
+    });
+  }
+
   isLiveMode() {
-    if (this.mode === 'live') return true;
-    if (this.mode === 'stub') return false;
-
-    if (isProductionLive()) {
-      return true;
-    }
-
-    return this.hasLiveConfig();
+    return this.getModeStrategy().effectiveMode === 'live';
   }
 
   getSourceTag() {
@@ -106,21 +107,24 @@ class MedicalApiService {
   }
 
   getModeTag() {
-    return this.isLiveMode() ? 'live' : 'stub';
+    return this.getModeStrategy().effectiveMode;
   }
 
   getCapabilityReport() {
+    const strategy = this.getModeStrategy();
     const missingConfig = [];
     if (!String(this.baseURL || '').trim()) missingConfig.push('MEDICAL_API_BASE_URL');
     if (!String(this.apiKey || '').trim()) missingConfig.push('MEDICAL_API_KEY');
 
     return {
       source: this.getSourceTag(),
-      mode: this.getModeTag(),
-      liveConfigured: this.hasLiveConfig(),
-      fallbackAllowed: this.allowStubFallback,
+      mode: strategy.requestedMode,
+      effectiveMode: strategy.effectiveMode,
+      liveConfigured: strategy.liveConfigured,
+      fallbackAllowed: strategy.fallbackAllowed && this.allowStubFallback,
       circuitOpen: this.isCircuitOpen(),
       missingConfig,
+      runtimeMode: strategy.runtimeMode,
     };
   }
 
@@ -202,7 +206,12 @@ class MedicalApiService {
   }
 
   async execute(operation, stubFactory, liveFactory) {
-    if (!this.isLiveMode()) {
+    const strategy = this.getModeStrategy();
+
+    if (strategy.effectiveMode !== 'live') {
+      if (!strategy.stubAllowed) {
+        throw createBizError(503, 'Medical API stub mode is disabled in PRODUCTION_LIVE mode.', 503);
+      }
       return stubFactory();
     }
 
@@ -213,7 +222,7 @@ class MedicalApiService {
     try {
       return await liveFactory();
     } catch (err) {
-      if (this.allowStubFallback && !isProductionLive()) {
+      if (this.allowStubFallback && strategy.fallbackAllowed) {
         logThirdPartyError('medical-api', err, {
           operation,
           fallback: 'stub',
@@ -492,3 +501,4 @@ class MedicalApiService {
 }
 
 module.exports = new MedicalApiService();
+

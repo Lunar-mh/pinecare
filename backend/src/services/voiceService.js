@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const axios = require('axios');
 const ossService = require('./ossService');
@@ -7,7 +7,7 @@ const {
   isRetryableError,
   logThirdPartyError,
 } = require('../utils/thirdParty');
-const { isCompetitionSandbox, isProductionLive } = require('../config/runtimeMode');
+const { resolveIntegrationMode } = require('../config/integrationMode');
 
 const DASHSCOPE_BASE = 'https://dashscope.aliyuncs.com/api/v1';
 const REQUEST_TIMEOUT_MS = Number(process.env.VOICE_SERVICE_TIMEOUT_MS || 15000);
@@ -24,26 +24,19 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function resolveMode() {
-  return String(
-    process.env.VOICE_SERVICE_MODE || process.env.DASHSCOPE_MODE || 'auto'
-  ).toLowerCase();
+function getRequestedMode() {
+  return process.env.VOICE_SERVICE_MODE || process.env.DASHSCOPE_MODE || 'auto';
 }
 
 function hasLiveConfig() {
   return Boolean(String(process.env.DASHSCOPE_API_KEY || '').trim());
 }
 
-function isLiveMode() {
-  const mode = resolveMode();
-  if (mode === 'live') return true;
-  if (mode === 'stub' || mode === 'mock') return false;
-
-  if (isProductionLive()) {
-    return true;
-  }
-
-  return hasLiveConfig();
+function getModeStrategy() {
+  return resolveIntegrationMode({
+    requestedMode: getRequestedMode(),
+    liveConfigured: hasLiveConfig(),
+  });
 }
 
 function toVoiceError(err) {
@@ -88,7 +81,7 @@ function requireDashScopeKey() {
 }
 
 function buildStubText() {
-  return '您好，我可以继续为您分析当前健康问题。';
+  return 'This is a sandbox speech-to-text transcript.';
 }
 
 function buildStubAudio(text) {
@@ -98,13 +91,29 @@ function buildStubAudio(text) {
 }
 
 class VoiceService {
+  getCapabilityReport() {
+    const strategy = getModeStrategy();
+    return {
+      requestedMode: strategy.requestedMode,
+      effectiveMode: strategy.effectiveMode,
+      liveConfigured: strategy.liveConfigured,
+      fallbackAllowed: strategy.fallbackAllowed,
+      runtimeMode: strategy.runtimeMode,
+    };
+  }
+
+  isLiveMode() {
+    return getModeStrategy().effectiveMode === 'live';
+  }
+
   async speechToText(audioBase64) {
     if (!audioBase64 || typeof audioBase64 !== 'string') {
       throw createBizError('audioData is required.', 400, 400);
     }
 
-    if (!isLiveMode()) {
-      if (isProductionLive() && !isCompetitionSandbox()) {
+    const strategy = getModeStrategy();
+    if (strategy.effectiveMode !== 'live') {
+      if (!strategy.stubAllowed) {
         throw createBizError('Voice stub mode is disabled in PRODUCTION_LIVE mode.', 503, 503);
       }
 
@@ -150,8 +159,9 @@ class VoiceService {
       throw createBizError('text is required.', 400, 400);
     }
 
-    if (!isLiveMode()) {
-      if (isProductionLive() && !isCompetitionSandbox()) {
+    const strategy = getModeStrategy();
+    if (strategy.effectiveMode !== 'live') {
+      if (!strategy.stubAllowed) {
         throw createBizError('Voice stub mode is disabled in PRODUCTION_LIVE mode.', 503, 503);
       }
 

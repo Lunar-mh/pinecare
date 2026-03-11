@@ -5,6 +5,8 @@ const path = require('path');
 const adminOpsModel = require('../models/adminOpsModel');
 const AuditLogModel = require('../models/auditLog');
 const timeBankModel = require('../models/timeBank');
+const aiService = require('./aiService');
+const voiceService = require('./voiceService');
 const medicalApiService = require('./medicalApiService');
 const ossService = require('./ossService');
 const { DEMO_SCENARIOS, getDemoScenarioById } = require('../config/demoScenarios');
@@ -96,27 +98,6 @@ function hasEnv(keys) {
   return keys.every((key) => Boolean(String(process.env[key] || '').trim()));
 }
 
-function hasOssLiveConfig() {
-  return (
-    hasEnv(['OSS_UPLOAD_API_URL', 'OSS_UPLOAD_TOKEN']) ||
-    hasEnv(['OSS_ENDPOINT', 'OSS_ACCESS_KEY_ID', 'OSS_ACCESS_KEY_SECRET'])
-  );
-}
-
-function resolveAiEffectiveMode() {
-  const mode = resolveServiceMode('AI_CONSULT_MODE');
-  if (mode === 'live') return 'live';
-  if (mode === 'stub' || mode === 'mock') return 'stub';
-  return isProductionLive() || hasEnv(['DASHSCOPE_API_KEY']) ? 'live' : 'stub';
-}
-
-function resolveVoiceEffectiveMode() {
-  const mode = resolveServiceMode('VOICE_SERVICE_MODE');
-  if (mode === 'live') return 'live';
-  if (mode === 'stub' || mode === 'mock') return 'stub';
-  return isProductionLive() || hasEnv(['DASHSCOPE_API_KEY']) ? 'live' : 'stub';
-}
-
 function getCompetitionSeedAssetStatus() {
   const outputDir = path.join(__dirname, '..', '..', 'generated', 'competition-seed');
   const bootstrapSqlPath = path.join(outputDir, COMPETITION_SEED_ASSETS.files.bootstrapSql);
@@ -134,30 +115,37 @@ function getCompetitionSeedAssetStatus() {
 
 function buildIntegrationRows() {
   const productionLive = isProductionLive();
+  const aiCapability = aiService.getCapabilityReport();
+  const voiceCapability = voiceService.getCapabilityReport();
+  const ossCapability = ossService.getCapabilityReport();
+  const medicalCapability =
+    typeof medicalApiService.getCapabilityReport === 'function'
+      ? medicalApiService.getCapabilityReport()
+      : null;
   const medicalSource = medicalApiService.getSourceTag();
   const competitionSeed = getCompetitionSeedAssetStatus();
 
   return [
     {
       key: 'ai_consult',
-      configured: hasEnv(['DASHSCOPE_API_KEY']),
-      mode: resolveServiceMode('AI_CONSULT_MODE'),
-      effectiveMode: resolveAiEffectiveMode(),
-      fallbackAllowed: !productionLive,
+      configured: aiCapability.liveConfigured,
+      mode: aiCapability.requestedMode,
+      effectiveMode: aiCapability.effectiveMode,
+      fallbackAllowed: aiCapability.fallbackAllowed,
     },
     {
       key: 'voice',
-      configured: hasEnv(['DASHSCOPE_API_KEY']),
-      mode: resolveServiceMode('VOICE_SERVICE_MODE'),
-      effectiveMode: resolveVoiceEffectiveMode(),
-      fallbackAllowed: !productionLive,
+      configured: voiceCapability.liveConfigured,
+      mode: voiceCapability.requestedMode,
+      effectiveMode: voiceCapability.effectiveMode,
+      fallbackAllowed: voiceCapability.fallbackAllowed,
     },
     {
       key: 'oss',
-      configured: hasOssLiveConfig(),
-      mode: resolveServiceMode('OSS_MODE'),
-      effectiveMode: ossService.isLiveMode() ? 'live' : 'stub',
-      fallbackAllowed: !productionLive,
+      configured: ossCapability.liveConfigured,
+      mode: ossCapability.requestedMode,
+      effectiveMode: ossCapability.effectiveMode,
+      fallbackAllowed: ossCapability.fallbackAllowed,
     },
     {
       key: 'competition_seed',
@@ -185,30 +173,28 @@ function buildIntegrationRows() {
       runtimeMode: resolveMode(),
       configState: competitionSeed.generated ? 'ready' : 'missing',
     },
-    (() => {
-      const capability =
-        typeof medicalApiService.getCapabilityReport === 'function'
-          ? medicalApiService.getCapabilityReport()
-          : null;
-
-      return {
-        key: 'medical',
-        configured: hasEnv(['MEDICAL_API_BASE_URL', 'MEDICAL_API_KEY']),
-        mode: resolveServiceMode('MEDICAL_API_MODE'),
-        effectiveMode: medicalSource === 'third_party_live' ? 'live' : 'stub',
-        fallbackAllowed:
-          !productionLive &&
-          String(process.env.MEDICAL_API_ALLOW_STUB_FALLBACK || 'false').toLowerCase() === 'true',
-        source: medicalSource,
-        missingConfig:
-          capability && Array.isArray(capability.missingConfig) ? capability.missingConfig : [],
-        circuitOpen: Boolean(capability && capability.circuitOpen),
-        notes:
-          medicalSource === 'third_party_live'
-            ? 'Medical requests currently use the live upstream integration path.'
-            : 'Medical requests currently use curated dataset fallback or deterministic stub data for competition replay.',
-      };
-    })(),
+    {
+      key: 'medical',
+      configured: Boolean(medicalCapability && medicalCapability.liveConfigured),
+      mode: medicalCapability ? medicalCapability.mode : resolveServiceMode('MEDICAL_API_MODE'),
+      effectiveMode:
+        medicalCapability && medicalCapability.effectiveMode
+          ? medicalCapability.effectiveMode
+          : medicalSource === 'third_party_live'
+            ? 'live'
+            : 'stub',
+      fallbackAllowed: Boolean(medicalCapability && medicalCapability.fallbackAllowed),
+      source: medicalSource,
+      missingConfig:
+        medicalCapability && Array.isArray(medicalCapability.missingConfig)
+          ? medicalCapability.missingConfig
+          : [],
+      circuitOpen: Boolean(medicalCapability && medicalCapability.circuitOpen),
+      notes:
+        medicalSource === 'third_party_live'
+          ? 'Medical requests currently use the live upstream integration path.'
+          : 'Medical requests currently use curated dataset fallback or deterministic stub data for competition replay.',
+    },
     {
       key: 'wechat_notify',
       configured: hasEnv(['WX_ACCESS_TOKEN']) && hasEnv(['WX_MSG_TEMPLATE_ID']),
@@ -1173,3 +1159,5 @@ const adminOpsService = {
 };
 
 module.exports = adminOpsService;
+
+

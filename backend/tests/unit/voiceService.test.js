@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/services/ossService', () => ({
   uploadAudio: jest.fn(),
@@ -40,7 +40,7 @@ describe('voiceService', () => {
 
     const result = await service.speechToText(Buffer.from('audio').toString('base64'));
 
-    expect(result).toContain('您好');
+    expect(result).toContain('sandbox speech-to-text transcript');
     expect(ossService.uploadAudio).not.toHaveBeenCalled();
   });
 
@@ -51,7 +51,7 @@ describe('voiceService', () => {
       PRODUCTION_LIVE: '0',
     });
 
-    const result = await service.textToSpeech('请按时服药');
+    const result = await service.textToSpeech('remind me to take medicine');
 
     expect(Buffer.from(result, 'base64').toString('utf8')).toContain('stub-audio');
   });
@@ -106,13 +106,29 @@ describe('voiceService', () => {
       VOICE_SERVICE_MAX_RETRY: '0',
     });
 
-    const result = await service.textToSpeech('播报今天的提醒');
+    const result = await service.textToSpeech('read the reminder aloud');
 
     expect(Buffer.from(result, 'base64').toString('utf8')).toBe('voice-binary');
     expect(axios.post).toHaveBeenCalledTimes(1);
     expect(axios.get).toHaveBeenCalledWith('https://example.com/audio.wav', {
       responseType: 'arraybuffer',
       timeout: 10000,
+    });
+  });
+
+  it('reports capability via shared integration mode strategy', () => {
+    const service = loadService({
+      VOICE_SERVICE_MODE: 'auto',
+      COMPETITION_SANDBOX: '1',
+      PRODUCTION_LIVE: '0',
+      DASHSCOPE_API_KEY: 'test-key',
+    });
+
+    expect(service.getCapabilityReport()).toMatchObject({
+      requestedMode: 'auto',
+      effectiveMode: 'live',
+      liveConfigured: true,
+      fallbackAllowed: true,
     });
   });
 });

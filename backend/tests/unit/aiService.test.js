@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/models/consultRecord', () => ({
   findBySession: jest.fn(),
@@ -30,7 +30,7 @@ describe('aiService', () => {
     healthContextService = require('../../src/services/healthContextService');
 
     healthContextService.getContextForUser.mockResolvedValue({
-      profile: { real_name: '张阿姨', chronicDiseases: ['高血压'] },
+      profile: { real_name: 'Wang', chronicDiseases: ['hypertension'] },
       contextMessages: [{ role: 'system', content: 'context' }],
     });
     ConsultRecord.findBySession.mockResolvedValue([]);
@@ -55,10 +55,11 @@ describe('aiService', () => {
       PRODUCTION_LIVE: '0',
     });
 
-    const result = await service.chat(1001, '最近头晕怎么办', 'session-1');
+    const result = await service.chat(1001, 'dizzy recently', 'session-1');
 
     expect(result.sessionId).toBe('session-1');
-    expect(result.reply).toContain('张阿姨');
+    expect(result.reply).toContain('Wang');
+    expect(result.reply).toContain('dizzy recently');
     expect(result.tokens).toBeNull();
     expect(ConsultRecord.create).toHaveBeenCalledTimes(2);
   });
@@ -77,6 +78,20 @@ describe('aiService', () => {
     });
   });
 
+  it('rejects stub mode in production live', async () => {
+    const service = loadService({
+      AI_CONSULT_MODE: 'stub',
+      PRODUCTION_LIVE: '1',
+      COMPETITION_SANDBOX: '0',
+    });
+
+    await expect(service.chat(1001, 'test', 'session-prod')).rejects.toMatchObject({
+      code: 503,
+      statusCode: 503,
+      message: 'AI consult stub mode is disabled in PRODUCTION_LIVE mode.',
+    });
+  });
+
   it('retries on 5xx and returns live reply', async () => {
     axios.post = jest
       .fn()
@@ -84,7 +99,7 @@ describe('aiService', () => {
       .mockResolvedValueOnce({
         data: {
           output: {
-            choices: [{ message: { content: '建议今天继续观察血压变化。' } }],
+            choices: [{ message: { content: 'Please rest today and monitor your blood pressure.' } }],
           },
           usage: {
             input_tokens: 10,
@@ -101,9 +116,9 @@ describe('aiService', () => {
       AI_CONSULT_MAX_RETRY: '1',
     });
 
-    const result = await service.chat(1001, '最近血压有点高', 'session-3');
+    const result = await service.chat(1001, 'blood pressure is a little high', 'session-3');
 
-    expect(result.reply).toBe('建议今天继续观察血压变化。');
+    expect(result.reply).toBe('Please rest today and monitor your blood pressure.');
     expect(result.tokens).toBe(15);
     expect(axios.post).toHaveBeenCalledTimes(2);
   });
@@ -120,6 +135,22 @@ describe('aiService', () => {
     await expect(service.chat(1001, 'test', 'session-4')).rejects.toMatchObject({
       code: 504,
       statusCode: 504,
+    });
+  });
+
+  it('reports capability via shared integration mode strategy', () => {
+    const service = loadService({
+      AI_CONSULT_MODE: 'auto',
+      PRODUCTION_LIVE: '0',
+      COMPETITION_SANDBOX: '1',
+      DASHSCOPE_API_KEY: 'test-key',
+    });
+
+    expect(service.getCapabilityReport()).toMatchObject({
+      requestedMode: 'auto',
+      effectiveMode: 'live',
+      liveConfigured: true,
+      fallbackAllowed: true,
     });
   });
 });
