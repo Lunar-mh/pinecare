@@ -27,6 +27,15 @@ Set via:
 - `RUNTIME_MODE=COMPETITION_SANDBOX|PRODUCTION_LIVE`
 - or `COMPETITION_SANDBOX=1` / `PRODUCTION_LIVE=1`
 
+AI/voice modules also support per-service mode switches:
+
+- `AI_CONSULT_MODE=auto|live|stub`
+- `VOICE_SERVICE_MODE=auto|live|stub`
+
+In `auto`, live mode is used when the required DashScope key exists; otherwise sandbox mode falls back to deterministic stub responses.
+
+When `PRODUCTION_LIVE=1`, startup validation blocks placeholder secrets and mock-only paths. Live integrations must provide their required env vars before the service can boot.
+
 ## Commands
 
 - `npm test`: run all tests with coverage
@@ -47,6 +56,7 @@ All APIs must return:
 
 - Docker image: `backend/Dockerfile`
 - Local compose: project root `docker-compose.yml`
+- Health endpoint: `GET /health`
 
 ## Notes
 

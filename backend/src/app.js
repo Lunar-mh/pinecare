@@ -3,6 +3,7 @@
 const express = require('express');
 const cors = require('cors');
 const routes = require('./routes');
+const healthRoutes = require('./routes/healthRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const requestContext = require('./middleware/requestContext');
 const { startMedicationJobs } = require('./jobs');
@@ -13,6 +14,7 @@ app.use(requestContext);
 app.use(express.json({ limit: '10mb' }));
 app.use(cors());
 
+app.use('/health', healthRoutes);
 app.use('/api/v1', routes);
 app.use('/', routes);
 

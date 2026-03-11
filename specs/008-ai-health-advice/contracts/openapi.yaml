@@ -1,185 +1,160 @@
 openapi: 3.0.3
 info:
-  title: 银伴平台 - AI健康顾问API
-  description: 银伴全域智慧照护平台AI健康顾问接口
-  version: 1.0.0
-  contact:
-    name: 银伴技术团队
+  title: 银伴平台 - AI 健康咨询 API
+  description: 银伴全域智慧照护平台 AI 健康咨询接口
+  version: 1.1.0
 
 servers:
-  - url: https://api.yinban.com/v1
-    description: 生产环境
-  - url: https://staging-api.yinban.com/v1
-    description: 测试环境
+  - url: /api/v1
+    description: Standard API prefix
+  - url: /
+    description: Mini-program compatibility prefix
 
 tags:
   - name: AI咨询
-    description: AI健康顾问相关接口
+    description: AI 健康咨询、语音咨询与健康画像
 
 paths:
-  # ==================== AI咨询 ====================
-  
   /ai-consult/chat:
     post:
-      tags:
-        - AI咨询
+      tags: [AI咨询]
       summary: 发送咨询消息
       operationId: sendChatMessage
       security:
         - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - message
-                - sessionId
+              required: [message]
               properties:
                 message:
                   type: string
                   description: 用户消息
-                  example: "我血压高怎么办"
                 sessionId:
                   type: string
-                  description: 会话ID
-                  example: "session-uuid"
+                  description: 会话 ID；缺省时服务端自动生成
       responses:
-        '200':
+        "200":
           description: 咨询成功
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  code:
-                    type: integer
-                    example: 0
-                  data:
-                    type: object
-                    properties:
-                      reply:
-                        type: string
-                        description: AI回复
-                      sessionId:
-                        type: string
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                $ref: "#/components/schemas/ChatResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /ai-consult/history:
     get:
-      tags:
-        - AI咨询
+      tags: [AI咨询]
       summary: 获取会话历史
       operationId: getChatHistory
       security:
         - BearerAuth: []
       parameters:
+        - $ref: "#/components/parameters/XRequestId"
         - name: sessionId
           in: query
-          required: true
+          required: false
           schema:
             type: string
         - name: limit
           in: query
+          required: false
           schema:
             type: integer
-            default: 20
+            default: 50
+            minimum: 1
+            maximum: 100
       responses:
-        '200':
+        "200":
           description: 获取成功
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    role:
-                      type: string
-                      enum: [user, assistant]
-                    content:
-                      type: string
-                    createdAt:
-                      type: string
-                      format: date-time
+                $ref: "#/components/schemas/HistoryResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /ai-consult/voice:
     post:
-      tags:
-        - AI咨询
+      tags: [AI咨询]
       summary: 语音咨询
       operationId: voiceConsult
       security:
         - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - audioData
-                - sessionId
+              required: [audioData]
               properties:
                 audioData:
                   type: string
-                  description: Base64编码的音频数据
+                  description: Base64 编码音频数据
                 sessionId:
                   type: string
+                  description: 会话 ID；缺省时服务端自动生成
       responses:
-        '200':
+        "200":
           description: 咨询成功
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  reply:
-                    type: string
-                  audioData:
-                    type: string
-                    description: Base64编码的回复音频
+                $ref: "#/components/schemas/VoiceResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /ai-consult/profile:
     get:
-      tags:
-        - AI咨询
+      tags: [AI咨询]
       summary: 获取健康画像
       operationId: getHealthProfile
       security:
         - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
       responses:
-        '200':
+        "200":
           description: 获取成功
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  age:
-                    type: integer
-                  gender:
-                    type: string
-                  chronicDiseases:
-                    type: array
-                    items:
-                      type: string
-                  allergies:
-                    type: array
-                    items:
-                      type: string
-                  recentIndicators:
-                    type: object
-
+                $ref: "#/components/schemas/ProfileResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
     put:
-      tags:
-        - AI咨询
+      tags: [AI咨询]
       summary: 更新健康画像
       operationId: updateHealthProfile
       security:
         - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestId"
       requestBody:
         required: true
         content:
@@ -189,8 +164,11 @@ paths:
               properties:
                 age:
                   type: integer
+                  minimum: 0
+                  maximum: 150
                 gender:
                   type: string
+                  enum: [male, female, other]
                 chronicDiseases:
                   type: array
                   items:
@@ -199,11 +177,24 @@ paths:
                   type: array
                   items:
                     type: string
+                recentIndicators:
+                  type: object
+                  additionalProperties: true
+                currentMedications:
+                  type: array
+                  items:
+                    type: string
       responses:
-        '200':
+        "200":
           description: 更新成功
-
-# ==================== Components ====================
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
 
 components:
   securitySchemes:
@@ -212,16 +203,174 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
+  parameters:
+    XRequestId:
+      in: header
+      name: x-request-id
+      required: false
+      schema:
+        type: string
+      description: 客户端请求追踪 ID，服务端会原样回传。
+
+  schemas:
+    Envelope:
+      type: object
+      required: [code, message, data]
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          nullable: true
+
+    ChatPayload:
+      type: object
+      properties:
+        reply:
+          type: string
+        sessionId:
+          type: string
+        tokens:
+          type: integer
+          nullable: true
+
+    ChatResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/ChatPayload"
+
+    HistoryRecord:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    HistoryResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                records:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/HistoryRecord"
+
+    VoicePayload:
+      type: object
+      properties:
+        reply:
+          type: string
+        audioData:
+          type: string
+          nullable: true
+        sessionId:
+          type: string
+        text:
+          type: string
+
+    VoiceResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/VoicePayload"
+
+    Profile:
+      type: object
+      properties:
+        age:
+          type: integer
+          nullable: true
+        gender:
+          type: string
+          nullable: true
+        chronicDiseases:
+          type: array
+          items:
+            type: string
+        allergies:
+          type: array
+          items:
+            type: string
+        recentIndicators:
+          type: object
+          additionalProperties: true
+        currentMedications:
+          type: array
+          items:
+            type: string
+
+    ProfileResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                profile:
+                  allOf:
+                    - $ref: "#/components/schemas/Profile"
+                  nullable: true
+
+    ErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/Envelope"
+        - type: object
+          properties:
+            code:
+              type: integer
+              example: 422
+            message:
+              type: string
+              example: validation failed
+            data:
+              nullable: true
+
   responses:
-    BadRequest:
-      description: 请求参数错误
+    Unauthorized:
+      description: 未认证
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                example: 400
-              message:
-                type: string
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: 内容被拦截或权限不足
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ValidationError:
+      description: 参数校验失败
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ServiceUnavailable:
+      description: 上游服务不可用
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    GatewayTimeout:
+      description: 上游服务超时
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"

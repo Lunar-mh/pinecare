@@ -4,36 +4,43 @@ const express = require('express');
 const { query } = require('../config/database');
 const redis = require('../config/redis');
 const { ok, fail } = require('../utils/response');
+const { resolveMode } = require('../config/runtimeMode');
 
 const router = express.Router();
 
+async function checkMysql() {
+  try {
+    await query('SELECT 1');
+    return { status: 'ok' };
+  } catch (err) {
+    return { status: 'error', detail: err.message };
+  }
+}
+
+async function checkRedis() {
+  try {
+    await redis.ping();
+    return { status: 'ok' };
+  } catch (err) {
+    return { status: 'error', detail: err.message };
+  }
+}
+
 router.get('/', async (req, res) => {
   try {
-    let mysqlStatus = '正常';
-    let redisStatus = '正常';
+    const [mysql, redisState] = await Promise.all([checkMysql(), checkRedis()]);
+    const healthy = mysql.status === 'ok' && redisState.status === 'ok';
 
-    try {
-      await query('SELECT 1');
-    } catch (err) {
-      mysqlStatus = `异常: ${err.message}`;
-    }
-
-    try {
-      await redis.ping();
-    } catch (err) {
-      redisStatus = `异常: ${err.message}`;
-    }
-
-    const allHealthy = mysqlStatus === '正常' && redisStatus === '正常';
-
-    if (!allHealthy) {
+    if (!healthy) {
       return fail(
         res,
         503,
-        '健康检查未通过',
+        'Health check failed.',
         {
-          mysql: mysqlStatus,
-          redis: redisStatus,
+          status: 'degraded',
+          runtimeMode: resolveMode(),
+          mysql,
+          redis: redisState,
         },
         503
       );
@@ -42,13 +49,21 @@ router.get('/', async (req, res) => {
     return ok(
       res,
       {
-        mysql: mysqlStatus,
-        redis: redisStatus,
+        status: 'ok',
+        runtimeMode: resolveMode(),
+        mysql,
+        redis: redisState,
       },
-      '健康检查通过'
+      'Health check passed.'
     );
   } catch (err) {
-    return fail(res, 500, '健康检查执行失败', { detail: err.message }, 500);
+    return fail(
+      res,
+      500,
+      'Health check execution failed.',
+      { status: 'error', detail: err.message },
+      500
+    );
   }
 });
 

@@ -1,18 +1,23 @@
-﻿'use strict';
+'use strict';
 
 const axios = require('axios');
 const { query } = require('../config/database');
 const { isCompetitionSandbox, isProductionLive } = require('../config/runtimeMode');
+const { createUpstreamError, isRetryableError, logThirdPartyError } = require('./thirdParty');
 
 const DEFAULT_TIMEOUT = 5000;
 const DEFAULT_RETRY_TIMES = 2;
 
-function createBizError(message, code, statusCode, data) {
+function createBizError(message, code = 502, statusCode = 502, data = null) {
   const err = new Error(message);
-  err.code = code || 502;
-  err.statusCode = statusCode || 502;
-  err.data = data || null;
+  err.code = code;
+  err.statusCode = statusCode;
+  err.data = data;
   return err;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function formatDateTime(value) {
@@ -73,7 +78,16 @@ function buildApiUrl() {
   return `${baseUrl}?access_token=${encodeURIComponent(accessToken)}`;
 }
 
-function mapWechatError(data) {
+function toWechatError(err) {
+  return createUpstreamError(err, {
+    timeout: 'WeChat notify timeout.',
+    rateLimited: 'WeChat notify rate limited.',
+    unavailable: 'WeChat notify service unavailable.',
+    failed: 'WeChat notify request failed.',
+  });
+}
+
+function normalizeWechatApiError(data) {
   const errCode = Number(data && data.errcode);
   const errMsg = String((data && data.errmsg) || 'wechat api error');
 
@@ -88,18 +102,22 @@ function mapWechatError(data) {
   return createBizError(`wechat notify failed: ${errMsg}`, 502, 502, data);
 }
 
-function shouldRetry(err) {
-  if (!err) return false;
+function isRetryableWechatError(err) {
+  if (isRetryableError(err)) return true;
 
-  if (err.response && err.response.data) {
+  if (err && err.response && err.response.data) {
     const errCode = Number(err.response.data.errcode);
     return errCode === -1 || errCode === 45009;
   }
 
-  return ['ECONNABORTED', 'ENOTFOUND', 'ETIMEDOUT', 'ECONNRESET'].includes(err.code);
+  if (err && err.code && err.statusCode) {
+    return err.code === 503 || err.statusCode === 503;
+  }
+
+  return ['ECONNABORTED', 'ENOTFOUND', 'ETIMEDOUT', 'ECONNRESET'].includes(err && err.code);
 }
 
-async function requestWithRetry(payload, retryTimes) {
+async function requestWithRetry(payload, retryTimes, type) {
   const apiUrl = buildApiUrl();
   const mockEnabledByEnv = process.env.WECHAT_NOTIFY_MOCK === '1';
   const allowMock = isCompetitionSandbox();
@@ -109,11 +127,11 @@ async function requestWithRetry(payload, retryTimes) {
       throw createBizError('WeChat notify config is missing in PRODUCTION_LIVE mode.', 503, 503);
     }
 
-    console.warn('[medication] wechat notify fallback to mock in COMPETITION_SANDBOX mode.');
     return {
       errcode: 0,
       errmsg: 'mock success',
       msgid: `mock-${Date.now()}`,
+      mock: true,
     };
   }
 
@@ -128,13 +146,19 @@ async function requestWithRetry(payload, retryTimes) {
 
       const data = response.data || {};
       if (Number(data.errcode || 0) !== 0) {
-        throw mapWechatError(data);
+        throw normalizeWechatApiError(data);
       }
 
       return data;
     } catch (err) {
       lastError = err;
-      if (i < maxRetries && shouldRetry(err)) {
+      logThirdPartyError('wechat-notify', err, {
+        type,
+        attempt: i + 1,
+      });
+
+      if (i < maxRetries && isRetryableWechatError(err)) {
+        await sleep(100 * (i + 1));
         continue;
       }
       break;
@@ -145,7 +169,7 @@ async function requestWithRetry(payload, retryTimes) {
     throw lastError;
   }
 
-  throw createBizError(`wechat notify request failed: ${lastError ? lastError.message : 'unknown'}`, 502, 502);
+  throw toWechatError(lastError);
 }
 
 async function sendTemplateByOpenId(options) {
@@ -155,7 +179,6 @@ async function sendTemplateByOpenId(options) {
       throw createBizError('WeChat template id is required in PRODUCTION_LIVE mode.', 503, 503);
     }
 
-    console.warn('[medication] wechat template id missing, fallback to mock.');
     return {
       msgid: `mock-${Date.now()}`,
       mock: true,
@@ -171,11 +194,11 @@ async function sendTemplateByOpenId(options) {
     lang: 'zh_CN',
   };
 
-  const result = await requestWithRetry(payload, DEFAULT_RETRY_TIMES);
+  const result = await requestWithRetry(payload, DEFAULT_RETRY_TIMES, options.type);
 
   return {
     msgid: result.msgid || null,
-    mock: false,
+    mock: Boolean(result.mock),
   };
 }
 
@@ -218,7 +241,11 @@ const wechatNotifier = {
       data: {
         thing1: { value: String(params.medicationName || 'medicine').slice(0, 20) },
         thing2: {
-          value: `remaining ${params.remainingQuantity}, threshold ${params.reminderThreshold}`.slice(0, 20),
+          value:
+            `remaining ${params.remainingQuantity}, threshold ${params.reminderThreshold}`.slice(
+              0,
+              20
+            ),
         },
         thing3: { value: 'please refill medicine in time'.slice(0, 20) },
       },

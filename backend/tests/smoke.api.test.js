@@ -22,7 +22,7 @@ function createApp() {
   app.use(express.json());
 
   app.get('/protected', auth, (req, res) => {
-    res.json({ code: 0, message: '鉴权通过', data: { userId: req.user.userId } });
+    res.json({ code: 0, message: 'auth passed', data: { userId: req.user.userId } });
   });
 
   app.use('/health', healthRoutes);
@@ -30,7 +30,7 @@ function createApp() {
   return app;
 }
 
-describe('后端 smoke 测试', () => {
+describe('backend smoke tests', () => {
   beforeAll(() => {
     process.env.JWT_SECRET = 'smoke-secret';
   });
@@ -39,7 +39,7 @@ describe('后端 smoke 测试', () => {
     jest.clearAllMocks();
   });
 
-  it('未携带 token 访问受保护接口返回 401', async () => {
+  it('returns 401 when protected route is missing token', async () => {
     const app = createApp();
     const res = await request(app).get('/protected');
 
@@ -47,19 +47,17 @@ describe('后端 smoke 测试', () => {
     expect(res.body.code).toBe(401);
   });
 
-  it('携带有效 token 访问受保护接口成功', async () => {
+  it('allows access with a valid bearer token', async () => {
     const token = jwt.sign({ userId: 1001 }, process.env.JWT_SECRET);
 
     const app = createApp();
-    const res = await request(app)
-      .get('/protected')
-      .set('Authorization', `Bearer ${token}`);
+    const res = await request(app).get('/protected').set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ code: 0, message: '鉴权通过', data: { userId: 1001 } });
+    expect(res.body).toEqual({ code: 0, message: 'auth passed', data: { userId: 1001 } });
   });
 
-  it('健康检查接口返回统一格式', async () => {
+  it('returns the unified health envelope', async () => {
     query.mockResolvedValue([[{ ok: 1 }]]);
     redis.ping.mockResolvedValue('PONG');
 
@@ -68,8 +66,9 @@ describe('后端 smoke 测试', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(res.body.message).toBe('健康检查通过');
-    expect(res.body.data.mysql).toBe('正常');
-    expect(res.body.data.redis).toBe('正常');
+    expect(res.body.message).toBe('Health check passed.');
+    expect(res.body.data.status).toBe('ok');
+    expect(res.body.data.mysql.status).toBe('ok');
+    expect(res.body.data.redis.status).toBe('ok');
   });
 });
