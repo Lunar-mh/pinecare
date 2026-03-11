@@ -1,7 +1,8 @@
-'use strict';
+﻿'use strict';
 
 const { query } = require('../config/database');
 const redis = require('../config/redis');
+const { getServerRole } = require('../config/http');
 const { resolveMode } = require('../config/runtimeMode');
 
 async function checkMysql() {
@@ -31,9 +32,26 @@ async function getHealthStatus() {
     data: {
       status: healthy ? 'ok' : 'degraded',
       runtimeMode: resolveMode(),
+      serverRole: getServerRole(),
       mysql,
       redis: redisState,
     },
+  };
+}
+
+function getLivenessStatus() {
+  return {
+    status: 'ok',
+    runtimeMode: resolveMode(),
+    serverRole: getServerRole(),
+  };
+}
+
+async function getReadinessStatus() {
+  const result = await getHealthStatus();
+  return {
+    ready: result.healthy,
+    data: result.data,
   };
 }
 
@@ -41,4 +59,6 @@ module.exports = {
   checkMysql,
   checkRedis,
   getHealthStatus,
+  getLivenessStatus,
+  getReadinessStatus,
 };

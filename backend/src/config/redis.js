@@ -1,6 +1,7 @@
-'use strict';
+﻿'use strict';
 
 const Redis = require('ioredis');
+const logger = require('../utils/logger');
 
 const redis = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
@@ -9,15 +10,29 @@ const redis = new Redis({
 });
 
 redis.on('error', (err) => {
-  console.error('Redis 连接错误:', err.message);
+  logger.error('redis', 'connection_error', { message: err.message });
 });
 
 redis.on('connect', () => {
-  console.log('Redis已连接');
+  logger.info('redis', 'connected');
 });
 
 redis.on('reconnecting', () => {
-  console.log('Redis 正在重连...');
+  logger.warn('redis', 'reconnecting');
 });
+
+async function closeRedis() {
+  if (redis.status === 'end') {
+    return;
+  }
+
+  try {
+    await redis.quit();
+  } catch (_err) {
+    redis.disconnect();
+  }
+}
+
+redis.closeRedis = closeRedis;
 
 module.exports = redis;

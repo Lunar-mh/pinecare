@@ -60,13 +60,29 @@ function toPublicUser(user) {
 }
 
 async function writeAuditLog(userId, action, context = {}, details = null) {
+  const mergedDetails = {
+    ...(details && typeof details === 'object' ? details : {}),
+    requestId: context.requestId || null,
+  };
+
   await AuditLogModel.create({
     userId: userId || null,
     action,
     ipAddress: context.ipAddress || null,
     userAgent: context.userAgent || null,
-    details,
+    details: mergedDetails,
   });
+}
+
+function getAdminCredentials() {
+  const username = String(process.env.ADMIN_USERNAME || '').trim();
+  const password = String(process.env.ADMIN_PASSWORD || '').trim();
+
+  if (!username || !password) {
+    throw createBusinessError(503, 'Admin credentials are not configured.', null, 503);
+  }
+
+  return { username, password };
 }
 
 async function issueTokens(userId, extraClaims = {}) {
@@ -96,8 +112,8 @@ async function sendSms(phone, purpose, context = {}) {
   return result;
 }
 
-async function registerPhone({ phone, code, password, ipAddress, userAgent }) {
-  const context = { ipAddress, userAgent };
+async function registerPhone({ phone, code, password, ipAddress, userAgent, requestId }) {
+  const context = { ipAddress, userAgent, requestId };
   const existed = await UserModel.findByPhone(phone);
   if (existed) {
     throw createBusinessError(409, 'Phone already registered.', null, 409);
@@ -130,8 +146,8 @@ function isLocked(user) {
   return new Date(user.locked_until).getTime() > Date.now();
 }
 
-async function loginPhone({ phone, password, ipAddress, userAgent }) {
-  const context = { ipAddress, userAgent };
+async function loginPhone({ phone, password, ipAddress, userAgent, requestId }) {
+  const context = { ipAddress, userAgent, requestId };
   let user = await UserModel.findByPhone(phone);
 
   if (!user) {
@@ -193,8 +209,8 @@ async function loginPhone({ phone, password, ipAddress, userAgent }) {
   };
 }
 
-async function loginPhoneByCode({ phone, code, ipAddress, userAgent }) {
-  const context = { ipAddress, userAgent };
+async function loginPhoneByCode({ phone, code, ipAddress, userAgent, requestId }) {
+  const context = { ipAddress, userAgent, requestId };
 
   const verifyResult = await smsService.verifyAndConsumeCode(phone, code, 'login');
   if (!verifyResult.valid) {
@@ -234,10 +250,9 @@ async function loginPhoneByCode({ phone, code, ipAddress, userAgent }) {
   };
 }
 
-async function loginAdmin({ username, password, ipAddress, userAgent }) {
-  const context = { ipAddress, userAgent };
-  const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+async function loginAdmin({ username, password, ipAddress, userAgent, requestId }) {
+  const context = { ipAddress, userAgent, requestId };
+  const { username: adminUsername, password: adminPassword } = getAdminCredentials();
 
   if (username !== adminUsername || password !== adminPassword) {
     await writeAuditLog(null, 'admin_login_fail', context, { username });
@@ -295,8 +310,8 @@ async function refreshToken(refreshTokenValue, context = {}) {
   };
 }
 
-async function loginWithWechat({ code, userInfo = {}, ipAddress, userAgent }) {
-  const context = { ipAddress, userAgent };
+async function loginWithWechat({ code, userInfo = {}, ipAddress, userAgent, requestId }) {
+  const context = { ipAddress, userAgent, requestId };
   const session = await wechatService.code2Session(code);
 
   let user = await UserModel.findByOpenid(session.openid);
@@ -363,6 +378,7 @@ async function unlockAccountByCode(phone, code, context = {}) {
 
 module.exports = {
   sendSms,
+  getAdminCredentials,
   registerPhone,
   loginPhone,
   loginAdmin,

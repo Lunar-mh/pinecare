@@ -124,6 +124,7 @@ describe('userController', () => {
     expect(userService.unlockAccount).toHaveBeenCalledWith('13812345678', '123456', {
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
+      requestId: null,
     });
     expect(res.statusCode).toBe(200);
     expect(res.body.code).toBe(0);

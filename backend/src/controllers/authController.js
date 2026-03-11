@@ -2,6 +2,7 @@
 
 const { ok, fail } = require('../utils/response');
 const authService = require('../services/authService');
+const { getRequestContext } = require('../utils/requestMeta');
 const {
   validatePhone,
   validateSmsCode,
@@ -10,13 +11,6 @@ const {
 } = require('../utils/validators');
 
 const SMS_PURPOSES = new Set(['register', 'login', 'bind', 'reset_password']);
-
-function getContext(req) {
-  return {
-    ipAddress: req.headers['x-forwarded-for'] || req.ip,
-    userAgent: req.headers['user-agent'] || '',
-  };
-}
 
 function handleError(res, err) {
   if (err && (err.code || err.statusCode)) {
@@ -46,7 +40,7 @@ async function sendSms(req, res) {
       return fail(res, 400, 'Invalid purpose.', null, 400);
     }
 
-    await authService.sendSms(req.body.phone, req.body.purpose, getContext(req));
+    await authService.sendSms(req.body.phone, req.body.purpose, getRequestContext(req));
     return ok(res, null, 'SMS sent.');
   } catch (err) {
     return handleError(res, err);
@@ -71,7 +65,7 @@ async function registerPhone(req, res) {
       phone: req.body.phone,
       code: req.body.code,
       password: req.body.password,
-      ...getContext(req),
+      ...getRequestContext(req),
     });
 
     return ok(res, data);
@@ -91,7 +85,7 @@ async function loginPhone(req, res) {
     const data = await authService.loginPhone({
       phone: req.body.phone,
       password: req.body.password,
-      ...getContext(req),
+      ...getRequestContext(req),
     });
 
     return ok(res, data);
@@ -108,7 +102,7 @@ async function adminLogin(req, res) {
     const data = await authService.loginAdmin({
       username: String(req.body.username || '').trim(),
       password: String(req.body.password || ''),
-      ...getContext(req),
+      ...getRequestContext(req),
     });
 
     return ok(res, {
@@ -128,7 +122,7 @@ async function refreshToken(req, res) {
     const required = validateRequired(req.body || {}, ['refresh_token']);
     if (!required.valid) return fail(res, 400, required.message, null, 400);
 
-    const data = await authService.refreshToken(req.body.refresh_token, getContext(req));
+    const data = await authService.refreshToken(req.body.refresh_token, getRequestContext(req));
     return ok(res, {
       access_token: data.access_token,
       refresh_token: data.refresh_token,
@@ -147,7 +141,7 @@ async function loginWechat(req, res) {
     const data = await authService.loginWithWechat({
       code: req.body.code,
       userInfo: req.body.userInfo || {},
-      ...getContext(req),
+      ...getRequestContext(req),
     });
 
     return ok(res, data);
@@ -164,7 +158,7 @@ async function loginWechatMiniProgram(req, res) {
     const data = await authService.loginWithWechat({
       code: req.body.code,
       userInfo: req.body.userInfo || {},
-      ...getContext(req),
+      ...getRequestContext(req),
     });
 
     return ok(res, toMiniProgramLoginPayload(data));
@@ -187,7 +181,7 @@ async function loginPhoneByCode(req, res) {
     const data = await authService.loginPhoneByCode({
       phone: req.body.phone,
       code: req.body.code,
-      ...getContext(req),
+      ...getRequestContext(req),
     });
 
     return ok(res, toMiniProgramLoginPayload(data));

@@ -1,5 +1,7 @@
 ﻿'use strict';
 
+const logger = require('../utils/logger');
+
 function sanitizeMessage(message) {
   const raw = String(message || 'Internal server error.');
 
@@ -9,13 +11,21 @@ function sanitizeMessage(message) {
     .replace(/https?:\/\/[^\s)]+/gi, '[REDACTED_URL]');
 }
 
+function resolveStatusCode(err) {
+  if (String(err && err.message || '') === 'CORS origin not allowed.') {
+    return 403;
+  }
+
+  return err.statusCode || err.status || 500;
+}
+
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
-  const statusCode = err.statusCode || err.status || 500;
+  const statusCode = resolveStatusCode(err);
   const message = sanitizeMessage(err.message || 'Internal server error.');
   const requestId = req.requestId || null;
 
-  console.error('global_error', {
+  logger.error('http', 'global_error', {
     requestId,
     path: req.path,
     method: req.method,

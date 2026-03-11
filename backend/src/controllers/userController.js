@@ -2,18 +2,12 @@
 
 const { ok, fail } = require('../utils/response');
 const userService = require('../services/userService');
+const { getRequestContext } = require('../utils/requestMeta');
 const {
   validatePhone,
   validateSmsCode,
   validateRequired,
 } = require('../utils/validators');
-
-function getContext(req) {
-  return {
-    ipAddress: req.headers['x-forwarded-for'] || req.ip,
-    userAgent: req.headers['user-agent'] || '',
-  };
-}
 
 function parsePositiveInt(value) {
   const parsed = Number.parseInt(value, 10);
@@ -50,7 +44,7 @@ async function updateProfile(req, res) {
       chronic_diseases: req.body.chronic_diseases,
     };
 
-    const data = await userService.updateProfile(req.user.userId, payload, getContext(req));
+    const data = await userService.updateProfile(req.user.userId, payload, getRequestContext(req));
     return ok(res, data);
   } catch (err) {
     return handleError(res, err);
@@ -86,7 +80,7 @@ async function createEmergencyContact(req, res) {
         relationship: req.body.relationship,
         is_primary: req.body.is_primary,
       },
-      getContext(req)
+      getRequestContext(req)
     );
 
     return ok(res, data);
@@ -122,7 +116,7 @@ async function updateEmergencyContact(req, res) {
         relationship: req.body.relationship,
         is_primary: req.body.is_primary,
       },
-      getContext(req)
+      getRequestContext(req)
     );
 
     return ok(res, data);
@@ -138,7 +132,7 @@ async function setPrimaryContact(req, res) {
       return fail(res, 400, 'Invalid contact id.', null, 400);
     }
 
-    const data = await userService.setPrimaryContact(req.user.userId, contactId, getContext(req));
+    const data = await userService.setPrimaryContact(req.user.userId, contactId, getRequestContext(req));
     return ok(res, data);
   } catch (err) {
     return handleError(res, err);
@@ -152,7 +146,7 @@ async function deleteEmergencyContact(req, res) {
       return fail(res, 400, 'Invalid contact id.', null, 400);
     }
 
-    await userService.deleteEmergencyContact(req.user.userId, contactId, getContext(req));
+    await userService.deleteEmergencyContact(req.user.userId, contactId, getRequestContext(req));
     return ok(res, null);
   } catch (err) {
     return handleError(res, err);
@@ -161,7 +155,7 @@ async function deleteEmergencyContact(req, res) {
 
 async function createBindingQrcode(req, res) {
   try {
-    const data = await userService.bindingQrcode(req.user.userId, getContext(req));
+    const data = await userService.bindingQrcode(req.user.userId, getRequestContext(req));
     return ok(res, data);
   } catch (err) {
     return handleError(res, err);
@@ -187,7 +181,7 @@ async function approveBinding(req, res) {
     const data = await userService.approveBinding(
       req.user.userId,
       { binding_id: bindingId, action: req.body.action },
-      getContext(req)
+      getRequestContext(req)
     );
 
     return ok(res, data);
@@ -208,7 +202,7 @@ async function deleteAccount(req, res) {
       return fail(res, 400, codeCheck.message, null, 400);
     }
 
-    await userService.deleteAccount(req.user.userId, req.body.code, getContext(req));
+    await userService.deleteAccount(req.user.userId, req.body.code, getRequestContext(req));
     return ok(res, null);
   } catch (err) {
     return handleError(res, err);
@@ -232,7 +226,7 @@ async function unlockAccount(req, res) {
       return fail(res, 400, codeCheck.message, null, 400);
     }
 
-    const data = await userService.unlockAccount(req.body.phone, req.body.code, getContext(req));
+    const data = await userService.unlockAccount(req.body.phone, req.body.code, getRequestContext(req));
     return ok(res, data);
   } catch (err) {
     return handleError(res, err);

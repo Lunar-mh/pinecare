@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const express = require('express');
 const request = require('supertest');
@@ -9,6 +9,22 @@ jest.mock('../../src/services/systemHealthService', () => ({
     data: {
       status: 'ok',
       runtimeMode: 'COMPETITION_SANDBOX',
+      serverRole: 'api',
+      mysql: { status: 'ok' },
+      redis: { status: 'ok' },
+    },
+  }),
+  getLivenessStatus: jest.fn(() => ({
+    status: 'ok',
+    runtimeMode: 'COMPETITION_SANDBOX',
+    serverRole: 'api',
+  })),
+  getReadinessStatus: jest.fn().mockResolvedValue({
+    ready: true,
+    data: {
+      status: 'ok',
+      runtimeMode: 'COMPETITION_SANDBOX',
+      serverRole: 'api',
       mysql: { status: 'ok' },
       redis: { status: 'ok' },
     },
@@ -51,11 +67,13 @@ const systemHealthService = require('../../src/services/systemHealthService');
 const healthArchiveService = require('../../src/services/healthArchiveService');
 const deviceService = require('../../src/services/deviceService');
 const healthRouter = require('../../src/routes/healthRoutes');
+const systemHealthRoutes = require('../../src/routes/systemHealthRoutes');
 const deviceRouter = require('../../src/routes/deviceCompat');
 
 function createApp() {
   const app = express();
   app.use(express.json());
+  app.use(systemHealthRoutes);
   app.use('/health', healthRouter);
   app.use('/device', deviceRouter);
   return app;
@@ -69,6 +87,17 @@ describe('health archive API contract', () => {
       data: {
         status: 'ok',
         runtimeMode: 'COMPETITION_SANDBOX',
+        serverRole: 'api',
+        mysql: { status: 'ok' },
+        redis: { status: 'ok' },
+      },
+    });
+    systemHealthService.getReadinessStatus.mockResolvedValue({
+      ready: true,
+      data: {
+        status: 'ok',
+        runtimeMode: 'COMPETITION_SANDBOX',
+        serverRole: 'api',
         mysql: { status: 'ok' },
         redis: { status: 'ok' },
       },
@@ -85,6 +114,36 @@ describe('health archive API contract', () => {
       data: {
         status: 'ok',
         runtimeMode: expect.any(String),
+        serverRole: expect.any(String),
+        mysql: { status: 'ok' },
+        redis: { status: 'ok' },
+      },
+    });
+  });
+
+  it('GET /livez and /readyz expose explicit probe contracts', async () => {
+    const livez = await request(createApp()).get('/livez');
+    const readyz = await request(createApp()).get('/readyz');
+
+    expect(livez.status).toBe(200);
+    expect(livez.body).toEqual({
+      code: 0,
+      message: 'Liveness check passed.',
+      data: {
+        status: 'ok',
+        runtimeMode: expect.any(String),
+        serverRole: expect.any(String),
+      },
+    });
+
+    expect(readyz.status).toBe(200);
+    expect(readyz.body).toEqual({
+      code: 0,
+      message: 'Readiness check passed.',
+      data: {
+        status: 'ok',
+        runtimeMode: expect.any(String),
+        serverRole: expect.any(String),
         mysql: { status: 'ok' },
         redis: { status: 'ok' },
       },

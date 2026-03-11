@@ -25,6 +25,7 @@ describe('config/redis', () => {
     jest.doMock('ioredis', () => Redis);
     const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     process.env = { ...originalEnv, REDIS_HOST: '', REDIS_PORT: '' };
     const redis = require('../../src/config/redis');
@@ -41,7 +42,9 @@ describe('config/redis', () => {
     handlers.connect();
     handlers.reconnecting();
 
-    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Redis'), 'boom');
-    expect(logSpy).toHaveBeenCalledTimes(2);
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('\"module\":\"redis\"'));
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('boom'));
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('\"action\":\"reconnecting\"'));
   });
 });

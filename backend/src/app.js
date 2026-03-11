@@ -4,23 +4,32 @@ const express = require('express');
 const cors = require('cors');
 const routes = require('./routes');
 const healthRoutes = require('./routes/healthRoutes');
+const systemHealthRoutes = require('./routes/systemHealthRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const requestContext = require('./middleware/requestContext');
+const securityHeaders = require('./middleware/securityHeaders');
 const { startMedicationJobs } = require('./jobs');
+const {
+  buildCorsOptions,
+  getJsonBodyLimit,
+  getTrustProxySetting,
+  shouldStartMedicationJobs,
+} = require('./config/http');
 
 const app = express();
 
+app.set('trust proxy', getTrustProxySetting());
 app.use(requestContext);
-app.use(express.json({ limit: '10mb' }));
-app.use(cors());
+app.use(securityHeaders);
+app.use(express.json({ limit: getJsonBodyLimit() }));
+app.use(cors(buildCorsOptions()));
 
+app.use(systemHealthRoutes);
 app.use('/health', healthRoutes);
 app.use('/api/v1', routes);
 app.use('/', routes);
 
-const shouldEnableJobs =
-  process.env.NODE_ENV !== 'test' && String(process.env.ENABLE_MEDICATION_JOBS || '1') !== '0';
-if (shouldEnableJobs) {
+if (shouldStartMedicationJobs()) {
   startMedicationJobs();
 }
 

@@ -52,6 +52,7 @@ describe('config/database', () => {
 
     const [, handler] = pool.on.mock.calls[0];
     handler({ message: 'db down' });
-    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('MySQL'), 'db down');
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('\"module\":\"database\"'));
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('db down'));
   });
 });

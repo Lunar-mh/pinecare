@@ -1,5 +1,6 @@
 ﻿'use strict';
 
+const { getCorsAllowedOrigins, getServerRole } = require('./http');
 const { applyRuntimeModeEnv, isProductionLive } = require('./runtimeMode');
 
 const BASE_SCHEMA = [
@@ -117,6 +118,27 @@ function validateProductionSecrets() {
   if (String(process.env.WECHAT_NOTIFY_MOCK || '0').trim() === '1') {
     throw new Error('WECHAT_NOTIFY_MOCK must be disabled in PRODUCTION_LIVE mode.');
   }
+
+  if (getCorsAllowedOrigins().length === 0) {
+    throw new Error('CORS_ALLOWED_ORIGINS must be configured in PRODUCTION_LIVE mode.');
+  }
+
+  const adminUsername = String(process.env.ADMIN_USERNAME || '').trim();
+  const adminPassword = String(process.env.ADMIN_PASSWORD || '').trim();
+  if (!adminUsername || !adminPassword) {
+    throw new Error('ADMIN_USERNAME and ADMIN_PASSWORD are required in PRODUCTION_LIVE mode.');
+  }
+
+  const weakPairs = [
+    ['admin', 'admin123'],
+    ['admin', 'password'],
+  ];
+  if (
+    adminPassword.length < 12 ||
+    weakPairs.some(([username, password]) => adminUsername === username && adminPassword === password)
+  ) {
+    throw new Error('Admin credentials are too weak for PRODUCTION_LIVE mode.');
+  }
 }
 
 function validateAiConfig() {
@@ -206,12 +228,12 @@ function validateEnv() {
   validateWeChatConfig();
   validateOssConfig();
 
+  normalized.SERVER_ROLE = getServerRole();
+  process.env.SERVER_ROLE = normalized.SERVER_ROLE;
+
   return normalized;
 }
 
 module.exports = {
   validateEnv,
 };
-
-
-

@@ -52,6 +52,7 @@ describe('userController extra', () => {
     expect(userService.updateProfile).toHaveBeenCalledWith(1, req.body, {
       ipAddress: '1.1.1.1',
       userAgent: 'jest',
+      requestId: null,
     });
     expect(res.body.code).toBe(0);
 

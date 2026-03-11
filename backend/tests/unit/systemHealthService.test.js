@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/config/database', () => ({
   query: jest.fn(),
@@ -15,6 +15,7 @@ const systemHealthService = require('../../src/services/systemHealthService');
 describe('systemHealthService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.SERVER_ROLE = 'worker';
   });
 
   it('reports healthy when mysql and redis are reachable', async () => {
@@ -26,6 +27,7 @@ describe('systemHealthService', () => {
       data: {
         status: 'ok',
         runtimeMode: expect.any(String),
+        serverRole: 'worker',
         mysql: { status: 'ok' },
         redis: { status: 'ok' },
       },
@@ -41,8 +43,31 @@ describe('systemHealthService', () => {
       data: {
         status: 'degraded',
         runtimeMode: expect.any(String),
+        serverRole: 'worker',
         mysql: { status: 'error', detail: 'mysql down' },
         redis: { status: 'error', detail: 'redis down' },
+      },
+    });
+  });
+
+  it('returns liveness and readiness payloads', async () => {
+    query.mockResolvedValueOnce([[{ ok: 1 }]]);
+    redis.ping.mockResolvedValueOnce('PONG');
+
+    expect(systemHealthService.getLivenessStatus()).toEqual({
+      status: 'ok',
+      runtimeMode: expect.any(String),
+      serverRole: 'worker',
+    });
+
+    await expect(systemHealthService.getReadinessStatus()).resolves.toEqual({
+      ready: true,
+      data: {
+        status: 'ok',
+        runtimeMode: expect.any(String),
+        serverRole: 'worker',
+        mysql: { status: 'ok' },
+        redis: { status: 'ok' },
       },
     });
   });

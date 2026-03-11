@@ -1,6 +1,7 @@
-'use strict';
+﻿'use strict';
 
 const mysql = require('mysql2/promise');
+const logger = require('../utils/logger');
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
@@ -15,17 +16,15 @@ const pool = mysql.createPool({
 });
 
 pool.on('error', (err) => {
-  console.error('MySQL 连接池错误:', err.message);
+  logger.error('database', 'pool_error', { message: err.message });
 });
 
-/**
- * 执行 SQL 查询的辅助函数
- * @param {string} sql - SQL 语句
- * @param {Array} params - 参数列表
- * @returns {Promise<[rows, fields]>}
- */
 async function query(sql, params = []) {
   return pool.execute(sql, params);
 }
 
-module.exports = { pool, query };
+async function closePool() {
+  await pool.end();
+}
+
+module.exports = { closePool, pool, query };

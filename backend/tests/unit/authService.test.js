@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('bcryptjs', () => ({
   hash: jest.fn(),
@@ -17,6 +17,7 @@ jest.mock('uuid', () => ({
 jest.mock('../../src/config/redis', () => ({
   set: jest.fn(),
   get: jest.fn(),
+  closeRedis: jest.fn(),
 }));
 
 jest.mock('../../src/models/user', () => ({
@@ -60,8 +61,8 @@ describe('authService', () => {
     jest.clearAllMocks();
     process.env.JWT_SECRET = 'super-secret-token-123';
     process.env.JWT_REFRESH_SECRET = 'super-refresh-token-456';
-    process.env.ADMIN_USERNAME = 'admin';
-    process.env.ADMIN_PASSWORD = 'admin123';
+    process.env.ADMIN_USERNAME = 'admin-root';
+    process.env.ADMIN_PASSWORD = 'super-admin-1234';
 
     jwt.sign.mockReset();
     jwt.verify.mockReset();
@@ -84,6 +85,7 @@ describe('authService', () => {
     const result = await authService.sendSms('13800138000', 'login', {
       ipAddress: '127.0.0.1',
       userAgent: 'jest',
+      requestId: 'req-1',
     });
 
     expect(result.sent).toBe(true);
@@ -91,7 +93,7 @@ describe('authService', () => {
     expect(AuditLogModel.create).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'send_sms',
-        details: { phone: '13800138000', purpose: 'login' },
+        details: { phone: '13800138000', purpose: 'login', requestId: 'req-1' },
       })
     );
   });
@@ -121,6 +123,7 @@ describe('authService', () => {
         password: 'Abcd1234',
         ipAddress: '127.0.0.1',
         userAgent: 'jest',
+        requestId: 'req-2',
       })
     ).rejects.toMatchObject({
       code: 401,
@@ -130,7 +133,7 @@ describe('authService', () => {
     expect(AuditLogModel.create).toHaveBeenCalledWith(
       expect.objectContaining({
         action: 'login_fail',
-        details: { phone: '13800138000', reason: 'not_found' },
+        details: { phone: '13800138000', reason: 'not_found', requestId: 'req-2' },
       })
     );
   });
@@ -224,7 +227,7 @@ describe('authService', () => {
 
     await expect(
       authService.loginAdmin({
-        username: 'admin',
+        username: 'admin-root',
         password: 'wrong',
         ipAddress: '127.0.0.1',
         userAgent: 'jest',
@@ -232,6 +235,21 @@ describe('authService', () => {
     ).rejects.toMatchObject({
       code: 401,
       statusCode: 401,
+    });
+  });
+
+  it('loginAdmin rejects when admin credentials are missing', async () => {
+    delete process.env.ADMIN_USERNAME;
+    delete process.env.ADMIN_PASSWORD;
+
+    await expect(
+      authService.loginAdmin({
+        username: 'admin-root',
+        password: 'super-admin-1234',
+      })
+    ).rejects.toMatchObject({
+      code: 503,
+      statusCode: 503,
     });
   });
 

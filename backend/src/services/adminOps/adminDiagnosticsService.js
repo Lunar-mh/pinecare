@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const fs = require('fs');
 const path = require('path');
@@ -289,3 +289,4 @@ const adminDiagnosticsService = {
 };
 
 module.exports = adminDiagnosticsService;
+
