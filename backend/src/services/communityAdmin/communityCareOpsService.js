@@ -12,63 +12,76 @@ const {
   writeAuditLog,
 } = require('./shared');
 
-const communityCareOpsService = {
-  async getHealthOverview(communityId, query = {}) {
+function delegateToAdminOps(methodName) {
+  return async (communityId, query = {}) => {
     requireCommunityScope(communityId);
-    return adminOpsService.getHealthOverview({
+    return adminOpsService[methodName]({
       ...query,
       communityId,
     });
-  },
+  };
+}
 
-  async getMedicationLogs(communityId, query = {}) {
-    requireCommunityScope(communityId);
-    return adminOpsService.getMedicationLogs({
-      ...query,
-      communityId,
-    });
-  },
-
-  async updateMedicationLogStatus(communityId, logId, body = {}, actor = {}) {
+function delegateToAdminOpsWithAudit(methodName, action, detailBuilder) {
+  return async (communityId, targetId, body = {}, actor = {}) => {
     requireCommunityScope(communityId);
 
-    const result = await adminOpsService.updateMedicationLogStatus(logId, {
+    const result = await adminOpsService[methodName](targetId, {
       ...body,
       communityId,
     });
 
-    await writeAuditLog(actor, 'community.medication.log_status_update', {
+    await writeAuditLog(actor, action, detailBuilder(communityId, targetId, result));
+    return result;
+  };
+}
+
+const communityCareOpsService = {
+  getHealthOverview: delegateToAdminOps('getHealthOverview'),
+  getMedicationLogs: delegateToAdminOps('getMedicationLogs'),
+  updateMedicationLogStatus: delegateToAdminOpsWithAudit(
+    'updateMedicationLogStatus',
+    'community.medication.log_status_update',
+    (communityId, logId, result) => ({
       community_id: Number(communityId),
       log_id: Number(logId),
+      status_to: result.status,
+    })
+  ),
+  getGpsCurrent: delegateToAdminOps('getGpsCurrent'),
+  getGpsTrail: delegateToAdminOps('getGpsTrail'),
+  getFamilyBindings: delegateToAdminOps('getFamilyBindings'),
+  getMedicalReports: delegateToAdminOps('getMedicalReports'),
+  getFallEvents: delegateToAdminOps('getFallEvents'),
+  getDrugInteractions: delegateToAdminOps('getDrugInteractions'),
+  updateDrugInteractionStatus: delegateToAdminOpsWithAudit(
+    'updateDrugInteractionStatus',
+    'community.drug_interaction.status_update',
+    (communityId, interactionId, result) => ({
+      community_id: Number(communityId),
+      interaction_id: Number(interactionId),
+      status_to: result.status,
+    })
+  ),
+  getTimeBankServiceHistory: delegateToAdminOps('getTimeBankServiceHistory'),
+  confirmTimeBankService: async (communityId, body = {}, actor = {}) => {
+    requireCommunityScope(communityId);
+
+    const result = await adminOpsService.confirmTimeBankService({
+      ...body,
+      communityId,
+    });
+
+    await writeAuditLog(actor, 'community.time_bank.service_settle', {
+      community_id: Number(communityId),
+      record_id: Number(result.recordId),
       status_to: result.status,
     });
 
     return result;
   },
-
-  async getGpsCurrent(communityId, query = {}) {
-    requireCommunityScope(communityId);
-    return adminOpsService.getGpsCurrent({
-      ...query,
-      communityId,
-    });
-  },
-
-  async getGpsTrail(communityId, query = {}) {
-    requireCommunityScope(communityId);
-    return adminOpsService.getGpsTrail({
-      ...query,
-      communityId,
-    });
-  },
-
-  async getFamilyBindings(communityId, query = {}) {
-    requireCommunityScope(communityId);
-    return adminOpsService.getFamilyBindings({
-      ...query,
-      communityId,
-    });
-  },
+  getTimeBankExchangeHistory: delegateToAdminOps('getTimeBankExchangeHistory'),
+  getTimeBankLeaderboard: delegateToAdminOps('getTimeBankLeaderboard'),
 
   async getSosEvents(communityId, query = {}) {
     requireCommunityScope(communityId);
@@ -103,14 +116,6 @@ const communityCareOpsService = {
         totalPages: Math.ceil(total / pagination.pageSize),
       },
     };
-  },
-
-  async getMedicalReports(communityId, query = {}) {
-    requireCommunityScope(communityId);
-    return adminOpsService.getMedicalReports({
-      ...query,
-      communityId,
-    });
   },
 
   async updateSosEventStatus(communityId, eventId, body = {}, actor = {}) {
@@ -173,80 +178,6 @@ const communityCareOpsService = {
     const summaryRows = await adminOpsModel.summarizeSosNotifications([id]);
     const summaryMap = buildSosNotificationSummaryMap(summaryRows);
     return mapSosEvent(latest, summaryMap);
-  },
-
-  async getFallEvents(communityId, query = {}) {
-    requireCommunityScope(communityId);
-    return adminOpsService.getFallEvents({
-      ...query,
-      communityId,
-    });
-  },
-
-  async getDrugInteractions(communityId, query = {}) {
-    requireCommunityScope(communityId);
-    return adminOpsService.getDrugInteractions({
-      ...query,
-      communityId,
-    });
-  },
-
-  async updateDrugInteractionStatus(communityId, interactionId, body = {}, actor = {}) {
-    requireCommunityScope(communityId);
-
-    const result = await adminOpsService.updateDrugInteractionStatus(interactionId, {
-      ...body,
-      communityId,
-    });
-
-    await writeAuditLog(actor, 'community.drug_interaction.status_update', {
-      community_id: Number(communityId),
-      interaction_id: Number(interactionId),
-      status_to: result.status,
-    });
-
-    return result;
-  },
-
-  async getTimeBankServiceHistory(communityId, query = {}) {
-    requireCommunityScope(communityId);
-    return adminOpsService.getTimeBankServiceHistory({
-      ...query,
-      communityId,
-    });
-  },
-
-  async confirmTimeBankService(communityId, body = {}, actor = {}) {
-    requireCommunityScope(communityId);
-
-    const result = await adminOpsService.confirmTimeBankService({
-      ...body,
-      communityId,
-    });
-
-    await writeAuditLog(actor, 'community.time_bank.service_settle', {
-      community_id: Number(communityId),
-      record_id: Number(result.recordId),
-      status_to: result.status,
-    });
-
-    return result;
-  },
-
-  async getTimeBankExchangeHistory(communityId, query = {}) {
-    requireCommunityScope(communityId);
-    return adminOpsService.getTimeBankExchangeHistory({
-      ...query,
-      communityId,
-    });
-  },
-
-  async getTimeBankLeaderboard(communityId, query = {}) {
-    requireCommunityScope(communityId);
-    return adminOpsService.getTimeBankLeaderboard({
-      ...query,
-      communityId,
-    });
   },
 };
 

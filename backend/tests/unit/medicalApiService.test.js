@@ -286,7 +286,9 @@ describe('medicalApiService', () => {
     const get = jest
       .fn()
       .mockResolvedValueOnce({ data: [{ id: 2001, hospitalId: 8, name: 'Cardiology' }] })
-      .mockResolvedValueOnce({ data: { doctors: [{ id: 3001, departmentId: 9, name: 'Dr. Li' }] } });
+      .mockResolvedValueOnce({
+        data: { doctors: [{ id: 3001, departmentId: 9, name: 'Dr. Li' }] },
+      });
 
     const { service, mockClient } = loadService({
       env: {
@@ -509,4 +511,3 @@ describe('medicalApiService', () => {
     await expect(service.fetchHospitals()).resolves.toEqual([{ id: 2, name: 'Recovered' }]);
   });
 });
-

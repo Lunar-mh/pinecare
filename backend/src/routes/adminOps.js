@@ -30,11 +30,7 @@ router.get(
   deprecatedRoute('/community/gps/current'),
   adminOpsController.gpsCurrent
 );
-router.get(
-  '/gps/trail',
-  deprecatedRoute('/community/gps/trail'),
-  adminOpsController.gpsTrail
-);
+router.get('/gps/trail', deprecatedRoute('/community/gps/trail'), adminOpsController.gpsTrail);
 router.get(
   '/family/bindings',
   deprecatedRoute('/community/family/bindings'),
@@ -46,11 +42,7 @@ router.get(
   adminOpsController.medicalReports
 );
 
-router.get(
-  '/sos/events',
-  deprecatedRoute('/community/sos/events'),
-  adminOpsController.sosEvents
-);
+router.get('/sos/events', deprecatedRoute('/community/sos/events'), adminOpsController.sosEvents);
 router.put(
   '/sos/events/:eventId/status',
   deprecatedRoute('/community/sos/events/:eventId/status'),

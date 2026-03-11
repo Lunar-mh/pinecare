@@ -37,13 +37,19 @@ module.exports = {
   timeBankServiceHistory: buildHandler((req) =>
     adminOpsService.getTimeBankServiceHistory(req.query || {})
   ),
-  confirmTimeBankService: buildHandler((req) => adminOpsService.confirmTimeBankService(req.body || {})),
+  confirmTimeBankService: buildHandler((req) =>
+    adminOpsService.confirmTimeBankService(req.body || {})
+  ),
   timeBankExchangeHistory: buildHandler((req) =>
     adminOpsService.getTimeBankExchangeHistory(req.query || {})
   ),
-  timeBankLeaderboard: buildHandler((req) => adminOpsService.getTimeBankLeaderboard(req.query || {})),
+  timeBankLeaderboard: buildHandler((req) =>
+    adminOpsService.getTimeBankLeaderboard(req.query || {})
+  ),
   integrationStatus: buildHandler(() => adminOpsService.getIntegrationStatus()),
   auditLogs: buildHandler((req) => adminOpsService.getAuditLogs(req.query || {})),
   demoScenarios: buildHandler(() => adminOpsService.getDemoScenarios()),
-  demoBootstrap: buildHandler((req) => adminOpsService.bootstrapDemoScenario(req.body || {}, req.user || null)),
+  demoBootstrap: buildHandler((req) =>
+    adminOpsService.bootstrapDemoScenario(req.body || {}, req.user || null)
+  ),
 };
