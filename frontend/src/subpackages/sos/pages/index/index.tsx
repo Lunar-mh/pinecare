@@ -1,35 +1,73 @@
-﻿import { useCallback, useEffect, useState } from 'react'
-import Taro from '@tarojs/taro'
+import { useCallback, useEffect, useState } from 'react'
+import Taro, { useDidShow, useLoad } from '@tarojs/taro'
 import { View, Text, ScrollView } from '@tarojs/components'
 import { Phone, Service, Warning } from '@nutui/icons-react-taro'
-import { DataPanel, EmptyState, HeroHeader, PageShell, SectionBlock, StickyPrimaryAction } from '@/components/shell'
-import { cancelSOS, getCurrentSOSStatus, getEmergencyContactsWithLocation, triggerSOS } from '@/services/modules/sos'
-import type { EmergencyContactWithLocation } from '@/services/types'
+import {
+  DataPanel,
+  EmptyState,
+  HeroHeader,
+  PageShell,
+  SectionBlock,
+  StickyPrimaryAction,
+} from '@/components/shell'
+import {
+  cancelSOS,
+  getCurrentSOSStatus,
+  getEmergencyContactsWithLocation,
+  triggerSOS,
+} from '@/services/modules/sos'
+import { getElderlyOverview } from '@/services/modules/family'
+import type { ElderlyOverview, EmergencyContactWithLocation, SOSEvent } from '@/services/types'
+import { useRole } from '@/hooks/useRole'
+import { Icon } from '@/components/icons'
 import './index.scss'
 
-type ActiveSOS = {
-  id: string
-  triggeredAt: string
-}
-
 export default function SOSIndex() {
-  const [activeSOS, setActiveSOS] = useState<ActiveSOS | null>(null)
+  const { isFamily } = useRole()
+  const [activeSOS, setActiveSOS] = useState<SOSEvent | null>(null)
   const [contacts, setContacts] = useState<EmergencyContactWithLocation[]>([])
+  const [overview, setOverview] = useState<ElderlyOverview | null>(null)
   const [loading, setLoading] = useState(true)
   const [triggering, setTriggering] = useState(false)
 
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const [status, contactList] = await Promise.all([getCurrentSOSStatus(), getEmergencyContactsWithLocation()])
-      setActiveSOS(status.active && status.event ? { id: status.event.id, triggeredAt: status.event.triggeredAt } : null)
+      if (isFamily) {
+        const data = await getElderlyOverview()
+        setOverview(data)
+        setActiveSOS(null)
+        setContacts([])
+        return
+      }
+
+      const [status, contactList] = await Promise.all([
+        getCurrentSOSStatus(),
+        getEmergencyContactsWithLocation(),
+      ])
+      setActiveSOS(status.active && status.event ? status.event : null)
       setContacts(contactList || [])
+      setOverview(null)
     } catch (loadError) {
-      console.error('load sos status failed', loadError)
+      console.error('load sos page failed', loadError)
+      if (isFamily) {
+        setOverview(null)
+      } else {
+        setActiveSOS(null)
+        setContacts([])
+      }
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [isFamily])
+
+  useLoad(() => {
+    loadData()
+  })
+
+  useDidShow(() => {
+    loadData()
+  })
 
   useEffect(() => {
     loadData()
@@ -53,7 +91,7 @@ export default function SOSIndex() {
               address: '已同步当前位置',
             },
           })
-          setActiveSOS({ id: event.id, triggeredAt: event.triggeredAt })
+          setActiveSOS(event)
           Taro.showToast({ title: 'SOS 已发出', icon: 'success' })
         } catch (triggerError) {
           console.error('trigger sos failed', triggerError)
@@ -85,6 +123,68 @@ export default function SOSIndex() {
     })
   }
 
+  if (isFamily) {
+    const sosAlerts = overview?.alerts.filter(item => item.type === 'sos').slice(0, 3) || []
+
+    return (
+      <PageShell roleTone="family" className="sos-overview-page">
+        <HeroHeader
+          roleTone="family"
+          eyebrow={overview ? `${overview.name} · 家属风险视角` : '家属 SOS 视角'}
+          title="先确认长辈是否处于紧急状态"
+          subtitle="如果首页已有 SOS 提醒，这里优先聚合风险信息和最近位置。"
+          aside={<View className="sos-overview-page__family-badge"><Icon name="sos" size={20} color="#fff" /></View>}
+        />
+
+        <ScrollView className="sos-overview-page__scroll" scrollY>
+          <SectionBlock title="当前风险" description="把长辈最需要先处理的提醒放在前面。">
+            {loading ? (
+              <DataPanel tone="info"><Text className="sos-overview-page__text">正在同步长辈 SOS 风险...</Text></DataPanel>
+            ) : sosAlerts.length > 0 ? (
+              <View className="sos-overview-page__stack">
+                {sosAlerts.map(item => (
+                  <DataPanel key={item.id} tone="danger">
+                    <Text className="sos-overview-page__title">{item.title}</Text>
+                    <Text className="sos-overview-page__text">{item.message}</Text>
+                    <Text className="sos-overview-page__text">触发时间：{new Date(item.createdAt).toLocaleString('zh-CN')}</Text>
+                  </DataPanel>
+                ))}
+              </View>
+            ) : (
+              <EmptyState title="当前没有进行中的 SOS 提醒" description="如果后台已确认或解决事件，这里会在重新进入页面时同步刷新。" icon={<Service size={28} />} />
+            )}
+          </SectionBlock>
+
+          <SectionBlock title="最近位置" description="紧急情况下先确认长辈最近一次位置。">
+            <DataPanel tone={overview?.location ? 'warning' : 'info'}>
+              <Text className="sos-overview-page__title">{overview?.location?.address || '暂未获取到长辈位置'}</Text>
+              <Text className="sos-overview-page__text">
+                {overview?.location ? `更新时间：${overview.location.updatedAt}` : '建议先检查定位共享和设备在线状态。'}
+              </Text>
+            </DataPanel>
+          </SectionBlock>
+
+          <SectionBlock title="处理建议" description="家属端聚焦确认、联络与定位，不承担后台处置流。">
+            <View className="sos-overview-page__stack">
+              <DataPanel tone="warning"><Text className="sos-overview-page__text">1. 先联系长辈，确认是否为真实紧急事件。</Text></DataPanel>
+              <DataPanel tone="info"><Text className="sos-overview-page__text">2. 再查看定位页，判断是否需要联系社区或线下救助。</Text></DataPanel>
+              <DataPanel tone="success"><Text className="sos-overview-page__text">3. 后台完成确认或解决后，这里会同步消除进行中提醒。</Text></DataPanel>
+            </View>
+          </SectionBlock>
+
+          <View className="sos-overview-page__bottom-space" />
+        </ScrollView>
+
+        <StickyPrimaryAction
+          tone="family"
+          label="查看实时定位"
+          icon={<Icon name="location" size={20} color="#fff" />}
+          onClick={() => Taro.navigateTo({ url: '/subpackages/location/pages/index/index' })}
+        />
+      </PageShell>
+    )
+  }
+
   return (
     <PageShell roleTone="elder" className="sos-overview-page">
       <HeroHeader
@@ -102,7 +202,9 @@ export default function SOSIndex() {
             <DataPanel tone="danger">
               <Text className="sos-overview-page__title">求助已发出</Text>
               <Text className="sos-overview-page__text">发起时间：{new Date(activeSOS.triggeredAt).toLocaleString('zh-CN')}</Text>
-              <Text className="sos-overview-page__text">家属和照护联系人会优先收到本次提醒。</Text>
+              <Text className="sos-overview-page__text">
+                {activeSOS.status === 'confirmed' ? '社区或家属已确认事件，等待处理闭环。' : '家属和照护联系人会优先收到本次提醒。'}
+              </Text>
               <View className="sos-overview-page__actions">
                 <View className="sos-overview-page__button sos-overview-page__button--danger" onClick={handleCancel}><Text>取消本次求助</Text></View>
               </View>
@@ -141,7 +243,12 @@ export default function SOSIndex() {
         <View className="sos-overview-page__bottom-space" />
       </ScrollView>
 
-      <StickyPrimaryAction tone="elder" label={triggering ? '正在发起求助...' : activeSOS ? '求助已发出，点击查看' : '立即发起 SOS'} icon={<Warning size={22} />} onClick={activeSOS ? handleCancel : handleTrigger} />
+      <StickyPrimaryAction
+        tone="elder"
+        label={triggering ? '正在发起求助...' : activeSOS ? '取消本次 SOS' : '立即发起 SOS'}
+        icon={<Warning size={22} />}
+        onClick={activeSOS ? handleCancel : handleTrigger}
+      />
     </PageShell>
   )
 }
