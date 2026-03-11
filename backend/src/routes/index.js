@@ -41,6 +41,7 @@ safeUse('/time-bank', './timeBank');
 safeUse('/ai-companion', './aiCompanion');
 safeUse('/family-space', './familySpace');
 safeUse('/community', './community');
+safeUse('/volunteer', './volunteer');
 safeUse('/gps', './gpsTracking');
 safeUse('/medical', './medicalIntegration');
 safeUse('/statistics', './statistics');

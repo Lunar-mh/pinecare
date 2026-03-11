@@ -7,7 +7,10 @@ const communityAdminController = require('../controllers/communityAdminControlle
 const {
   validateVolunteerQuery,
   validateOrderQuery,
+  validateOrderId,
   validateCreateOrder,
+  validateAssignOrder,
+  validateUpdateOrderStatus,
   validateActivityQuery,
   validateCreateActivity,
   validateStatsQuery,
@@ -22,6 +25,19 @@ router.get('/volunteers', validateVolunteerQuery, communityAdminController.getVo
 
 router.get('/orders', validateOrderQuery, communityAdminController.getOrders);
 router.post('/orders', validateCreateOrder, communityAdminController.createOrder);
+router.get('/orders/:orderId', validateOrderId, communityAdminController.getOrderDetail);
+router.patch(
+  '/orders/:orderId/assign',
+  validateOrderId,
+  validateAssignOrder,
+  communityAdminController.assignOrder
+);
+router.patch(
+  '/orders/:orderId/status',
+  validateOrderId,
+  validateUpdateOrderStatus,
+  communityAdminController.updateOrderStatus
+);
 
 router.get('/activities', validateActivityQuery, communityAdminController.getActivities);
 router.post('/activities', validateCreateActivity, communityAdminController.createActivity);

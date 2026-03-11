@@ -147,6 +147,11 @@ function buildIntegrationRows() {
       fallbackAllowed:
         !productionLive &&
         String(process.env.MEDICAL_API_ALLOW_STUB_FALLBACK || 'false').toLowerCase() === 'true',
+      source: medicalSource,
+      notes:
+        medicalSource === 'third_party_live'
+          ? 'Medical requests currently use the live upstream integration path.'
+          : 'Medical requests currently use deterministic stub data for competition replay.',
     },
     {
       key: 'wechat_notify',
@@ -161,6 +166,7 @@ function buildIntegrationRows() {
   ].map((item) => ({
     ...item,
     runtimeMode: resolveMode(),
+    configState: item.configured ? 'ready' : 'missing',
     healthy:
       item.effectiveMode === 'live' ? item.configured : item.fallbackAllowed || item.configured,
   }));
@@ -931,6 +937,10 @@ const adminOpsService = {
       generatedAt: new Date().toISOString(),
       items: buildIntegrationRows(),
       recentErrors: getRecentThirdPartyErrors(10),
+      summary: {
+        healthyCount: buildIntegrationRows().filter((item) => item.healthy).length,
+        totalCount: buildIntegrationRows().length,
+      },
     };
   },
 
@@ -1026,6 +1036,7 @@ const adminOpsService = {
       bootstrapAt,
       status: 'ready',
       bootstrap: scenario.bootstrap,
+      preparedData: scenario.bootstrap,
       modules: scenario.modules,
       apiSequence: scenario.apiSequence,
       checklist: scenario.checklist,

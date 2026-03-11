@@ -191,6 +191,48 @@ const communityAdminModel = {
     return rows[0] ? Number(rows[0].total) : 0;
   },
 
+  async findVolunteerInCommunity(communityId, volunteerUserId) {
+    const [rows] = await query(
+      `SELECT ca.id, ca.user_id, ca.community_id, ca.role, u.name, u.phone
+       FROM community_admins ca
+       INNER JOIN users u ON u.id = ca.user_id
+       WHERE ca.community_id = ?
+         AND ca.user_id = ?
+         AND ca.role = 'volunteer'
+       LIMIT 1`,
+      [Number(communityId), Number(volunteerUserId)]
+    );
+
+    return rows[0] || null;
+  },
+
+  async findOrderById(communityId, orderId) {
+    const [rows] = await query(
+      `SELECT
+         so.id,
+         so.order_no,
+         so.community_id,
+         so.service_type,
+         so.elder_id,
+         so.volunteer_id,
+         so.status,
+         so.scheduled_at,
+         so.completed_at,
+         so.created_at,
+         elder.name AS elder_name,
+         volunteer.name AS volunteer_name
+       FROM service_orders so
+       LEFT JOIN users elder ON elder.id = so.elder_id
+       LEFT JOIN users volunteer ON volunteer.id = so.volunteer_id
+       WHERE so.community_id = ?
+         AND so.id = ?
+       LIMIT 1`,
+      [Number(communityId), Number(orderId)]
+    );
+
+    return rows[0] || null;
+  },
+
   /**
    * 创建工单（自动生成唯一工单号）
    * @param {object} data
@@ -250,6 +292,46 @@ const communityAdminModel = {
     }
 
     throw lastError || new Error('工单号生成失败，请稍后重试');
+  },
+
+  async assignOrder(communityId, orderId, volunteerId, scheduledAt = null) {
+    const [result] = await query(
+      `UPDATE service_orders
+       SET volunteer_id = ?,
+           status = 'assigned',
+           scheduled_at = COALESCE(?, scheduled_at)
+       WHERE community_id = ?
+         AND id = ?
+         AND status = 'pending'`,
+      [Number(volunteerId), scheduledAt, Number(communityId), Number(orderId)]
+    );
+
+    return result;
+  },
+
+  async updateOrderStatus(communityId, orderId, status, payload = {}) {
+    const sets = ['status = ?'];
+    const params = [status];
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'completedAt')) {
+      sets.push('completed_at = ?');
+      params.push(payload.completedAt);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'volunteerId')) {
+      sets.push('volunteer_id = ?');
+      params.push(payload.volunteerId);
+    }
+
+    const [result] = await query(
+      `UPDATE service_orders
+       SET ${sets.join(', ')}
+       WHERE community_id = ?
+         AND id = ?`,
+      [...params, Number(communityId), Number(orderId)]
+    );
+
+    return result;
   },
 
   /**

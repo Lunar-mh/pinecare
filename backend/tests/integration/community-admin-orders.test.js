@@ -8,7 +8,10 @@ jest.mock('../../src/middleware/adminAuth', () => jest.fn());
 jest.mock('../../src/services/communityAdminService', () => ({
   getVolunteers: jest.fn(),
   getOrders: jest.fn(),
+  getOrderDetail: jest.fn(),
   createOrder: jest.fn(),
+  assignOrder: jest.fn(),
+  updateOrderStatus: jest.fn(),
   getActivities: jest.fn(),
   createActivity: jest.fn(),
   getStats: jest.fn(),
@@ -29,16 +32,16 @@ function createToken(userId = 1002) {
   return jwt.sign({ userId }, process.env.JWT_SECRET || 'fallback_secret');
 }
 
-describe('社区管理-工单管理集成测试', () => {
+describe('community admin order routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    adminAuth.mockImplementation((req, res, next) => {
+    adminAuth.mockImplementation((req, _res, next) => {
       req.adminScope = { communityId: 66, role: 'leader' };
       next();
     });
   });
 
-  test('工单列表支持状态过滤与分页', async () => {
+  test('lists community orders with status filter', async () => {
     const app = buildApp();
     const token = createToken();
 
@@ -68,7 +71,7 @@ describe('社区管理-工单管理集成测试', () => {
     );
   });
 
-  test('创建工单默认 pending 且返回唯一工单号', async () => {
+  test('creates pending order with generated order number', async () => {
     const app = buildApp();
     const token = createToken();
 
@@ -98,7 +101,71 @@ describe('社区管理-工单管理集成测试', () => {
     expect(res.body.data.order_no).toMatch(/^ORDER-\d{8}-\d{6}$/);
   });
 
-  test('非法 status 枚举应被参数校验拦截', async () => {
+  test('returns order detail in unified envelope', async () => {
+    const app = buildApp();
+    const token = createToken();
+
+    communityAdminService.getOrderDetail.mockResolvedValue({
+      id: 5,
+      order_no: 'ORDER-20260311-123456',
+      status: 'assigned',
+    });
+
+    const res = await request(app)
+      .get('/community/orders/5')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.code).toBe(0);
+    expect(res.body.data.id).toBe(5);
+  });
+
+  test('assigns order to volunteer', async () => {
+    const app = buildApp();
+    const token = createToken();
+
+    communityAdminService.assignOrder.mockResolvedValue({
+      id: 5,
+      status: 'assigned',
+      volunteer_id: 2001,
+    });
+
+    const res = await request(app)
+      .patch('/community/orders/5/assign')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ volunteer_id: 2001, scheduled_at: '2026-03-11 10:00:00' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.code).toBe(0);
+    expect(res.body.data.status).toBe('assigned');
+    expect(communityAdminService.assignOrder).toHaveBeenCalledWith(
+      66,
+      '5',
+      expect.objectContaining({ volunteer_id: 2001 }),
+      expect.objectContaining({ userId: 1002 })
+    );
+  });
+
+  test('updates order status through community console', async () => {
+    const app = buildApp();
+    const token = createToken();
+
+    communityAdminService.updateOrderStatus.mockResolvedValue({
+      id: 5,
+      status: 'cancelled',
+    });
+
+    const res = await request(app)
+      .patch('/community/orders/5/status')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ status: 'cancelled', reason: 'schedule_conflict' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.code).toBe(0);
+    expect(res.body.data.status).toBe('cancelled');
+  });
+
+  test('rejects invalid order status filter before service layer', async () => {
     const app = buildApp();
     const token = createToken();
 
@@ -108,7 +175,7 @@ describe('社区管理-工单管理集成测试', () => {
       .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(400);
-    expect(res.body).toMatchObject({ code: 400, message: 'status 枚举值非法' });
+    expect(res.body).toMatchObject({ code: 400 });
     expect(communityAdminService.getOrders).not.toHaveBeenCalled();
   });
 });

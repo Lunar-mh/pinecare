@@ -27,9 +27,14 @@ describe('medicalApiService', () => {
       create: jest.fn(() => mockClient),
     }));
 
+    const mockAuditLog = {
+      create: jest.fn().mockResolvedValue(1),
+    };
+    jest.doMock('../../src/models/auditLog', () => mockAuditLog);
+
     // eslint-disable-next-line global-require
     const service = require('../../src/services/medicalApiService');
-    return { service, mockClient };
+    return { service, mockClient, mockAuditLog };
   }
 
   it('returns stub hospitals when mode is stub', async () => {
@@ -119,7 +124,7 @@ describe('medicalApiService', () => {
   });
 
   it('falls back to stub when live call fails and fallback is enabled', async () => {
-    const { service } = loadService({
+    const { service, mockAuditLog } = loadService({
       env: {
         MEDICAL_API_MODE: 'live',
         MEDICAL_API_BASE_URL: 'https://medical-api.example.com',
@@ -135,6 +140,11 @@ describe('medicalApiService', () => {
 
     expect(Array.isArray(list)).toBe(true);
     expect(list.length).toBeGreaterThan(0);
+    expect(mockAuditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'medical.upstream.fallback',
+      })
+    );
   });
 
   it('cancels appointment through live endpoint', async () => {
@@ -215,7 +225,7 @@ describe('medicalApiService', () => {
   it('opens circuit breaker after repeated retryable failures', async () => {
     const get = jest.fn().mockRejectedValue({ response: { status: 503 } });
 
-    const { service } = loadService({
+    const { service, mockAuditLog } = loadService({
       env: {
         MEDICAL_API_MODE: 'live',
         MEDICAL_API_BASE_URL: 'https://medical-api.example.com',
@@ -229,6 +239,12 @@ describe('medicalApiService', () => {
       code: 503,
       statusCode: 503,
     });
+
+    expect(mockAuditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'medical.upstream.failure',
+      })
+    );
 
     await expect(service.fetchHospitals()).rejects.toMatchObject({
       code: 503,

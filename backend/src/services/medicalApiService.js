@@ -1,6 +1,7 @@
 ﻿'use strict';
 
 const axios = require('axios');
+const AuditLogModel = require('../models/auditLog');
 const {
   createUpstreamError,
   isRetryableError,
@@ -34,6 +35,18 @@ function normalizeList(data, fieldName) {
   if (Array.isArray(data)) return data;
   if (data && Array.isArray(data[fieldName])) return data[fieldName];
   return [];
+}
+
+async function writeAudit(action, details) {
+  try {
+    await AuditLogModel.create({
+      userId: null,
+      action,
+      details,
+    });
+  } catch (_err) {
+    // Ignore audit failures to keep third-party integration path non-blocking.
+  }
 }
 
 class MedicalApiService {
@@ -150,7 +163,16 @@ class MedicalApiService {
         logThirdPartyError('medical-api', err, { operation, attempt: attempt + 1 });
 
         if (!isRetryableError(err) || attempt >= MAX_RETRY) {
-          throw this.toUpstreamError(err);
+          const upstreamError = this.toUpstreamError(err);
+          await writeAudit('medical.upstream.failure', {
+            operation,
+            mode: 'live',
+            code: upstreamError.code,
+            status_code: upstreamError.statusCode,
+            message: upstreamError.message,
+            attempt: attempt + 1,
+          });
+          throw upstreamError;
         }
 
         await sleep(100 * (attempt + 1));
@@ -176,6 +198,12 @@ class MedicalApiService {
         logThirdPartyError('medical-api', err, {
           operation,
           fallback: 'stub',
+        });
+        await writeAudit('medical.upstream.fallback', {
+          operation,
+          mode: 'live',
+          fallback: 'stub',
+          source: this.getSourceTag(),
         });
         return stubFactory();
       }

@@ -4,6 +4,7 @@ const { fail } = require('../utils/response');
 
 const ORDER_STATUS_ENUM = ['pending', 'assigned', 'processing', 'completed', 'cancelled'];
 const ADMIN_ROLE_ENUM = ['admin', 'leader', 'volunteer'];
+const COMMUNITY_MANAGED_ORDER_STATUS_ENUM = ['cancelled', 'completed'];
 const MAX_PAGE_SIZE = 100;
 
 function getPageSize(source) {
@@ -84,6 +85,16 @@ function validateVolunteerQuery(req, res, next) {
   return next();
 }
 
+function validateOrderId(req, res, next) {
+  const orderId = Number(req.params.orderId);
+  if (!Number.isInteger(orderId) || orderId <= 0) {
+    return fail(res, 400, 'orderId must be a positive integer.', null, 400);
+  }
+
+  req.params.orderId = String(orderId);
+  return next();
+}
+
 function validateOrderQuery(req, res, next) {
   const pageResult = validatePagination(req.query);
   if (!pageResult.ok) {
@@ -128,6 +139,38 @@ function validateCreateOrder(req, res, next) {
   const scopeResult = validateCommunityScope(req);
   if (!scopeResult.ok) {
     return fail(res, scopeResult.code, scopeResult.message, null, scopeResult.status);
+  }
+
+  return next();
+}
+
+function validateAssignOrder(req, res, next) {
+  const volunteerId = Number(req.body && req.body.volunteer_id);
+  if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
+    return fail(res, 400, 'volunteer_id must be a positive integer.', null, 400);
+  }
+
+  if (req.body && req.body.scheduled_at && Number.isNaN(new Date(req.body.scheduled_at).getTime())) {
+    return fail(res, 400, 'Invalid scheduled_at.', null, 400);
+  }
+
+  return next();
+}
+
+function validateUpdateOrderStatus(req, res, next) {
+  const status = req.body && req.body.status;
+  if (!status || !COMMUNITY_MANAGED_ORDER_STATUS_ENUM.includes(status)) {
+    return fail(
+      res,
+      400,
+      `status must be one of: ${COMMUNITY_MANAGED_ORDER_STATUS_ENUM.join(', ')}.`,
+      null,
+      400
+    );
+  }
+
+  if (req.body && req.body.reason !== undefined && typeof req.body.reason !== 'string') {
+    return fail(res, 400, 'reason must be a string.', null, 400);
   }
 
   return next();
@@ -213,7 +256,10 @@ function validateStatsQuery(req, res, next) {
 module.exports = {
   validateVolunteerQuery,
   validateOrderQuery,
+  validateOrderId,
   validateCreateOrder,
+  validateAssignOrder,
+  validateUpdateOrderStatus,
   validateActivityQuery,
   validateCreateActivity,
   validateStatsQuery,
