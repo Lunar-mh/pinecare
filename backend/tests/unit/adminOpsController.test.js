@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 jest.mock('../../src/services/adminOpsService', () => ({
   getHealthOverview: jest.fn(),
@@ -46,28 +46,13 @@ describe('adminOpsController', () => {
     jest.clearAllMocks();
   });
 
-  it('blocks non-admin users', async () => {
-    const req = {
-      user: { userId: 1, role: 'user' },
-      query: {},
-    };
-    const res = createRes();
-
-    await adminOpsController.healthOverview(req, res);
-
-    expect(adminOpsService.getHealthOverview).not.toHaveBeenCalled();
-    expect(res.statusCode).toBe(403);
-    expect(res.body.code).toBe(403);
-  });
-
-  it('returns health overview for admin users', async () => {
+  it('delegates health overview once request is already authorized', async () => {
     adminOpsService.getHealthOverview.mockResolvedValue({
       list: [{ userId: 1 }],
       pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
     });
 
     const req = {
-      user: { userId: 0, role: 'admin', isAdmin: true },
       query: { page: '1', pageSize: '10' },
     };
     const res = createRes();
@@ -86,7 +71,6 @@ describe('adminOpsController', () => {
     adminOpsService.updateMedicationLogStatus.mockRejectedValue(err);
 
     const req = {
-      user: { userId: 0, role: 'admin', isAdmin: true },
       params: { logId: '999' },
       body: { status: 'taken' },
     };
@@ -102,7 +86,6 @@ describe('adminOpsController', () => {
     adminOpsService.getSosEvents.mockRejectedValue(new Error('unexpected'));
 
     const req = {
-      user: { userId: 0, role: 'admin', isAdmin: true },
       query: {},
     };
     const res = createRes();
@@ -117,7 +100,7 @@ describe('adminOpsController', () => {
     });
   });
 
-  it('returns integration diagnostics for admin users', async () => {
+  it('returns integration diagnostics for authorized admin requests', async () => {
     adminOpsService.getIntegrationStatus.mockResolvedValue({
       runtimeMode: 'COMPETITION_SANDBOX',
       items: [
@@ -127,9 +110,7 @@ describe('adminOpsController', () => {
       recentErrors: [],
     });
 
-    const req = {
-      user: { userId: 0, role: 'admin', isAdmin: true },
-    };
+    const req = {};
     const res = createRes();
 
     await adminOpsController.integrationStatus(req, res);
@@ -141,14 +122,13 @@ describe('adminOpsController', () => {
     expect(res.body.data.items[1].key).toBe('competition_seed');
   });
 
-  it('returns paged audit logs for admin users', async () => {
+  it('returns paged audit logs for authorized admin requests', async () => {
     adminOpsService.getAuditLogs.mockResolvedValue({
       list: [{ id: 1, action: 'admin.demo.bootstrap' }],
       pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
     });
 
     const req = {
-      user: { userId: 0, role: 'admin', isAdmin: true },
       query: { page: '1', pageSize: '20' },
     };
     const res = createRes();

@@ -4,14 +4,6 @@ const { ok, fail } = require('../utils/response');
 const adminUserService = require('../services/adminUserService');
 const { validatePhone, validateRequired } = require('../utils/validators');
 
-function ensureAdmin(req, res) {
-  if (req.user && (req.user.isAdmin === true || req.user.role === 'admin')) {
-    return true;
-  }
-  fail(res, 403, 'Forbidden.', null, 403);
-  return false;
-}
-
 function handleError(res, err) {
   if (err && (err.code || err.statusCode)) {
     const code = err.code || err.statusCode;
@@ -23,7 +15,6 @@ function handleError(res, err) {
 
 const adminUserController = {
   async list(req, res) {
-    if (!ensureAdmin(req, res)) return;
     try {
       const data = await adminUserService.listUsers(req.query);
       return ok(res, data, 'ok');
@@ -33,7 +24,6 @@ const adminUserController = {
   },
 
   async detail(req, res) {
-    if (!ensureAdmin(req, res)) return;
     const userId = Number.parseInt(req.params.userId, 10);
     if (!Number.isInteger(userId) || userId <= 0) {
       return fail(res, 400, 'Invalid userId.', null, 400);
@@ -48,8 +38,6 @@ const adminUserController = {
   },
 
   async create(req, res) {
-    if (!ensureAdmin(req, res)) return;
-
     const required = validateRequired(req.body || {}, ['nickname', 'phone', 'role']);
     if (!required.valid) {
       return fail(res, 400, required.message, null, 400);
@@ -73,8 +61,6 @@ const adminUserController = {
   },
 
   async updateStatus(req, res) {
-    if (!ensureAdmin(req, res)) return;
-
     const userId = Number.parseInt(req.params.userId, 10);
     if (!Number.isInteger(userId) || userId <= 0) {
       return fail(res, 400, 'Invalid userId.', null, 400);

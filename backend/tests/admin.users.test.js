@@ -10,6 +10,8 @@ jest.mock('../src/middleware/auth', () => {
   };
 });
 
+jest.mock('../src/middleware/adminAuth', () => jest.fn((_req, _res, next) => next()));
+
 jest.mock('../src/services/adminUserService', () => ({
   listUsers: jest.fn(),
   getUserDetail: jest.fn(),
@@ -18,6 +20,7 @@ jest.mock('../src/services/adminUserService', () => ({
 }));
 
 const adminUsersRouter = require('../src/routes/adminUsers');
+const adminAuth = require('../src/middleware/adminAuth');
 const adminUserService = require('../src/services/adminUserService');
 
 function createApp() {
@@ -30,11 +33,12 @@ function createApp() {
 describe('admin users routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    adminAuth.mockImplementation((_req, _res, next) => next());
   });
 
   it('GET /admin/users returns paged users', async () => {
     adminUserService.listUsers.mockResolvedValue({
-      list: [{ id: 1, nickname: 'A', phone: '13800000000', role: 'elder', status: '正常', registerDate: '2026-03-10', lastActive: '从未登录' }],
+      list: [{ id: 1, nickname: 'A', phone: '13800000000', role: 'elder', status: 'active', registerDate: '2026-03-10', lastActive: '2026-03-10 10:00:00' }],
       total: 1,
       page: 1,
       pageSize: 10,
@@ -46,6 +50,7 @@ describe('admin users routes', () => {
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
     expect(res.body.data.total).toBe(1);
+    expect(adminAuth).toHaveBeenCalled();
     expect(adminUserService.listUsers).toHaveBeenCalledWith({ page: '1', pageSize: '10' });
   });
 
@@ -63,9 +68,9 @@ describe('admin users routes', () => {
       nickname: 'new-user',
       phone: '13900000000',
       role: 'elder',
-      status: '正常',
+      status: 'active',
       registerDate: '2026-03-10',
-      lastActive: '从未登录',
+      lastActive: '2026-03-10 10:00:00',
     });
 
     const app = createApp();
@@ -94,10 +99,23 @@ describe('admin users routes', () => {
     const app = createApp();
     const res = await request(app)
       .put('/admin/users/1/status')
-      .send({ status: '禁用' });
+      .send({ status: 'disabled' });
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(adminUserService.updateUserStatus).toHaveBeenCalledWith(1, '禁用');
+    expect(adminUserService.updateUserStatus).toHaveBeenCalledWith(1, 'disabled');
+  });
+
+  it('blocks requests rejected by adminAuth', async () => {
+    adminAuth.mockImplementationOnce((_req, res) => {
+      res.status(403).json({ code: 403, message: 'Forbidden.', data: null });
+    });
+
+    const app = createApp();
+    const res = await request(app).get('/admin/users');
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe(403);
+    expect(adminUserService.listUsers).not.toHaveBeenCalled();
   });
 });

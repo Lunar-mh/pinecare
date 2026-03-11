@@ -10,10 +10,10 @@ The following numbers are verified from the current repository state:
 - Integration test files: 34
 - Performance test files: 15
 - Coverage summary from the latest full run:
-  - statements: 57.63%
-  - branches: 41.74%
-  - functions: 60.14%
-  - lines: 58.09%
+  - statements: 57.76%
+  - branches: 41.76%
+  - functions: 60.09%
+  - lines: 58.07%
 
 These numbers must be updated only after a fresh full test run.
 
@@ -30,13 +30,15 @@ Done in this change set:
 - Added contract tests for the new `/health`, `/device`, and `/family` contract paths
 - Added parity regression tests to keep canonical and compatibility routes behaviorally aligned
 - Reworked time-bank, AI consult, AI companion, health archive, and fall-report performance tests so they measure successful in-process responses instead of external localhost state
+- Unified `/community`, `/admin`, `/admin/users`, and `/statistics` onto middleware-level `adminAuth` instead of controller-local admin checks
+- Moved legacy admin route authorization assertions into route-level regression coverage
 
 P0 still required:
 
 - Publish one canonical path table for every backend module
 - Add deprecation headers for old compatibility routes that are no longer canonical
-- Unify admin and community authorization at middleware level instead of controller-local checks
 - Freeze one global business error mapping policy
+- Decide whether remaining legacy admin entry points stay for one deprecation cycle or are retired immediately
 
 Definition of done for P0:
 
@@ -85,7 +87,7 @@ Definition of done for P2:
 ## Execution order
 
 1. Finish all remaining P0 drift fixes and document canonical paths.
-2. Unify runtime mode and authorization strategy before touching more feature code.
+2. Unify runtime mode strategy before touching more feature code.
 3. Move external integrations to live-first with explicit diagnostics.
 4. Raise coverage and add performance baselines for the highest-risk chains.
 5. Freeze replay scripts and release checklists for competition and staging use.
