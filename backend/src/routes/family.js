@@ -3,27 +3,29 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 const familyController = require('../controllers/familyController');
+const familySpaceController = require('../controllers/familySpaceController');
+const { uploadAudio, uploadImage } = require('../middleware/upload');
+const {
+  validatePagination,
+  validateSendMessage,
+  validateUploadAlbum,
+  validateFamilyIdQuery,
+} = require('../middleware/familySpaceValidators');
 const { fail } = require('../utils/response');
 
 const router = express.Router();
 
-/**
- * elderId 参数校验
- */
 function validateElderId(req, res, next) {
   const elderId = Number(req.params.elderId);
   if (!Number.isInteger(elderId) || elderId <= 0) {
-    return fail(res, 422, 'elderId 必须为正整数', null, 422);
+    return fail(res, 422, 'elderId must be a positive integer.', null, 422);
   }
   return next();
 }
 
-/**
- * 通知设置更新参数校验
- */
 function validateSettingsPayload(req, res, next) {
   if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
-    return fail(res, 422, '请求体必须为对象', null, 422);
+    return fail(res, 422, 'request body must be an object.', null, 422);
   }
   return next();
 }
@@ -35,5 +37,13 @@ router.get('/elderly-overview', familyController.getElderlyOverview);
 router.get('/health/:elderId', validateElderId, familyController.getHealthByElderId);
 router.get('/settings', familyController.getSettings);
 router.put('/settings', validateSettingsPayload, familyController.updateSettings);
+
+// Expose family-space APIs on the spec-compatible /family prefix.
+router.post('/message/send', uploadAudio, validateSendMessage, familySpaceController.sendMessage);
+router.get('/message/list', validatePagination, familySpaceController.listMessages);
+router.post('/album/upload', uploadImage, validateUploadAlbum, familySpaceController.uploadAlbum);
+router.get('/album/list', validateFamilyIdQuery, validatePagination, familySpaceController.listAlbum);
+router.get('/points', validatePagination, familySpaceController.getPoints);
+router.get('/leaderboard', validateFamilyIdQuery, validatePagination, familySpaceController.getLeaderboard);
 
 module.exports = router;

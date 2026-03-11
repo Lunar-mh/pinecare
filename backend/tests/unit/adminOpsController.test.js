@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/services/adminOpsService', () => ({
   getHealthOverview: jest.fn(),
@@ -120,7 +120,10 @@ describe('adminOpsController', () => {
   it('returns integration diagnostics for admin users', async () => {
     adminOpsService.getIntegrationStatus.mockResolvedValue({
       runtimeMode: 'COMPETITION_SANDBOX',
-      items: [{ key: 'medical', healthy: true }],
+      items: [
+        { key: 'medical', healthy: true },
+        { key: 'competition_seed', healthy: true, sqlReady: true },
+      ],
       recentErrors: [],
     });
 
@@ -135,6 +138,7 @@ describe('adminOpsController', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.code).toBe(0);
     expect(res.body.data.items[0].key).toBe('medical');
+    expect(res.body.data.items[1].key).toBe('competition_seed');
   });
 
   it('returns paged audit logs for admin users', async () => {

@@ -5,9 +5,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-COPY src ./src
-COPY migrations ./migrations
-COPY server.js ./
+COPY . .
+RUN mkdir -p /app/generated/competition-seed && chown -R node:node /app
 
 ENV NODE_ENV=production
 EXPOSE 3000

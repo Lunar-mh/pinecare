@@ -1,5 +1,7 @@
 ﻿'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const adminOpsModel = require('../models/adminOpsModel');
 const AuditLogModel = require('../models/auditLog');
 const timeBankModel = require('../models/timeBank');
@@ -115,9 +117,25 @@ function resolveVoiceEffectiveMode() {
   return isProductionLive() || hasEnv(['DASHSCOPE_API_KEY']) ? 'live' : 'stub';
 }
 
+function getCompetitionSeedAssetStatus() {
+  const outputDir = path.join(__dirname, '..', '..', 'generated', 'competition-seed');
+  const bootstrapSqlPath = path.join(outputDir, COMPETITION_SEED_ASSETS.files.bootstrapSql);
+  const summaryPath = path.join(outputDir, COMPETITION_SEED_ASSETS.files.summary);
+  const bootstrapSummaryPath = path.join(outputDir, COMPETITION_SEED_ASSETS.files.bootstrapSummary);
+
+  return {
+    outputDir: COMPETITION_SEED_ASSETS.outputDir,
+    generated: fs.existsSync(summaryPath) || fs.existsSync(bootstrapSummaryPath),
+    sqlReady: fs.existsSync(bootstrapSqlPath),
+    files: COMPETITION_SEED_ASSETS.files,
+    commands: COMPETITION_SEED_ASSETS.commands,
+  };
+}
+
 function buildIntegrationRows() {
   const productionLive = isProductionLive();
   const medicalSource = medicalApiService.getSourceTag();
+  const competitionSeed = getCompetitionSeedAssetStatus();
 
   return [
     {
@@ -140,6 +158,32 @@ function buildIntegrationRows() {
       mode: resolveServiceMode('OSS_MODE'),
       effectiveMode: ossService.isLiveMode() ? 'live' : 'stub',
       fallbackAllowed: !productionLive,
+    },
+    {
+      key: 'competition_seed',
+      configured: competitionSeed.generated,
+      mode: 'local',
+      effectiveMode: competitionSeed.sqlReady
+        ? 'ready'
+        : competitionSeed.generated
+          ? 'partial'
+          : 'missing',
+      fallbackAllowed: false,
+      source: 'local_generated_assets',
+      missingConfig: [],
+      circuitOpen: false,
+      generated: competitionSeed.generated,
+      sqlReady: competitionSeed.sqlReady,
+      assetFiles: competitionSeed.files,
+      commands: competitionSeed.commands,
+      notes: competitionSeed.sqlReady
+        ? 'Competition seed SQL is ready for direct MySQL bootstrap.'
+        : competitionSeed.generated
+          ? 'Competition seed JSON assets exist but bootstrap.sql has not been generated yet.'
+          : 'Competition seed assets have not been generated in this workspace yet.',
+      healthy: competitionSeed.generated,
+      runtimeMode: resolveMode(),
+      configState: competitionSeed.generated ? 'ready' : 'missing',
     },
     (() => {
       const capability =

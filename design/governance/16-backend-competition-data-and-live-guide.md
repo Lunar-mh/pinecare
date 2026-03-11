@@ -137,3 +137,11 @@
 - 导库说明输出位置：`backend/generated/competition-seed/bootstrap-readme.md`
 
 如果后续要做答辩回放，建议先执行 SQL 导库，再调用 `POST /admin/system/demo/bootstrap` 获取 replay context 和审计证据。
+
+- 如本地 MySQL 已完成迁移并配置好 `backend/.env`，可继续执行：`npm run seed:competition:apply`
+- 如需先验证流程不落库，可执行：`node scripts/applyCompetitionSeed.js --dry-run`
+
+- ???????????`npm run seed:competition:verify`
+
+- ???????????`npm run seed:competition:snapshot`
+- ?????? + ?? + ???`npm run seed:competition:refresh`

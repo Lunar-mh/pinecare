@@ -6,6 +6,9 @@ const COMPETITION_SEED_ASSETS = {
     'npm run seed:competition',
     'npm run seed:competition:export',
     'npm run seed:competition:sql',
+    'npm run seed:competition:apply',
+    'npm run seed:competition:verify',
+    'npm run seed:competition:refresh',
   ],
   files: {
     manifest: 'manifest.json',
@@ -31,7 +34,10 @@ const COMPETITION_SEED_ASSETS = {
     summary: 'summary.json',
     bootstrapSql: 'bootstrap.sql',
     bootstrapReadme: 'bootstrap-readme.md',
-    bootstrapSummary: 'bootstrap-summary.json'
+    bootstrapSummary: 'bootstrap-summary.json',
+    latestSnapshot: 'latest-db-snapshot.json',
+    latestVerification: 'latest-verification.json',
+    latestRefreshReport: 'latest-refresh-report.json'
   },
 };
 

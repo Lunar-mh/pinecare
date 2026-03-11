@@ -16,7 +16,11 @@
     "format:write": "prettier --write .",
     "seed:competition": "node scripts/seedCompetitionData.js",
     "seed:competition:export": "node scripts/exportCompetitionSeed.js",
-    "seed:competition:sql": "node scripts/exportCompetitionSeedSql.js"
+    "seed:competition:sql": "node scripts/exportCompetitionSeedSql.js",
+    "seed:competition:apply": "node scripts/applyCompetitionSeed.js",
+    "seed:competition:verify": "node scripts/verifyCompetitionSeed.js",
+    "seed:competition:snapshot": "node scripts/snapshotCompetitionSeedDb.js",
+    "seed:competition:refresh": "node scripts/refreshCompetitionSeed.js"
   },
   "dependencies": {
     "axios": "^1.13.5",

@@ -10,9 +10,11 @@ const {
   validateUploadAlbum,
   validateFamilyIdQuery,
 } = require('../middleware/familySpaceValidators');
+const { deprecatedRoute } = require('../utils/deprecation');
 
 const router = express.Router();
 
+router.use(deprecatedRoute((req) => `/family${req.path}`));
 router.use(auth);
 
 router.post('/message/send', uploadAudio, validateSendMessage, familySpaceController.sendMessage);

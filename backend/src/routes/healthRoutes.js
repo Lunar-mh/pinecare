@@ -5,6 +5,7 @@ const { query } = require('../config/database');
 const redis = require('../config/redis');
 const { ok, fail } = require('../utils/response');
 const { resolveMode } = require('../config/runtimeMode');
+const healthArchiveRouter = require('./healthArchive');
 
 const router = express.Router();
 
@@ -66,5 +67,8 @@ router.get('/', async (req, res) => {
     );
   }
 });
+
+// Keep infra health check at /health while exposing spec-compatible health archive APIs.
+router.use('/', healthArchiveRouter);
 
 module.exports = router;

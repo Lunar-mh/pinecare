@@ -391,6 +391,7 @@ describe('admin ops smoke', () => {
     expect(res.body.code).toBe(0);
     expect(Array.isArray(res.body.data.items)).toBe(true);
     expect(res.body.data.items.some((item) => item.key === 'medical')).toBe(true);
+    expect(res.body.data.items.some((item) => item.key === 'competition_seed')).toBe(true);
     expect(res.body.data.runtimeMode).toBeTruthy();
   });
 

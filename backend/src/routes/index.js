@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const express = require('express');
 const { ok } = require('../utils/response');
@@ -30,6 +30,7 @@ safeUse('/admin/users', './adminUsers');
 safeUse('/admin', './adminOps');
 
 safeUse('/health-archive', './healthArchive');
+safeUse('/device', './deviceCompat');
 safeUse('/medication', './medication');
 safeUse('/sos', './sos');
 safeUse('/family', './family');
