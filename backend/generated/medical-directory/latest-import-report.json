@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-03-11T11:25:21.227Z",
-  "dryRun": true,
-  "filePath": "D:\\03_Study\\Desktop\\old\\backend\\templates\\medical-directory.real.json",
+  "generatedAt": "2026-03-11T11:49:37.618Z",
+  "dryRun": false,
+  "filePath": "/app/templates/medical-directory.real.json",
   "connection": {
-    "host": "127.0.0.1",
-    "port": 3307,
+    "host": "mysql",
+    "port": 3306,
     "database": "yinban",
     "user": "yinban"
   },
@@ -72,6 +72,7 @@
       }
     ]
   },
-  "nextStep": "Remove --dry-run to import this curated medical directory into medical_directory_cache.",
-  "status": "ready"
+  "nextStep": "Import finished. Verify via GET /medical/hospitals and GET /admin/system/integrations.",
+  "status": "imported",
+  "importedAt": "2026-03-11T11:49:37.730Z"
 }

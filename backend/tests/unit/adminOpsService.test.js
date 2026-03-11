@@ -43,6 +43,8 @@ const loadService = () => {
   };
   const ossService = { getCapabilityReport: jest.fn(() => ({ liveConfigured: true, requestedMode: 'live', effectiveMode: 'live', fallbackAllowed: false })) };
   const wechatNotifier = { getCapabilityReport: jest.fn(() => ({ liveConfigured: false, requestedMode: 'auto', effectiveMode: 'mock', fallbackAllowed: true, missingConfig: ['WECHAT_APP_ID'] })) };
+  const smsNotifyService = { getCapabilityReport: jest.fn(() => ({ configured: true, mode: 'live', effectiveMode: 'live', fallbackAllowed: false, source: 'aliyun_sms', missingConfig: [], notes: 'ok', healthy: true })) };
+  const wechatNotifyService = { getCapabilityReport: jest.fn(() => ({ configured: true, mode: 'live', effectiveMode: 'live', fallbackAllowed: false, source: 'wechat_subscribe_message', missingConfig: [], notes: 'ok', healthy: true })) };
   const runtimeMode = { resolveMode: jest.fn(() => 'COMPETITION_SANDBOX'), isProductionLive: jest.fn(() => false) };
   const thirdParty = { getRecentThirdPartyErrors: jest.fn(() => [{ code: '503' }]) };
   const DEMO_SCENARIOS = [{ id: 'demo-1', title: 'Demo One', bootstrap: { tables: 1 }, modules: ['medical'], apiSequence: ['/a', '/b'], checklist: ['step1'], }];
@@ -62,6 +64,8 @@ const loadService = () => {
   jest.doMock('../../src/config/runtimeMode', () => runtimeMode);
   jest.doMock('../../src/utils/thirdParty', () => thirdParty);
   jest.doMock('../../src/utils/wechatNotifier', () => wechatNotifier);
+  jest.doMock('../../src/services/smsNotifyService', () => smsNotifyService);
+  jest.doMock('../../src/services/wechatNotifyService', () => wechatNotifyService);
 
   const service = require('../../src/services/adminOpsService');
   return { service, existsSync, adminOpsModel, AuditLogModel, timeBankModel, getDemoScenarioById };
@@ -173,7 +177,7 @@ describe('adminOpsService', () => {
     loaded = loadService();
     loaded.existsSync.mockReturnValueOnce(false).mockReturnValueOnce(true).mockReturnValueOnce(false);
     loaded.AuditLogModel.create.mockResolvedValueOnce(1);
-    await expect(loaded.service.getIntegrationStatus()).resolves.toMatchObject({ summary: { totalCount: 6 }, recentErrors: [{ code: '503' }] });
+    await expect(loaded.service.getIntegrationStatus()).resolves.toMatchObject({ summary: { totalCount: 8 }, recentErrors: [{ code: '503' }] });
     await expect(loaded.service.getDemoScenarios()).resolves.toMatchObject({ scenarios: [expect.objectContaining({ id: 'demo-1', order: 1 })] });
     await expect(loaded.service.bootstrapDemoScenario({ scenarioId: 'demo-1' }, { userId: 7 })).resolves.toMatchObject({ scenarioId: 'demo-1', status: 'ready' });
   });

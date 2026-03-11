@@ -4,16 +4,16 @@
 
 The following numbers are verified from the current repository state:
 
-- Backend test suites: 143 passed out of 143
-- Backend test cases: 569 passed out of 569
+- Backend test suites: 147 passed out of 147
+- Backend test cases: 581 passed out of 581
 - Contract test files: 11
 - Integration test files: 35
 - Performance test files: 15
 - Coverage summary from the latest full run:
-  - statements: 70.00%
-  - branches: 52.19%
-  - functions: 70.38%
-  - lines: 70.40%
+  - statements: 70.94%
+  - branches: 52.72%
+  - functions: 71.22%
+  - lines: 71.37%
 
 These numbers must be updated only after a fresh full test run.
 
@@ -40,13 +40,19 @@ Done in this change set:
 - Removed the published legacy aliases for `/timebank`, `/location`, and `/companion`
 - Moved admin and volunteer scope lookups behind a dedicated model instead of querying in middleware
 - Moved `/health` dependency probing behind a dedicated service instead of querying in the route file
+- Split `adminOpsService` into thin facade plus focused admin subservices for care overview, incidents, and diagnostics
+- Split `communityAdminService` into thin facade plus focused community subservices for orders, activities, and care operations
+- Split `medicalApiService` into thin facade plus focused internal modules for capability policy, catalog fetches, request orchestration, and stub data
+- Split `timeBankService` into thin facade plus focused internal modules for account reads, service record workflows, exchange flows, and cache helpers
+- Added architecture guardrail tests to keep retired aliases removed, keep DB/Redis out of route and middleware boundaries, and stop the new facades from regrowing into monoliths
+- Raised Jest coverage thresholds to the current verified backend baseline
 
 P0 still required:
 
 - Publish one canonical path table for every backend module
 - Freeze one global business error mapping policy across the remaining controllers
-- Split the heaviest service aggregators before adding new feature code
 - Keep shrinking duplicate route/controller glue as compatibility paths are retired
+- Continue splitting the next overweight services without rebuilding all-in-one facades elsewhere
 
 Definition of done for P0:
 
@@ -61,11 +67,12 @@ P1 is about reducing backend weight while improving production intent.
 
 Required work:
 
-- Split large aggregation services when they mix multiple bounded contexts
+- Continue splitting large aggregation services when they mix multiple bounded contexts
 - Keep route files and middleware thin and data-access free
 - Continue replacing controller-local error mappers with the shared policy
 - Raise coverage to at least 75% overall without growing large files further
 - Push new work into small focused services instead of adding to all-in-one modules
+- Drive the next reductions in `fallService`, `familyService`, `authService`, and `companionService`
 
 Definition of done for P1:
 
@@ -86,6 +93,7 @@ The following rules are mandatory for future backend changes:
 - New deprecated paths must be documented at the time they are introduced
 - New production flows must not default to stub, mock, or fake success paths
 - New feature work must prefer deleting or extracting duplicate code over stacking logic into large files
+- Facade services must stay thin and only delegate to focused subservices
 
 ## Release gate
 

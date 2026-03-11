@@ -13,6 +13,8 @@ const { COMPETITION_SEED_ASSETS } = require('../../data/competitionSeedAssets');
 const { resolveMode, isProductionLive } = require('../../config/runtimeMode');
 const { getRecentThirdPartyErrors } = require('../../utils/thirdParty');
 const wechatNotifier = require('../../utils/wechatNotifier');
+const smsNotifyService = require('../smsNotifyService');
+const wechatNotifyService = require('../wechatNotifyService');
 const {
   buildEmptyPagedResult,
   buildPagination,
@@ -47,6 +49,8 @@ function buildIntegrationRows() {
       : null;
   const medicalSource = medicalApiService.getSourceTag();
   const wechatCapability = wechatNotifier.getCapabilityReport();
+  const sosSmsCapability = smsNotifyService.getCapabilityReport();
+  const sosWechatCapability = wechatNotifyService.getCapabilityReport();
   const competitionSeed = getCompetitionSeedAssetStatus();
   const runtimeMode = resolveMode();
 
@@ -132,6 +136,28 @@ function buildIntegrationRows() {
         wechatCapability.effectiveMode === 'live'
           ? 'WeChat template notify currently uses the live platform API path.'
           : 'WeChat template notify currently uses deterministic mock responses for sandbox replay.',
+    },
+    {
+      key: 'sos_sms_notify',
+      configured: sosSmsCapability.configured,
+      mode: sosSmsCapability.mode,
+      effectiveMode: sosSmsCapability.effectiveMode,
+      fallbackAllowed: sosSmsCapability.fallbackAllowed,
+      source: sosSmsCapability.source,
+      missingConfig: sosSmsCapability.missingConfig,
+      notes: sosSmsCapability.notes,
+      healthy: sosSmsCapability.healthy,
+    },
+    {
+      key: 'sos_wechat_notify',
+      configured: sosWechatCapability.configured,
+      mode: sosWechatCapability.mode,
+      effectiveMode: sosWechatCapability.effectiveMode,
+      fallbackAllowed: sosWechatCapability.fallbackAllowed,
+      source: sosWechatCapability.source,
+      missingConfig: sosWechatCapability.missingConfig,
+      notes: sosWechatCapability.notes,
+      healthy: sosWechatCapability.healthy,
     },
   ].map((item) => ({
     ...item,

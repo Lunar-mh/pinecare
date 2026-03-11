@@ -13,6 +13,29 @@ const REPORT_DIR = path.join(ROOT_DIR, 'generated', 'medical-directory');
 const REPORT_FILE = path.join(REPORT_DIR, 'latest-import-report.json');
 const DEFAULT_FILE = path.join(ROOT_DIR, 'templates', 'medical-directory.template.json');
 
+const CACHE_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS medical_directory_cache (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  directory_type ENUM('hospital', 'department', 'doctor') NOT NULL,
+  business_key VARCHAR(100) NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  hospital_id BIGINT NULL,
+  department_id BIGINT NULL,
+  payload JSON NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_medical_directory_cache (directory_type, business_key, hospital_id, department_id),
+  INDEX idx_medical_directory_type (directory_type),
+  INDEX idx_medical_directory_hospital (hospital_id),
+  INDEX idx_medical_directory_department (department_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+`;
+
+async function ensureCacheTable() {
+  await query(CACHE_TABLE_SQL);
+}
+
+
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
@@ -171,6 +194,7 @@ async function importMedicalDirectory({ filePath, dryRun = false }) {
   const departmentGroups = groupBy(dataset.departments, 'hospitalId');
   const doctorGroups = groupBy(dataset.doctors, 'departmentId');
 
+  await ensureCacheTable();
   await query("DELETE FROM medical_directory_cache WHERE directory_type IN ('doctor', 'department', 'hospital')");
   await medicalDirectoryModel.refreshHospitals(dataset.hospitals);
 
