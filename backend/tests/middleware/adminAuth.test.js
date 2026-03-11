@@ -1,10 +1,10 @@
 ﻿'use strict';
 
-jest.mock('../../src/config/db', () => ({
+jest.mock('../../src/config/database', () => ({
   query: jest.fn(),
 }));
 
-const { query } = require('../../src/config/db');
+const { query } = require('../../src/config/database');
 const adminAuth = require('../../src/middleware/adminAuth');
 
 function createRes() {

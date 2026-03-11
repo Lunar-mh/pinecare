@@ -2,11 +2,11 @@
 
 const loadModel = () => {
   jest.resetModules();
-  jest.doMock('../../src/config/db', () => ({
+  jest.doMock('../../src/config/database', () => ({
     query: jest.fn(),
   }));
 
-  const db = require('../../src/config/db');
+  const db = require('../../src/config/database');
   const model = require('../../src/models/geoFenceModel');
   return { model, query: db.query };
 };

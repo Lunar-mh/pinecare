@@ -256,7 +256,7 @@ const mockDb = {
   },
 };
 
-jest.mock('../../src/config/db', () => mockDb);
+jest.mock('../../src/config/database', () => mockDb);
 
 jest.mock('../../src/config/redis', () => ({
   get: jest.fn(async () => null),
