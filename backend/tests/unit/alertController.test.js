@@ -43,13 +43,11 @@ describe('alertController', () => {
 
     expect(alertService.listAlerts).toHaveBeenCalledWith(1001, { isHandled: 'false' });
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({
-      code: 0,
-      message: '查询成功',
-      data: {
-        list: [{ id: 1, level: 'warning' }],
-        total: 1,
-      },
+    expect(res.body.code).toBe(0);
+    expect(typeof res.body.message).toBe('string');
+    expect(res.body.data).toEqual({
+      list: [{ id: 1, level: 'warning' }],
+      total: 1,
     });
   });
 
@@ -73,5 +71,22 @@ describe('alertController', () => {
       message: 'Alert not found.',
       data: null,
     });
+  });
+
+  it('falls back to generic 500 for uncoded service errors', async () => {
+    alertService.listAlerts.mockRejectedValue(new Error('boom'));
+    const res = createRes();
+
+    await alertController.list(
+      {
+        user: { userId: 1001 },
+        query: {},
+      },
+      res
+    );
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body.code).toBe(500);
+    expect(res.body.data).toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 describe('integrationMode', () => {
   let originalEnv;
@@ -13,6 +13,7 @@ describe('integrationMode', () => {
   });
 
   function loadModule(env = {}) {
+    jest.resetModules();
     process.env = { ...originalEnv, ...env };
     return require('../../src/config/integrationMode');
   }
@@ -56,5 +57,17 @@ describe('integrationMode', () => {
       fallbackAllowed: false,
       stubAllowed: false,
     });
+  });
+
+  it('normalizes unsupported modes and checks required env keys', () => {
+    const { normalizeRequestedMode, hasRequiredEnv } = loadModule({
+      FIRST_KEY: 'value',
+      SECOND_KEY: ' ',
+    });
+
+    expect(normalizeRequestedMode('LIVE')).toBe('live');
+    expect(normalizeRequestedMode('weird-mode', 'mock')).toBe('mock');
+    expect(hasRequiredEnv(['FIRST_KEY'])).toBe(true);
+    expect(hasRequiredEnv(['FIRST_KEY', 'SECOND_KEY'])).toBe(false);
   });
 });

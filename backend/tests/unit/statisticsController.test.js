@@ -44,6 +44,21 @@ describe('statisticsController', () => {
     expect(statisticsService.getOverview).toHaveBeenCalledTimes(1);
   });
 
+  it('returns activities payload in unified envelope', async () => {
+    statisticsService.getActivities.mockResolvedValue([{ id: 1, type: 'checkin' }]);
+    const res = createRes();
+
+    await statisticsController.activities({ query: { limit: '5' } }, res);
+
+    expect(statisticsService.getActivities).toHaveBeenCalledWith('5');
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({
+      code: 0,
+      message: 'ok',
+      data: [{ id: 1, type: 'checkin' }],
+    });
+  });
+
   it('uses coded service errors when available', async () => {
     const err = new Error('Statistics source busy.');
     err.code = 503;

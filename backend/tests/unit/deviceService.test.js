@@ -75,6 +75,16 @@ describe('deviceService', () => {
     });
   });
 
+  it('unbind returns success payload when device exists', async () => {
+    deviceBindingModel.unbindDevice.mockResolvedValue(true);
+
+    await expect(deviceService.unbind(1001, { deviceId: 9 })).resolves.toEqual({
+      deviceId: 9,
+      unbound: true,
+    });
+    expect(deviceBindingModel.unbindDevice).toHaveBeenCalledWith(1001, 9);
+  });
+
   it('unbind throws 404 when target device is missing', async () => {
     deviceBindingModel.unbindDevice.mockResolvedValue(false);
 

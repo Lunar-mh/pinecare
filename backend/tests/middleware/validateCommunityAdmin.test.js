@@ -294,4 +294,228 @@ describe('validateCommunityAdmin middleware', () => {
     });
     expect(result.next).toHaveBeenCalledTimes(1);
   });
+
+  it('covers remaining community admin validator branches', () => {
+    let result = run(validators.validateVolunteerQuery, {
+      query: { community_id: 'bad' },
+      body: {},
+      adminScope: { isGlobalAdmin: true, communityId: null },
+    });
+    expect(result.res.body.message).toBe('community_id must be a positive integer.');
+
+    result = run(validators.validateCreateActivity, {
+      body: { title: 'A', start_time: '2026-03-12T09:00:00Z', end_time: '2026-03-12T10:00:00Z' },
+      query: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('content is required.');
+
+    result = run(validators.validateCreateActivity, {
+      body: { title: 'A', content: 'B', start_time: '2026-03-12T09:00:00Z', end_time: 'bad' },
+      query: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('Invalid end_time.');
+
+    result = run(validators.validateCreateActivity, {
+      body: {
+        title: 'A',
+        content: 'B',
+        start_time: '2026-03-12T09:00:00Z',
+        end_time: '2026-03-12T10:00:00Z',
+        max_participants: '0',
+      },
+      query: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('max_participants must be a positive integer.');
+
+    result = run(validators.validateStatsQuery, {
+      query: { end_date: 'bad' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('Invalid end_date.');
+
+    result = run(validators.validateMedicationLogsQuery, {
+      query: { startDate: 'bad' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('startDate is invalid.');
+
+    result = run(validators.validateMedicationLogsQuery, {
+      query: { endDate: 'bad' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('endDate is invalid.');
+
+    result = run(validators.validateMedicationLogId, {
+      params: { logId: 'bad' },
+    });
+    expect(result.res.body.message).toBe('logId must be a positive integer.');
+
+    result = run(validators.validateMedicationLogId, {
+      params: { logId: '5' },
+    });
+    expect(result.next).toHaveBeenCalledTimes(1);
+
+    result = run(validators.validateMedicationLogStatus, {
+      body: { status: 'odd' },
+    });
+    expect(result.res.body.message).toBe('status must be one of: pending, taken, skipped, missed.');
+
+    result = run(validators.validateMedicationLogStatus, {
+      body: { status: 'taken' },
+    });
+    expect(result.next).toHaveBeenCalledTimes(1);
+
+    result = run(validators.validateGpsCurrentQuery, {
+      query: { page: '0' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('page must be a positive integer.');
+
+    result = run(validators.validateGpsCurrentQuery, {
+      query: { community_id: '10' },
+      body: {},
+      adminScope: { communityId: 9, isGlobalAdmin: false },
+    });
+    expect(result.res.statusCode).toBe(403);
+
+    result = run(validators.validateGpsTrailQuery, {
+      query: { userId: '1', startDate: 'bad' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('startDate is invalid.');
+
+    result = run(validators.validateGpsTrailQuery, {
+      query: { userId: '1', startDate: '2026-03-12', endDate: 'bad' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('endDate is invalid.');
+
+    result = run(validators.validateGpsTrailQuery, {
+      query: { userId: '1', startDate: '2026-03-12', endDate: '2026-03-11' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('endDate must be >= startDate.');
+
+    result = run(validators.validateGpsTrailQuery, {
+      query: { userId: '1', startDate: '2026-03-11', endDate: '2026-03-12', limit: '5001' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('limit must be in 1-5000.');
+
+    result = run(validators.validateFamilyBindingsQuery, {
+      query: { community_id: '10' },
+      body: {},
+      adminScope: { communityId: 9, isGlobalAdmin: false },
+    });
+    expect(result.res.statusCode).toBe(403);
+
+    result = run(validators.validateSosEventId, {
+      params: { eventId: 'bad' },
+    });
+    expect(result.res.body.message).toBe('eventId must be a positive integer.');
+
+    result = run(validators.validateSosEventId, {
+      params: { eventId: '12' },
+    });
+    expect(result.next).toHaveBeenCalledTimes(1);
+
+    result = run(validators.validateMedicalReportsQuery, {
+      query: { endDate: 'bad' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('endDate is invalid.');
+
+    result = run(validators.validateUpdateSosEventStatus, {
+      body: { status: 'confirmed', reason: 123 },
+    });
+    expect(result.res.body.message).toBe('reason must be a string.');
+
+    result = run(validators.validateFallEventsQuery, {
+      query: { status: 'weird' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('status is invalid.');
+
+    result = run(validators.validateFallEventsQuery, {
+      query: { status: 'confirmed', page: '1' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.next).toHaveBeenCalledTimes(1);
+
+    result = run(validators.validateDrugInteractionId, {
+      params: { interactionId: 'bad' },
+    });
+    expect(result.res.body.message).toBe('interactionId must be a positive integer.');
+
+    result = run(validators.validateDrugInteractionId, {
+      params: { interactionId: '7' },
+    });
+    expect(result.next).toHaveBeenCalledTimes(1);
+
+    result = run(validators.validateDrugInteractionStatus, {
+      body: { status: 'done' },
+    });
+    expect(result.res.body.message).toBe('status must be one of: pending, acknowledged.');
+
+    result = run(validators.validateDrugInteractionStatus, {
+      body: { status: 'acknowledged' },
+    });
+    expect(result.next).toHaveBeenCalledTimes(1);
+
+    result = run(validators.validateTimeBankServiceHistoryQuery, {
+      query: { status: 'done' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('status is invalid.');
+
+    result = run(validators.validateTimeBankServiceHistoryQuery, {
+      query: { status: 'confirmed', page: '1', pageSize: '20' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.next).toHaveBeenCalledTimes(1);
+
+    result = run(validators.validateTimeBankServiceConfirm, {
+      query: {},
+      body: { recordId: '0', action: 'confirm' },
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('recordId must be a positive integer.');
+
+    result = run(validators.validateTimeBankExchangeHistoryQuery, {
+      query: { limit: '0' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('limit must be in 1-1000.');
+
+    result = run(validators.validateTimeBankExchangeHistoryQuery, {
+      query: { limit: '10' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.next).toHaveBeenCalledTimes(1);
+
+    result = run(validators.validateTimeBankLeaderboardQuery, {
+      query: { limit: '501' },
+      body: {},
+      adminScope: { communityId: 9 },
+    });
+    expect(result.res.body.message).toBe('limit must be in 1-500.');
+  });
 });

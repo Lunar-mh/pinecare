@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 describe('medicalApiService', () => {
   let originalEnv;
@@ -15,6 +15,7 @@ describe('medicalApiService', () => {
   });
 
   function loadService({ env = {}, client = {} } = {}) {
+    jest.resetModules();
     process.env = { ...originalEnv, ...env };
 
     const mockClient = {
@@ -252,4 +253,260 @@ describe('medicalApiService', () => {
       message: 'Medical API circuit breaker is open.',
     });
   });
+
+  it('reports missing config and blocks stub mode in production live', async () => {
+    const { service } = loadService({
+      env: {
+        MEDICAL_API_MODE: 'stub',
+        MEDICAL_API_BASE_URL: '',
+        MEDICAL_API_KEY: '',
+        PRODUCTION_LIVE: '1',
+      },
+    });
+
+    expect(service.getCapabilityReport()).toEqual(
+      expect.objectContaining({
+        source: 'third_party_stub',
+        mode: 'stub',
+        effectiveMode: 'stub',
+        fallbackAllowed: false,
+        missingConfig: ['MEDICAL_API_BASE_URL', 'MEDICAL_API_KEY'],
+        runtimeMode: 'PRODUCTION_LIVE',
+      })
+    );
+
+    await expect(service.fetchHospitals()).rejects.toMatchObject({
+      code: 503,
+      statusCode: 503,
+      message: 'Medical API stub mode is disabled in PRODUCTION_LIVE mode.',
+    });
+  });
+
+  it('fetches departments and doctors from live responses', async () => {
+    const get = jest
+      .fn()
+      .mockResolvedValueOnce({ data: [{ id: 2001, hospitalId: 8, name: 'Cardiology' }] })
+      .mockResolvedValueOnce({ data: { doctors: [{ id: 3001, departmentId: 9, name: 'Dr. Li' }] } });
+
+    const { service, mockClient } = loadService({
+      env: {
+        MEDICAL_API_MODE: 'live',
+        MEDICAL_API_BASE_URL: 'https://medical-api.example.com',
+        MEDICAL_API_KEY: 'test-key',
+      },
+      client: { get },
+    });
+
+    await expect(service.fetchDepartments(8)).resolves.toEqual([
+      { id: 2001, hospitalId: 8, name: 'Cardiology' },
+    ]);
+    await expect(service.fetchDoctors(9)).resolves.toEqual([
+      { id: 3001, departmentId: 9, name: 'Dr. Li' },
+    ]);
+    expect(mockClient.get).toHaveBeenNthCalledWith(1, '/hospitals/8/departments');
+    expect(mockClient.get).toHaveBeenNthCalledWith(2, '/departments/9/doctors');
+  });
+
+  it('handles doctor detail and empty live list responses', async () => {
+    let loaded = loadService({
+      env: {
+        MEDICAL_API_MODE: 'stub',
+      },
+    });
+    await expect(loaded.service.fetchDoctorDetail(9999)).resolves.toBeNull();
+
+    loaded = loadService({
+      env: {
+        MEDICAL_API_MODE: 'live',
+        MEDICAL_API_BASE_URL: 'https://medical-api.example.com',
+        MEDICAL_API_KEY: 'test-key',
+      },
+      client: {
+        get: jest.fn().mockResolvedValue({ data: [] }),
+      },
+    });
+    await expect(loaded.service.fetchHospitals()).rejects.toMatchObject({
+      code: 503,
+      statusCode: 503,
+      message: 'Empty hospitals response.',
+    });
+
+    loaded = loadService({
+      env: {
+        MEDICAL_API_MODE: 'live',
+        MEDICAL_API_BASE_URL: 'https://medical-api.example.com',
+        MEDICAL_API_KEY: 'test-key',
+      },
+      client: {
+        get: jest.fn().mockResolvedValue({ data: {} }),
+      },
+    });
+    await expect(loaded.service.fetchDoctorDetail(1)).rejects.toMatchObject({
+      code: 404,
+      statusCode: 404,
+      message: 'Doctor not found.',
+    });
+  });
+
+  it('creates consult sessions and appointments with request headers', async () => {
+    const post = jest
+      .fn()
+      .mockResolvedValueOnce({
+        data: {
+          thirdPartySessionId: 'consult-1',
+          sessionUrl: 'https://consult.example.com/session/consult-1',
+          consultStatus: 'active',
+          startedAt: '2026-03-11T09:00:00.000Z',
+          doctorId: 7,
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          thirdPartyAppointId: 'appoint-1',
+          appointStatus: 'confirmed',
+          hospitalId: 8,
+          doctorId: 7,
+        },
+      });
+
+    const { service, mockClient } = loadService({
+      env: {
+        MEDICAL_API_MODE: 'live',
+        MEDICAL_API_BASE_URL: 'https://medical-api.example.com',
+        MEDICAL_API_KEY: 'test-key',
+      },
+      client: { post },
+    });
+
+    const consult = await service.createConsultSession({ doctorId: 7, requestId: 'req-consult-1' });
+    const appointment = await service.createAppointment({
+      hospitalId: 8,
+      doctorId: 7,
+      requestId: 'req-appoint-1',
+    });
+
+    expect(consult).toEqual(
+      expect.objectContaining({
+        thirdPartySessionId: 'consult-1',
+        doctorId: 7,
+      })
+    );
+    expect(appointment).toEqual(
+      expect.objectContaining({
+        thirdPartyAppointId: 'appoint-1',
+        hospitalId: 8,
+        doctorId: 7,
+      })
+    );
+    expect(mockClient.post).toHaveBeenNthCalledWith(
+      1,
+      '/consult/sessions',
+      { doctorId: 7, requestId: 'req-consult-1' },
+      { headers: { 'X-Request-Id': 'req-consult-1' } }
+    );
+    expect(mockClient.post).toHaveBeenNthCalledWith(
+      2,
+      '/appointments',
+      { hospitalId: 8, doctorId: 7, requestId: 'req-appoint-1' },
+      { headers: { 'X-Request-Id': 'req-appoint-1' } }
+    );
+  });
+
+  it('returns stub reports and maps live medical reports', async () => {
+    let loaded = loadService({
+      env: {
+        MEDICAL_API_MODE: 'stub',
+      },
+    });
+
+    const stubReports = await loaded.service.fetchMedicalReports(5, { reportType: 'Lab' });
+    expect(stubReports).toHaveLength(1);
+    expect(stubReports[0].reportType).toBe('Lab');
+
+    const get = jest.fn().mockResolvedValue({
+      data: {
+        reports: [
+          {
+            reportNo: 'RPT-5-003',
+            reportType: 'Lab',
+            reportDate: '2026-03-11',
+            reportUrl: 'https://report.example.com/rpt-003.pdf',
+            reportData: { item: 'Glucose' },
+            syncStatus: 'synced',
+          },
+        ],
+      },
+    });
+    loaded = loadService({
+      env: {
+        MEDICAL_API_MODE: 'live',
+        MEDICAL_API_BASE_URL: 'https://medical-api.example.com',
+        MEDICAL_API_KEY: 'test-key',
+      },
+      client: { get },
+    });
+
+    const liveReports = await loaded.service.fetchMedicalReports(5, {
+      reportType: 'Lab',
+      startDate: '2026-03-01',
+      endDate: '2026-03-11',
+      requestId: 'req-report-1',
+    });
+
+    expect(liveReports).toEqual([
+      {
+        reportNo: 'RPT-5-003',
+        reportType: 'Lab',
+        reportDate: '2026-03-11',
+        reportUrl: 'https://report.example.com/rpt-003.pdf',
+        reportData: { item: 'Glucose' },
+        syncStatus: 'synced',
+      },
+    ]);
+    expect(loaded.mockClient.get).toHaveBeenCalledWith('/reports', {
+      params: {
+        userId: 5,
+        reportType: 'Lab',
+        startDate: '2026-03-01',
+        endDate: '2026-03-11',
+      },
+      headers: {
+        'X-Request-Id': 'req-report-1',
+      },
+    });
+  });
+
+  it('resets the circuit breaker after cooldown', async () => {
+    const get = jest
+      .fn()
+      .mockRejectedValueOnce({ response: { status: 503 } })
+      .mockResolvedValueOnce({ data: { hospitals: [{ id: 2, name: 'Recovered' }] } });
+
+    const nowSpy = jest.spyOn(Date, 'now');
+    nowSpy.mockReturnValue(1000);
+
+    const { service } = loadService({
+      env: {
+        MEDICAL_API_MODE: 'live',
+        MEDICAL_API_BASE_URL: 'https://medical-api.example.com',
+        MEDICAL_API_KEY: 'test-key',
+        MEDICAL_API_CIRCUIT_BREAKER_THRESHOLD: '1',
+        MEDICAL_API_CIRCUIT_BREAKER_COOLDOWN_MS: '1000',
+        MEDICAL_API_MAX_RETRY: '0',
+      },
+      client: { get },
+    });
+
+    await expect(service.fetchHospitals()).rejects.toMatchObject({
+      code: 503,
+      statusCode: 503,
+    });
+    await expect(service.fetchHospitals()).rejects.toMatchObject({
+      message: 'Medical API circuit breaker is open.',
+    });
+
+    nowSpy.mockReturnValue(2200);
+    await expect(service.fetchHospitals()).resolves.toEqual([{ id: 2, name: 'Recovered' }]);
+  });
 });
+
