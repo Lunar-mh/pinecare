@@ -381,4 +381,75 @@ describe('admin ops smoke', () => {
     expect(res.body.data[0].rank).toBe(1);
     expect(res.body.data[0].userId).toBe(1);
   });
+
+  it('GET /api/v1/admin/system/integrations returns diagnostics', async () => {
+    const res = await request(app)
+      .get('/api/v1/admin/system/integrations')
+      .set('Authorization', `Bearer ${createAdminToken()}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.code).toBe(0);
+    expect(Array.isArray(res.body.data.items)).toBe(true);
+    expect(res.body.data.items.some((item) => item.key === 'medical')).toBe(true);
+    expect(res.body.data.runtimeMode).toBeTruthy();
+  });
+
+  it('GET /api/v1/admin/system/audit-logs returns paged logs', async () => {
+    query
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 1,
+            user_id: 99,
+            action: 'admin.demo.bootstrap',
+            ip_address: '127.0.0.1',
+            user_agent: 'jest',
+            details: '{"scenarioId":"medical-consultation"}',
+            created_at: '2026-03-10 10:00:00',
+          },
+        ],
+      ])
+      .mockResolvedValueOnce([[{ total: 1 }]]);
+
+    const res = await request(app)
+      .get('/api/v1/admin/system/audit-logs?page=1&pageSize=20')
+      .set('Authorization', `Bearer ${createAdminToken()}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.code).toBe(0);
+    expect(res.body.data.list[0].action).toBe('admin.demo.bootstrap');
+    expect(res.body.data.pagination.total).toBe(1);
+  });
+
+  it('GET /api/v1/admin/system/demo/scenarios returns curated scenarios', async () => {
+    const res = await request(app)
+      .get('/api/v1/admin/system/demo/scenarios')
+      .set('Authorization', `Bearer ${createAdminToken()}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.code).toBe(0);
+    expect(Array.isArray(res.body.data.scenarios)).toBe(true);
+    expect(res.body.data.scenarios[0]).toEqual(
+      expect.objectContaining({
+        id: expect.any(String),
+        title: expect.any(String),
+        order: expect.any(Number),
+      })
+    );
+  });
+
+  it('POST /api/v1/admin/system/demo/bootstrap returns replay context', async () => {
+    query.mockResolvedValueOnce([{ insertId: 1 }]);
+
+    const res = await request(app)
+      .post('/api/v1/admin/system/demo/bootstrap')
+      .set('Authorization', `Bearer ${createAdminToken()}`)
+      .send({ scenarioId: 'medical-consultation' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.code).toBe(0);
+    expect(res.body.data.scenarioId).toBe('medical-consultation');
+    expect(res.body.data.status).toBe('ready');
+    expect(Array.isArray(res.body.data.replayLog)).toBe(true);
+  });
 });

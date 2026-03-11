@@ -6,6 +6,8 @@ const {
   createUpstreamError,
   isRetryableError,
   logThirdPartyError,
+  getRecentThirdPartyErrors,
+  clearRecentThirdPartyErrors,
   maskIdCard,
   maskPhone,
 } = require('../../src/utils/thirdParty');
@@ -13,6 +15,7 @@ const {
 describe('thirdParty utils', () => {
   beforeEach(() => {
     jest.spyOn(console, 'error').mockImplementation(() => {});
+    clearRecentThirdPartyErrors();
   });
 
   afterEach(() => {
@@ -110,6 +113,15 @@ describe('thirdParty utils', () => {
         message: expect.not.stringContaining('abc'),
       })
     );
+
+    expect(getRecentThirdPartyErrors(1)).toEqual([
+      expect.objectContaining({
+        provider: 'medical',
+        extra: expect.objectContaining({
+          sessionUrl: '[REDACTED_URL]',
+        }),
+      }),
+    ]);
   });
 
   it('mask helpers should keep expected edges', () => {

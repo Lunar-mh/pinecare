@@ -4,9 +4,9 @@
   collectCoverageFrom: ['src/**/*.js', '!src/docs/**'],
   coverageThreshold: {
     global: {
-      branches: 34,
-      functions: 47,
-      lines: 50,
+      branches: 37,
+      functions: 52,
+      lines: 54,
     },
   },
   testTimeout: 30000,

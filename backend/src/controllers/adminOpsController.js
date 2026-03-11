@@ -242,7 +242,7 @@ const adminOpsController = {
     if (!ensureAdmin(req, res)) return;
 
     try {
-      const data = await adminOpsService.bootstrapDemoScenario(req.body || {});
+      const data = await adminOpsService.bootstrapDemoScenario(req.body || {}, req.user || null);
       return ok(res, data, 'ok');
     } catch (err) {
       return handleError(res, err);

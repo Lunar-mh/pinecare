@@ -367,9 +367,13 @@ class MedicalApiService {
         }
 
         const response = await this.requestWithRetry('cancelAppointment', (client) =>
-          client.post(`/appointments/${targetId}/cancel`, {
-            reason: payload.reason || 'user_cancelled',
-          }, requestOptions)
+          client.post(
+            `/appointments/${targetId}/cancel`,
+            {
+              reason: payload.reason || 'user_cancelled',
+            },
+            requestOptions
+          )
         );
 
         const data = response.data || {};

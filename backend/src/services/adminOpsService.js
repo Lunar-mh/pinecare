@@ -924,6 +924,119 @@ const adminOpsService = {
       throw err;
     }
   },
+
+  async getIntegrationStatus() {
+    return {
+      runtimeMode: resolveMode(),
+      generatedAt: new Date().toISOString(),
+      items: buildIntegrationRows(),
+      recentErrors: getRecentThirdPartyErrors(10),
+    };
+  },
+
+  async getAuditLogs(query = {}) {
+    const page = Math.max(Number(query.page) || 1, 1);
+    const pageSize = Math.min(Math.max(Number(query.pageSize) || 20, 1), 100);
+    const filters = {
+      userId: query.userId ? parsePositiveInt(query.userId, 'userId') : null,
+      action: query.action ? String(query.action).trim() : '',
+    };
+
+    try {
+      const [list, total] = await Promise.all([
+        AuditLogModel.list(filters, { page, pageSize }),
+        AuditLogModel.count(filters),
+      ]);
+
+      return {
+        list,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      };
+    } catch (err) {
+      if (isSchemaMissingError(err)) {
+        return {
+          list: [],
+          pagination: {
+            page,
+            pageSize,
+            total: 0,
+            totalPages: 0,
+          },
+        };
+      }
+      throw err;
+    }
+  },
+
+  async getDemoScenarios() {
+    return {
+      runtimeMode: resolveMode(),
+      generatedAt: new Date().toISOString(),
+      scenarios: DEMO_SCENARIOS.map((scenario, index) => ({
+        ...scenario,
+        order: index + 1,
+      })),
+    };
+  },
+
+  async bootstrapDemoScenario(payload = {}, actor = null) {
+    const scenarioId = String(payload.scenarioId || payload.id || '').trim();
+    if (!scenarioId) {
+      throw createBizError(400, 'scenarioId is required.', 400);
+    }
+
+    const scenario = getDemoScenarioById(scenarioId);
+    if (!scenario) {
+      throw createBizError(404, 'Demo scenario not found.', 404);
+    }
+
+    const bootstrapAt = new Date().toISOString();
+    const replayLog = scenario.apiSequence.map((api, index) => ({
+      step: index + 1,
+      action: api,
+      status: 'pending',
+      note: scenario.checklist[index] || 'Ready for replay.',
+    }));
+
+    try {
+      await AuditLogModel.create({
+        userId: actor && actor.userId ? Number(actor.userId) : null,
+        action: 'admin.demo.bootstrap',
+        details: {
+          scenarioId: scenario.id,
+          runtimeMode: resolveMode(),
+          bootstrapAt,
+        },
+      });
+    } catch (err) {
+      if (!isSchemaMissingError(err)) {
+        throw err;
+      }
+    }
+
+    return {
+      scenarioId: scenario.id,
+      title: scenario.title,
+      runtimeMode: resolveMode(),
+      bootstrapAt,
+      status: 'ready',
+      bootstrap: scenario.bootstrap,
+      modules: scenario.modules,
+      apiSequence: scenario.apiSequence,
+      checklist: scenario.checklist,
+      replayLog,
+      warnings: [
+        isProductionLive()
+          ? 'PRODUCTION_LIVE enabled. Stub fallback paths are restricted.'
+          : 'Sandbox mode active. Demo fallback paths remain available.',
+      ],
+    };
+  },
 };
 
 module.exports = adminOpsService;
