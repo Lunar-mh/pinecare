@@ -1,42 +1,39 @@
 openapi: 3.0.3
 info:
-  title: 银伴平台 - 社区管理API
-  description: 银伴全域智慧照护平台社区管理接口
-  version: 1.0.0
+  title: 银伴平台 - 社区管理 API
+  description: 与当前后端实现对齐的社区管理接口契约
+  version: 1.1.0
 
 servers:
-  - url: https://api.yinban.com/v1
+  - url: /api/v1
+  - url: /
 
 tags:
-  - name: 社区管理
-    description: 社区管理相关接口
+  - name: Community
+    description: 社区管理后台接口
 
 paths:
-  /admin/volunteers:
+  /community/volunteers:
     get:
-      tags:
-        - 社区管理
-      summary: 志愿者列表
+      tags: [Community]
+      summary: 获取社区志愿者列表
       security:
         - BearerAuth: []
       responses:
         '200':
           description: 成功
 
-  /admin/orders:
+  /community/orders:
     get:
-      tags:
-        - 社区管理
-      summary: 工单列表
+      tags: [Community]
+      summary: 获取工单列表
       security:
         - BearerAuth: []
       responses:
         '200':
           description: 成功
-
     post:
-      tags:
-        - 社区管理
+      tags: [Community]
       summary: 创建工单
       security:
         - BearerAuth: []
@@ -44,20 +41,102 @@ paths:
         '200':
           description: 成功
 
-  /admin/activities:
+  /community/orders/{orderId}:
     get:
-      tags:
-        - 社区管理
-      summary: 活动列表
+      tags: [Community]
+      summary: 获取工单详情
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: integer
       responses:
         '200':
           description: 成功
 
-  /admin/stats:
+  /community/orders/{orderId}/assign:
+    patch:
+      tags: [Community]
+      summary: 分派工单给志愿者
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [volunteer_id]
+              properties:
+                volunteer_id:
+                  type: integer
+                scheduled_at:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: 成功
+
+  /community/orders/{orderId}/status:
+    patch:
+      tags: [Community]
+      summary: 后台收口工单状态
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [cancelled, completed]
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: 成功
+
+  /community/activities:
     get:
-      tags:
-        - 社区管理
-      summary: 数据统计
+      tags: [Community]
+      summary: 获取社区活动列表
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 成功
+    post:
+      tags: [Community]
+      summary: 创建社区活动
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 成功
+
+  /community/stats:
+    get:
+      tags: [Community]
+      summary: 获取社区统计摘要
       security:
         - BearerAuth: []
       responses:

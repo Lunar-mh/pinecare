@@ -1,8 +1,18 @@
-# design/
+# 设计与治理目录
 
-本目录用于存放“银伴”小程序前端的设计系统与页面/组件规范（全中文）。
+`design/` 同时承载设计系统资料和开发治理资料。后续任何页面设计、前后端对齐、答辩材料准备，都应先从这里找到统一约束。
 
-- `design/design-system/MASTER.md`：全局设计系统（适老化+无障碍硬约束、tokens、组件与交互规则）
-- `design/tokens/`：设计token与实现约束（仅包含可核验数值；不确定项标“待核验”）
-- `design/components/`：组件级规范（后续补齐）
-- `design/pages/`：页面级规范（后续补齐）
+## 目录说明
+
+- `design-system/`：设计系统、通用视觉约束、组件规范
+- `tokens/`：设计令牌
+- `components/`：组件级说明
+- `pages/`：页面级说明
+- `governance/`：四端协同开发治理文档，是当前唯一可信的开发方向来源
+
+## 使用顺序
+
+1. 如果要看总体方向，先读 `governance/01-master-governance.md`
+2. 如果要做具体端的设计或开发，再读对应蓝图
+3. 如果要做联调、录屏、答辩和验收，再读 `governance/08-cross-end-acceptance-matrix.md`
+4. 如果要看最新问题、建议和下一阶段任务，再读 `governance/13-project-audit-report.md` 与 `governance/14-next-phase-task-breakdown.md`

@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 
 # Build output
 dist/
@@ -28,6 +27,10 @@ Thumbs.db
 
 # Test coverage
 coverage/
+
+# Private configs
+project.private.config.json
+frontend/project.private.config.json
 
 # Redis dump
 dump.rdb
