@@ -13,28 +13,21 @@ function createBizError(code, message, statusCode, data) {
 }
 
 function normalizeDate(input, fieldName) {
-  if (input === undefined) {
-    return undefined;
-  }
-  if (input === null || input === '') {
-    return null;
-  }
+  if (input === undefined) return undefined;
+  if (input === null || input === '') return null;
 
   const time = new Date(input).getTime();
   if (Number.isNaN(time)) {
-    throw createBizError(400, `${fieldName} 日期格式非法`, 400);
+    throw createBizError(400, `${fieldName} has invalid date format.`, 400);
   }
 
   return new Date(time).toISOString().slice(0, 10);
 }
 
 function normalizeRemindTimes(remindTimes, required) {
-  if (remindTimes === undefined) {
-    return undefined;
-  }
-
+  if (remindTimes === undefined) return undefined;
   if (!Array.isArray(remindTimes)) {
-    throw createBizError(400, 'remind_times 必须为时间数组', 400);
+    throw createBizError(400, 'remind_times must be an array of time strings.', 400);
   }
 
   const regex = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -43,12 +36,12 @@ function normalizeRemindTimes(remindTimes, required) {
     .filter((item) => item.length > 0);
 
   if (required && cleaned.length === 0) {
-    throw createBizError(400, 'remind_times 至少包含一个提醒时间', 400);
+    throw createBizError(400, 'remind_times must include at least one reminder time.', 400);
   }
 
   cleaned.forEach((item) => {
     if (!regex.test(item)) {
-      throw createBizError(400, `提醒时间格式非法: ${item}`, 400);
+      throw createBizError(400, `Invalid reminder time: ${item}`, 400);
     }
   });
 
@@ -68,13 +61,17 @@ function normalizePayload(payload, options) {
     start_date: normalizeDate(safe.start_date, 'start_date'),
     end_date: normalizeDate(safe.end_date, 'end_date'),
     remaining_quantity:
-      safe.remaining_quantity === undefined || safe.remaining_quantity === null || safe.remaining_quantity === ''
+      safe.remaining_quantity === undefined ||
+      safe.remaining_quantity === null ||
+      safe.remaining_quantity === ''
         ? safe.remaining_quantity === undefined
           ? undefined
           : null
         : Number(safe.remaining_quantity),
     reminder_threshold:
-      safe.reminder_threshold === undefined || safe.reminder_threshold === null || safe.reminder_threshold === ''
+      safe.reminder_threshold === undefined ||
+      safe.reminder_threshold === null ||
+      safe.reminder_threshold === ''
         ? safe.reminder_threshold === undefined
           ? undefined
           : null
@@ -88,22 +85,14 @@ function normalizePayload(payload, options) {
   };
 
   if (!isUpdate) {
-    if (!normalized.medication_name) {
-      throw createBizError(400, 'medication_name 不能为空', 400);
-    }
-    if (!normalized.dosage) {
-      throw createBizError(400, 'dosage 不能为空', 400);
-    }
-    if (!normalized.frequency) {
-      throw createBizError(400, 'frequency 不能为空', 400);
-    }
-    if (!normalized.start_date) {
-      throw createBizError(400, 'start_date 不能为空', 400);
-    }
+    if (!normalized.medication_name) throw createBizError(400, 'medication_name is required.', 400);
+    if (!normalized.dosage) throw createBizError(400, 'dosage is required.', 400);
+    if (!normalized.frequency) throw createBizError(400, 'frequency is required.', 400);
+    if (!normalized.start_date) throw createBizError(400, 'start_date is required.', 400);
   }
 
   if (normalized.frequency !== undefined && !VALID_FREQUENCIES.includes(normalized.frequency)) {
-    throw createBizError(400, 'frequency 枚举值非法', 400);
+    throw createBizError(400, 'frequency is invalid.', 400);
   }
 
   if (
@@ -111,7 +100,7 @@ function normalizePayload(payload, options) {
     normalized.remaining_quantity !== null &&
     (!Number.isInteger(normalized.remaining_quantity) || normalized.remaining_quantity < 0)
   ) {
-    throw createBizError(400, 'remaining_quantity 必须为大于等于0的整数', 400);
+    throw createBizError(400, 'remaining_quantity must be an integer >= 0.', 400);
   }
 
   if (
@@ -119,11 +108,11 @@ function normalizePayload(payload, options) {
     normalized.reminder_threshold !== null &&
     (!Number.isInteger(normalized.reminder_threshold) || normalized.reminder_threshold < 0)
   ) {
-    throw createBizError(400, 'reminder_threshold 必须为大于等于0的整数', 400);
+    throw createBizError(400, 'reminder_threshold must be an integer >= 0.', 400);
   }
 
   if (normalized.start_date && normalized.end_date && normalized.end_date < normalized.start_date) {
-    throw createBizError(400, 'end_date 不能早于 start_date', 400);
+    throw createBizError(400, 'end_date must not be earlier than start_date.', 400);
   }
 
   return normalized;
@@ -157,14 +146,11 @@ const medicationPlanService = {
 
   async updatePlan(userId, planId, payload) {
     const existing = await medicationPlanModel.getByIdAndUser(planId, userId);
-    if (!existing) {
-      throw createBizError(404, '用药计划不存在或无权访问', 404);
-    }
+    if (!existing) throw createBizError(404, 'Medication plan not found or inaccessible.', 404);
 
     const normalized = normalizePayload(payload, { isUpdate: true });
-
     if (Object.values(normalized).every((value) => value === undefined)) {
-      throw createBizError(400, '至少提供一个可更新字段', 400);
+      throw createBizError(400, 'At least one updatable field is required.', 400);
     }
 
     const nextStartDate =
@@ -172,7 +158,7 @@ const medicationPlanService = {
     const nextEndDate = normalized.end_date === undefined ? existing.end_date : normalized.end_date;
 
     if (nextStartDate && nextEndDate && String(nextEndDate) < String(nextStartDate)) {
-      throw createBizError(400, 'end_date 不能早于 start_date', 400);
+      throw createBizError(400, 'end_date must not be earlier than start_date.', 400);
     }
 
     return medicationPlanModel.updateByIdAndUser(planId, userId, normalized);
@@ -180,20 +166,15 @@ const medicationPlanService = {
 
   async deletePlan(userId, planId) {
     const existing = await medicationPlanModel.getByIdAndUser(planId, userId);
-    if (!existing) {
-      throw createBizError(404, '用药计划不存在或无权访问', 404);
-    }
+    if (!existing) throw createBizError(404, 'Medication plan not found or inaccessible.', 404);
 
     await medicationPlanModel.deleteByIdAndUser(planId, userId);
-
     return { deleted: true, plan_id: Number(planId) };
   },
 
   async getPlanById(userId, planId) {
     const plan = await medicationPlanModel.getByIdAndUser(planId, userId);
-    if (!plan) {
-      throw createBizError(404, '用药计划不存在或无权访问', 404);
-    }
+    if (!plan) throw createBizError(404, 'Medication plan not found or inaccessible.', 404);
     return plan;
   },
 

@@ -1,6 +1,6 @@
 ﻿'use strict';
 
-const { query } = require('../config/db');
+const { query } = require('../config/database');
 const { fail } = require('../utils/response');
 
 function parsePositiveInt(value) {

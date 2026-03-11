@@ -1,6 +1,6 @@
 ﻿'use strict';
 
-const { query } = require('../config/db');
+const { query } = require('../config/database');
 
 function unwrap(result) {
   return Array.isArray(result) ? result[0] : result;

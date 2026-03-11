@@ -1,6 +1,6 @@
 'use strict';
 
-const { query } = require('../config/db');
+const { query } = require('../config/database');
 
 const ORDER_STATUS_LIST = ['pending', 'assigned', 'processing', 'completed', 'cancelled'];
 

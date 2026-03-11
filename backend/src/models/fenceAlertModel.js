@@ -1,6 +1,6 @@
 'use strict';
 
-const { query } = require('../config/db');
+const { query } = require('../config/database');
 
 /**
  * 兼容 query 返回结构

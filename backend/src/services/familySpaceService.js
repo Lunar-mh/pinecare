@@ -14,17 +14,13 @@ function createBizError(code, message, statusCode, data) {
 
 function parsePage(page) {
   const value = Number(page);
-  if (!Number.isInteger(value) || value <= 0) {
-    return 1;
-  }
+  if (!Number.isInteger(value) || value <= 0) return 1;
   return value;
 }
 
 function parsePageSize(pageSize) {
   const value = Number(pageSize);
-  if (!Number.isInteger(value) || value <= 0) {
-    return 10;
-  }
+  if (!Number.isInteger(value) || value <= 0) return 10;
   return Math.min(value, 100);
 }
 
@@ -104,21 +100,19 @@ const familySpaceService = {
     const audioFile = payload.audioFile;
 
     if (!audioFile || !Buffer.isBuffer(audioFile.buffer)) {
-      throw createBizError(400, '请上传音频文件', 400);
+      throw createBizError(400, 'Audio file is required.', 400);
     }
-
     if (fromUserId === toUserId) {
-      throw createBizError(400, '不能给自己发送留言', 400);
+      throw createBizError(400, 'Cannot send a voice message to yourself.', 400);
     }
 
     const sharedFamilyId = await familySpaceModel.findSharedFamilyId(fromUserId, toUserId);
     if (!sharedFamilyId) {
-      throw createBizError(403, '双方不在同一个家庭空间内，无法发送留言', 403);
+      throw createBizError(403, 'Users are not in the same family space.', 403);
     }
 
     const audioKey = buildStorageKey('family-space/audio', fromUserId, audioFile);
     const audioUrl = await ossService.uploadAudio(audioFile.buffer, audioKey);
-
     const row = await familySpaceModel.createVoiceMessage({
       fromUserId,
       toUserId,
@@ -135,8 +129,8 @@ const familySpaceService = {
   async listMessages(userId, query) {
     const page = parsePage(query.page);
     const pageSize = parsePageSize(query.pageSize);
-
     const result = await familySpaceModel.listReceivedVoiceMessages(Number(userId), page, pageSize);
+
     return {
       list: result.list.map(mapVoiceMessage),
       pagination: {
@@ -155,24 +149,22 @@ const familySpaceService = {
     const caption = payload.caption || '';
 
     if (!imageFile || !Buffer.isBuffer(imageFile.buffer)) {
-      throw createBizError(400, '请上传图片文件', 400);
+      throw createBizError(400, 'Image file is required.', 400);
     }
 
     const allowed = await familySpaceModel.checkUserInFamily(parsedUserId, familyId);
     if (!allowed) {
-      throw createBizError(403, '无权访问该家庭空间', 403);
+      throw createBizError(403, 'User cannot access this family space.', 403);
     }
 
     const imageKey = buildStorageKey('family-space/album', parsedUserId, imageFile);
     const imageUrl = await ossService.uploadImage(imageFile.buffer, imageKey);
-
     const photoRow = await familySpaceModel.createAlbumPhoto({
       userId: parsedUserId,
       familyId,
       imageUrl,
       caption,
     });
-
     const pointRow = await familySpaceModel.addFamilyPoints({
       userId: parsedUserId,
       familyId,
@@ -195,7 +187,7 @@ const familySpaceService = {
 
     const allowed = await familySpaceModel.checkUserInFamily(parsedUserId, familyId);
     if (!allowed) {
-      throw createBizError(403, '无权访问该家庭空间', 403);
+      throw createBizError(403, 'User cannot access this family space.', 403);
     }
 
     const result = await familySpaceModel.listAlbumByFamilyId(familyId, page, pageSize);
@@ -215,7 +207,6 @@ const familySpaceService = {
     const parsedUserId = Number(userId);
     const page = parsePage(query.page);
     const pageSize = parsePageSize(query.pageSize);
-
     const totalPoints = await familySpaceModel.getUserPointsTotal(parsedUserId);
     const detailResult = await familySpaceModel.listUserPointsDetails(parsedUserId, page, pageSize);
 
@@ -239,11 +230,10 @@ const familySpaceService = {
 
     const allowed = await familySpaceModel.checkUserInFamily(parsedUserId, familyId);
     if (!allowed) {
-      throw createBizError(403, '无权访问该家庭空间', 403);
+      throw createBizError(403, 'User cannot access this family space.', 403);
     }
 
     const result = await familySpaceModel.getFamilyLeaderboard(familyId, page, pageSize);
-
     return {
       familyId,
       list: result.list.map((row, index) => ({

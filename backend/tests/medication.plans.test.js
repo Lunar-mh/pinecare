@@ -5,7 +5,7 @@ const express = require('express');
 const { createMedicationPlanPayload } = require('./helpers/medicationPlanFactory');
 
 jest.mock('../src/middleware/auth', () => {
-  return (req, res, next) => {
+  return (req, _res, next) => {
     req.user = { userId: 1001 };
     next();
   };
@@ -28,18 +28,18 @@ function createApp() {
   return app;
 }
 
-describe('用药计划接口集成测试', () => {
+describe('medication plans api', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('GET /medication/plans 返回当前用户计划列表', async () => {
+  it('GET /medication/plans returns current user plan list', async () => {
     medicationPlanService.listPlans.mockResolvedValue([
       {
         id: 1,
         user_id: 1001,
-        medication_name: '降压药',
-        dosage: '1片',
+        medication_name: 'Blood Pressure Tablet',
+        dosage: '1 tablet',
         frequency: 'once_daily',
         remind_times: ['08:00'],
         start_date: '2026-02-21',
@@ -55,17 +55,17 @@ describe('用药计划接口集成测试', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(res.body.message).toBe('获取用药计划成功');
+    expect(res.body.message).toBe('Medication plans loaded.');
     expect(res.body.data.length).toBe(1);
     expect(medicationPlanService.listPlans).toHaveBeenCalledWith(1001);
   });
 
-  it('POST /medication/plans 创建计划成功', async () => {
+  it('POST /medication/plans creates a plan', async () => {
     medicationPlanService.createPlan.mockResolvedValue({
       id: 2,
       user_id: 1001,
-      medication_name: '维生素',
-      dosage: '2粒',
+      medication_name: 'Vitamin C',
+      dosage: '2 pills',
       frequency: 'twice_daily',
       remind_times: ['08:00', '20:00'],
       start_date: '2026-02-21',
@@ -77,8 +77,8 @@ describe('用药计划接口集成测试', () => {
 
     const app = createApp();
     const payload = createMedicationPlanPayload({
-      medication_name: '维生素',
-      dosage: '2粒',
+      medication_name: 'Vitamin C',
+      dosage: '2 pills',
       frequency: 'twice_daily',
       remind_times: ['08:00', '20:00'],
     });
@@ -87,16 +87,16 @@ describe('用药计划接口集成测试', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(res.body.message).toBe('创建用药计划成功');
-    expect(res.body.data.medication_name).toBe('维生素');
+    expect(res.body.message).toBe('Medication plan created.');
+    expect(res.body.data.medication_name).toBe('Vitamin C');
   });
 
-  it('PUT /medication/plans/:id 更新计划成功', async () => {
+  it('PUT /medication/plans/:id updates a plan', async () => {
     medicationPlanService.updatePlan.mockResolvedValue({
       id: 2,
       user_id: 1001,
-      medication_name: '维生素B',
-      dosage: '1粒',
+      medication_name: 'Vitamin B',
+      dosage: '1 pill',
       frequency: 'once_daily',
       remind_times: ['09:00'],
       start_date: '2026-02-21',
@@ -109,19 +109,19 @@ describe('用药计划接口集成测试', () => {
     const app = createApp();
     const res = await request(app)
       .put('/medication/plans/2')
-      .send({ medication_name: '维生素B', dosage: '1粒', remind_times: ['09:00'] });
+      .send({ medication_name: 'Vitamin B', dosage: '1 pill', remind_times: ['09:00'] });
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(res.body.message).toBe('更新用药计划成功');
+    expect(res.body.message).toBe('Medication plan updated.');
     expect(medicationPlanService.updatePlan).toHaveBeenCalledWith(1001, 2, {
-      medication_name: '维生素B',
-      dosage: '1粒',
+      medication_name: 'Vitamin B',
+      dosage: '1 pill',
       remind_times: ['09:00'],
     });
   });
 
-  it('DELETE /medication/plans/:id 删除计划成功', async () => {
+  it('DELETE /medication/plans/:id deletes a plan', async () => {
     medicationPlanService.deletePlan.mockResolvedValue({ deleted: true, plan_id: 2 });
 
     const app = createApp();
@@ -129,7 +129,7 @@ describe('用药计划接口集成测试', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(res.body.message).toBe('删除用药计划成功');
+    expect(res.body.message).toBe('Medication plan deleted.');
     expect(res.body.data.plan_id).toBe(2);
   });
 });

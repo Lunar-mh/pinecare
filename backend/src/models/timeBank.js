@@ -1,6 +1,6 @@
 'use strict';
 
-const { pool, query } = require('../config/db');
+const { pool, query } = require('../config/database');
 const { generateRecordHash } = require('../utils/hashChain');
 
 const ZERO_HASH = '0'.repeat(64);

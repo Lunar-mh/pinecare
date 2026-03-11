@@ -1,6 +1,6 @@
 ﻿'use strict';
 
-const { query } = require('../config/db');
+const { query } = require('../config/database');
 
 async function getCount(sql, params = [], key = 'total') {
   const [rows] = await query(sql, params);
