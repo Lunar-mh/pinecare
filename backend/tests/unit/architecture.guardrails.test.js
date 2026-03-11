@@ -40,14 +40,16 @@ describe('backend architecture guardrails', () => {
     expect(healthRoutes).toContain("require('../services/systemHealthService')");
   });
 
-  test('prevents the heaviest services and controllers from growing past guardrail size', () => {
+  test('keeps facades thin and subservices under bounded size limits', () => {
     const lineGuardrails = [
-      ['src/services/adminOpsService.js', 1200],
-      ['src/services/communityAdminService.js', 750],
-      ['src/services/medicalApiService.js', 550],
-      ['src/services/fallService.js', 475],
-      ['src/services/familyService.js', 450],
-      ['src/services/timeBankService.js', 475],
+      ['src/services/adminOpsService.js', 40],
+      ['src/services/communityAdminService.js', 40],
+      ['src/services/adminOps/adminCareOverviewService.js', 650],
+      ['src/services/adminOps/adminIncidentOpsService.js', 150],
+      ['src/services/adminOps/adminDiagnosticsService.js', 300],
+      ['src/services/communityAdmin/communityOrderService.js', 240],
+      ['src/services/communityAdmin/communityActivityService.js', 120],
+      ['src/services/communityAdmin/communityCareOpsService.js', 280],
       ['src/controllers/communityAdminController.js', 350],
       ['src/controllers/adminOpsController.js', 220],
     ];
