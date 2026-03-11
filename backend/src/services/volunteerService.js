@@ -2,6 +2,7 @@
 
 const AuditLogModel = require('../models/auditLog');
 const volunteerModel = require('../models/volunteerModel');
+const timeBankService = require('./timeBankService');
 
 function createBizError(message, code = 400, statusCode = 400) {
   const error = new Error(message);
@@ -38,6 +39,34 @@ async function writeAuditLog(scope, action, details = null) {
     action,
     details,
   });
+}
+
+function toMySqlDateTime(date) {
+  const pad = (value) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(
+    date.getHours()
+  )}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function resolveServiceTimeRange(task, attendanceLog, completedAt) {
+  const endDate = completedAt ? new Date(completedAt.replace(' ', 'T') + 'Z') : new Date();
+  const startDate = attendanceLog && attendanceLog.check_in_at
+    ? new Date(String(attendanceLog.check_in_at).replace(' ', 'T') + 'Z')
+    : task && task.scheduled_at
+      ? new Date(String(task.scheduled_at).replace(' ', 'T') + 'Z')
+      : new Date(endDate.getTime() - 60 * 60 * 1000);
+
+  if (Number.isNaN(startDate.getTime()) || startDate.getTime() >= endDate.getTime()) {
+    return {
+      startTime: toMySqlDateTime(new Date(endDate.getTime() - 60 * 60 * 1000)),
+      endTime: toMySqlDateTime(endDate),
+    };
+  }
+
+  return {
+    startTime: toMySqlDateTime(startDate),
+    endTime: toMySqlDateTime(endDate),
+  };
 }
 
 const volunteerService = {
@@ -239,6 +268,22 @@ const volunteerService = {
       volunteerUserId: scope.userId,
       checkOutAt: completedAt,
     });
+
+    const attendanceLog = await volunteerModel.getAttendanceByOrderId(scope, taskId);
+    const serviceTime = resolveServiceTimeRange(task, attendanceLog, completedAt);
+    const serviceRecord = await timeBankService.recordService(scope.userId, {
+      recipientId: Number(task.elder_id),
+      type: task.service_type,
+      startTime: serviceTime.startTime,
+      endTime: serviceTime.endTime,
+      communityId: scope.communityId,
+    });
+    const settlement = await timeBankService.confirmService(scope.userId, {
+      recordId: serviceRecord.recordId,
+      action: 'confirm',
+      communityId: scope.communityId,
+    });
+
     await writeAuditLog(scope, 'volunteer.task.complete', {
       community_id: Number(scope.communityId),
       order_id: Number(taskId),
@@ -246,12 +291,24 @@ const volunteerService = {
       status_from: task.status,
       status_to: 'completed',
       completed_at: completedAt,
+      service_record_id: Number(serviceRecord.recordId),
+      time_coins: Number(serviceRecord.timeCoins),
     });
 
     return {
       task_id: Number(taskId),
       status: 'completed',
       completed_at: completedAt,
+      settlement: {
+        serviceRecord: {
+          recordId: Number(serviceRecord.recordId),
+          recordHash: serviceRecord.recordHash,
+          prevHash: serviceRecord.prevHash,
+          status: settlement.status || settlement.record?.status || 'confirmed',
+          timeCoins: Number(serviceRecord.timeCoins),
+        },
+        account: settlement.account || null,
+      },
     };
   },
 };

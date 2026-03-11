@@ -123,9 +123,92 @@ async function getStats(req, res, next) {
   }
 }
 
+async function getHealthOverview(req, res, next) {
+  try {
+    const data = await communityAdminService.getHealthOverview(
+      req.adminScope.communityId,
+      req.query
+    );
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function getMedicationLogs(req, res, next) {
+  try {
+    const data = await communityAdminService.getMedicationLogs(
+      req.adminScope.communityId,
+      req.query
+    );
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function updateMedicationLogStatus(req, res, next) {
+  try {
+    const data = await communityAdminService.updateMedicationLogStatus(
+      req.adminScope.communityId,
+      req.params.logId,
+      req.body,
+      {
+        userId: req.user && req.user.userId ? Number(req.user.userId) : null,
+        role: req.adminScope && req.adminScope.role ? req.adminScope.role : null,
+      }
+    );
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function getGpsCurrent(req, res, next) {
+  try {
+    const data = await communityAdminService.getGpsCurrent(req.adminScope.communityId, req.query);
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function getGpsTrail(req, res, next) {
+  try {
+    const data = await communityAdminService.getGpsTrail(req.adminScope.communityId, req.query);
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function getFamilyBindings(req, res, next) {
+  try {
+    const data = await communityAdminService.getFamilyBindings(
+      req.adminScope.communityId,
+      req.query
+    );
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
 async function getSosEvents(req, res, next) {
   try {
     const data = await communityAdminService.getSosEvents(req.adminScope.communityId, req.query);
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function getMedicalReports(req, res, next) {
+  try {
+    const data = await communityAdminService.getMedicalReports(
+      req.adminScope.communityId,
+      req.query
+    );
     return ok(res, data, 'success');
   } catch (error) {
     return handleError(error, res, next);
@@ -149,6 +232,96 @@ async function updateSosEventStatus(req, res, next) {
   }
 }
 
+async function getFallEvents(req, res, next) {
+  try {
+    const data = await communityAdminService.getFallEvents(req.adminScope.communityId, req.query);
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function getDrugInteractions(req, res, next) {
+  try {
+    const data = await communityAdminService.getDrugInteractions(
+      req.adminScope.communityId,
+      req.query
+    );
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function updateDrugInteractionStatus(req, res, next) {
+  try {
+    const data = await communityAdminService.updateDrugInteractionStatus(
+      req.adminScope.communityId,
+      req.params.interactionId,
+      req.body,
+      {
+        userId: req.user && req.user.userId ? Number(req.user.userId) : null,
+        role: req.adminScope && req.adminScope.role ? req.adminScope.role : null,
+      }
+    );
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function getTimeBankServiceHistory(req, res, next) {
+  try {
+    const data = await communityAdminService.getTimeBankServiceHistory(
+      req.adminScope.communityId,
+      req.query
+    );
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function confirmTimeBankService(req, res, next) {
+  try {
+    const data = await communityAdminService.confirmTimeBankService(
+      req.adminScope.communityId,
+      req.body,
+      {
+        userId: req.user && req.user.userId ? Number(req.user.userId) : null,
+        role: req.adminScope && req.adminScope.role ? req.adminScope.role : null,
+      }
+    );
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function getTimeBankExchangeHistory(req, res, next) {
+  try {
+    const data = await communityAdminService.getTimeBankExchangeHistory(
+      req.adminScope.communityId,
+      req.query
+    );
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function getTimeBankLeaderboard(req, res, next) {
+  try {
+    const data = await communityAdminService.getTimeBankLeaderboard(
+      req.adminScope.communityId,
+      req.query
+    );
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
 module.exports = {
   getVolunteers,
   getOrders,
@@ -159,6 +332,20 @@ module.exports = {
   getActivities,
   createActivity,
   getStats,
+  getHealthOverview,
+  getMedicationLogs,
+  updateMedicationLogStatus,
+  getGpsCurrent,
+  getGpsTrail,
+  getFamilyBindings,
   getSosEvents,
+  getMedicalReports,
   updateSosEventStatus,
+  getFallEvents,
+  getDrugInteractions,
+  updateDrugInteractionStatus,
+  getTimeBankServiceHistory,
+  confirmTimeBankService,
+  getTimeBankExchangeHistory,
+  getTimeBankLeaderboard,
 };

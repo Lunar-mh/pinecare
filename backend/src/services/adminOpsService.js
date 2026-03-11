@@ -205,11 +205,14 @@ const adminOpsService = {
     const pageSize = Math.min(Math.max(Number(query.pageSize) || 10, 1), 100);
     const offset = (page - 1) * pageSize;
     const search = String(query.search || '').trim();
+    const communityId = query.communityId
+      ? parsePositiveInt(query.communityId, 'communityId')
+      : null;
 
     try {
       const [rows, total] = await Promise.all([
-        adminOpsModel.listHealthOverview({ search }, { pageSize, offset }),
-        adminOpsModel.countHealthOverview({ search }),
+        adminOpsModel.listHealthOverview({ search, communityId }, { pageSize, offset }),
+        adminOpsModel.countHealthOverview({ search, communityId }),
       ]);
 
       const list = rows.map((row) => {
@@ -265,6 +268,9 @@ const adminOpsService = {
     const status = String(query.status || '').trim();
     const startDate = query.startDate ? String(query.startDate).trim() : null;
     const endDate = query.endDate ? String(query.endDate).trim() : null;
+    const communityId = query.communityId
+      ? parsePositiveInt(query.communityId, 'communityId')
+      : null;
 
     const allowedStatus = ['', 'pending', 'taken', 'skipped', 'missed'];
     if (!allowedStatus.includes(status)) {
@@ -287,10 +293,11 @@ const adminOpsService = {
             status,
             startDate,
             endDate,
+            communityId,
           },
           { pageSize, offset }
         ),
-        adminOpsModel.countMedicationLogs({ search, status, startDate, endDate }),
+        adminOpsModel.countMedicationLogs({ search, status, startDate, endDate, communityId }),
       ]);
 
       return {
@@ -335,6 +342,9 @@ const adminOpsService = {
   async updateMedicationLogStatus(logId, payload = {}) {
     const id = parsePositiveInt(logId, 'logId');
     const status = String(payload.status || '').trim();
+    const communityId = payload.communityId
+      ? parsePositiveInt(payload.communityId, 'communityId')
+      : null;
     const allowed = ['pending', 'taken', 'skipped', 'missed'];
 
     if (!allowed.includes(status)) {
@@ -342,12 +352,17 @@ const adminOpsService = {
     }
 
     try {
+      const current = await adminOpsModel.getMedicationLogById(id, communityId);
+      if (!current) {
+        throw createBizError(404, 'Medication log not found.', 404);
+      }
+
       const affected = await adminOpsModel.updateMedicationLogStatus(id, status);
       if (!affected) {
         throw createBizError(404, 'Medication log not found.', 404);
       }
 
-      const latest = await adminOpsModel.getMedicationLogById(id);
+      const latest = await adminOpsModel.getMedicationLogById(id, communityId);
       return {
         id: Number(latest.id),
         status: latest.status,
@@ -366,11 +381,14 @@ const adminOpsService = {
     const pageSize = Math.min(Math.max(Number(query.pageSize) || 10, 1), 100);
     const offset = (page - 1) * pageSize;
     const search = String(query.search || '').trim();
+    const communityId = query.communityId
+      ? parsePositiveInt(query.communityId, 'communityId')
+      : null;
 
     try {
       const [rows, total] = await Promise.all([
-        adminOpsModel.listGpsCurrent({ search }, { pageSize, offset }),
-        adminOpsModel.countGpsCurrent({ search }),
+        adminOpsModel.listGpsCurrent({ search, communityId }, { pageSize, offset }),
+        adminOpsModel.countGpsCurrent({ search, communityId }),
       ]);
 
       return {
@@ -414,6 +432,9 @@ const adminOpsService = {
     const startDate = parseDate(query.startDate, 'startDate');
     const endDate = parseDate(query.endDate, 'endDate');
     const limit = Math.min(Math.max(Number(query.limit) || 1000, 1), 5000);
+    const communityId = query.communityId
+      ? parsePositiveInt(query.communityId, 'communityId')
+      : null;
 
     if (endDate.getTime() < startDate.getTime()) {
       throw createBizError(400, 'endDate must be >= startDate.', 400);
@@ -424,6 +445,7 @@ const adminOpsService = {
         startDate,
         endDate,
         limit,
+        communityId,
       });
 
       return {
@@ -457,11 +479,14 @@ const adminOpsService = {
     const offset = (page - 1) * pageSize;
     const search = String(query.search || '').trim();
     const status = String(query.status || '').trim();
+    const communityId = query.communityId
+      ? parsePositiveInt(query.communityId, 'communityId')
+      : null;
 
     try {
       const [rows, total] = await Promise.all([
-        adminOpsModel.listFamilyBindings({ search, status }, { pageSize, offset }),
-        adminOpsModel.countFamilyBindings({ search, status }),
+        adminOpsModel.listFamilyBindings({ search, status, communityId }, { pageSize, offset }),
+        adminOpsModel.countFamilyBindings({ search, status, communityId }),
       ]);
 
       return {
@@ -518,6 +543,9 @@ const adminOpsService = {
     const reportType = String(query.reportType || '').trim();
     const startDate = query.startDate ? String(query.startDate).trim() : '';
     const endDate = query.endDate ? String(query.endDate).trim() : '';
+    const communityId = query.communityId
+      ? parsePositiveInt(query.communityId, 'communityId')
+      : null;
 
     if (startDate && Number.isNaN(new Date(startDate).getTime())) {
       throw createBizError(400, 'startDate is invalid.', 400);
@@ -534,6 +562,7 @@ const adminOpsService = {
             reportType,
             startDate: startDate || null,
             endDate: endDate || null,
+            communityId,
           },
           { pageSize, offset }
         ),
@@ -542,6 +571,7 @@ const adminOpsService = {
           reportType,
           startDate: startDate || null,
           endDate: endDate || null,
+          communityId,
         }),
       ]);
 
@@ -693,6 +723,9 @@ const adminOpsService = {
     const offset = (page - 1) * pageSize;
     const search = String(query.search || '').trim();
     const status = String(query.status || '').trim();
+    const communityId = query.communityId
+      ? parsePositiveInt(query.communityId, 'communityId')
+      : null;
 
     const allowedStatus = ['', 'detecting', 'confirmed', 'cancelled', 'false_alarm'];
     if (!allowedStatus.includes(status)) {
@@ -701,8 +734,8 @@ const adminOpsService = {
 
     try {
       const [rows, total] = await Promise.all([
-        adminOpsModel.listFallEvents({ search, status }, { pageSize, offset }),
-        adminOpsModel.countFallEvents({ search, status }),
+        adminOpsModel.listFallEvents({ search, status, communityId }, { pageSize, offset }),
+        adminOpsModel.countFallEvents({ search, status, communityId }),
       ]);
 
       return {
@@ -746,6 +779,9 @@ const adminOpsService = {
     const search = String(query.search || '').trim();
     const status = String(query.status || '').trim();
     const limit = Math.min(Math.max(Number(query.limit) || 500, 1), 1000);
+    const communityId = query.communityId
+      ? parsePositiveInt(query.communityId, 'communityId')
+      : null;
 
     const allowedStatus = ['', 'pending', 'acknowledged'];
     if (!allowedStatus.includes(status)) {
@@ -754,7 +790,7 @@ const adminOpsService = {
 
     try {
       const rows = await adminOpsModel.listDrugInteractions(
-        { search, status },
+        { search, status, communityId },
         { pageSize: limit, offset: 0 }
       );
 
@@ -784,13 +820,16 @@ const adminOpsService = {
   async updateDrugInteractionStatus(interactionId, payload = {}) {
     const id = parsePositiveInt(interactionId, 'interactionId');
     const status = String(payload.status || '').trim();
+    const communityId = payload.communityId
+      ? parsePositiveInt(payload.communityId, 'communityId')
+      : null;
     const allowedStatus = ['pending', 'acknowledged'];
 
     if (!allowedStatus.includes(status)) {
       throw createBizError(400, 'status is invalid.', 400);
     }
 
-    const current = await adminOpsModel.getDrugInteractionById(id);
+    const current = await adminOpsModel.getDrugInteractionById(id, communityId);
     if (!current) {
       throw createBizError(404, 'Drug interaction not found.', 404);
     }
@@ -812,6 +851,9 @@ const adminOpsService = {
     const offset = (page - 1) * pageSize;
     const search = String(query.search || '').trim();
     const status = String(query.status || '').trim();
+    const communityId = query.communityId
+      ? parsePositiveInt(query.communityId, 'communityId')
+      : null;
 
     const allowedStatus = ['', 'pending', 'confirmed', 'cancelled'];
     if (!allowedStatus.includes(status)) {
@@ -820,8 +862,11 @@ const adminOpsService = {
 
     try {
       const [rows, total] = await Promise.all([
-        adminOpsModel.listTimeBankServiceHistory({ search, status }, { pageSize, offset }),
-        adminOpsModel.countTimeBankServiceHistory({ search, status }),
+        adminOpsModel.listTimeBankServiceHistory(
+          { search, status, communityId },
+          { pageSize, offset }
+        ),
+        adminOpsModel.countTimeBankServiceHistory({ search, status, communityId }),
       ]);
 
       return {
@@ -865,11 +910,14 @@ const adminOpsService = {
   async confirmTimeBankService(payload = {}) {
     const recordId = parsePositiveInt(payload.recordId, 'recordId');
     const action = String(payload.action || '').trim();
+    const communityId = payload.communityId
+      ? parsePositiveInt(payload.communityId, 'communityId')
+      : null;
     if (!['confirm', 'cancel'].includes(action)) {
       throw createBizError(400, 'action is invalid.', 400);
     }
 
-    const existing = await adminOpsModel.getTimeBankServiceRecordById(recordId);
+    const existing = await adminOpsModel.getTimeBankServiceRecordById(recordId, communityId);
     if (!existing) {
       throw createBizError(404, 'Service record not found.', 404);
     }
@@ -888,9 +936,12 @@ const adminOpsService = {
 
   async getTimeBankExchangeHistory(query = {}) {
     const limit = Math.min(Math.max(Number(query.limit) || 200, 1), 1000);
+    const communityId = query.communityId
+      ? parsePositiveInt(query.communityId, 'communityId')
+      : null;
 
     try {
-      const rows = await adminOpsModel.listTimeBankExchangeHistory({ limit });
+      const rows = await adminOpsModel.listTimeBankExchangeHistory({ limit, communityId });
       return rows.map((item) => ({
         id: Number(item.id),
         userId: Number(item.user_id),
@@ -911,7 +962,9 @@ const adminOpsService = {
 
   async getTimeBankLeaderboard(query = {}) {
     const limit = Math.min(Math.max(Number(query.limit) || 100, 1), 500);
-    const communityId = query.communityId || null;
+    const communityId = query.communityId
+      ? parsePositiveInt(query.communityId, 'communityId')
+      : null;
 
     try {
       const rows = await adminOpsModel.listTimeBankLeaderboard({ communityId, limit });

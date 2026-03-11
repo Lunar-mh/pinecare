@@ -3,6 +3,7 @@
 const adminOpsModel = require('../models/adminOpsModel');
 const communityAdminModel = require('../models/communityAdmin');
 const AuditLogModel = require('../models/auditLog');
+const adminOpsService = require('./adminOpsService');
 const statisticsService = require('./statisticsService');
 
 const ORDER_STATUS_ENUM = ['pending', 'assigned', 'processing', 'completed', 'cancelled'];
@@ -414,6 +415,80 @@ const communityAdminService = {
     return statisticsService.getCommunityDashboardStats(communityId);
   },
 
+  async getHealthOverview(communityId, query = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    return adminOpsService.getHealthOverview({
+      ...query,
+      communityId,
+    });
+  },
+
+  async getMedicationLogs(communityId, query = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    return adminOpsService.getMedicationLogs({
+      ...query,
+      communityId,
+    });
+  },
+
+  async updateMedicationLogStatus(communityId, logId, body = {}, actor = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    const result = await adminOpsService.updateMedicationLogStatus(logId, {
+      ...body,
+      communityId,
+    });
+
+    await writeAuditLog(actor, 'community.medication.log_status_update', {
+      community_id: Number(communityId),
+      log_id: Number(logId),
+      status_to: result.status,
+    });
+
+    return result;
+  },
+
+  async getGpsCurrent(communityId, query = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    return adminOpsService.getGpsCurrent({
+      ...query,
+      communityId,
+    });
+  },
+
+  async getGpsTrail(communityId, query = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    return adminOpsService.getGpsTrail({
+      ...query,
+      communityId,
+    });
+  },
+
+  async getFamilyBindings(communityId, query = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    return adminOpsService.getFamilyBindings({
+      ...query,
+      communityId,
+    });
+  },
+
   async getSosEvents(communityId, query = {}) {
     if (!communityId) {
       throw createBizError('Community scope is required.', 403, 403);
@@ -449,6 +524,17 @@ const communityAdminService = {
         totalPages: Math.ceil(total / pagination.pageSize),
       },
     };
+  },
+
+  async getMedicalReports(communityId, query = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    return adminOpsService.getMedicalReports({
+      ...query,
+      communityId,
+    });
   },
 
   async updateSosEventStatus(communityId, eventId, body = {}, actor = {}) {
@@ -513,6 +599,99 @@ const communityAdminService = {
     const summaryRows = await adminOpsModel.summarizeSosNotifications([id]);
     const summaryMap = formatSosNotificationSummary(summaryRows);
     return mapSosEvent(latest, summaryMap);
+  },
+
+  async getFallEvents(communityId, query = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    return adminOpsService.getFallEvents({
+      ...query,
+      communityId,
+    });
+  },
+
+  async getDrugInteractions(communityId, query = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    return adminOpsService.getDrugInteractions({
+      ...query,
+      communityId,
+    });
+  },
+
+  async updateDrugInteractionStatus(communityId, interactionId, body = {}, actor = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    const result = await adminOpsService.updateDrugInteractionStatus(interactionId, {
+      ...body,
+      communityId,
+    });
+
+    await writeAuditLog(actor, 'community.drug_interaction.status_update', {
+      community_id: Number(communityId),
+      interaction_id: Number(interactionId),
+      status_to: result.status,
+    });
+
+    return result;
+  },
+
+  async getTimeBankServiceHistory(communityId, query = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    return adminOpsService.getTimeBankServiceHistory({
+      ...query,
+      communityId,
+    });
+  },
+
+  async confirmTimeBankService(communityId, body = {}, actor = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    const result = await adminOpsService.confirmTimeBankService({
+      ...body,
+      communityId,
+    });
+
+    await writeAuditLog(actor, 'community.time_bank.service_settle', {
+      community_id: Number(communityId),
+      record_id: Number(result.recordId),
+      status_to: result.status,
+    });
+
+    return result;
+  },
+
+  async getTimeBankExchangeHistory(communityId, query = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    return adminOpsService.getTimeBankExchangeHistory({
+      ...query,
+      communityId,
+    });
+  },
+
+  async getTimeBankLeaderboard(communityId, query = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    return adminOpsService.getTimeBankLeaderboard({
+      ...query,
+      communityId,
+    });
   },
 };
 

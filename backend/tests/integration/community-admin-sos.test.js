@@ -15,6 +15,12 @@ jest.mock('../../src/services/communityAdminService', () => ({
   getActivities: jest.fn(),
   createActivity: jest.fn(),
   getStats: jest.fn(),
+  getHealthOverview: jest.fn(),
+  getMedicationLogs: jest.fn(),
+  updateMedicationLogStatus: jest.fn(),
+  getGpsCurrent: jest.fn(),
+  getGpsTrail: jest.fn(),
+  getFamilyBindings: jest.fn(),
   getSosEvents: jest.fn(),
   updateSosEventStatus: jest.fn(),
 }));

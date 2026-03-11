@@ -1,7 +1,8 @@
-﻿'use strict';
+'use strict';
 
 const medicalApiService = require('./medicalApiService');
 const medicalReportModel = require('../models/medicalReportModel');
+const { createMedicalMeta } = require('./medicalMeta');
 const { logThirdPartyError } = require('../utils/thirdParty');
 
 function createBizError(code, message, statusCode) {
@@ -52,6 +53,53 @@ function paginate(list, page, pageSize) {
   };
 }
 
+function withMeta(operation, payload, options = {}) {
+  return {
+    ...createMedicalMeta(medicalApiService, operation, options),
+    ...payload,
+  };
+}
+
+function buildSampleReports(userId, filters = {}) {
+  const sampleList = [
+    {
+      reportNo: `LAB-${userId}-20260301`,
+      reportType: 'Lab',
+      reportDate: '2026-03-01',
+      reportUrl: null,
+      reportData: {
+        item: 'Blood routine',
+        summary: 'Hemoglobin and leukocyte indicators remain in acceptable range.',
+      },
+      syncStatus: 'synced',
+    },
+    {
+      reportNo: `IMG-${userId}-20260305`,
+      reportType: 'Imaging',
+      reportDate: '2026-03-05',
+      reportUrl: null,
+      reportData: {
+        item: 'Chest CT',
+        summary: 'No progressive abnormal imaging findings were observed.',
+      },
+      syncStatus: 'synced',
+    },
+  ];
+
+  return sampleList.filter((item) => {
+    if (filters.reportType && item.reportType !== filters.reportType) {
+      return false;
+    }
+    if (filters.startDate && item.reportDate < filters.startDate) {
+      return false;
+    }
+    if (filters.endDate && item.reportDate > filters.endDate) {
+      return false;
+    }
+    return true;
+  });
+}
+
 const medicalReportService = {
   async list(userId, filters = {}) {
     const userIdNum = normalizePositiveInt(userId, 'userId');
@@ -74,18 +122,14 @@ const medicalReportService = {
       );
       await medicalReportModel.batchUpsert(userIdNum, remoteReports);
       const synced = await medicalReportModel.listByUserId(userIdNum, normalizedFilters);
+      const payload = includePagination ? paginate(synced, page, pageSize) : { list: synced };
 
-      if (includePagination) {
-        return {
-          source: medicalApiService.getSourceTag(),
-          ...paginate(synced, page, pageSize),
-        };
-      }
-
-      return {
-        source: medicalApiService.getSourceTag(),
-        list: synced,
-      };
+      return withMeta('medical.reports.list', payload, {
+        source: typeof medicalApiService.getSourceTag === 'function'
+          ? medicalApiService.getSourceTag()
+          : 'third_party_stub',
+        reason: 'report_sync_complete',
+      });
     } catch (error) {
       logThirdPartyError('medical-report', error, {
         operation: 'listReports',
@@ -93,17 +137,27 @@ const medicalReportService = {
       });
 
       if (localReports.length > 0) {
-        if (includePagination) {
-          return {
-            source: 'cache',
-            ...paginate(localReports, page, pageSize),
-          };
-        }
-
-        return {
+        const payload = includePagination
+          ? paginate(localReports, page, pageSize)
+          : { list: localReports };
+        return withMeta('medical.reports.list', payload, {
           source: 'cache',
-          list: localReports,
-        };
+          fallbackUsed: true,
+          reason: 'local_cache_fallback',
+        });
+      }
+
+      const sampleReports = buildSampleReports(userIdNum, normalizedFilters);
+      if (sampleReports.length > 0) {
+        const payload = includePagination
+          ? paginate(sampleReports, page, pageSize)
+          : { list: sampleReports };
+        return withMeta('medical.reports.list', payload, {
+          source: 'competition_dataset_sample',
+          fallbackUsed: true,
+          reason: 'sample_report_fallback',
+          detail: 'Using curated competition report samples because upstream medical sync is unavailable.',
+        });
       }
 
       if (error && (typeof error.code === 'number' || typeof error.statusCode === 'number')) {

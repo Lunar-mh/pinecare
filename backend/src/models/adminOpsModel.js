@@ -58,7 +58,10 @@ async function resolveFamilyBindingColumns() {
 }
 
 const adminOpsModel = {
-  async listHealthOverview({ search = '', communityId = null }, { pageSize = 10, offset = 0 } = {}) {
+  async listHealthOverview(
+    { search = '', communityId = null },
+    { pageSize = 10, offset = 0 } = {}
+  ) {
     const where = [];
     const values = [];
 
@@ -323,10 +326,7 @@ const adminOpsModel = {
 
     sql += ' LIMIT 1';
 
-    const [rows] = await query(
-      sql,
-      values
-    );
+    const [rows] = await query(sql, values);
 
     return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
   },
@@ -431,10 +431,7 @@ const adminOpsModel = {
     sql += ' ORDER BY lr.created_at ASC, lr.id ASC LIMIT ?';
     values.push(Number(limit));
 
-    const [rows] = await query(
-      sql,
-      values
-    );
+    const [rows] = await query(sql, values);
 
     return Array.isArray(rows) ? rows : [];
   },
@@ -542,7 +539,7 @@ const adminOpsModel = {
   },
 
   async listMedicalReports(
-    { search = '', reportType = '', startDate = null, endDate = null },
+    { search = '', reportType = '', startDate = null, endDate = null, communityId = null },
     { pageSize = 10, offset = 0 } = {}
   ) {
     const where = [];
@@ -572,6 +569,11 @@ const adminOpsModel = {
       values.push(endDate);
     }
 
+    if (communityId) {
+      where.push('u.community_id = ?');
+      values.push(Number(communityId));
+    }
+
     const whereSql = buildWhereSql(where);
 
     const [rows] = await query(
@@ -598,7 +600,13 @@ const adminOpsModel = {
     return Array.isArray(rows) ? rows : [];
   },
 
-  async countMedicalReports({ search = '', reportType = '', startDate = null, endDate = null }) {
+  async countMedicalReports({
+    search = '',
+    reportType = '',
+    startDate = null,
+    endDate = null,
+    communityId = null,
+  }) {
     const where = [];
     const values = [];
 
@@ -624,6 +632,11 @@ const adminOpsModel = {
     if (endDate) {
       where.push('r.report_date <= ?');
       values.push(endDate);
+    }
+
+    if (communityId) {
+      where.push('u.community_id = ?');
+      values.push(Number(communityId));
     }
 
     const whereSql = buildWhereSql(where);
@@ -786,7 +799,10 @@ const adminOpsModel = {
     return Array.isArray(rows) ? rows : [];
   },
 
-  async listFallEvents({ search = '', status = '' }, { pageSize = 10, offset = 0 } = {}) {
+  async listFallEvents(
+    { search = '', status = '', communityId = null },
+    { pageSize = 10, offset = 0 } = {}
+  ) {
     const where = [];
     const values = [];
 
@@ -800,6 +816,11 @@ const adminOpsModel = {
     if (status) {
       where.push('f.status = ?');
       values.push(status);
+    }
+
+    if (communityId) {
+      where.push('u.community_id = ?');
+      values.push(Number(communityId));
     }
 
     const whereSql = buildWhereSql(where);
@@ -828,7 +849,7 @@ const adminOpsModel = {
     return Array.isArray(rows) ? rows : [];
   },
 
-  async countFallEvents({ search = '', status = '' }) {
+  async countFallEvents({ search = '', status = '', communityId = null }) {
     const where = [];
     const values = [];
 
@@ -844,6 +865,11 @@ const adminOpsModel = {
       values.push(status);
     }
 
+    if (communityId) {
+      where.push('u.community_id = ?');
+      values.push(Number(communityId));
+    }
+
     const whereSql = buildWhereSql(where);
 
     const [rows] = await query(
@@ -857,7 +883,10 @@ const adminOpsModel = {
     return Number(rows && rows[0] ? rows[0].total : 0);
   },
 
-  async listDrugInteractions({ search = '', status = '' }, { pageSize = 100, offset = 0 } = {}) {
+  async listDrugInteractions(
+    { search = '', status = '', communityId = null },
+    { pageSize = 100, offset = 0 } = {}
+  ) {
     const where = [];
     const values = [];
 
@@ -873,6 +902,11 @@ const adminOpsModel = {
     if (status) {
       where.push('d.status = ?');
       values.push(status);
+    }
+
+    if (communityId) {
+      where.push('u.community_id = ?');
+      values.push(Number(communityId));
     }
 
     const whereSql = buildWhereSql(where);
@@ -914,21 +948,28 @@ const adminOpsModel = {
     return Number(result && result.affectedRows ? result.affectedRows : 0);
   },
 
-  async getDrugInteractionById(interactionId) {
-    const [rows] = await query(
-      `SELECT id, user_id, drug_a, drug_b, level, mechanism, risk_description, suggestion,
-              status, check_batch_id, created_at
-       FROM drug_interactions
-       WHERE id = ?
-       LIMIT 1`,
-      [Number(interactionId)]
-    );
+  async getDrugInteractionById(interactionId, communityId = null) {
+    const values = [Number(interactionId)];
+    let sql = `SELECT d.id, d.user_id, d.drug_a, d.drug_b, d.level, d.mechanism, d.risk_description,
+                      d.suggestion, d.status, d.check_batch_id, d.created_at
+               FROM drug_interactions d
+               LEFT JOIN users u ON u.id = d.user_id
+               WHERE d.id = ?`;
+
+    if (communityId) {
+      sql += ' AND u.community_id = ?';
+      values.push(Number(communityId));
+    }
+
+    sql += ' LIMIT 1';
+
+    const [rows] = await query(sql, values);
 
     return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
   },
 
   async listTimeBankServiceHistory(
-    { search = '', status = '' },
+    { search = '', status = '', communityId = null },
     { pageSize = 10, offset = 0 } = {}
   ) {
     const where = [];
@@ -949,6 +990,11 @@ const adminOpsModel = {
     if (status) {
       where.push('sr.status = ?');
       values.push(status);
+    }
+
+    if (communityId) {
+      where.push('(up.community_id = ? OR ur.community_id = ?)');
+      values.push(Number(communityId), Number(communityId));
     }
 
     const whereSql = buildWhereSql(where);
@@ -981,7 +1027,7 @@ const adminOpsModel = {
     return Array.isArray(rows) ? rows : [];
   },
 
-  async countTimeBankServiceHistory({ search = '', status = '' }) {
+  async countTimeBankServiceHistory({ search = '', status = '', communityId = null }) {
     const where = [];
     const values = [];
 
@@ -1002,6 +1048,11 @@ const adminOpsModel = {
       values.push(status);
     }
 
+    if (communityId) {
+      where.push('(up.community_id = ? OR ur.community_id = ?)');
+      values.push(Number(communityId), Number(communityId));
+    }
+
     const whereSql = buildWhereSql(where);
 
     const [rows] = await query(
@@ -1016,24 +1067,31 @@ const adminOpsModel = {
     return Number(rows && rows[0] ? rows[0].total : 0);
   },
 
-  async getTimeBankServiceRecordById(recordId) {
-    const [rows] = await query(
-      `SELECT id, provider_id, recipient_id, service_type, start_time, end_time,
-              duration_hours, time_coins, status, created_at
-       FROM service_records
-       WHERE id = ?
-       LIMIT 1`,
-      [Number(recordId)]
-    );
+  async getTimeBankServiceRecordById(recordId, communityId = null) {
+    const values = [Number(recordId)];
+    let sql = `SELECT sr.id, sr.provider_id, sr.recipient_id, sr.service_type, sr.start_time, sr.end_time,
+                      sr.duration_hours, sr.time_coins, sr.status, sr.created_at
+               FROM service_records sr
+               LEFT JOIN users up ON up.id = sr.provider_id
+               LEFT JOIN users ur ON ur.id = sr.recipient_id
+               WHERE sr.id = ?`;
+
+    if (communityId) {
+      sql += ' AND (up.community_id = ? OR ur.community_id = ?)';
+      values.push(Number(communityId), Number(communityId));
+    }
+
+    sql += ' LIMIT 1';
+
+    const [rows] = await query(sql, values);
 
     return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
   },
 
-  async listTimeBankExchangeHistory({ limit = 200 } = {}) {
+  async listTimeBankExchangeHistory({ limit = 200, communityId = null } = {}) {
     const safeLimit = Math.min(Math.max(Number(limit) || 200, 1), 1000);
-
-    const [rows] = await query(
-      `SELECT
+    const values = [];
+    let sql = `SELECT
          er.id,
          er.user_id,
          er.exchange_type,
@@ -1042,11 +1100,17 @@ const adminOpsModel = {
          er.status,
          er.created_at,
          er.completed_at
-       FROM exchange_records er
-       ORDER BY er.id DESC
-       LIMIT ?`,
-      [safeLimit]
-    );
+       FROM exchange_records er`;
+
+    if (communityId) {
+      sql += ' LEFT JOIN users u ON u.id = er.user_id WHERE u.community_id = ?';
+      values.push(Number(communityId));
+    }
+
+    sql += ' ORDER BY er.id DESC LIMIT ?';
+    values.push(safeLimit);
+
+    const [rows] = await query(sql, values);
 
     return Array.isArray(rows) ? rows : [];
   },

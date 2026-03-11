@@ -28,6 +28,23 @@ jest.mock('../../src/services/statisticsService', () => ({
   getCommunityDashboardStats: jest.fn(),
 }));
 
+jest.mock('../../src/services/adminOpsService', () => ({
+  getHealthOverview: jest.fn(),
+  getMedicationLogs: jest.fn(),
+  updateMedicationLogStatus: jest.fn(),
+  getGpsCurrent: jest.fn(),
+  getGpsTrail: jest.fn(),
+  getFamilyBindings: jest.fn(),
+  getMedicalReports: jest.fn(),
+  getFallEvents: jest.fn(),
+  getDrugInteractions: jest.fn(),
+  updateDrugInteractionStatus: jest.fn(),
+  getTimeBankServiceHistory: jest.fn(),
+  confirmTimeBankService: jest.fn(),
+  getTimeBankExchangeHistory: jest.fn(),
+  getTimeBankLeaderboard: jest.fn(),
+}));
+
 jest.mock('../../src/models/auditLog', () => ({
   create: jest.fn(),
 }));
@@ -35,6 +52,7 @@ jest.mock('../../src/models/auditLog', () => ({
 const communityAdminModel = require('../../src/models/communityAdmin');
 const adminOpsModel = require('../../src/models/adminOpsModel');
 const AuditLogModel = require('../../src/models/auditLog');
+const adminOpsService = require('../../src/services/adminOpsService');
 const statisticsService = require('../../src/services/statisticsService');
 const communityAdminService = require('../../src/services/communityAdminService');
 
@@ -236,6 +254,108 @@ describe('communityAdminService', () => {
     expect(result.overview.active_elders).toBe(2);
   });
 
+  it('delegates health overview into the scoped admin ops service', async () => {
+    adminOpsService.getHealthOverview.mockResolvedValue({
+      list: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    });
+
+    const result = await communityAdminService.getHealthOverview(9, { page: '1', pageSize: '10' });
+
+    expect(adminOpsService.getHealthOverview).toHaveBeenCalledWith({
+      page: '1',
+      pageSize: '10',
+      communityId: 9,
+    });
+    expect(result.pagination.total).toBe(0);
+  });
+
+  it('delegates medication logs into the scoped admin ops service', async () => {
+    adminOpsService.getMedicationLogs.mockResolvedValue({
+      list: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    });
+
+    await communityAdminService.getMedicationLogs(9, { status: 'pending' });
+
+    expect(adminOpsService.getMedicationLogs).toHaveBeenCalledWith({
+      status: 'pending',
+      communityId: 9,
+    });
+  });
+
+  it('updates medication log status and writes community audit log', async () => {
+    adminOpsService.updateMedicationLogStatus.mockResolvedValue({
+      id: 11,
+      status: 'taken',
+      actualTime: '2026-03-11T10:00:00.000Z',
+    });
+    AuditLogModel.create.mockResolvedValue(1);
+
+    const result = await communityAdminService.updateMedicationLogStatus(
+      9,
+      11,
+      { status: 'taken' },
+      { userId: 1, role: 'leader' }
+    );
+
+    expect(adminOpsService.updateMedicationLogStatus).toHaveBeenCalledWith(11, {
+      status: 'taken',
+      communityId: 9,
+    });
+    expect(AuditLogModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 1,
+        action: 'community.medication.log_status_update',
+      })
+    );
+    expect(result.status).toBe('taken');
+  });
+
+  it('delegates gps current and trail into the scoped admin ops service', async () => {
+    adminOpsService.getGpsCurrent.mockResolvedValue({
+      list: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    });
+    adminOpsService.getGpsTrail.mockResolvedValue({
+      userId: 88,
+      total: 0,
+      list: [],
+    });
+
+    await communityAdminService.getGpsCurrent(9, { page: '1' });
+    await communityAdminService.getGpsTrail(9, {
+      userId: '88',
+      startDate: '2026-03-11T00:00:00.000Z',
+      endDate: '2026-03-11T12:00:00.000Z',
+    });
+
+    expect(adminOpsService.getGpsCurrent).toHaveBeenCalledWith({
+      page: '1',
+      communityId: 9,
+    });
+    expect(adminOpsService.getGpsTrail).toHaveBeenCalledWith({
+      userId: '88',
+      startDate: '2026-03-11T00:00:00.000Z',
+      endDate: '2026-03-11T12:00:00.000Z',
+      communityId: 9,
+    });
+  });
+
+  it('delegates family bindings into the scoped admin ops service', async () => {
+    adminOpsService.getFamilyBindings.mockResolvedValue({
+      list: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    });
+
+    await communityAdminService.getFamilyBindings(9, { search: 'elder' });
+
+    expect(adminOpsService.getFamilyBindings).toHaveBeenCalledWith({
+      search: 'elder',
+      communityId: 9,
+    });
+  });
+
   it('lists community SOS events with frozen camelCase summaries', async () => {
     adminOpsModel.listSosEvents.mockResolvedValue([
       {
@@ -327,5 +447,111 @@ describe('communityAdminService', () => {
       })
     );
     expect(result.eventStatus).toBe('confirmed');
+  });
+
+  it('delegates medical reports and fall events into the scoped admin ops service', async () => {
+    adminOpsService.getMedicalReports.mockResolvedValue({
+      source: 'admin',
+      list: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    });
+    adminOpsService.getFallEvents.mockResolvedValue({
+      list: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    });
+
+    await communityAdminService.getMedicalReports(9, { reportType: 'exam' });
+    await communityAdminService.getFallEvents(9, { status: 'confirmed' });
+
+    expect(adminOpsService.getMedicalReports).toHaveBeenCalledWith({
+      reportType: 'exam',
+      communityId: 9,
+    });
+    expect(adminOpsService.getFallEvents).toHaveBeenCalledWith({
+      status: 'confirmed',
+      communityId: 9,
+    });
+  });
+
+  it('delegates drug interactions and writes community audit when status changes', async () => {
+    adminOpsService.getDrugInteractions.mockResolvedValue([]);
+    adminOpsService.updateDrugInteractionStatus.mockResolvedValue({
+      id: 21,
+      status: 'acknowledged',
+    });
+    AuditLogModel.create.mockResolvedValue(1);
+
+    await communityAdminService.getDrugInteractions(9, { status: 'pending', limit: '20' });
+    const result = await communityAdminService.updateDrugInteractionStatus(
+      9,
+      21,
+      { status: 'acknowledged' },
+      { userId: 1, role: 'leader' }
+    );
+
+    expect(adminOpsService.getDrugInteractions).toHaveBeenCalledWith({
+      status: 'pending',
+      limit: '20',
+      communityId: 9,
+    });
+    expect(adminOpsService.updateDrugInteractionStatus).toHaveBeenCalledWith(21, {
+      status: 'acknowledged',
+      communityId: 9,
+    });
+    expect(AuditLogModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 1,
+        action: 'community.drug_interaction.status_update',
+      })
+    );
+    expect(result.status).toBe('acknowledged');
+  });
+
+  it('delegates time bank history, settlement, exchange history and leaderboard', async () => {
+    adminOpsService.getTimeBankServiceHistory.mockResolvedValue({
+      list: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    });
+    adminOpsService.confirmTimeBankService.mockResolvedValue({
+      recordId: 31,
+      status: 'confirmed',
+    });
+    adminOpsService.getTimeBankExchangeHistory.mockResolvedValue([]);
+    adminOpsService.getTimeBankLeaderboard.mockResolvedValue([]);
+    AuditLogModel.create.mockResolvedValue(1);
+
+    await communityAdminService.getTimeBankServiceHistory(9, { status: 'pending' });
+    const settlement = await communityAdminService.confirmTimeBankService(
+      9,
+      { recordId: 31, action: 'confirm' },
+      { userId: 1, role: 'leader' }
+    );
+    await communityAdminService.getTimeBankExchangeHistory(9, { limit: '50' });
+    await communityAdminService.getTimeBankLeaderboard(9, { limit: '20' });
+
+    expect(adminOpsService.getTimeBankServiceHistory).toHaveBeenCalledWith({
+      status: 'pending',
+      communityId: 9,
+    });
+    expect(adminOpsService.confirmTimeBankService).toHaveBeenCalledWith({
+      recordId: 31,
+      action: 'confirm',
+      communityId: 9,
+    });
+    expect(adminOpsService.getTimeBankExchangeHistory).toHaveBeenCalledWith({
+      limit: '50',
+      communityId: 9,
+    });
+    expect(adminOpsService.getTimeBankLeaderboard).toHaveBeenCalledWith({
+      limit: '20',
+      communityId: 9,
+    });
+    expect(AuditLogModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 1,
+        action: 'community.time_bank.service_settle',
+      })
+    );
+    expect(settlement.status).toBe('confirmed');
   });
 });

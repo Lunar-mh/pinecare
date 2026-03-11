@@ -15,8 +15,22 @@ jest.mock('../../src/services/communityAdminService', () => ({
   getActivities: jest.fn(),
   createActivity: jest.fn(),
   getStats: jest.fn(),
+  getHealthOverview: jest.fn(),
+  getMedicationLogs: jest.fn(),
+  updateMedicationLogStatus: jest.fn(),
+  getGpsCurrent: jest.fn(),
+  getGpsTrail: jest.fn(),
+  getFamilyBindings: jest.fn(),
   getSosEvents: jest.fn(),
   updateSosEventStatus: jest.fn(),
+  getMedicalReports: jest.fn(),
+  getFallEvents: jest.fn(),
+  getDrugInteractions: jest.fn(),
+  updateDrugInteractionStatus: jest.fn(),
+  getTimeBankServiceHistory: jest.fn(),
+  confirmTimeBankService: jest.fn(),
+  getTimeBankExchangeHistory: jest.fn(),
+  getTimeBankLeaderboard: jest.fn(),
 }));
 
 const adminAuth = require('../../src/middleware/adminAuth');
@@ -84,6 +98,32 @@ describe('community admin api contract', () => {
         cancelled: 0,
       },
     });
+    communityAdminService.getHealthOverview.mockResolvedValue({
+      list: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    });
+    communityAdminService.getMedicationLogs.mockResolvedValue({
+      list: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    });
+    communityAdminService.updateMedicationLogStatus.mockResolvedValue({
+      id: 1,
+      status: 'taken',
+      actualTime: '2026-03-11T10:00:00.000Z',
+    });
+    communityAdminService.getGpsCurrent.mockResolvedValue({
+      list: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    });
+    communityAdminService.getGpsTrail.mockResolvedValue({
+      userId: 1,
+      total: 0,
+      list: [],
+    });
+    communityAdminService.getFamilyBindings.mockResolvedValue({
+      list: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    });
     communityAdminService.getSosEvents.mockResolvedValue({
       list: [],
       pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
@@ -93,6 +133,30 @@ describe('community admin api contract', () => {
       eventStatus: 'confirmed',
       latestStatusChangedAt: '2026-03-11T10:01:00.000Z',
     });
+    communityAdminService.getMedicalReports.mockResolvedValue({
+      source: 'admin',
+      list: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    });
+    communityAdminService.getFallEvents.mockResolvedValue({
+      list: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    });
+    communityAdminService.getDrugInteractions.mockResolvedValue([]);
+    communityAdminService.updateDrugInteractionStatus.mockResolvedValue({
+      id: 1,
+      status: 'acknowledged',
+    });
+    communityAdminService.getTimeBankServiceHistory.mockResolvedValue({
+      list: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    });
+    communityAdminService.confirmTimeBankService.mockResolvedValue({
+      recordId: 1,
+      status: 'confirmed',
+    });
+    communityAdminService.getTimeBankExchangeHistory.mockResolvedValue([]);
+    communityAdminService.getTimeBankLeaderboard.mockResolvedValue([]);
   });
 
   test('returns 401 for all protected endpoints without token', async () => {
@@ -116,12 +180,41 @@ describe('community admin api contract', () => {
         },
       },
       { method: 'get', path: '/community/stats' },
+      { method: 'get', path: '/community/health/overview' },
+      { method: 'get', path: '/community/medication/logs' },
+      {
+        method: 'put',
+        path: '/community/medication/logs/1/status',
+        body: { status: 'taken' },
+      },
+      { method: 'get', path: '/community/gps/current' },
+      {
+        method: 'get',
+        path: '/community/gps/trail?userId=1&startDate=2026-03-01T00:00:00.000Z&endDate=2026-03-01T12:00:00.000Z',
+      },
+      { method: 'get', path: '/community/family/bindings' },
       { method: 'get', path: '/community/sos/events' },
       {
         method: 'patch',
         path: '/community/sos/events/1/status',
         body: { status: 'confirmed' },
       },
+      { method: 'get', path: '/community/medical/reports' },
+      { method: 'get', path: '/community/fall/events' },
+      { method: 'get', path: '/community/drug-interactions' },
+      {
+        method: 'put',
+        path: '/community/drug-interactions/1/status',
+        body: { status: 'acknowledged' },
+      },
+      { method: 'get', path: '/community/time-bank/service/history' },
+      {
+        method: 'post',
+        path: '/community/time-bank/service/confirm',
+        body: { recordId: 1, action: 'confirm' },
+      },
+      { method: 'get', path: '/community/time-bank/exchange/history' },
+      { method: 'get', path: '/community/time-bank/leaderboard' },
     ];
 
     for (const item of endpoints) {
@@ -185,6 +278,31 @@ describe('community admin api contract', () => {
       await request(app).get('/community/stats').set('Authorization', `Bearer ${token}`)
     );
     responses.push(
+      await request(app).get('/community/health/overview').set('Authorization', `Bearer ${token}`)
+    );
+    responses.push(
+      await request(app).get('/community/medication/logs').set('Authorization', `Bearer ${token}`)
+    );
+    responses.push(
+      await request(app)
+        .put('/community/medication/logs/1/status')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ status: 'taken' })
+    );
+    responses.push(
+      await request(app).get('/community/gps/current').set('Authorization', `Bearer ${token}`)
+    );
+    responses.push(
+      await request(app)
+        .get(
+          '/community/gps/trail?userId=1&startDate=2026-03-01T00:00:00.000Z&endDate=2026-03-01T12:00:00.000Z'
+        )
+        .set('Authorization', `Bearer ${token}`)
+    );
+    responses.push(
+      await request(app).get('/community/family/bindings').set('Authorization', `Bearer ${token}`)
+    );
+    responses.push(
       await request(app).get('/community/sos/events').set('Authorization', `Bearer ${token}`)
     );
     responses.push(
@@ -192,6 +310,42 @@ describe('community admin api contract', () => {
         .patch('/community/sos/events/1/status')
         .set('Authorization', `Bearer ${token}`)
         .send({ status: 'confirmed' })
+    );
+    responses.push(
+      await request(app).get('/community/medical/reports').set('Authorization', `Bearer ${token}`)
+    );
+    responses.push(
+      await request(app).get('/community/fall/events').set('Authorization', `Bearer ${token}`)
+    );
+    responses.push(
+      await request(app).get('/community/drug-interactions').set('Authorization', `Bearer ${token}`)
+    );
+    responses.push(
+      await request(app)
+        .put('/community/drug-interactions/1/status')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ status: 'acknowledged' })
+    );
+    responses.push(
+      await request(app)
+        .get('/community/time-bank/service/history')
+        .set('Authorization', `Bearer ${token}`)
+    );
+    responses.push(
+      await request(app)
+        .post('/community/time-bank/service/confirm')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ recordId: 1, action: 'confirm' })
+    );
+    responses.push(
+      await request(app)
+        .get('/community/time-bank/exchange/history')
+        .set('Authorization', `Bearer ${token}`)
+    );
+    responses.push(
+      await request(app)
+        .get('/community/time-bank/leaderboard')
+        .set('Authorization', `Bearer ${token}`)
     );
 
     responses.forEach((res) => {

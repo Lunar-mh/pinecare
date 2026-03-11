@@ -1,7 +1,9 @@
-﻿'use strict';
+'use strict';
 
 const medicalApiService = require('./medicalApiService');
 const medicalDirectoryModel = require('../models/medicalDirectoryModel');
+const { createMedicalMeta } = require('./medicalMeta');
+const publicMedicalDirectory = require('../data/publicMedicalDirectory');
 const { logThirdPartyError } = require('../utils/thirdParty');
 
 function createBizError(code, message, statusCode) {
@@ -70,27 +72,65 @@ function paginate(list, page, pageSize) {
   };
 }
 
+function canUseLiveMedicalDirectory() {
+  if (typeof medicalApiService.hasLiveConfig === 'function') {
+    return medicalApiService.hasLiveConfig();
+  }
+
+  return (
+    Boolean(String(process.env.MEDICAL_API_BASE_URL || '').trim()) &&
+    Boolean(String(process.env.MEDICAL_API_KEY || '').trim())
+  );
+}
+
+function withMeta(operation, payload, options = {}) {
+  return {
+    ...createMedicalMeta(medicalApiService, operation, options),
+    ...payload,
+  };
+}
+
 const medicalDirectoryService = {
   async getHospitals() {
     const cached = await medicalDirectoryModel.getHospitals();
     if (cached.length > 0) {
-      return {
-        source: 'cache',
-        list: cached,
-      };
+      return withMeta(
+        'medical.directory.hospitals',
+        { list: cached },
+        { source: 'cache', reason: 'cache_hit' }
+      );
     }
 
-    try {
-      const remote = await medicalApiService.fetchHospitals();
-      await medicalDirectoryModel.refreshHospitals(remote);
-      return {
-        source: medicalApiService.getSourceTag(),
-        list: remote,
-      };
-    } catch (err) {
-      logThirdPartyError('medical-directory', err, { operation: 'getHospitals' });
-      rethrowAsServiceError(err, 'Medical hospitals service is temporarily unavailable.');
+    if (canUseLiveMedicalDirectory()) {
+      try {
+        const remote = await medicalApiService.fetchHospitals();
+        await medicalDirectoryModel.refreshHospitals(remote);
+        return withMeta(
+          'medical.directory.hospitals',
+          { list: remote },
+          { source: medicalApiService.getSourceTag(), reason: 'live_sync' }
+        );
+      } catch (err) {
+        logThirdPartyError('medical-directory', err, { operation: 'getHospitals' });
+      }
     }
+
+    const publicList = publicMedicalDirectory.getHospitals();
+    if (publicList.length > 0) {
+      await medicalDirectoryModel.refreshHospitals(publicList);
+      return withMeta(
+        'medical.directory.hospitals',
+        { list: publicList },
+        {
+          source: 'public_curated_dataset',
+          fallbackUsed: true,
+          reason: 'public_dataset_fallback',
+          detail: 'Using curated public hospital directory because live medical catalog is unavailable.',
+        }
+      );
+    }
+
+    throw createBizError(503, 'Medical hospitals service is temporarily unavailable.', 503);
   },
 
   async getDepartments(hospitalId) {
@@ -98,26 +138,46 @@ const medicalDirectoryService = {
 
     const cached = await medicalDirectoryModel.getDepartments(hospitalIdNum);
     if (cached.length > 0) {
-      return {
-        source: 'cache',
-        list: cached,
-      };
+      return withMeta(
+        'medical.directory.departments',
+        { list: cached },
+        { source: 'cache', reason: 'cache_hit' }
+      );
     }
 
-    try {
-      const remote = await medicalApiService.fetchDepartments(hospitalIdNum);
-      await medicalDirectoryModel.refreshDepartments(hospitalIdNum, remote);
-      return {
-        source: medicalApiService.getSourceTag(),
-        list: remote,
-      };
-    } catch (err) {
-      logThirdPartyError('medical-directory', err, {
-        operation: 'getDepartments',
-        hospitalId: hospitalIdNum,
-      });
-      rethrowAsServiceError(err, 'Medical departments service is temporarily unavailable.');
+    if (canUseLiveMedicalDirectory()) {
+      try {
+        const remote = await medicalApiService.fetchDepartments(hospitalIdNum);
+        await medicalDirectoryModel.refreshDepartments(hospitalIdNum, remote);
+        return withMeta(
+          'medical.directory.departments',
+          { list: remote },
+          { source: medicalApiService.getSourceTag(), reason: 'live_sync' }
+        );
+      } catch (err) {
+        logThirdPartyError('medical-directory', err, {
+          operation: 'getDepartments',
+          hospitalId: hospitalIdNum,
+        });
+      }
     }
+
+    const publicList = publicMedicalDirectory.getDepartments(hospitalIdNum);
+    if (publicList.length > 0) {
+      await medicalDirectoryModel.refreshDepartments(hospitalIdNum, publicList);
+      return withMeta(
+        'medical.directory.departments',
+        { list: publicList },
+        {
+          source: 'public_curated_dataset',
+          fallbackUsed: true,
+          reason: 'public_dataset_fallback',
+          detail: `Using curated public department catalog for hospital ${hospitalIdNum}.`,
+        }
+      );
+    }
+
+    throw createBizError(503, 'Medical departments service is temporarily unavailable.', 503);
   },
 
   async getDoctors(query = {}) {
@@ -129,28 +189,52 @@ const medicalDirectoryService = {
     const cached = await medicalDirectoryModel.getDoctors(departmentIdNum);
     if (cached.length > 0) {
       const filtered = filterDoctors(cached, normalizedQuery);
-      return {
-        source: 'cache',
-        ...paginate(filtered, page, pageSize),
-      };
+      return withMeta(
+        'medical.directory.doctors',
+        paginate(filtered, page, pageSize),
+        { source: 'cache', reason: 'cache_hit' }
+      );
     }
 
-    try {
-      const remote = await medicalApiService.fetchDoctors(departmentIdNum);
-      await medicalDirectoryModel.refreshDoctors(departmentIdNum, remote);
-      const filtered = filterDoctors(remote, normalizedQuery);
+    if (canUseLiveMedicalDirectory()) {
+      try {
+        const remote = await medicalApiService.fetchDoctors(departmentIdNum);
+        await medicalDirectoryModel.refreshDoctors(departmentIdNum, remote);
+        const filtered = filterDoctors(remote, normalizedQuery);
 
-      return {
-        source: medicalApiService.getSourceTag(),
-        ...paginate(filtered, page, pageSize),
-      };
-    } catch (err) {
-      logThirdPartyError('medical-directory', err, {
-        operation: 'getDoctors',
-        departmentId: departmentIdNum,
-      });
-      rethrowAsServiceError(err, 'Medical doctors service is temporarily unavailable.');
+        return withMeta(
+          'medical.directory.doctors',
+          paginate(filtered, page, pageSize),
+          { source: medicalApiService.getSourceTag(), reason: 'live_sync' }
+        );
+      } catch (err) {
+        logThirdPartyError('medical-directory', err, {
+          operation: 'getDoctors',
+          departmentId: departmentIdNum,
+        });
+
+        if (err && (typeof err.code === 'number' || typeof err.statusCode === 'number')) {
+          throw err;
+        }
+      }
     }
+
+    const publicList = filterDoctors(publicMedicalDirectory.getDoctors(departmentIdNum), normalizedQuery);
+    if (publicList.length > 0) {
+      await medicalDirectoryModel.refreshDoctors(departmentIdNum, publicMedicalDirectory.getDoctors(departmentIdNum));
+      return withMeta(
+        'medical.directory.doctors',
+        paginate(publicList, page, pageSize),
+        {
+          source: 'public_curated_dataset',
+          fallbackUsed: true,
+          reason: 'public_dataset_fallback',
+          detail: `Using curated public doctor directory for department ${departmentIdNum}.`,
+        }
+      );
+    }
+
+    throw createBizError(503, 'Medical doctors service is temporarily unavailable.', 503);
   },
 
   async getDoctorDetail(doctorId) {
@@ -158,31 +242,54 @@ const medicalDirectoryService = {
 
     const cached = await medicalDirectoryModel.findDoctorById(doctorIdNum);
     if (cached) {
-      return {
-        source: 'cache',
-        doctor: cached,
-      };
+      return withMeta(
+        'medical.directory.doctor_detail',
+        { doctor: cached },
+        { source: 'cache', reason: 'cache_hit' }
+      );
     }
 
-    try {
-      const remote = await medicalApiService.fetchDoctorDetail(doctorIdNum);
-      if (!remote) {
-        throw createBizError(404, 'Doctor not found.', 404);
+    if (canUseLiveMedicalDirectory()) {
+      try {
+        const remote = await medicalApiService.fetchDoctorDetail(doctorIdNum);
+        if (!remote) {
+          throw createBizError(404, 'Doctor not found.', 404);
+        }
+
+        await medicalDirectoryModel.upsertDoctor(remote);
+
+        return withMeta(
+          'medical.directory.doctor_detail',
+          { doctor: remote },
+          { source: medicalApiService.getSourceTag(), reason: 'live_sync' }
+        );
+      } catch (err) {
+        logThirdPartyError('medical-directory', err, {
+          operation: 'getDoctorDetail',
+          doctorId: doctorIdNum,
+        });
+        if (err && (typeof err.code === 'number' || typeof err.statusCode === 'number')) {
+          throw err;
+        }
       }
-
-      await medicalDirectoryModel.upsertDoctor(remote);
-
-      return {
-        source: medicalApiService.getSourceTag(),
-        doctor: remote,
-      };
-    } catch (err) {
-      logThirdPartyError('medical-directory', err, {
-        operation: 'getDoctorDetail',
-        doctorId: doctorIdNum,
-      });
-      rethrowAsServiceError(err, 'Medical doctor detail service is temporarily unavailable.');
     }
+
+    const doctor = publicMedicalDirectory.getDoctorById(doctorIdNum);
+    if (doctor) {
+      await medicalDirectoryModel.upsertDoctor(doctor);
+      return withMeta(
+        'medical.directory.doctor_detail',
+        { doctor },
+        {
+          source: 'public_curated_dataset',
+          fallbackUsed: true,
+          reason: 'public_dataset_fallback',
+          detail: `Using curated public doctor detail for doctor ${doctorIdNum}.`,
+        }
+      );
+    }
+
+    throw createBizError(404, 'Doctor not found.', 404);
   },
 };
 

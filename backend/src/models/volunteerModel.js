@@ -195,6 +195,20 @@ const volunteerModel = {
     return result;
   },
 
+  async getAttendanceByOrderId(scope, taskId) {
+    const [rows] = await query(
+      `SELECT id, order_id, community_id, volunteer_user_id, check_in_at, check_out_at, created_at, updated_at
+       FROM volunteer_attendance_logs
+       WHERE order_id = ?
+         AND community_id = ?
+         AND volunteer_user_id = ?
+       LIMIT 1`,
+      [Number(taskId), Number(scope.communityId), Number(scope.userId)]
+    );
+
+    return rows[0] || null;
+  },
+
   async findProfileByUserId(userId, communityId) {
     const [rows] = await query(
       `SELECT

@@ -1,8 +1,9 @@
-﻿'use strict';
+'use strict';
 
 const crypto = require('crypto');
 const appointmentModel = require('../models/appointmentModel');
 const medicalApiService = require('./medicalApiService');
+const { createMedicalMeta } = require('./medicalMeta');
 
 const CANCELLABLE_STATUS = new Set(['pending', 'confirmed']);
 const ALLOWED_STATUS_FILTER = new Set(['pending', 'confirmed', 'completed', 'cancelled']);
@@ -92,6 +93,13 @@ function isDuplicateKeyError(err) {
   return Boolean(err && (err.code === 'ER_DUP_ENTRY' || err.errno === 1062));
 }
 
+function withMeta(operation, payload, options = {}) {
+  return {
+    ...createMedicalMeta(medicalApiService, operation, options),
+    ...payload,
+  };
+}
+
 const appointmentService = {
   buildIdempotencyKey,
 
@@ -109,11 +117,15 @@ const appointmentService = {
 
     const existing = await appointmentModel.findByIdempotencyKey(idempotencyKey);
     if (existing) {
-      return {
-        duplicate: true,
-        idempotencyKey,
-        appointment: existing,
-      };
+      return withMeta(
+        'medical.appointment.create',
+        {
+          duplicate: true,
+          idempotencyKey,
+          appointment: existing,
+        },
+        { source: 'local', reason: 'idempotent_replay' }
+      );
     }
 
     const thirdPartyResult = await medicalApiService.createAppointment({
@@ -139,20 +151,33 @@ const appointmentService = {
         idempotencyKey,
       });
 
-      return {
-        duplicate: false,
-        idempotencyKey,
-        appointment: saved,
-      };
+      return withMeta(
+        'medical.appointment.create',
+        {
+          duplicate: false,
+          idempotencyKey,
+          appointment: saved,
+        },
+        {
+          source: typeof medicalApiService.getSourceTag === 'function'
+            ? medicalApiService.getSourceTag()
+            : 'third_party_stub',
+          reason: 'appointment_created',
+        }
+      );
     } catch (err) {
       if (isDuplicateKeyError(err)) {
         const duplicated = await appointmentModel.findByIdempotencyKey(idempotencyKey);
         if (duplicated) {
-          return {
-            duplicate: true,
-            idempotencyKey,
-            appointment: duplicated,
-          };
+          return withMeta(
+            'medical.appointment.create',
+            {
+              duplicate: true,
+              idempotencyKey,
+              appointment: duplicated,
+            },
+            { source: 'local', reason: 'duplicate_key_replay' }
+          );
         }
       }
       throw err;
@@ -165,11 +190,17 @@ const appointmentService = {
     const pageSize = Math.min(normalizePage(query.pageSize, 10), 100);
     const status = normalizeStatus(query.status);
 
-    return appointmentModel.listByUserId(userIdNum, {
+    const result = await appointmentModel.listByUserId(userIdNum, {
       status,
       page,
       pageSize,
     });
+
+    return withMeta(
+      'medical.appointment.list',
+      result,
+      { source: 'local', reason: 'appointment_local_list' }
+    );
   },
 
   async cancel(userId, appointmentId) {
@@ -183,10 +214,14 @@ const appointmentService = {
 
     const currentStatus = String(appointment.appointStatus || '').toLowerCase();
     if (currentStatus === 'cancelled') {
-      return {
-        idempotent: true,
-        appointment,
-      };
+      return withMeta(
+        'medical.appointment.cancel',
+        {
+          idempotent: true,
+          appointment,
+        },
+        { source: 'local', reason: 'cancel_idempotent_replay' }
+      );
     }
 
     if (!CANCELLABLE_STATUS.has(currentStatus)) {
@@ -202,10 +237,19 @@ const appointmentService = {
     await appointmentModel.updateStatus(appointmentIdNum, 'cancelled');
     const latest = await appointmentModel.findByIdAndUserId(appointmentIdNum, userIdNum);
 
-    return {
-      idempotent: false,
-      appointment: latest,
-    };
+    return withMeta(
+      'medical.appointment.cancel',
+      {
+        idempotent: false,
+        appointment: latest,
+      },
+      {
+        source: typeof medicalApiService.getSourceTag === 'function'
+          ? medicalApiService.getSourceTag()
+          : 'third_party_stub',
+        reason: 'appointment_cancelled',
+      }
+    );
   },
 };
 

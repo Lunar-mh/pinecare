@@ -1,7 +1,8 @@
-﻿'use strict';
+'use strict';
 
 const onlineConsultationModel = require('../models/onlineConsultationModel');
 const medicalApiService = require('./medicalApiService');
+const { createMedicalMeta } = require('./medicalMeta');
 
 const ALLOWED_CONSULT_STATUS = ['pending', 'active', 'completed', 'cancelled'];
 
@@ -46,6 +47,13 @@ function validateStatusTransition(fromStatus, toStatus) {
   }
 }
 
+function withMeta(operation, payload, options = {}) {
+  return {
+    ...createMedicalMeta(medicalApiService, operation, options),
+    ...payload,
+  };
+}
+
 const onlineConsultationService = {
   async start(userId, payload = {}) {
     const userIdNum = normalizePositiveInt(userId, 'userId');
@@ -68,10 +76,16 @@ const onlineConsultationService = {
       startedAt: session.startedAt || new Date(),
     });
 
-    return {
-      consultation: saved,
-      source: medicalApiService.getSourceTag(),
-    };
+    return withMeta(
+      'medical.consult.start',
+      { consultation: saved },
+      {
+        source: typeof medicalApiService.getSourceTag === 'function'
+          ? medicalApiService.getSourceTag()
+          : 'third_party_stub',
+        reason: 'consult_session_started',
+      }
+    );
   },
 
   async updateStatus(userId, consultationId, consultStatus) {
@@ -94,13 +108,27 @@ const onlineConsultationService = {
       throw createBizError(500, 'Failed to update consultation status.', 500);
     }
 
-    return onlineConsultationModel.findById(consultationIdNum);
+    const consultation = await onlineConsultationModel.findById(consultationIdNum);
+    return withMeta(
+      'medical.consult.update_status',
+      { consultation },
+      { source: 'local', reason: 'consultation_status_updated' }
+    );
   },
 
   async listByUser(userId, limit) {
     const userIdNum = normalizePositiveInt(userId, 'userId');
     const limitNum = limit ? Number(limit) : 20;
-    return onlineConsultationModel.listByUserId(userIdNum, Number.isInteger(limitNum) ? limitNum : 20);
+    const list = await onlineConsultationModel.listByUserId(
+      userIdNum,
+      Number.isInteger(limitNum) ? limitNum : 20
+    );
+
+    return withMeta(
+      'medical.consult.list',
+      { list },
+      { source: 'local', reason: 'consultation_local_list' }
+    );
   },
 };
 

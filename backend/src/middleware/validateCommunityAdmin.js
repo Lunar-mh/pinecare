@@ -276,6 +276,129 @@ function validateStatsQuery(req, res, next) {
   return next();
 }
 
+function validateHealthOverviewQuery(req, res, next) {
+  const pageResult = validatePagination(req.query);
+  if (!pageResult.ok) {
+    return fail(res, 400, pageResult.message, null, 400);
+  }
+
+  const scopeResult = validateCommunityScope(req);
+  if (!scopeResult.ok) {
+    return fail(res, scopeResult.code, scopeResult.message, null, scopeResult.status);
+  }
+
+  return next();
+}
+
+function validateMedicationLogsQuery(req, res, next) {
+  const pageResult = validatePagination(req.query);
+  if (!pageResult.ok) {
+    return fail(res, 400, pageResult.message, null, 400);
+  }
+
+  if (
+    req.query.status !== undefined &&
+    !['pending', 'taken', 'skipped', 'missed'].includes(req.query.status)
+  ) {
+    return fail(res, 400, 'status is invalid.', null, 400);
+  }
+
+  if (req.query.startDate !== undefined && Number.isNaN(new Date(req.query.startDate).getTime())) {
+    return fail(res, 400, 'startDate is invalid.', null, 400);
+  }
+
+  if (req.query.endDate !== undefined && Number.isNaN(new Date(req.query.endDate).getTime())) {
+    return fail(res, 400, 'endDate is invalid.', null, 400);
+  }
+
+  const scopeResult = validateCommunityScope(req);
+  if (!scopeResult.ok) {
+    return fail(res, scopeResult.code, scopeResult.message, null, scopeResult.status);
+  }
+
+  return next();
+}
+
+function validateMedicationLogId(req, res, next) {
+  const logId = Number(req.params.logId);
+  if (!Number.isInteger(logId) || logId <= 0) {
+    return fail(res, 400, 'logId must be a positive integer.', null, 400);
+  }
+
+  req.params.logId = String(logId);
+  return next();
+}
+
+function validateMedicationLogStatus(req, res, next) {
+  const status = req.body && req.body.status;
+  if (!status || !['pending', 'taken', 'skipped', 'missed'].includes(status)) {
+    return fail(res, 400, 'status must be one of: pending, taken, skipped, missed.', null, 400);
+  }
+
+  return next();
+}
+
+function validateGpsCurrentQuery(req, res, next) {
+  const pageResult = validatePagination(req.query);
+  if (!pageResult.ok) {
+    return fail(res, 400, pageResult.message, null, 400);
+  }
+
+  const scopeResult = validateCommunityScope(req);
+  if (!scopeResult.ok) {
+    return fail(res, scopeResult.code, scopeResult.message, null, scopeResult.status);
+  }
+
+  return next();
+}
+
+function validateGpsTrailQuery(req, res, next) {
+  const userId = Number(req.query.userId);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return fail(res, 400, 'userId must be a positive integer.', null, 400);
+  }
+
+  if (!req.query.startDate || Number.isNaN(new Date(req.query.startDate).getTime())) {
+    return fail(res, 400, 'startDate is invalid.', null, 400);
+  }
+
+  if (!req.query.endDate || Number.isNaN(new Date(req.query.endDate).getTime())) {
+    return fail(res, 400, 'endDate is invalid.', null, 400);
+  }
+
+  if (new Date(req.query.endDate).getTime() < new Date(req.query.startDate).getTime()) {
+    return fail(res, 400, 'endDate must be >= startDate.', null, 400);
+  }
+
+  if (req.query.limit !== undefined) {
+    const limit = Number(req.query.limit);
+    if (!Number.isInteger(limit) || limit < 1 || limit > 5000) {
+      return fail(res, 400, 'limit must be in 1-5000.', null, 400);
+    }
+  }
+
+  const scopeResult = validateCommunityScope(req);
+  if (!scopeResult.ok) {
+    return fail(res, scopeResult.code, scopeResult.message, null, scopeResult.status);
+  }
+
+  return next();
+}
+
+function validateFamilyBindingsQuery(req, res, next) {
+  const pageResult = validatePagination(req.query);
+  if (!pageResult.ok) {
+    return fail(res, 400, pageResult.message, null, 400);
+  }
+
+  const scopeResult = validateCommunityScope(req);
+  if (!scopeResult.ok) {
+    return fail(res, scopeResult.code, scopeResult.message, null, scopeResult.status);
+  }
+
+  return next();
+}
+
 function validateSosEventQuery(req, res, next) {
   const pageResult = validatePagination(req.query);
   if (!pageResult.ok) {
@@ -307,6 +430,28 @@ function validateSosEventId(req, res, next) {
   return next();
 }
 
+function validateMedicalReportsQuery(req, res, next) {
+  const pageResult = validatePagination(req.query);
+  if (!pageResult.ok) {
+    return fail(res, 400, pageResult.message, null, 400);
+  }
+
+  if (req.query.startDate !== undefined && Number.isNaN(new Date(req.query.startDate).getTime())) {
+    return fail(res, 400, 'startDate is invalid.', null, 400);
+  }
+
+  if (req.query.endDate !== undefined && Number.isNaN(new Date(req.query.endDate).getTime())) {
+    return fail(res, 400, 'endDate is invalid.', null, 400);
+  }
+
+  const scopeResult = validateCommunityScope(req);
+  if (!scopeResult.ok) {
+    return fail(res, scopeResult.code, scopeResult.message, null, scopeResult.status);
+  }
+
+  return next();
+}
+
 function validateUpdateSosEventStatus(req, res, next) {
   const status = req.body && req.body.status;
   if (!status || !['confirmed', 'resolved', 'cancelled'].includes(status)) {
@@ -315,6 +460,138 @@ function validateUpdateSosEventStatus(req, res, next) {
 
   if (req.body && req.body.reason !== undefined && typeof req.body.reason !== 'string') {
     return fail(res, 400, 'reason must be a string.', null, 400);
+  }
+
+  return next();
+}
+
+function validateFallEventsQuery(req, res, next) {
+  const pageResult = validatePagination(req.query);
+  if (!pageResult.ok) {
+    return fail(res, 400, pageResult.message, null, 400);
+  }
+
+  if (
+    req.query.status !== undefined &&
+    !['detecting', 'confirmed', 'cancelled', 'false_alarm'].includes(req.query.status)
+  ) {
+    return fail(res, 400, 'status is invalid.', null, 400);
+  }
+
+  const scopeResult = validateCommunityScope(req);
+  if (!scopeResult.ok) {
+    return fail(res, scopeResult.code, scopeResult.message, null, scopeResult.status);
+  }
+
+  return next();
+}
+
+function validateDrugInteractionsQuery(req, res, next) {
+  if (req.query.status !== undefined && !['pending', 'acknowledged'].includes(req.query.status)) {
+    return fail(res, 400, 'status is invalid.', null, 400);
+  }
+
+  if (req.query.limit !== undefined) {
+    const limit = Number(req.query.limit);
+    if (!Number.isInteger(limit) || limit < 1 || limit > 1000) {
+      return fail(res, 400, 'limit must be in 1-1000.', null, 400);
+    }
+  }
+
+  const scopeResult = validateCommunityScope(req);
+  if (!scopeResult.ok) {
+    return fail(res, scopeResult.code, scopeResult.message, null, scopeResult.status);
+  }
+
+  return next();
+}
+
+function validateDrugInteractionId(req, res, next) {
+  const interactionId = Number(req.params.interactionId);
+  if (!Number.isInteger(interactionId) || interactionId <= 0) {
+    return fail(res, 400, 'interactionId must be a positive integer.', null, 400);
+  }
+
+  req.params.interactionId = String(interactionId);
+  return next();
+}
+
+function validateDrugInteractionStatus(req, res, next) {
+  const status = req.body && req.body.status;
+  if (!status || !['pending', 'acknowledged'].includes(status)) {
+    return fail(res, 400, 'status must be one of: pending, acknowledged.', null, 400);
+  }
+
+  return next();
+}
+
+function validateTimeBankServiceHistoryQuery(req, res, next) {
+  const pageResult = validatePagination(req.query);
+  if (!pageResult.ok) {
+    return fail(res, 400, pageResult.message, null, 400);
+  }
+
+  if (
+    req.query.status !== undefined &&
+    !['pending', 'confirmed', 'cancelled'].includes(req.query.status)
+  ) {
+    return fail(res, 400, 'status is invalid.', null, 400);
+  }
+
+  const scopeResult = validateCommunityScope(req);
+  if (!scopeResult.ok) {
+    return fail(res, scopeResult.code, scopeResult.message, null, scopeResult.status);
+  }
+
+  return next();
+}
+
+function validateTimeBankServiceConfirm(req, res, next) {
+  const recordId = Number(req.body && req.body.recordId);
+  if (!Number.isInteger(recordId) || recordId <= 0) {
+    return fail(res, 400, 'recordId must be a positive integer.', null, 400);
+  }
+
+  const action = req.body && req.body.action;
+  if (!action || !['confirm', 'cancel'].includes(action)) {
+    return fail(res, 400, 'action must be one of: confirm, cancel.', null, 400);
+  }
+
+  const scopeResult = validateCommunityScope(req);
+  if (!scopeResult.ok) {
+    return fail(res, scopeResult.code, scopeResult.message, null, scopeResult.status);
+  }
+
+  return next();
+}
+
+function validateTimeBankExchangeHistoryQuery(req, res, next) {
+  if (req.query.limit !== undefined) {
+    const limit = Number(req.query.limit);
+    if (!Number.isInteger(limit) || limit < 1 || limit > 1000) {
+      return fail(res, 400, 'limit must be in 1-1000.', null, 400);
+    }
+  }
+
+  const scopeResult = validateCommunityScope(req);
+  if (!scopeResult.ok) {
+    return fail(res, scopeResult.code, scopeResult.message, null, scopeResult.status);
+  }
+
+  return next();
+}
+
+function validateTimeBankLeaderboardQuery(req, res, next) {
+  if (req.query.limit !== undefined) {
+    const limit = Number(req.query.limit);
+    if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
+      return fail(res, 400, 'limit must be in 1-500.', null, 400);
+    }
+  }
+
+  const scopeResult = validateCommunityScope(req);
+  if (!scopeResult.ok) {
+    return fail(res, scopeResult.code, scopeResult.message, null, scopeResult.status);
   }
 
   return next();
@@ -330,7 +607,23 @@ module.exports = {
   validateActivityQuery,
   validateCreateActivity,
   validateStatsQuery,
+  validateHealthOverviewQuery,
+  validateMedicationLogsQuery,
+  validateMedicationLogId,
+  validateMedicationLogStatus,
+  validateGpsCurrentQuery,
+  validateGpsTrailQuery,
+  validateFamilyBindingsQuery,
   validateSosEventQuery,
   validateSosEventId,
+  validateMedicalReportsQuery,
   validateUpdateSosEventStatus,
+  validateFallEventsQuery,
+  validateDrugInteractionsQuery,
+  validateDrugInteractionId,
+  validateDrugInteractionStatus,
+  validateTimeBankServiceHistoryQuery,
+  validateTimeBankServiceConfirm,
+  validateTimeBankExchangeHistoryQuery,
+  validateTimeBankLeaderboardQuery,
 };
