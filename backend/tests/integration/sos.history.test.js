@@ -21,12 +21,12 @@ const SosEventModel = require('../../src/models/sosEvent');
 const SosNotificationModel = require('../../src/models/sosNotification');
 const sosService = require('../../src/services/sosService');
 
-describe('SOS 历史查询集成测试', () => {
+describe('SOS history integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  test('应按分页与状态过滤返回历史，并包含通知摘要', async () => {
+  test('returns paged history with camelCase contract and summaries', async () => {
     SosEventModel.countByUser.mockResolvedValue(2);
     SosEventModel.listByUser.mockResolvedValue([
       {
@@ -36,7 +36,7 @@ describe('SOS 历史查询集成测试', () => {
         trigger_type: 'manual',
         latitude: 30.1,
         longitude: 120.1,
-        address: 'A 地址',
+        address: 'Address A',
         created_at: '2026-02-21 10:00:00',
         confirmed_at: '2026-02-21 10:01:00',
         resolved_at: '2026-02-21 10:03:00',
@@ -49,7 +49,7 @@ describe('SOS 历史查询集成测试', () => {
         trigger_type: 'manual',
         latitude: 30.2,
         longitude: 120.2,
-        address: 'B 地址',
+        address: 'Address B',
         created_at: '2026-02-21 09:00:00',
         confirmed_at: '2026-02-21 09:01:00',
         resolved_at: '2026-02-21 09:03:00',
@@ -76,17 +76,19 @@ describe('SOS 历史查询集成测试', () => {
     });
     expect(result.pagination).toEqual({
       page: 1,
-      page_size: 2,
+      pageSize: 2,
       total: 2,
-      total_pages: 1,
+      totalPages: 1,
     });
-    expect(result.list[0].event_id).toBe(21);
-    expect(result.list[1].event_id).toBe(20);
-    expect(result.list[0].notification_summary.total.sent).toBe(2);
-    expect(result.list[1].notification_summary.total.failed).toBe(1);
+    expect(result.list[0].eventId).toBe(21);
+    expect(result.list[1].eventId).toBe(20);
+    expect(result.list[0].notificationSummary.total.sent).toBe(2);
+    expect(result.list[1].notificationSummary.total.failed).toBe(1);
+    expect(result.list[0].auditTrailSummary.currentStatus).toBe('resolved');
+    expect(result.list[0].latestStatusChangedAt).toBe('2026-02-21T02:03:00.000Z');
   });
 
-  test('应只按当前用户查询，保证用户隔离', async () => {
+  test('isolates history by current user only', async () => {
     SosEventModel.countByUser.mockResolvedValue(0);
     SosEventModel.listByUser.mockResolvedValue([]);
     SosNotificationModel.summarizeByEventIds.mockResolvedValue([]);

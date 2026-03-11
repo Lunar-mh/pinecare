@@ -41,7 +41,7 @@ async function getBindings(req, res, next) {
  */
 async function getElderlyOverview(req, res, next) {
   try {
-    const data = await familyService.getElderlyOverview(req.user.userId);
+    const data = await familyService.getElderlyOverview(req.user.userId, req.query || {});
     return ok(res, data, '成功');
   } catch (error) {
     return handleBusinessError(error, res, next);

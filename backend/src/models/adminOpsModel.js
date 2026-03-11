@@ -58,8 +58,23 @@ async function resolveFamilyBindingColumns() {
 }
 
 const adminOpsModel = {
-  async listHealthOverview({ search = '' }, { pageSize = 10, offset = 0 } = {}) {
-    const { whereSql, values } = buildUserSearchWhere(search, 'u');
+  async listHealthOverview({ search = '', communityId = null }, { pageSize = 10, offset = 0 } = {}) {
+    const where = [];
+    const values = [];
+
+    const text = String(search || '').trim();
+    if (text) {
+      const keyword = `%${text}%`;
+      where.push('(u.nickname LIKE ? OR u.phone LIKE ? OR CAST(u.id AS CHAR) LIKE ?)');
+      values.push(keyword, keyword, keyword);
+    }
+
+    if (communityId) {
+      where.push('u.community_id = ?');
+      values.push(Number(communityId));
+    }
+
+    const whereSql = buildWhereSql(where);
 
     const [rows] = await query(
       `SELECT
@@ -119,8 +134,23 @@ const adminOpsModel = {
     return Array.isArray(rows) ? rows : [];
   },
 
-  async countHealthOverview({ search = '' }) {
-    const { whereSql, values } = buildUserSearchWhere(search, 'u');
+  async countHealthOverview({ search = '', communityId = null }) {
+    const where = [];
+    const values = [];
+
+    const text = String(search || '').trim();
+    if (text) {
+      const keyword = `%${text}%`;
+      where.push('(u.nickname LIKE ? OR u.phone LIKE ? OR CAST(u.id AS CHAR) LIKE ?)');
+      values.push(keyword, keyword, keyword);
+    }
+
+    if (communityId) {
+      where.push('u.community_id = ?');
+      values.push(Number(communityId));
+    }
+
+    const whereSql = buildWhereSql(where);
     const [rows] = await query(
       `SELECT COUNT(1) AS total
        FROM users u
@@ -131,7 +161,7 @@ const adminOpsModel = {
   },
 
   async listMedicationLogs(
-    { search = '', status = '', startDate = null, endDate = null },
+    { search = '', status = '', startDate = null, endDate = null, communityId = null },
     { pageSize = 10, offset = 0 } = {}
   ) {
     const where = [];
@@ -159,6 +189,11 @@ const adminOpsModel = {
     if (endDate) {
       where.push('DATE(l.scheduled_time) <= ?');
       values.push(endDate);
+    }
+
+    if (communityId) {
+      where.push('u.community_id = ?');
+      values.push(Number(communityId));
     }
 
     const whereSql = buildWhereSql(where);
@@ -192,7 +227,13 @@ const adminOpsModel = {
     return Array.isArray(rows) ? rows : [];
   },
 
-  async countMedicationLogs({ search = '', status = '', startDate = null, endDate = null }) {
+  async countMedicationLogs({
+    search = '',
+    status = '',
+    startDate = null,
+    endDate = null,
+    communityId = null,
+  }) {
     const where = [];
     const values = [];
 
@@ -218,6 +259,11 @@ const adminOpsModel = {
     if (endDate) {
       where.push('DATE(l.scheduled_time) <= ?');
       values.push(endDate);
+    }
+
+    if (communityId) {
+      where.push('u.community_id = ?');
+      values.push(Number(communityId));
     }
 
     const whereSql = buildWhereSql(where);
@@ -247,9 +293,9 @@ const adminOpsModel = {
     return Number(result && result.affectedRows ? result.affectedRows : 0);
   },
 
-  async getMedicationLogById(logId) {
-    const [rows] = await query(
-      `SELECT
+  async getMedicationLogById(logId, communityId = null) {
+    const values = [Number(logId)];
+    let sql = `SELECT
          l.id,
          l.user_id,
          u.nickname,
@@ -268,15 +314,24 @@ const adminOpsModel = {
        FROM medication_logs l
        LEFT JOIN medication_plans p ON p.id = l.plan_id
        LEFT JOIN users u ON u.id = l.user_id
-       WHERE l.id = ?
-       LIMIT 1`,
-      [Number(logId)]
+       WHERE l.id = ?`;
+
+    if (communityId) {
+      sql += ' AND u.community_id = ?';
+      values.push(Number(communityId));
+    }
+
+    sql += ' LIMIT 1';
+
+    const [rows] = await query(
+      sql,
+      values
     );
 
     return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
   },
 
-  async listGpsCurrent({ search = '' }, { pageSize = 10, offset = 0 } = {}) {
+  async listGpsCurrent({ search = '', communityId = null }, { pageSize = 10, offset = 0 } = {}) {
     const text = String(search || '').trim();
     const where = [];
     const values = [];
@@ -285,6 +340,11 @@ const adminOpsModel = {
       const keyword = `%${text}%`;
       where.push('(u.nickname LIKE ? OR u.phone LIKE ? OR CAST(u.id AS CHAR) LIKE ?)');
       values.push(keyword, keyword, keyword);
+    }
+
+    if (communityId) {
+      where.push('u.community_id = ?');
+      values.push(Number(communityId));
     }
 
     const whereSql = buildWhereSql(where);
@@ -317,7 +377,7 @@ const adminOpsModel = {
     return Array.isArray(rows) ? rows : [];
   },
 
-  async countGpsCurrent({ search = '' }) {
+  async countGpsCurrent({ search = '', communityId = null }) {
     const text = String(search || '').trim();
     const where = [];
     const values = [];
@@ -326,6 +386,11 @@ const adminOpsModel = {
       const keyword = `%${text}%`;
       where.push('(u.nickname LIKE ? OR u.phone LIKE ? OR CAST(u.id AS CHAR) LIKE ?)');
       values.push(keyword, keyword, keyword);
+    }
+
+    if (communityId) {
+      where.push('u.community_id = ?');
+      values.push(Number(communityId));
     }
 
     const whereSql = buildWhereSql(where);
@@ -349,22 +414,35 @@ const adminOpsModel = {
     return Number(rows && rows[0] ? rows[0].total : 0);
   },
 
-  async listGpsTrail(userId, { startDate, endDate, limit = 1000 } = {}) {
+  async listGpsTrail(userId, { startDate, endDate, limit = 1000, communityId = null } = {}) {
+    const values = [Number(userId), startDate, endDate];
+    let sql = `SELECT lr.id, lr.user_id, lr.latitude, lr.longitude, lr.accuracy, lr.location_type, lr.created_at
+       FROM location_records lr
+       LEFT JOIN users u ON u.id = lr.user_id
+       WHERE lr.user_id = ?
+         AND lr.created_at >= ?
+         AND lr.created_at <= ?`;
+
+    if (communityId) {
+      sql += ' AND u.community_id = ?';
+      values.push(Number(communityId));
+    }
+
+    sql += ' ORDER BY lr.created_at ASC, lr.id ASC LIMIT ?';
+    values.push(Number(limit));
+
     const [rows] = await query(
-      `SELECT id, user_id, latitude, longitude, accuracy, location_type, created_at
-       FROM location_records
-       WHERE user_id = ?
-         AND created_at >= ?
-         AND created_at <= ?
-       ORDER BY created_at ASC, id ASC
-       LIMIT ?`,
-      [Number(userId), startDate, endDate, Number(limit)]
+      sql,
+      values
     );
 
     return Array.isArray(rows) ? rows : [];
   },
 
-  async listFamilyBindings({ search = '', status = '' }, { pageSize = 10, offset = 0 } = {}) {
+  async listFamilyBindings(
+    { search = '', status = '', communityId = null },
+    { pageSize = 10, offset = 0 } = {}
+  ) {
     const { elderColumn, familyColumn, statusColumn } = await resolveFamilyBindingColumns();
 
     const where = [];
@@ -385,6 +463,11 @@ const adminOpsModel = {
     if (status) {
       where.push(`fb.${statusColumn} = ?`);
       values.push(status);
+    }
+
+    if (communityId) {
+      where.push('elder.community_id = ?');
+      values.push(Number(communityId));
     }
 
     const whereSql = buildWhereSql(where);
@@ -416,7 +499,7 @@ const adminOpsModel = {
     return Array.isArray(rows) ? rows : [];
   },
 
-  async countFamilyBindings({ search = '', status = '' }) {
+  async countFamilyBindings({ search = '', status = '', communityId = null }) {
     const { elderColumn, familyColumn, statusColumn } = await resolveFamilyBindingColumns();
 
     const where = [];
@@ -437,6 +520,11 @@ const adminOpsModel = {
     if (status) {
       where.push(`fb.${statusColumn} = ?`);
       values.push(status);
+    }
+
+    if (communityId) {
+      where.push('elder.community_id = ?');
+      values.push(Number(communityId));
     }
 
     const whereSql = buildWhereSql(where);
@@ -551,7 +639,10 @@ const adminOpsModel = {
     return Number(rows && rows[0] ? rows[0].total : 0);
   },
 
-  async listSosEvents({ search = '', status = '' }, { pageSize = 10, offset = 0 } = {}) {
+  async listSosEvents(
+    { search = '', status = '', communityId = null },
+    { pageSize = 10, offset = 0 } = {}
+  ) {
     const where = [];
     const values = [];
 
@@ -567,6 +658,11 @@ const adminOpsModel = {
     if (status) {
       where.push('e.event_status = ?');
       values.push(status);
+    }
+
+    if (communityId) {
+      where.push('u.community_id = ?');
+      values.push(Number(communityId));
     }
 
     const whereSql = buildWhereSql(where);
@@ -598,7 +694,7 @@ const adminOpsModel = {
     return Array.isArray(rows) ? rows : [];
   },
 
-  async countSosEvents({ search = '', status = '' }) {
+  async countSosEvents({ search = '', status = '', communityId = null }) {
     const where = [];
     const values = [];
 
@@ -616,6 +712,11 @@ const adminOpsModel = {
       values.push(status);
     }
 
+    if (communityId) {
+      where.push('u.community_id = ?');
+      values.push(Number(communityId));
+    }
+
     const whereSql = buildWhereSql(where);
 
     const [rows] = await query(
@@ -629,15 +730,22 @@ const adminOpsModel = {
     return Number(rows && rows[0] ? rows[0].total : 0);
   },
 
-  async getSosEventById(eventId) {
-    const [rows] = await query(
-      `SELECT id, user_id, trigger_type, latitude, longitude, address, event_status,
-              created_at, confirmed_at, resolved_at, cancelled_at, updated_at
-       FROM sos_events
-       WHERE id = ?
-       LIMIT 1`,
-      [Number(eventId)]
-    );
+  async getSosEventById(eventId, communityId = null) {
+    const values = [Number(eventId)];
+    let sql = `SELECT e.id, e.user_id, e.trigger_type, e.latitude, e.longitude, e.address, e.event_status,
+                      e.created_at, e.confirmed_at, e.resolved_at, e.cancelled_at, e.updated_at
+               FROM sos_events e
+               LEFT JOIN users u ON u.id = e.user_id
+               WHERE e.id = ?`;
+
+    if (communityId) {
+      sql += ' AND u.community_id = ?';
+      values.push(Number(communityId));
+    }
+
+    sql += ' LIMIT 1';
+
+    const [rows] = await query(sql, values);
 
     return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
   },

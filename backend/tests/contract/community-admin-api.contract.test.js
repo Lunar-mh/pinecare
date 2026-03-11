@@ -15,6 +15,8 @@ jest.mock('../../src/services/communityAdminService', () => ({
   getActivities: jest.fn(),
   createActivity: jest.fn(),
   getStats: jest.fn(),
+  getSosEvents: jest.fn(),
+  updateSosEventStatus: jest.fn(),
 }));
 
 const adminAuth = require('../../src/middleware/adminAuth');
@@ -82,6 +84,15 @@ describe('community admin api contract', () => {
         cancelled: 0,
       },
     });
+    communityAdminService.getSosEvents.mockResolvedValue({
+      list: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    });
+    communityAdminService.updateSosEventStatus.mockResolvedValue({
+      eventId: 1,
+      eventStatus: 'confirmed',
+      latestStatusChangedAt: '2026-03-11T10:01:00.000Z',
+    });
   });
 
   test('returns 401 for all protected endpoints without token', async () => {
@@ -105,6 +116,12 @@ describe('community admin api contract', () => {
         },
       },
       { method: 'get', path: '/community/stats' },
+      { method: 'get', path: '/community/sos/events' },
+      {
+        method: 'patch',
+        path: '/community/sos/events/1/status',
+        body: { status: 'confirmed' },
+      },
     ];
 
     for (const item of endpoints) {
@@ -166,6 +183,15 @@ describe('community admin api contract', () => {
     );
     responses.push(
       await request(app).get('/community/stats').set('Authorization', `Bearer ${token}`)
+    );
+    responses.push(
+      await request(app).get('/community/sos/events').set('Authorization', `Bearer ${token}`)
+    );
+    responses.push(
+      await request(app)
+        .patch('/community/sos/events/1/status')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ status: 'confirmed' })
     );
 
     responses.forEach((res) => {

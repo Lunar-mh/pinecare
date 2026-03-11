@@ -14,6 +14,9 @@ const {
   validateActivityQuery,
   validateCreateActivity,
   validateStatsQuery,
+  validateSosEventQuery,
+  validateSosEventId,
+  validateUpdateSosEventStatus,
 } = require('../middleware/validateCommunityAdmin');
 
 const router = express.Router();
@@ -43,5 +46,12 @@ router.get('/activities', validateActivityQuery, communityAdminController.getAct
 router.post('/activities', validateCreateActivity, communityAdminController.createActivity);
 
 router.get('/stats', validateStatsQuery, communityAdminController.getStats);
+router.get('/sos/events', validateSosEventQuery, communityAdminController.getSosEvents);
+router.patch(
+  '/sos/events/:eventId/status',
+  validateSosEventId,
+  validateUpdateSosEventStatus,
+  communityAdminController.updateSosEventStatus
+);
 
 module.exports = router;

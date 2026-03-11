@@ -34,14 +34,20 @@ function validatePagination(source) {
 
 function validateCommunityScope(req) {
   if (req.adminScope && req.adminScope.isGlobalAdmin === true) {
-    const rawCommunityId = req.query.community_id !== undefined ? req.query.community_id : req.body.community_id;
+    const rawCommunityId =
+      req.query.community_id !== undefined ? req.query.community_id : req.body.community_id;
     if (rawCommunityId === undefined || rawCommunityId === null || rawCommunityId === '') {
       return { ok: true, status: 200, code: 0 };
     }
 
     const requestedCommunityId = Number(rawCommunityId);
     if (!Number.isInteger(requestedCommunityId) || requestedCommunityId <= 0) {
-      return { ok: false, status: 400, code: 400, message: 'community_id must be a positive integer.' };
+      return {
+        ok: false,
+        status: 400,
+        code: 400,
+        message: 'community_id must be a positive integer.',
+      };
     }
 
     req.adminScope.communityId = requestedCommunityId;
@@ -49,7 +55,8 @@ function validateCommunityScope(req) {
   }
 
   const scopeCommunityId = req.adminScope ? Number(req.adminScope.communityId) : null;
-  const rawCommunityId = req.query.community_id !== undefined ? req.query.community_id : req.body.community_id;
+  const rawCommunityId =
+    req.query.community_id !== undefined ? req.query.community_id : req.body.community_id;
 
   if (rawCommunityId === undefined || rawCommunityId === null || rawCommunityId === '') {
     return { ok: true, status: 200, code: 0 };
@@ -57,7 +64,12 @@ function validateCommunityScope(req) {
 
   const requestedCommunityId = Number(rawCommunityId);
   if (!Number.isInteger(requestedCommunityId) || requestedCommunityId <= 0) {
-    return { ok: false, status: 400, code: 400, message: 'community_id must be a positive integer.' };
+    return {
+      ok: false,
+      status: 400,
+      code: 400,
+      message: 'community_id must be a positive integer.',
+    };
   }
 
   if (!scopeCommunityId || requestedCommunityId !== scopeCommunityId) {
@@ -116,7 +128,11 @@ function validateOrderQuery(req, res, next) {
 function validateCreateOrder(req, res, next) {
   const body = req.body || {};
 
-  if (!body.service_type || typeof body.service_type !== 'string' || body.service_type.trim() === '') {
+  if (
+    !body.service_type ||
+    typeof body.service_type !== 'string' ||
+    body.service_type.trim() === ''
+  ) {
     return fail(res, 400, 'service_type is required.', null, 400);
   }
 
@@ -150,7 +166,11 @@ function validateAssignOrder(req, res, next) {
     return fail(res, 400, 'volunteer_id must be a positive integer.', null, 400);
   }
 
-  if (req.body && req.body.scheduled_at && Number.isNaN(new Date(req.body.scheduled_at).getTime())) {
+  if (
+    req.body &&
+    req.body.scheduled_at &&
+    Number.isNaN(new Date(req.body.scheduled_at).getTime())
+  ) {
     return fail(res, 400, 'Invalid scheduled_at.', null, 400);
   }
 
@@ -229,7 +249,10 @@ function validateCreateActivity(req, res, next) {
 }
 
 function validateStatsQuery(req, res, next) {
-  if (req.query.start_date !== undefined && Number.isNaN(new Date(req.query.start_date).getTime())) {
+  if (
+    req.query.start_date !== undefined &&
+    Number.isNaN(new Date(req.query.start_date).getTime())
+  ) {
     return fail(res, 400, 'Invalid start_date.', null, 400);
   }
 
@@ -253,6 +276,50 @@ function validateStatsQuery(req, res, next) {
   return next();
 }
 
+function validateSosEventQuery(req, res, next) {
+  const pageResult = validatePagination(req.query);
+  if (!pageResult.ok) {
+    return fail(res, 400, pageResult.message, null, 400);
+  }
+
+  if (
+    req.query.status !== undefined &&
+    !['triggered', 'confirmed', 'resolved', 'cancelled'].includes(req.query.status)
+  ) {
+    return fail(res, 400, 'status is invalid.', null, 400);
+  }
+
+  const scopeResult = validateCommunityScope(req);
+  if (!scopeResult.ok) {
+    return fail(res, scopeResult.code, scopeResult.message, null, scopeResult.status);
+  }
+
+  return next();
+}
+
+function validateSosEventId(req, res, next) {
+  const eventId = Number(req.params.eventId);
+  if (!Number.isInteger(eventId) || eventId <= 0) {
+    return fail(res, 400, 'eventId must be a positive integer.', null, 400);
+  }
+
+  req.params.eventId = String(eventId);
+  return next();
+}
+
+function validateUpdateSosEventStatus(req, res, next) {
+  const status = req.body && req.body.status;
+  if (!status || !['confirmed', 'resolved', 'cancelled'].includes(status)) {
+    return fail(res, 400, 'status must be one of: confirmed, resolved, cancelled.', null, 400);
+  }
+
+  if (req.body && req.body.reason !== undefined && typeof req.body.reason !== 'string') {
+    return fail(res, 400, 'reason must be a string.', null, 400);
+  }
+
+  return next();
+}
+
 module.exports = {
   validateVolunteerQuery,
   validateOrderQuery,
@@ -263,5 +330,7 @@ module.exports = {
   validateActivityQuery,
   validateCreateActivity,
   validateStatsQuery,
+  validateSosEventQuery,
+  validateSosEventId,
+  validateUpdateSosEventStatus,
 };
-

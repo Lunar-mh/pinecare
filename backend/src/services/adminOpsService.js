@@ -666,7 +666,7 @@ const adminOpsService = {
 
     const fromStatus = String(current.event_status || '');
     const allowedFlow = {
-      triggered: ['confirmed', 'resolved', 'cancelled'],
+      triggered: ['confirmed', 'cancelled'],
       confirmed: ['resolved'],
       resolved: [],
       cancelled: [],

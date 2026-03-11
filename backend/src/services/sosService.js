@@ -25,7 +25,12 @@ function ensureEventId(eventId) {
 async function loadOwnedEventOrThrow(userId, eventId) {
   const event = await SosEventModel.findByIdAndUser(eventId, userId);
   if (!event) {
-    throw createSosError(SOS_ERROR_CODES.EVENT_NOT_FOUND, SOS_ERROR_MESSAGES.EVENT_NOT_FOUND, null, 404);
+    throw createSosError(
+      SOS_ERROR_CODES.EVENT_NOT_FOUND,
+      SOS_ERROR_MESSAGES.EVENT_NOT_FOUND,
+      null,
+      404
+    );
   }
   return event;
 }
@@ -55,6 +60,13 @@ function formatNotificationSummary(summaryRows) {
   });
 
   return summaryMap;
+}
+
+function toIsoText(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
 }
 
 const sosService = {
@@ -92,9 +104,14 @@ const sosService = {
     const event = await loadOwnedEventOrThrow(currentUserId, currentEventId);
 
     if (event.event_status !== 'triggered') {
-      throw createSosError(SOS_ERROR_CODES.INVALID_STATUS, SOS_ERROR_MESSAGES.INVALID_STATUS, {
-        current_status: event.event_status,
-      }, 409);
+      throw createSosError(
+        SOS_ERROR_CODES.INVALID_STATUS,
+        SOS_ERROR_MESSAGES.INVALID_STATUS,
+        {
+          current_status: event.event_status,
+        },
+        409
+      );
     }
 
     try {
@@ -103,14 +120,29 @@ const sosService = {
       if (now - createdAt > 5000) throw new Error('取消窗口已超时');
     } catch (err) {
       if (err.message === '取消窗口已超时') {
-        throw createSosError(SOS_ERROR_CODES.CANCEL_TIMEOUT, SOS_ERROR_MESSAGES.CANCEL_TIMEOUT, null, 408);
+        throw createSosError(
+          SOS_ERROR_CODES.CANCEL_TIMEOUT,
+          SOS_ERROR_MESSAGES.CANCEL_TIMEOUT,
+          null,
+          408
+        );
       }
       throw err;
     }
 
-    const updated = await SosEventModel.transitionStatus(currentEventId, currentUserId, 'triggered', 'cancelled');
+    const updated = await SosEventModel.transitionStatus(
+      currentEventId,
+      currentUserId,
+      'triggered',
+      'cancelled'
+    );
     if (!updated) {
-      throw createSosError(SOS_ERROR_CODES.INVALID_STATUS, SOS_ERROR_MESSAGES.INVALID_STATUS, null, 409);
+      throw createSosError(
+        SOS_ERROR_CODES.INVALID_STATUS,
+        SOS_ERROR_MESSAGES.INVALID_STATUS,
+        null,
+        409
+      );
     }
 
     return {
@@ -126,9 +158,19 @@ const sosService = {
 
     assertTransition(event.event_status, 'confirmed');
 
-    const updated = await SosEventModel.transitionStatus(currentEventId, currentUserId, event.event_status, 'confirmed');
+    const updated = await SosEventModel.transitionStatus(
+      currentEventId,
+      currentUserId,
+      event.event_status,
+      'confirmed'
+    );
     if (!updated) {
-      throw createSosError(SOS_ERROR_CODES.INVALID_STATUS, SOS_ERROR_MESSAGES.INVALID_STATUS, null, 409);
+      throw createSosError(
+        SOS_ERROR_CODES.INVALID_STATUS,
+        SOS_ERROR_MESSAGES.INVALID_STATUS,
+        null,
+        409
+      );
     }
 
     return {
@@ -144,9 +186,19 @@ const sosService = {
 
     assertTransition(event.event_status, 'resolved');
 
-    const updated = await SosEventModel.transitionStatus(currentEventId, currentUserId, event.event_status, 'resolved');
+    const updated = await SosEventModel.transitionStatus(
+      currentEventId,
+      currentUserId,
+      event.event_status,
+      'resolved'
+    );
     if (!updated) {
-      throw createSosError(SOS_ERROR_CODES.INVALID_STATUS, SOS_ERROR_MESSAGES.INVALID_STATUS, null, 409);
+      throw createSosError(
+        SOS_ERROR_CODES.INVALID_STATUS,
+        SOS_ERROR_MESSAGES.INVALID_STATUS,
+        null,
+        409
+      );
     }
 
     return {
@@ -172,28 +224,39 @@ const sosService = {
 
     return {
       list: list.map((item) => ({
-        event_id: item.id,
-        event_status: item.event_status,
-        trigger_type: item.trigger_type,
+        eventId: item.id,
+        eventStatus: item.event_status,
+        triggerType: item.trigger_type,
         latitude: item.latitude,
         longitude: item.longitude,
         address: item.address,
-        created_at: item.created_at,
-        confirmed_at: item.confirmed_at,
-        resolved_at: item.resolved_at,
-        cancelled_at: item.cancelled_at,
-        notification_summary:
-          summaryMap[item.id] || {
-            wechat: { pending: 0, sent: 0, failed: 0 },
-            sms: { pending: 0, sent: 0, failed: 0 },
-            total: { pending: 0, sent: 0, failed: 0 },
-          },
+        createdAt: toIsoText(item.created_at),
+        confirmedAt: toIsoText(item.confirmed_at),
+        resolvedAt: toIsoText(item.resolved_at),
+        cancelledAt: toIsoText(item.cancelled_at),
+        latestStatusChangedAt:
+          toIsoText(item.cancelled_at) ||
+          toIsoText(item.resolved_at) ||
+          toIsoText(item.confirmed_at) ||
+          toIsoText(item.created_at),
+        notificationSummary: summaryMap[item.id] || {
+          wechat: { pending: 0, sent: 0, failed: 0 },
+          sms: { pending: 0, sent: 0, failed: 0 },
+          total: { pending: 0, sent: 0, failed: 0 },
+        },
+        auditTrailSummary: {
+          currentStatus: item.event_status,
+          triggeredAt: toIsoText(item.created_at),
+          confirmedAt: toIsoText(item.confirmed_at),
+          resolvedAt: toIsoText(item.resolved_at),
+          cancelledAt: toIsoText(item.cancelled_at),
+        },
       })),
       pagination: {
         page,
-        page_size: pageSize,
+        pageSize,
         total,
-        total_pages: Math.ceil(total / pageSize),
+        totalPages: Math.ceil(total / pageSize),
       },
     };
   },

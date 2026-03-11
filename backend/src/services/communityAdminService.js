@@ -1,10 +1,12 @@
 'use strict';
 
+const adminOpsModel = require('../models/adminOpsModel');
 const communityAdminModel = require('../models/communityAdmin');
 const AuditLogModel = require('../models/auditLog');
 const statisticsService = require('./statisticsService');
 
 const ORDER_STATUS_ENUM = ['pending', 'assigned', 'processing', 'completed', 'cancelled'];
+const SOS_STATUS_ENUM = ['triggered', 'confirmed', 'resolved', 'cancelled'];
 
 function createBizError(message, code = 400, statusCode = 400) {
   const error = new Error(message);
@@ -25,6 +27,83 @@ async function writeAuditLog(actor = {}, action, details = null) {
     action,
     details,
   });
+}
+
+function toIsoText(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
+function formatSosNotificationSummary(summaryRows) {
+  const summaryMap = {};
+
+  summaryRows.forEach((row) => {
+    const eventId = Number(row.sos_event_id);
+    if (!summaryMap[eventId]) {
+      summaryMap[eventId] = {
+        wechat: { pending: 0, sent: 0, failed: 0 },
+        sms: { pending: 0, sent: 0, failed: 0 },
+        total: { pending: 0, sent: 0, failed: 0 },
+      };
+    }
+
+    const pending = Number(row.pending_count) || 0;
+    const sent = Number(row.sent_count) || 0;
+    const failed = Number(row.failed_count) || 0;
+    const channel = row.notify_type === 'wechat' ? 'wechat' : 'sms';
+
+    summaryMap[eventId][channel] = { pending, sent, failed };
+    summaryMap[eventId].total.pending += pending;
+    summaryMap[eventId].total.sent += sent;
+    summaryMap[eventId].total.failed += failed;
+  });
+
+  return summaryMap;
+}
+
+function buildSosAuditTrailSummary(row) {
+  const triggeredAt = toIsoText(row.created_at);
+  return {
+    currentStatus: row.event_status,
+    triggeredAt,
+    confirmedAt: toIsoText(row.confirmed_at),
+    resolvedAt: toIsoText(row.resolved_at),
+    cancelledAt: toIsoText(row.cancelled_at),
+  };
+}
+
+function mapSosEvent(row, summaryMap) {
+  const createdAt = toIsoText(row.created_at);
+  const latestStatusChangedAt =
+    toIsoText(row.cancelled_at) ||
+    toIsoText(row.resolved_at) ||
+    toIsoText(row.confirmed_at) ||
+    createdAt;
+
+  return {
+    eventId: Number(row.id),
+    userId: Number(row.user_id),
+    userName: row.nickname || `User${row.user_id}`,
+    userPhone: row.phone || '',
+    eventStatus: row.event_status,
+    triggerType: row.trigger_type,
+    latitude: row.latitude === null || row.latitude === undefined ? null : Number(row.latitude),
+    longitude: row.longitude === null || row.longitude === undefined ? null : Number(row.longitude),
+    address: row.address || '',
+    createdAt,
+    confirmedAt: toIsoText(row.confirmed_at),
+    resolvedAt: toIsoText(row.resolved_at),
+    cancelledAt: toIsoText(row.cancelled_at),
+    latestStatusChangedAt,
+    notificationSummary: summaryMap[Number(row.id)] || {
+      wechat: { pending: 0, sent: 0, failed: 0 },
+      sms: { pending: 0, sent: 0, failed: 0 },
+      total: { pending: 0, sent: 0, failed: 0 },
+    },
+    auditTrailSummary: buildSosAuditTrailSummary(row),
+  };
 }
 
 const communityAdminService = {
@@ -156,7 +235,12 @@ const communityAdminService = {
     }
 
     const scheduledAt = body.scheduled_at || order.scheduled_at || null;
-    const result = await communityAdminModel.assignOrder(communityId, orderId, volunteerId, scheduledAt);
+    const result = await communityAdminModel.assignOrder(
+      communityId,
+      orderId,
+      volunteerId,
+      scheduledAt
+    );
     if (!result || result.affectedRows < 1) {
       throw createBizError('Order assignment failed, please retry.', 409, 409);
     }
@@ -188,12 +272,23 @@ const communityAdminService = {
       throw createBizError('Unsupported order status.', 400, 400);
     }
 
-    if (targetStatus === 'cancelled' && !['pending', 'assigned', 'processing'].includes(order.status)) {
-      throw createBizError('Only pending, assigned or processing orders can be cancelled.', 409, 409);
+    if (
+      targetStatus === 'cancelled' &&
+      !['pending', 'assigned', 'processing'].includes(order.status)
+    ) {
+      throw createBizError(
+        'Only pending, assigned or processing orders can be cancelled.',
+        409,
+        409
+      );
     }
 
     if (targetStatus === 'completed' && !['assigned', 'processing'].includes(order.status)) {
-      throw createBizError('Only assigned or processing orders can be completed by admin.', 409, 409);
+      throw createBizError(
+        'Only assigned or processing orders can be completed by admin.',
+        409,
+        409
+      );
     }
 
     const payload = {};
@@ -205,7 +300,12 @@ const communityAdminService = {
       payload.volunteerId = null;
     }
 
-    const result = await communityAdminModel.updateOrderStatus(communityId, orderId, targetStatus, payload);
+    const result = await communityAdminModel.updateOrderStatus(
+      communityId,
+      orderId,
+      targetStatus,
+      payload
+    );
     if (!result || result.affectedRows < 1) {
       throw createBizError('Order status update failed, please retry.', 409, 409);
     }
@@ -312,6 +412,107 @@ const communityAdminService = {
     }
 
     return statisticsService.getCommunityDashboardStats(communityId);
+  },
+
+  async getSosEvents(communityId, query = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    const pagination = normalizePagination(query);
+    const search = query.search ? String(query.search).trim() : '';
+    const status = query.status ? String(query.status).trim() : '';
+
+    if (status && !SOS_STATUS_ENUM.includes(status)) {
+      throw createBizError('SOS status is invalid.', 400, 400);
+    }
+
+    const offset = (pagination.page - 1) * pagination.pageSize;
+    const [rows, total] = await Promise.all([
+      adminOpsModel.listSosEvents(
+        { search, status, communityId },
+        { pageSize: pagination.pageSize, offset }
+      ),
+      adminOpsModel.countSosEvents({ search, status, communityId }),
+    ]);
+
+    const eventIds = rows.map((item) => Number(item.id));
+    const summaryRows = await adminOpsModel.summarizeSosNotifications(eventIds);
+    const summaryMap = formatSosNotificationSummary(summaryRows);
+
+    return {
+      list: rows.map((item) => mapSosEvent(item, summaryMap)),
+      pagination: {
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        total,
+        totalPages: Math.ceil(total / pagination.pageSize),
+      },
+    };
+  },
+
+  async updateSosEventStatus(communityId, eventId, body = {}, actor = {}) {
+    if (!communityId) {
+      throw createBizError('Community scope is required.', 403, 403);
+    }
+
+    const id = Number(eventId);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw createBizError('eventId must be a positive integer.', 400, 400);
+    }
+
+    const targetStatus = String(body.status || '').trim();
+    if (!['confirmed', 'resolved', 'cancelled'].includes(targetStatus)) {
+      throw createBizError('Unsupported SOS status.', 400, 400);
+    }
+
+    const current = await adminOpsModel.getSosEventById(id, communityId);
+    if (!current) {
+      throw createBizError('SOS event not found.', 404, 404);
+    }
+
+    const allowedFlow = {
+      triggered: ['confirmed', 'cancelled'],
+      confirmed: ['resolved'],
+      resolved: [],
+      cancelled: [],
+    };
+
+    if (!(allowedFlow[current.event_status] || []).includes(targetStatus)) {
+      throw createBizError(
+        `Cannot transition SOS event from ${current.event_status} to ${targetStatus}.`,
+        409,
+        409
+      );
+    }
+
+    const affected = await adminOpsModel.updateSosEventStatus(
+      id,
+      current.event_status,
+      targetStatus
+    );
+    if (!affected) {
+      throw createBizError('SOS event status changed concurrently, please retry.', 409, 409);
+    }
+
+    const latest = await adminOpsModel.getSosEventById(id, communityId);
+    const actionMap = {
+      confirmed: 'community.sos.confirm',
+      resolved: 'community.sos.resolve',
+      cancelled: 'community.sos.cancel',
+    };
+
+    await writeAuditLog(actor, actionMap[targetStatus], {
+      community_id: Number(communityId),
+      event_id: id,
+      status_from: current.event_status,
+      status_to: targetStatus,
+      reason: body.reason ? String(body.reason).trim() : null,
+    });
+
+    const summaryRows = await adminOpsModel.summarizeSosNotifications([id]);
+    const summaryMap = formatSosNotificationSummary(summaryRows);
+    return mapSosEvent(latest, summaryMap);
   },
 };
 

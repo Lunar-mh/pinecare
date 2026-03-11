@@ -269,6 +269,76 @@ const familySpaceModel = {
       list: Array.isArray(rows) ? rows : [],
     };
   },
+
+  async getInteractionEvidenceSummary(familyId) {
+    const [voiceCountRows, albumCountRows, pointCountRows, latestRows] = await Promise.all([
+      execute(
+        `SELECT COUNT(*) AS total
+         FROM voice_messages vm
+         WHERE EXISTS (
+           SELECT 1
+           FROM (${FAMILY_MEMBERSHIP_SQL}) sender
+           WHERE sender.family_id = ?
+             AND sender.user_id = vm.from_user_id
+         )
+           AND EXISTS (
+             SELECT 1
+             FROM (${FAMILY_MEMBERSHIP_SQL}) receiver
+             WHERE receiver.family_id = ?
+               AND receiver.user_id = vm.to_user_id
+           )`,
+        [familyId, familyId]
+      ),
+      execute(
+        `SELECT COUNT(*) AS total
+         FROM family_albums
+         WHERE family_id = ?`,
+        [familyId]
+      ),
+      execute(
+        `SELECT COUNT(*) AS total
+         FROM family_points
+         WHERE family_id = ?`,
+        [familyId]
+      ),
+      execute(
+        `SELECT MAX(latest_at) AS latest_at
+         FROM (
+           SELECT MAX(vm.created_at) AS latest_at
+           FROM voice_messages vm
+           WHERE EXISTS (
+             SELECT 1
+             FROM (${FAMILY_MEMBERSHIP_SQL}) sender
+             WHERE sender.family_id = ?
+               AND sender.user_id = vm.from_user_id
+           )
+             AND EXISTS (
+               SELECT 1
+               FROM (${FAMILY_MEMBERSHIP_SQL}) receiver
+               WHERE receiver.family_id = ?
+                 AND receiver.user_id = vm.to_user_id
+             )
+           UNION ALL
+           SELECT MAX(created_at) AS latest_at
+           FROM family_albums
+           WHERE family_id = ?
+           UNION ALL
+           SELECT MAX(created_at) AS latest_at
+           FROM family_points
+           WHERE family_id = ?
+         ) evidence`,
+        [familyId, familyId, familyId, familyId]
+      ),
+    ]);
+
+    return {
+      familyId: Number(familyId),
+      voiceMessageCount: Number((voiceCountRows[0] && voiceCountRows[0].total) || 0),
+      albumCount: Number((albumCountRows[0] && albumCountRows[0].total) || 0),
+      pointRecordCount: Number((pointCountRows[0] && pointCountRows[0].total) || 0),
+      lastInteractionAt: latestRows[0] ? latestRows[0].latest_at || null : null,
+    };
+  },
 };
 
 module.exports = familySpaceModel;

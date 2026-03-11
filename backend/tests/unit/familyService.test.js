@@ -9,6 +9,10 @@ jest.mock('../../src/models/family', () => ({
   upsertNotificationSettings: jest.fn(),
 }));
 
+jest.mock('../../src/models/familySpace', () => ({
+  getInteractionEvidenceSummary: jest.fn(),
+}));
+
 jest.mock('../../src/models/sosEvent', () => ({
   listActiveByUser: jest.fn(),
 }));
@@ -18,6 +22,7 @@ jest.mock('../../src/services/medicationLogService', () => ({
 }));
 
 const familyModel = require('../../src/models/family');
+const familySpaceModel = require('../../src/models/familySpace');
 const SosEventModel = require('../../src/models/sosEvent');
 const medicationLogService = require('../../src/services/medicationLogService');
 const familyService = require('../../src/services/familyService');
@@ -54,13 +59,21 @@ describe('familyService', () => {
     expect(data.latestMetrics.blood_oxygen.value).toBe('98');
   });
 
-  it('builds elderly overview with sos alerts and medication progress', async () => {
+  it('builds frozen elderly overview with summaries and alerts', async () => {
     familyModel.listBindingsByFamilyId.mockResolvedValue([
       {
         elderId: 3001,
         elderProfile: {
-          realName: '王阿姨',
-          nickname: '王阿姨',
+          realName: 'Wang Ayi',
+          nickname: 'Ayi',
+          avatarUrl: null,
+        },
+      },
+      {
+        elderId: 3002,
+        elderProfile: {
+          realName: 'Li Shushu',
+          nickname: 'Shushu',
           avatarUrl: null,
         },
       },
@@ -86,37 +99,75 @@ describe('familyService', () => {
     familyModel.getLatestLocation.mockResolvedValue({
       latitude: 30.1,
       longitude: 120.1,
-      address: '杭州市西湖区',
+      address: 'Hangzhou Xihu',
       updatedAt: '2026-03-11T09:05:00.000Z',
     });
+    familySpaceModel.getInteractionEvidenceSummary.mockResolvedValue({
+      familyId: 3001,
+      voiceMessageCount: 2,
+      albumCount: 3,
+      pointRecordCount: 5,
+      lastInteractionAt: '2026-03-11T09:06:00.000Z',
+    });
     medicationLogService.getTodaySchedule.mockResolvedValue([
-      { status: 'taken' },
-      { status: 'pending' },
+      { status: 'taken', actualTime: '2026-03-11T08:00:00.000Z' },
+      { status: 'pending', scheduledTime: '2026-03-11T12:00:00.000Z' },
     ]);
     SosEventModel.listActiveByUser.mockResolvedValue([
       {
         id: 88,
         trigger_type: 'manual',
         event_status: 'triggered',
-        address: '杭州市西湖区文三路',
+        address: 'Hangzhou Wenyi Road',
         created_at: '2026-03-11T09:10:00.000Z',
       },
     ]);
 
-    const data = await familyService.getElderlyOverview(2001);
+    const data = await familyService.getElderlyOverview(2001, { elderId: 3001 });
 
     expect(medicationLogService.getTodaySchedule).toHaveBeenCalledWith(3001);
     expect(SosEventModel.listActiveByUser).toHaveBeenCalledWith(3001, 3);
-    expect(data.name).toBe('王阿姨');
-    expect(data.todayHealth.medicationProgress).toBe(50);
+    expect(familySpaceModel.getInteractionEvidenceSummary).toHaveBeenCalledWith(3001);
+    expect(data.elderProfile).toMatchObject({
+      elderId: 3001,
+      familyId: 3001,
+      name: 'Wang Ayi',
+    });
+    expect(data.todayHealthSummary.bloodPressure.status).toBe('warning');
+    expect(data.medicationSummary.progress).toBe(50);
+    expect(data.locationSummary.hasLocation).toBe(true);
     expect(data.alerts[0]).toMatchObject({
       type: 'sos',
-      title: 'SOS 紧急求助进行中',
+      status: 'triggered',
     });
     expect(data.alerts[1]).toMatchObject({
       type: 'medication',
     });
-    expect(data.isOnline).toBe(true);
+    expect(data.interactionEvidenceSummary).toMatchObject({
+      hasInteractionEvidence: true,
+      voiceMessageCount: 2,
+      albumCount: 3,
+      pointRecordCount: 5,
+    });
+  });
+
+  it('uses the first binding when elderId is not provided', async () => {
+    familyModel.listBindingsByFamilyId.mockResolvedValue([
+      {
+        elderId: 3001,
+        elderProfile: { realName: 'Primary Elder', nickname: null, avatarUrl: null },
+      },
+    ]);
+    familyModel.getLatestHealthSnapshot.mockResolvedValue(null);
+    familyModel.getLatestLocation.mockResolvedValue(null);
+    familySpaceModel.getInteractionEvidenceSummary.mockResolvedValue(null);
+    medicationLogService.getTodaySchedule.mockResolvedValue([]);
+    SosEventModel.listActiveByUser.mockResolvedValue([]);
+
+    const data = await familyService.getElderlyOverview(2001);
+
+    expect(data.elderProfile.elderId).toBe(3001);
+    expect(data.medicationSummary.progress).toBe(100);
   });
 
   it('returns default notification settings when no record exists', async () => {

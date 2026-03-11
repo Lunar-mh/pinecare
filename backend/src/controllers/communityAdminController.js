@@ -12,7 +12,13 @@ const { ok, fail } = require('../utils/response');
  */
 function handleError(error, res, next) {
   if (error && error.statusCode) {
-    return fail(res, error.code || error.statusCode, error.message || '请求失败', null, error.statusCode);
+    return fail(
+      res,
+      error.code || error.statusCode,
+      error.message || '请求失败',
+      null,
+      error.statusCode
+    );
   }
   return next(error);
 }
@@ -117,6 +123,32 @@ async function getStats(req, res, next) {
   }
 }
 
+async function getSosEvents(req, res, next) {
+  try {
+    const data = await communityAdminService.getSosEvents(req.adminScope.communityId, req.query);
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
+async function updateSosEventStatus(req, res, next) {
+  try {
+    const data = await communityAdminService.updateSosEventStatus(
+      req.adminScope.communityId,
+      req.params.eventId,
+      req.body,
+      {
+        userId: req.user && req.user.userId ? Number(req.user.userId) : null,
+        role: req.adminScope && req.adminScope.role ? req.adminScope.role : null,
+      }
+    );
+    return ok(res, data, 'success');
+  } catch (error) {
+    return handleError(error, res, next);
+  }
+}
+
 module.exports = {
   getVolunteers,
   getOrders,
@@ -127,4 +159,6 @@ module.exports = {
   getActivities,
   createActivity,
   getStats,
+  getSosEvents,
+  updateSosEventStatus,
 };

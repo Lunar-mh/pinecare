@@ -16,6 +16,14 @@ jest.mock('../../src/models/communityAdmin', () => ({
   createActivity: jest.fn(),
 }));
 
+jest.mock('../../src/models/adminOpsModel', () => ({
+  listSosEvents: jest.fn(),
+  countSosEvents: jest.fn(),
+  summarizeSosNotifications: jest.fn(),
+  getSosEventById: jest.fn(),
+  updateSosEventStatus: jest.fn(),
+}));
+
 jest.mock('../../src/services/statisticsService', () => ({
   getCommunityDashboardStats: jest.fn(),
 }));
@@ -25,6 +33,7 @@ jest.mock('../../src/models/auditLog', () => ({
 }));
 
 const communityAdminModel = require('../../src/models/communityAdmin');
+const adminOpsModel = require('../../src/models/adminOpsModel');
 const AuditLogModel = require('../../src/models/auditLog');
 const statisticsService = require('../../src/services/statisticsService');
 const communityAdminService = require('../../src/services/communityAdminService');
@@ -108,7 +117,10 @@ describe('communityAdminService', () => {
     communityAdminModel.findOrderById
       .mockResolvedValueOnce({ id: 8, status: 'pending', volunteer_id: null })
       .mockResolvedValueOnce({ id: 8, status: 'assigned', volunteer_id: 22 });
-    communityAdminModel.findVolunteerInCommunity.mockResolvedValue({ user_id: 22, role: 'volunteer' });
+    communityAdminModel.findVolunteerInCommunity.mockResolvedValue({
+      user_id: 22,
+      role: 'volunteer',
+    });
     communityAdminModel.assignOrder.mockResolvedValue({ affectedRows: 1 });
     AuditLogModel.create.mockResolvedValue(1);
 
@@ -222,5 +234,98 @@ describe('communityAdminService', () => {
 
     expect(statisticsService.getCommunityDashboardStats).toHaveBeenCalledWith(9);
     expect(result.overview.active_elders).toBe(2);
+  });
+
+  it('lists community SOS events with frozen camelCase summaries', async () => {
+    adminOpsModel.listSosEvents.mockResolvedValue([
+      {
+        id: 18,
+        user_id: 2001,
+        nickname: 'Wang Ayi',
+        phone: '13800000000',
+        event_status: 'triggered',
+        trigger_type: 'manual',
+        latitude: 30.1,
+        longitude: 120.1,
+        address: 'Hangzhou Xihu',
+        created_at: '2026-03-11 10:00:00',
+        confirmed_at: null,
+        resolved_at: null,
+        cancelled_at: null,
+      },
+    ]);
+    adminOpsModel.countSosEvents.mockResolvedValue(1);
+    adminOpsModel.summarizeSosNotifications.mockResolvedValue([
+      { sos_event_id: 18, notify_type: 'wechat', pending_count: 0, sent_count: 1, failed_count: 0 },
+      { sos_event_id: 18, notify_type: 'sms', pending_count: 1, sent_count: 0, failed_count: 0 },
+    ]);
+
+    const result = await communityAdminService.getSosEvents(9, {
+      page: '1',
+      pageSize: '10',
+      status: 'triggered',
+    });
+
+    expect(adminOpsModel.listSosEvents).toHaveBeenCalledWith(
+      { search: '', status: 'triggered', communityId: 9 },
+      { pageSize: 10, offset: 0 }
+    );
+    expect(result.pagination).toEqual({
+      page: 1,
+      pageSize: 10,
+      total: 1,
+      totalPages: 1,
+    });
+    expect(result.list[0]).toMatchObject({
+      eventId: 18,
+      eventStatus: 'triggered',
+      triggerType: 'manual',
+    });
+    expect(result.list[0].notificationSummary.total.sent).toBe(1);
+  });
+
+  it('updates community SOS status with strict state machine and audit log', async () => {
+    adminOpsModel.getSosEventById
+      .mockResolvedValueOnce({
+        id: 18,
+        user_id: 2001,
+        event_status: 'triggered',
+        trigger_type: 'manual',
+        created_at: '2026-03-11 10:00:00',
+      })
+      .mockResolvedValueOnce({
+        id: 18,
+        user_id: 2001,
+        nickname: 'Wang Ayi',
+        phone: '13800000000',
+        event_status: 'confirmed',
+        trigger_type: 'manual',
+        latitude: 30.1,
+        longitude: 120.1,
+        address: 'Hangzhou Xihu',
+        created_at: '2026-03-11 10:00:00',
+        confirmed_at: '2026-03-11 10:01:00',
+        resolved_at: null,
+        cancelled_at: null,
+      });
+    adminOpsModel.updateSosEventStatus.mockResolvedValue(1);
+    adminOpsModel.summarizeSosNotifications.mockResolvedValue([]);
+    AuditLogModel.create.mockResolvedValue(1);
+
+    const result = await communityAdminService.updateSosEventStatus(
+      9,
+      18,
+      { status: 'confirmed', reason: 'family_contacted' },
+      { userId: 1, role: 'leader' }
+    );
+
+    expect(adminOpsModel.updateSosEventStatus).toHaveBeenCalledWith(18, 'triggered', 'confirmed');
+    expect(AuditLogModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 1,
+        action: 'community.sos.confirm',
+      })
+    );
+    expect(result.eventStatus).toBe('confirmed');
   });
 });
