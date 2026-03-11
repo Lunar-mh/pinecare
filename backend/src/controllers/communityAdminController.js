@@ -1,24 +1,12 @@
 'use strict';
 
 const communityAdminService = require('../services/communityAdminService');
-const { ok, fail } = require('../utils/response');
+const { ok } = require('../utils/response');
+const { sendControllerError } = require('../utils/controllerError');
 
-/**
- * 统一处理业务错误
- * @param {Error} error
- * @param {object} res
- * @param {function} next
- * @returns {any}
- */
 function handleError(error, res, next) {
-  if (error && error.statusCode) {
-    return fail(
-      res,
-      error.code || error.statusCode,
-      error.message || '请求失败',
-      null,
-      error.statusCode
-    );
+  if (error && (error.code || error.statusCode)) {
+    return sendControllerError(res, error);
   }
   return next(error);
 }

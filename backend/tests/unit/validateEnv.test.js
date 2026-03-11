@@ -20,6 +20,7 @@ function applyBaseEnv() {
   process.env.AI_CONSULT_MODE = 'auto';
   process.env.VOICE_SERVICE_MODE = 'auto';
   process.env.MEDICAL_API_MODE = 'auto';
+  process.env.WECHAT_NOTIFY_MODE = 'auto';
   process.env.OSS_MODE = 'stub';
 }
 
@@ -100,5 +101,15 @@ describe('validateEnv', () => {
     const { validateEnv } = require('../../src/config/validateEnv');
 
     expect(() => validateEnv()).toThrow(/Medical API live mode/i);
+  });
+
+  it('requires wechat notify config for live mode', () => {
+    process.env.WECHAT_NOTIFY_MODE = 'live';
+    delete process.env.WX_ACCESS_TOKEN;
+    delete process.env.WX_MSG_TEMPLATE_ID;
+
+    const { validateEnv } = require('../../src/config/validateEnv');
+
+    expect(() => validateEnv()).toThrow(/WeChat notify live mode/i);
   });
 });

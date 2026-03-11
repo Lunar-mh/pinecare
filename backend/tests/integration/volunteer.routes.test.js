@@ -120,6 +120,26 @@ describe('volunteer routes', () => {
     expect(res.body.data.name).toBe('Alice');
   });
 
+  test('returns coded business errors for volunteer actions', async () => {
+    const app = buildApp();
+    const token = createToken();
+    const err = new Error('Task already assigned.');
+    err.code = 409;
+    err.statusCode = 409;
+    volunteerService.acceptTask.mockRejectedValue(err);
+
+    const res = await request(app)
+      .post('/volunteer/tasks/2/accept')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({
+      code: 409,
+      message: 'Task already assigned.',
+      data: null,
+    });
+  });
+
   test('returns settlement payload when volunteer completes a task', async () => {
     const app = buildApp();
     const token = createToken();

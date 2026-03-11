@@ -1,9 +1,9 @@
-'use strict';
+﻿'use strict';
 
 const axios = require('axios');
 const { query } = require('../config/database');
-const { isCompetitionSandbox, isProductionLive } = require('../config/runtimeMode');
 const { createUpstreamError, isRetryableError, logThirdPartyError } = require('./thirdParty');
+const { resolveIntegrationMode } = require('../config/integrationMode');
 
 const DEFAULT_TIMEOUT = 5000;
 const DEFAULT_RETRY_TIMES = 2;
@@ -78,6 +78,47 @@ function buildApiUrl() {
   return `${baseUrl}?access_token=${encodeURIComponent(accessToken)}`;
 }
 
+function getRequestedMode() {
+  if (String(process.env.WECHAT_NOTIFY_MOCK || '0').trim() === '1') {
+    return 'stub';
+  }
+
+  return process.env.WECHAT_NOTIFY_MODE || 'auto';
+}
+
+function hasLiveConfig() {
+  return Boolean(String(process.env.WX_ACCESS_TOKEN || '').trim());
+}
+
+function getModeStrategy() {
+  return resolveIntegrationMode({
+    requestedMode: getRequestedMode(),
+    liveConfigured: hasLiveConfig(),
+  });
+}
+
+function getCapabilityReport() {
+  const strategy = getModeStrategy();
+  const missingConfig = [];
+
+  if (!String(process.env.WX_ACCESS_TOKEN || '').trim()) {
+    missingConfig.push('WX_ACCESS_TOKEN');
+  }
+
+  if (!String(process.env.WX_MSG_TEMPLATE_ID || '').trim()) {
+    missingConfig.push('WX_MSG_TEMPLATE_ID');
+  }
+
+  return {
+    requestedMode: strategy.requestedMode,
+    effectiveMode: strategy.effectiveMode,
+    liveConfigured: strategy.liveConfigured,
+    fallbackAllowed: strategy.fallbackAllowed,
+    runtimeMode: strategy.runtimeMode,
+    missingConfig,
+  };
+}
+
 function toWechatError(err) {
   return createUpstreamError(err, {
     timeout: 'WeChat notify timeout.',
@@ -119,12 +160,11 @@ function isRetryableWechatError(err) {
 
 async function requestWithRetry(payload, retryTimes, type) {
   const apiUrl = buildApiUrl();
-  const mockEnabledByEnv = process.env.WECHAT_NOTIFY_MOCK === '1';
-  const allowMock = isCompetitionSandbox();
+  const strategy = getModeStrategy();
 
-  if (!apiUrl || mockEnabledByEnv) {
-    if (!allowMock || isProductionLive()) {
-      throw createBizError('WeChat notify config is missing in PRODUCTION_LIVE mode.', 503, 503);
+  if (strategy.effectiveMode !== 'live' || !apiUrl) {
+    if (!strategy.stubAllowed) {
+      throw createBizError('WeChat notify stub mode is disabled in PRODUCTION_LIVE mode.', 503, 503);
     }
 
     return {
@@ -174,8 +214,10 @@ async function requestWithRetry(payload, retryTimes, type) {
 
 async function sendTemplateByOpenId(options) {
   const templateId = resolveTemplateId(options.type);
+  const strategy = getModeStrategy();
+
   if (!templateId) {
-    if (isProductionLive()) {
+    if (!strategy.stubAllowed) {
       throw createBizError('WeChat template id is required in PRODUCTION_LIVE mode.', 503, 503);
     }
 
@@ -203,6 +245,8 @@ async function sendTemplateByOpenId(options) {
 }
 
 const wechatNotifier = {
+  getCapabilityReport,
+
   async sendMedicationReminder(params) {
     const openid = await findOpenIdByUserId(params.userId);
 

@@ -1,16 +1,12 @@
 'use strict';
 
 const { ok, fail } = require('../utils/response');
+const { sendControllerError } = require('../utils/controllerError');
 const adminUserService = require('../services/adminUserService');
 const { validatePhone, validateRequired } = require('../utils/validators');
 
 function handleError(res, err) {
-  if (err && (err.code || err.statusCode)) {
-    const code = err.code || err.statusCode;
-    const status = err.statusCode || code;
-    return fail(res, code, err.message, err.data || null, status);
-  }
-  return fail(res, 500, 'Internal server error.', null, 500);
+  return sendControllerError(res, err);
 }
 
 const adminUserController = {

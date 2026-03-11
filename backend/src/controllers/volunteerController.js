@@ -1,11 +1,12 @@
 'use strict';
 
 const volunteerService = require('../services/volunteerService');
-const { ok, fail } = require('../utils/response');
+const { ok } = require('../utils/response');
+const { sendControllerError } = require('../utils/controllerError');
 
 function handleError(error, res, next) {
-  if (error && error.statusCode) {
-    return fail(res, error.code || error.statusCode, error.message || 'Request failed.', null, error.statusCode);
+  if (error && (error.code || error.statusCode)) {
+    return sendControllerError(res, error);
   }
   return next(error);
 }

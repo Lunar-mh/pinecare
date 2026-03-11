@@ -1,10 +1,13 @@
 'use strict';
 
-const { ok, fail } = require('../utils/response');
+const { ok } = require('../utils/response');
+const { sendControllerError } = require('../utils/controllerError');
 const statisticsService = require('../services/statisticsService');
 
-function handleServiceUnavailable(res) {
-  return fail(res, 500, 'Statistics service is temporarily unavailable.', null, 500);
+function handleError(res, err) {
+  return sendControllerError(res, err, {
+    defaultMessage: 'Statistics service is temporarily unavailable.',
+  });
 }
 
 const statisticsController = {
@@ -12,8 +15,8 @@ const statisticsController = {
     try {
       const data = await statisticsService.getOverview();
       return ok(res, data, 'ok');
-    } catch (_err) {
-      return handleServiceUnavailable(res);
+    } catch (err) {
+      return handleError(res, err);
     }
   },
 
@@ -21,8 +24,8 @@ const statisticsController = {
     try {
       const data = await statisticsService.getActivities(req.query.limit);
       return ok(res, data, 'ok');
-    } catch (_err) {
-      return handleServiceUnavailable(res);
+    } catch (err) {
+      return handleError(res, err);
     }
   },
 };

@@ -393,6 +393,19 @@ describe('admin ops smoke', () => {
     expect(res.body.data.items.some((item) => item.key === 'medical')).toBe(true);
     expect(res.body.data.items.some((item) => item.key === 'competition_seed')).toBe(true);
     expect(res.body.data.runtimeMode).toBeTruthy();
+
+    const wechatItem = res.body.data.items.find((item) => item.key === 'wechat_notify');
+    expect(wechatItem).toEqual(
+      expect.objectContaining({
+        configured: expect.any(Boolean),
+        mode: expect.any(String),
+        effectiveMode: expect.any(String),
+        fallbackAllowed: expect.any(Boolean),
+        source: 'wechat_template_api',
+        healthy: expect.any(Boolean),
+      })
+    );
+    expect(Array.isArray(wechatItem.missingConfig)).toBe(true);
   });
 
   it('GET /api/v1/admin/system/audit-logs returns paged logs', async () => {

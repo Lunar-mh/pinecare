@@ -14,6 +14,7 @@ const { COMPETITION_SEED_MANIFEST } = require('../data/competitionSeedManifest')
 const { COMPETITION_SEED_ASSETS } = require('../data/competitionSeedAssets');
 const { resolveMode, isProductionLive } = require('../config/runtimeMode');
 const { getRecentThirdPartyErrors } = require('../utils/thirdParty');
+const wechatNotifier = require('../utils/wechatNotifier');
 
 function createBizError(code, message, statusCode) {
   const err = new Error(message);
@@ -88,16 +89,6 @@ function parseSensorData(value) {
   }
 }
 
-function resolveServiceMode(key) {
-  return String(process.env[key] || 'auto')
-    .trim()
-    .toLowerCase();
-}
-
-function hasEnv(keys) {
-  return keys.every((key) => Boolean(String(process.env[key] || '').trim()));
-}
-
 function getCompetitionSeedAssetStatus() {
   const outputDir = path.join(__dirname, '..', '..', 'generated', 'competition-seed');
   const bootstrapSqlPath = path.join(outputDir, COMPETITION_SEED_ASSETS.files.bootstrapSql);
@@ -114,7 +105,6 @@ function getCompetitionSeedAssetStatus() {
 }
 
 function buildIntegrationRows() {
-  const productionLive = isProductionLive();
   const aiCapability = aiService.getCapabilityReport();
   const voiceCapability = voiceService.getCapabilityReport();
   const ossCapability = ossService.getCapabilityReport();
@@ -123,6 +113,7 @@ function buildIntegrationRows() {
       ? medicalApiService.getCapabilityReport()
       : null;
   const medicalSource = medicalApiService.getSourceTag();
+  const wechatCapability = wechatNotifier.getCapabilityReport();
   const competitionSeed = getCompetitionSeedAssetStatus();
 
   return [
@@ -176,7 +167,7 @@ function buildIntegrationRows() {
     {
       key: 'medical',
       configured: Boolean(medicalCapability && medicalCapability.liveConfigured),
-      mode: medicalCapability ? medicalCapability.mode : resolveServiceMode('MEDICAL_API_MODE'),
+      mode: medicalCapability ? medicalCapability.mode : 'auto',
       effectiveMode:
         medicalCapability && medicalCapability.effectiveMode
           ? medicalCapability.effectiveMode
@@ -197,13 +188,16 @@ function buildIntegrationRows() {
     },
     {
       key: 'wechat_notify',
-      configured: hasEnv(['WX_ACCESS_TOKEN']) && hasEnv(['WX_MSG_TEMPLATE_ID']),
-      mode: productionLive ? 'live' : 'auto',
-      effectiveMode:
-        productionLive || String(process.env.WECHAT_NOTIFY_MOCK || '0').trim() !== '1'
-          ? 'live'
-          : 'stub',
-      fallbackAllowed: !productionLive,
+      configured: wechatCapability.liveConfigured,
+      mode: wechatCapability.requestedMode,
+      effectiveMode: wechatCapability.effectiveMode,
+      fallbackAllowed: wechatCapability.fallbackAllowed,
+      source: 'wechat_template_api',
+      missingConfig: wechatCapability.missingConfig,
+      notes:
+        wechatCapability.effectiveMode === 'live'
+          ? 'WeChat template notify currently uses the live platform API path.'
+          : 'WeChat template notify currently uses deterministic mock responses for sandbox replay.',
     },
   ].map((item) => ({
     ...item,
@@ -1159,5 +1153,6 @@ const adminOpsService = {
 };
 
 module.exports = adminOpsService;
+
 
 

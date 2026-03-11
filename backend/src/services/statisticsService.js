@@ -1,7 +1,38 @@
-﻿'use strict';
+'use strict';
 
 const statisticsModel = require('../models/statisticsModel');
 const communityAdminModel = require('../models/communityAdmin');
+
+const OVERVIEW_CARD_META = [
+  {
+    key: 'totalUsers',
+    label: '\u6d3b\u8dc3\u7528\u6237',
+    unit: '\u4eba',
+    color: '#01579b',
+    bg: '#e3f2fd',
+  },
+  {
+    key: 'healthRecordsToday',
+    label: '\u4eca\u65e5\u5065\u5eb7\u8bb0\u5f55',
+    unit: '\u6761',
+    color: '#2e7d32',
+    bg: '#e8f5e9',
+  },
+  {
+    key: 'pendingOrders',
+    label: '\u5f85\u5904\u7406\u5de5\u5355',
+    unit: '\u5355',
+    color: '#e65100',
+    bg: '#fff3e0',
+  },
+  {
+    key: 'activeSosEvents',
+    label: '\u8fdb\u884c\u4e2dSOS',
+    unit: '\u6761',
+    color: '#6a1b9a',
+    bg: '#f3e5f5',
+  },
+];
 
 function isTableMissingError(err) {
   return Boolean(
@@ -9,84 +40,29 @@ function isTableMissingError(err) {
   );
 }
 
+function buildOverviewCards(data = null) {
+  return OVERVIEW_CARD_META.map((item) => ({
+    label: item.label,
+    value: data ? String(data[item.key]) : '--',
+    unit: item.unit,
+    color: item.color,
+    bg: item.bg,
+    trend: '',
+  }));
+}
+
 const statisticsService = {
   async getOverview() {
     try {
       const data = await statisticsModel.getOverview();
       return {
-        stats: [
-          {
-            label: '活跃用户',
-            value: String(data.totalUsers),
-            unit: '人',
-            color: '#01579b',
-            bg: '#e3f2fd',
-            trend: '',
-          },
-          {
-            label: '今日健康记录',
-            value: String(data.healthRecordsToday),
-            unit: '条',
-            color: '#2e7d32',
-            bg: '#e8f5e9',
-            trend: '',
-          },
-          {
-            label: '待处理工单',
-            value: String(data.pendingOrders),
-            unit: '单',
-            color: '#e65100',
-            bg: '#fff3e0',
-            trend: '',
-          },
-          {
-            label: '进行中SOS',
-            value: String(data.activeSosEvents),
-            unit: '条',
-            color: '#6a1b9a',
-            bg: '#f3e5f5',
-            trend: '',
-          },
-        ],
+        stats: buildOverviewCards(data),
         recentActivities: [],
       };
     } catch (err) {
       if (isTableMissingError(err)) {
         return {
-          stats: [
-            {
-              label: '活跃用户',
-              value: '--',
-              unit: '人',
-              color: '#01579b',
-              bg: '#e3f2fd',
-              trend: '',
-            },
-            {
-              label: '今日健康记录',
-              value: '--',
-              unit: '条',
-              color: '#2e7d32',
-              bg: '#e8f5e9',
-              trend: '',
-            },
-            {
-              label: '待处理工单',
-              value: '--',
-              unit: '单',
-              color: '#e65100',
-              bg: '#fff3e0',
-              trend: '',
-            },
-            {
-              label: '进行中SOS',
-              value: '--',
-              unit: '条',
-              color: '#6a1b9a',
-              bg: '#f3e5f5',
-              trend: '',
-            },
-          ],
+          stats: buildOverviewCards(),
           recentActivities: [],
         };
       }
@@ -103,7 +79,7 @@ const statisticsService = {
         type: item.action || 'system',
         user: item.user_id ? String(item.user_id) : 'system',
         time: item.created_at,
-        status: '完成',
+        status: '\u5b8c\u6210',
       }));
     } catch (err) {
       if (isTableMissingError(err)) {

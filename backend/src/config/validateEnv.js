@@ -160,6 +160,15 @@ function validateMedicalConfig() {
   }
 }
 
+function validateWeChatConfig() {
+  const mode = resolveServiceMode('WECHAT_NOTIFY_MODE');
+  if (mode !== 'live' && !isProductionLive()) {
+    return;
+  }
+
+  requireEnv(['WX_ACCESS_TOKEN', 'WX_MSG_TEMPLATE_ID'], 'WeChat notify live mode requires environment variables');
+}
+
 function validateOssConfig() {
   const mode = resolveServiceMode('OSS_MODE');
   if (mode !== 'live' && !isProductionLive()) {
@@ -194,6 +203,7 @@ function validateEnv() {
   validateAiConfig();
   validateVoiceConfig();
   validateMedicalConfig();
+  validateWeChatConfig();
   validateOssConfig();
 
   return normalized;
@@ -202,3 +212,6 @@ function validateEnv() {
 module.exports = {
   validateEnv,
 };
+
+
+

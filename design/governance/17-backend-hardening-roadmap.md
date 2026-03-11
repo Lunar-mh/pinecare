@@ -4,16 +4,16 @@
 
 The following numbers are verified from the current repository state:
 
-- Backend test suites: 116 passed out of 116
-- Backend test cases: 457 passed out of 457
+- Backend test suites: 119 passed out of 119
+- Backend test cases: 470 passed out of 470
 - Contract test files: 10
 - Integration test files: 34
 - Performance test files: 15
 - Coverage summary from the latest full run:
-  - statements: 57.87%
-  - branches: 41.75%
-  - functions: 60.00%
-  - lines: 58.20%
+  - statements: 58.15%
+  - branches: 42.05%
+  - functions: 60.32%
+  - lines: 58.50%
 
 These numbers must be updated only after a fresh full test run.
 
@@ -32,6 +32,12 @@ Done in this change set:
 - Reworked time-bank, AI consult, AI companion, health archive, and fall-report performance tests so they measure successful in-process responses instead of external localhost state
 - Unified `/community`, `/admin`, `/admin/users`, and `/statistics` onto middleware-level `adminAuth` instead of controller-local admin checks
 - Moved legacy admin route authorization assertions into route-level regression coverage
+- Unified WeChat notify diagnostics and environment validation onto the shared runtime mode policy
+- Added regression coverage for WeChat live-mode env validation and system integration diagnostics fields
+- Centralized admin-side controller error mapping to reduce duplicated error envelopes
+- Replaced garbled statistics response labels with stable Unicode-safe literals
+- Extended shared controller error handling to community-admin and volunteer backends
+- Added route-level regression coverage for coded volunteer and community-admin business failures
 
 P0 still required:
 

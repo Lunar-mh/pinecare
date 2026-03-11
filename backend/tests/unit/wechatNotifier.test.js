@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/config/database', () => ({
   query: jest.fn(),
@@ -41,10 +41,10 @@ describe('wechatNotifier', () => {
 
     const result = await notifier.sendMedicationReminder({
       userId: 1,
-      medicationName: '阿司匹林',
-      dosage: '1片',
+      medicationName: 'Aspirin',
+      dosage: '1 tablet',
       scheduledTime: '2026-03-11T08:00:00.000Z',
-      remark: '饭后服用',
+      remark: 'take with water',
     });
 
     expect(result.mock).toBe(true);
@@ -62,8 +62,8 @@ describe('wechatNotifier', () => {
     await expect(
       notifier.sendMedicationReminder({
         userId: 1,
-        medicationName: '阿司匹林',
-        dosage: '1片',
+        medicationName: 'Aspirin',
+        dosage: '1 tablet',
         scheduledTime: '2026-03-11T08:00:00.000Z',
       })
     ).rejects.toMatchObject({
@@ -88,7 +88,7 @@ describe('wechatNotifier', () => {
 
     const result = await notifier.sendRefillReminder({
       userId: 1,
-      medicationName: '阿司匹林',
+      medicationName: 'Aspirin',
       remainingQuantity: 2,
       reminderThreshold: 5,
     });
@@ -114,7 +114,7 @@ describe('wechatNotifier', () => {
     await expect(
       notifier.sendFamilyMissedReminder({
         familyUserId: 1,
-        medicationName: '阿司匹林',
+        medicationName: 'Aspirin',
         scheduledTime: '2026-03-11T08:00:00.000Z',
       })
     ).rejects.toMatchObject({
@@ -135,13 +135,54 @@ describe('wechatNotifier', () => {
     await expect(
       notifier.sendMedicationReminder({
         userId: 1,
-        medicationName: '阿司匹林',
-        dosage: '1片',
+        medicationName: 'Aspirin',
+        dosage: '1 tablet',
         scheduledTime: '2026-03-11T08:00:00.000Z',
       })
     ).rejects.toMatchObject({
       code: 400,
       statusCode: 400,
+    });
+  });
+
+  it('reports capability via shared integration mode strategy', () => {
+    const notifier = loadNotifier({
+      WECHAT_NOTIFY_MODE: 'auto',
+      COMPETITION_SANDBOX: '1',
+      PRODUCTION_LIVE: '0',
+      WX_ACCESS_TOKEN: 'token-001',
+      WX_MSG_TEMPLATE_ID: 'template-001',
+    });
+
+    expect(notifier.getCapabilityReport()).toMatchObject({
+      requestedMode: 'auto',
+      effectiveMode: 'live',
+      liveConfigured: true,
+      fallbackAllowed: true,
+      missingConfig: [],
+    });
+  });
+
+  it('rejects stub mode in production live', async () => {
+    const notifier = loadNotifier({
+      WECHAT_NOTIFY_MODE: 'stub',
+      COMPETITION_SANDBOX: '0',
+      PRODUCTION_LIVE: '1',
+      WX_MSG_TEMPLATE_ID: 'template-001',
+      WX_ACCESS_TOKEN: 'token-001',
+    });
+
+    await expect(
+      notifier.sendMedicationReminder({
+        userId: 1,
+        medicationName: 'Aspirin',
+        dosage: '1 tablet',
+        scheduledTime: '2026-03-11T08:00:00.000Z',
+      })
+    ).rejects.toMatchObject({
+      code: 503,
+      statusCode: 503,
+      message: 'WeChat notify stub mode is disabled in PRODUCTION_LIVE mode.',
     });
   });
 });

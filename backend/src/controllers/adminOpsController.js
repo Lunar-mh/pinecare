@@ -1,16 +1,11 @@
 'use strict';
 
-const { ok, fail } = require('../utils/response');
+const { ok } = require('../utils/response');
+const { sendControllerError } = require('../utils/controllerError');
 const adminOpsService = require('../services/adminOpsService');
 
 function handleError(res, err) {
-  if (err && (err.code || err.statusCode)) {
-    const code = err.code || err.statusCode;
-    const status = err.statusCode || code;
-    return fail(res, code, err.message || 'Request failed.', null, status);
-  }
-
-  return fail(res, 500, 'Internal server error.', null, 500);
+  return sendControllerError(res, err);
 }
 
 const adminOpsController = {

@@ -146,6 +146,27 @@ describe('community admin order routes', () => {
     );
   });
 
+  test('returns coded business errors for community order assignment', async () => {
+    const app = buildApp();
+    const token = createToken();
+    const err = new Error('Volunteer does not belong to this community.');
+    err.code = 403;
+    err.statusCode = 403;
+    communityAdminService.assignOrder.mockRejectedValue(err);
+
+    const res = await request(app)
+      .patch('/community/orders/5/assign')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ volunteer_id: 3001, scheduled_at: '2026-03-11 10:00:00' });
+
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({
+      code: 403,
+      message: 'Volunteer does not belong to this community.',
+      data: null,
+    });
+  });
+
   test('updates order status through community console', async () => {
     const app = buildApp();
     const token = createToken();
