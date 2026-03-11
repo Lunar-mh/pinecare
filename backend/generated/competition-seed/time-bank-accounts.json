@@ -1,0 +1,402 @@
+[
+  {
+    "id": 17001,
+    "userId": 6001,
+    "balance": 5,
+    "totalEarned": 10,
+    "totalSpent": 0,
+    "creditScore": 80
+  },
+  {
+    "id": 17002,
+    "userId": 6002,
+    "balance": 6,
+    "totalEarned": 11,
+    "totalSpent": 1,
+    "creditScore": 81
+  },
+  {
+    "id": 17003,
+    "userId": 6003,
+    "balance": 7,
+    "totalEarned": 12,
+    "totalSpent": 2,
+    "creditScore": 82
+  },
+  {
+    "id": 17004,
+    "userId": 6004,
+    "balance": 8,
+    "totalEarned": 13,
+    "totalSpent": 3,
+    "creditScore": 83
+  },
+  {
+    "id": 17005,
+    "userId": 6005,
+    "balance": 9,
+    "totalEarned": 14,
+    "totalSpent": 0,
+    "creditScore": 84
+  },
+  {
+    "id": 17006,
+    "userId": 6006,
+    "balance": 10,
+    "totalEarned": 15,
+    "totalSpent": 1,
+    "creditScore": 85
+  },
+  {
+    "id": 17007,
+    "userId": 6007,
+    "balance": 11,
+    "totalEarned": 16,
+    "totalSpent": 2,
+    "creditScore": 86
+  },
+  {
+    "id": 17008,
+    "userId": 6008,
+    "balance": 12,
+    "totalEarned": 17,
+    "totalSpent": 3,
+    "creditScore": 87
+  },
+  {
+    "id": 17009,
+    "userId": 6009,
+    "balance": 5,
+    "totalEarned": 18,
+    "totalSpent": 0,
+    "creditScore": 88
+  },
+  {
+    "id": 17010,
+    "userId": 6010,
+    "balance": 6,
+    "totalEarned": 19,
+    "totalSpent": 1,
+    "creditScore": 89
+  },
+  {
+    "id": 17011,
+    "userId": 6011,
+    "balance": 7,
+    "totalEarned": 20,
+    "totalSpent": 2,
+    "creditScore": 90
+  },
+  {
+    "id": 17012,
+    "userId": 6012,
+    "balance": 8,
+    "totalEarned": 21,
+    "totalSpent": 3,
+    "creditScore": 91
+  },
+  {
+    "id": 17013,
+    "userId": 6013,
+    "balance": 9,
+    "totalEarned": 10,
+    "totalSpent": 0,
+    "creditScore": 92
+  },
+  {
+    "id": 17014,
+    "userId": 6014,
+    "balance": 10,
+    "totalEarned": 11,
+    "totalSpent": 1,
+    "creditScore": 93
+  },
+  {
+    "id": 17015,
+    "userId": 8001,
+    "balance": 11,
+    "totalEarned": 12,
+    "totalSpent": 2,
+    "creditScore": 94
+  },
+  {
+    "id": 17016,
+    "userId": 8002,
+    "balance": 12,
+    "totalEarned": 13,
+    "totalSpent": 3,
+    "creditScore": 80
+  },
+  {
+    "id": 17017,
+    "userId": 8003,
+    "balance": 5,
+    "totalEarned": 14,
+    "totalSpent": 0,
+    "creditScore": 81
+  },
+  {
+    "id": 17018,
+    "userId": 8004,
+    "balance": 6,
+    "totalEarned": 15,
+    "totalSpent": 1,
+    "creditScore": 82
+  },
+  {
+    "id": 17019,
+    "userId": 8005,
+    "balance": 7,
+    "totalEarned": 16,
+    "totalSpent": 2,
+    "creditScore": 83
+  },
+  {
+    "id": 17020,
+    "userId": 8006,
+    "balance": 8,
+    "totalEarned": 17,
+    "totalSpent": 3,
+    "creditScore": 84
+  },
+  {
+    "id": 17021,
+    "userId": 8007,
+    "balance": 9,
+    "totalEarned": 18,
+    "totalSpent": 0,
+    "creditScore": 85
+  },
+  {
+    "id": 17022,
+    "userId": 8008,
+    "balance": 10,
+    "totalEarned": 19,
+    "totalSpent": 1,
+    "creditScore": 86
+  },
+  {
+    "id": 17023,
+    "userId": 8009,
+    "balance": 11,
+    "totalEarned": 20,
+    "totalSpent": 2,
+    "creditScore": 87
+  },
+  {
+    "id": 17024,
+    "userId": 8010,
+    "balance": 12,
+    "totalEarned": 21,
+    "totalSpent": 3,
+    "creditScore": 88
+  },
+  {
+    "id": 17025,
+    "userId": 8011,
+    "balance": 5,
+    "totalEarned": 10,
+    "totalSpent": 0,
+    "creditScore": 89
+  },
+  {
+    "id": 17026,
+    "userId": 8012,
+    "balance": 6,
+    "totalEarned": 11,
+    "totalSpent": 1,
+    "creditScore": 90
+  },
+  {
+    "id": 17027,
+    "userId": 8013,
+    "balance": 7,
+    "totalEarned": 12,
+    "totalSpent": 2,
+    "creditScore": 91
+  },
+  {
+    "id": 17028,
+    "userId": 8014,
+    "balance": 8,
+    "totalEarned": 13,
+    "totalSpent": 3,
+    "creditScore": 92
+  },
+  {
+    "id": 17029,
+    "userId": 8015,
+    "balance": 9,
+    "totalEarned": 14,
+    "totalSpent": 0,
+    "creditScore": 93
+  },
+  {
+    "id": 17030,
+    "userId": 8016,
+    "balance": 10,
+    "totalEarned": 15,
+    "totalSpent": 1,
+    "creditScore": 94
+  },
+  {
+    "id": 17031,
+    "userId": 8017,
+    "balance": 11,
+    "totalEarned": 16,
+    "totalSpent": 2,
+    "creditScore": 80
+  },
+  {
+    "id": 17032,
+    "userId": 8018,
+    "balance": 12,
+    "totalEarned": 17,
+    "totalSpent": 3,
+    "creditScore": 81
+  },
+  {
+    "id": 17033,
+    "userId": 8019,
+    "balance": 5,
+    "totalEarned": 18,
+    "totalSpent": 0,
+    "creditScore": 82
+  },
+  {
+    "id": 17034,
+    "userId": 8020,
+    "balance": 6,
+    "totalEarned": 19,
+    "totalSpent": 1,
+    "creditScore": 83
+  },
+  {
+    "id": 17035,
+    "userId": 8021,
+    "balance": 7,
+    "totalEarned": 20,
+    "totalSpent": 2,
+    "creditScore": 84
+  },
+  {
+    "id": 17036,
+    "userId": 8022,
+    "balance": 8,
+    "totalEarned": 21,
+    "totalSpent": 3,
+    "creditScore": 85
+  },
+  {
+    "id": 17037,
+    "userId": 8023,
+    "balance": 9,
+    "totalEarned": 10,
+    "totalSpent": 0,
+    "creditScore": 86
+  },
+  {
+    "id": 17038,
+    "userId": 8024,
+    "balance": 10,
+    "totalEarned": 11,
+    "totalSpent": 1,
+    "creditScore": 87
+  },
+  {
+    "id": 17039,
+    "userId": 8025,
+    "balance": 11,
+    "totalEarned": 12,
+    "totalSpent": 2,
+    "creditScore": 88
+  },
+  {
+    "id": 17040,
+    "userId": 8026,
+    "balance": 12,
+    "totalEarned": 13,
+    "totalSpent": 3,
+    "creditScore": 89
+  },
+  {
+    "id": 17041,
+    "userId": 8027,
+    "balance": 5,
+    "totalEarned": 14,
+    "totalSpent": 0,
+    "creditScore": 90
+  },
+  {
+    "id": 17042,
+    "userId": 8028,
+    "balance": 6,
+    "totalEarned": 15,
+    "totalSpent": 1,
+    "creditScore": 91
+  },
+  {
+    "id": 17043,
+    "userId": 8029,
+    "balance": 7,
+    "totalEarned": 16,
+    "totalSpent": 2,
+    "creditScore": 92
+  },
+  {
+    "id": 17044,
+    "userId": 8030,
+    "balance": 8,
+    "totalEarned": 17,
+    "totalSpent": 3,
+    "creditScore": 93
+  },
+  {
+    "id": 17045,
+    "userId": 8031,
+    "balance": 9,
+    "totalEarned": 18,
+    "totalSpent": 0,
+    "creditScore": 94
+  },
+  {
+    "id": 17046,
+    "userId": 8032,
+    "balance": 10,
+    "totalEarned": 19,
+    "totalSpent": 1,
+    "creditScore": 80
+  },
+  {
+    "id": 17047,
+    "userId": 8033,
+    "balance": 11,
+    "totalEarned": 20,
+    "totalSpent": 2,
+    "creditScore": 81
+  },
+  {
+    "id": 17048,
+    "userId": 8034,
+    "balance": 12,
+    "totalEarned": 21,
+    "totalSpent": 3,
+    "creditScore": 82
+  },
+  {
+    "id": 17049,
+    "userId": 8035,
+    "balance": 5,
+    "totalEarned": 10,
+    "totalSpent": 0,
+    "creditScore": 83
+  },
+  {
+    "id": 17050,
+    "userId": 8036,
+    "balance": 6,
+    "totalEarned": 11,
+    "totalSpent": 1,
+    "creditScore": 84
+  }
+]

@@ -37,9 +37,11 @@ function inferCapability(service, source, mode) {
 }
 
 function createMedicalMeta(service, operation, options = {}) {
-  const source = options.source || (service && typeof service.getSourceTag === 'function'
-    ? service.getSourceTag()
-    : 'third_party_stub');
+  const source =
+    options.source ||
+    (service && typeof service.getSourceTag === 'function'
+      ? service.getSourceTag()
+      : 'third_party_stub');
   const mode = options.mode || inferMode(service, source);
   const fallbackUsed = Boolean(options.fallbackUsed);
   const diagnosticId = `${String(operation || 'medical').replace(/[^a-zA-Z0-9]+/g, '_')}_${Date.now()}_${Math.random()

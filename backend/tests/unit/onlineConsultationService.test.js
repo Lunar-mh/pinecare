@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/models/onlineConsultationModel', () => ({
   create: jest.fn(),
@@ -46,7 +46,9 @@ describe('onlineConsultationService', () => {
       doctorId: 3,
       department: 'Cardiology',
     });
-    expect(result).toEqual({
+    expect(result).toMatchObject({
+      source: 'third_party_live',
+      fallbackUsed: false,
       consultation: {
         id: 1,
         userId: 9,
@@ -54,16 +56,16 @@ describe('onlineConsultationService', () => {
         department: 'Cardiology',
         consultStatus: 'active',
       },
-      source: 'third_party_live',
     });
   });
 
   it('validates doctorId and department on start', async () => {
-    await expect(onlineConsultationService.start(9, { doctorId: 'bad', department: '' })).rejects
-      .toMatchObject({
-        code: 422,
-        statusCode: 422,
-      });
+    await expect(
+      onlineConsultationService.start(9, { doctorId: 'bad', department: '' })
+    ).rejects.toMatchObject({
+      code: 422,
+      statusCode: 422,
+    });
   });
 
   it('rejects status update when record does not belong to user', async () => {
@@ -73,12 +75,10 @@ describe('onlineConsultationService', () => {
       consultStatus: 'active',
     });
 
-    await expect(onlineConsultationService.updateStatus(9, 1, 'completed')).rejects.toMatchObject(
-      {
-        code: 404,
-        statusCode: 404,
-      }
-    );
+    await expect(onlineConsultationService.updateStatus(9, 1, 'completed')).rejects.toMatchObject({
+      code: 404,
+      statusCode: 404,
+    });
   });
 
   it('rejects invalid consultation status transition', async () => {
@@ -117,7 +117,10 @@ describe('onlineConsultationService', () => {
         endedAt: expect.any(Date),
       })
     );
-    expect(result.consultStatus).toBe('completed');
+    expect(result).toMatchObject({
+      source: 'local',
+      consultation: { consultStatus: 'completed' },
+    });
   });
 
   it('throws 500 when status update write fails', async () => {
@@ -128,20 +131,22 @@ describe('onlineConsultationService', () => {
     });
     onlineConsultationModel.updateStatus.mockResolvedValue(false);
 
-    await expect(onlineConsultationService.updateStatus(9, 1, 'completed')).rejects.toMatchObject(
-      {
-        code: 500,
-        statusCode: 500,
-      }
-    );
+    await expect(onlineConsultationService.updateStatus(9, 1, 'completed')).rejects.toMatchObject({
+      code: 500,
+      statusCode: 500,
+    });
   });
 
-  it('lists consultation records for a user with default limit fallback', async () => {
+  it('lists consultation records for a user with local diagnostics envelope', async () => {
     onlineConsultationModel.listByUserId.mockResolvedValue([{ id: 1 }, { id: 2 }]);
 
     const result = await onlineConsultationService.listByUser(9, 'not-a-number');
 
     expect(onlineConsultationModel.listByUserId).toHaveBeenCalledWith(9, 20);
-    expect(result).toHaveLength(2);
+    expect(result).toMatchObject({
+      source: 'local',
+      fallbackUsed: false,
+      list: [{ id: 1 }, { id: 2 }],
+    });
   });
 });

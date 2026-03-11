@@ -30,7 +30,7 @@ const hospitals = [
     name: 'The First Affiliated Hospital of Sun Yat-sen University',
     level: '3A',
     city: 'Guangzhou',
-  }
+  },
 ];
 
 const departments = [
@@ -39,7 +39,7 @@ const departments = [
   { id: 32010003, hospitalId: 31000002, name: 'Neurology' },
   { id: 32010004, hospitalId: 31000003, name: 'Geriatrics' },
   { id: 32010005, hospitalId: 31000004, name: 'Rehabilitation Medicine' },
-  { id: 32010006, hospitalId: 31000005, name: 'General Practice' }
+  { id: 32010006, hospitalId: 31000005, name: 'General Practice' },
 ];
 
 const doctors = [
@@ -49,7 +49,7 @@ const doctors = [
     departmentId: 32010001,
     name: 'Dr. Lin Wei',
     title: 'Chief Physician',
-    specialty: 'Coronary heart disease and chronic heart failure'
+    specialty: 'Coronary heart disease and chronic heart failure',
   },
   {
     id: 33010002,
@@ -57,7 +57,7 @@ const doctors = [
     departmentId: 32010002,
     name: 'Dr. Xu Min',
     title: 'Associate Chief Physician',
-    specialty: 'Diabetes and metabolic syndrome management'
+    specialty: 'Diabetes and metabolic syndrome management',
   },
   {
     id: 33010003,
@@ -65,7 +65,7 @@ const doctors = [
     departmentId: 32010003,
     name: 'Dr. Zhang Qian',
     title: 'Chief Physician',
-    specialty: 'Stroke rehabilitation and cognitive disorders'
+    specialty: 'Stroke rehabilitation and cognitive disorders',
   },
   {
     id: 33010004,
@@ -73,7 +73,7 @@ const doctors = [
     departmentId: 32010004,
     name: 'Dr. Chen Rong',
     title: 'Attending Physician',
-    specialty: 'Geriatric chronic disease follow-up'
+    specialty: 'Geriatric chronic disease follow-up',
   },
   {
     id: 33010005,
@@ -81,7 +81,7 @@ const doctors = [
     departmentId: 32010005,
     name: 'Dr. Wu Jia',
     title: 'Associate Chief Physician',
-    specialty: 'Post-fall rehabilitation and mobility recovery'
+    specialty: 'Post-fall rehabilitation and mobility recovery',
   },
   {
     id: 33010006,
@@ -89,8 +89,8 @@ const doctors = [
     departmentId: 32010006,
     name: 'Dr. Liu Yan',
     title: 'Chief Physician',
-    specialty: 'Community family medicine and elderly care'
-  }
+    specialty: 'Community family medicine and elderly care',
+  },
 ];
 
 function getHospitals() {
@@ -118,5 +118,5 @@ module.exports = {
   getHospitals,
   getDepartments,
   getDoctors,
-  getDoctorById
+  getDoctorById,
 };

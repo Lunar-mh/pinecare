@@ -159,9 +159,10 @@ const appointmentService = {
           appointment: saved,
         },
         {
-          source: typeof medicalApiService.getSourceTag === 'function'
-            ? medicalApiService.getSourceTag()
-            : 'third_party_stub',
+          source:
+            typeof medicalApiService.getSourceTag === 'function'
+              ? medicalApiService.getSourceTag()
+              : 'third_party_stub',
           reason: 'appointment_created',
         }
       );
@@ -196,11 +197,10 @@ const appointmentService = {
       pageSize,
     });
 
-    return withMeta(
-      'medical.appointment.list',
-      result,
-      { source: 'local', reason: 'appointment_local_list' }
-    );
+    return withMeta('medical.appointment.list', result, {
+      source: 'local',
+      reason: 'appointment_local_list',
+    });
   },
 
   async cancel(userId, appointmentId) {
@@ -244,9 +244,10 @@ const appointmentService = {
         appointment: latest,
       },
       {
-        source: typeof medicalApiService.getSourceTag === 'function'
-          ? medicalApiService.getSourceTag()
-          : 'third_party_stub',
+        source:
+          typeof medicalApiService.getSourceTag === 'function'
+            ? medicalApiService.getSourceTag()
+            : 'third_party_stub',
         reason: 'appointment_cancelled',
       }
     );

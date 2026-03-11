@@ -43,7 +43,11 @@ function validateStatusTransition(fromStatus, toStatus) {
 
   const allowed = transitions[fromStatus] || [];
   if (!allowed.includes(toStatus)) {
-    throw createBizError(409, `Invalid consult status transition: ${fromStatus} -> ${toStatus}.`, 409);
+    throw createBizError(
+      409,
+      `Invalid consult status transition: ${fromStatus} -> ${toStatus}.`,
+      409
+    );
   }
 }
 
@@ -80,9 +84,10 @@ const onlineConsultationService = {
       'medical.consult.start',
       { consultation: saved },
       {
-        source: typeof medicalApiService.getSourceTag === 'function'
-          ? medicalApiService.getSourceTag()
-          : 'third_party_stub',
+        source:
+          typeof medicalApiService.getSourceTag === 'function'
+            ? medicalApiService.getSourceTag()
+            : 'third_party_stub',
         reason: 'consult_session_started',
       }
     );

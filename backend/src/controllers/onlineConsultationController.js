@@ -11,7 +11,7 @@ function handleError(res, err) {
         ? err.statusCode
         : 500;
   const status = typeof err.statusCode === 'number' ? err.statusCode : code;
-  const message = err.message || '在线问诊处理失败';
+  const message = err.message || 'Online consultation request failed.';
   return fail(res, code, message, null, status);
 }
 
@@ -22,7 +22,30 @@ async function start(req, res) {
       department: req.body.department,
     });
 
-    return ok(res, data, '在线问诊创建成功');
+    return ok(res, data, 'created');
+  } catch (err) {
+    return handleError(res, err);
+  }
+}
+
+async function list(req, res) {
+  try {
+    const data = await onlineConsultationService.listByUser(req.user.userId, req.query.limit);
+    return ok(res, data, 'ok');
+  } catch (err) {
+    return handleError(res, err);
+  }
+}
+
+async function updateStatus(req, res) {
+  try {
+    const data = await onlineConsultationService.updateStatus(
+      req.user.userId,
+      req.params.consultationId,
+      req.body.consultStatus
+    );
+
+    return ok(res, data, 'ok');
   } catch (err) {
     return handleError(res, err);
   }
@@ -30,4 +53,6 @@ async function start(req, res) {
 
 module.exports = {
   start,
+  list,
+  updateStatus,
 };

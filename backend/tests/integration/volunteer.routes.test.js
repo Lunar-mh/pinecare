@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const express = require('express');
 const request = require('supertest');
@@ -118,5 +118,40 @@ describe('volunteer routes', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data.name).toBe('Alice');
+  });
+
+  test('returns settlement payload when volunteer completes a task', async () => {
+    const app = buildApp();
+    const token = createToken();
+
+    volunteerService.completeTask.mockResolvedValue({
+      task_id: 9,
+      status: 'completed',
+      completed_at: '2026-03-11 10:30:00',
+      settlement: {
+        serviceRecord: {
+          recordId: 501,
+          status: 'confirmed',
+          timeCoins: 2,
+        },
+        account: {
+          balance: 18,
+          totalEarned: 20,
+        },
+      },
+    });
+
+    const res = await request(app)
+      .post('/volunteer/tasks/9/complete')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.code).toBe(0);
+    expect(res.body.data.settlement.serviceRecord.recordId).toBe(501);
+    expect(res.body.data.settlement.account.balance).toBe(18);
+    expect(volunteerService.completeTask).toHaveBeenCalledWith(
+      { userId: 2001, communityId: 66, role: 'volunteer' },
+      '9'
+    );
   });
 });

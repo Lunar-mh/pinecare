@@ -1,0 +1,74 @@
+[
+  {
+    "id": 18001,
+    "userId": 6001,
+    "exchangeType": "service",
+    "itemName": "Home Visit Voucher",
+    "coinsRequired": 2,
+    "status": "completed"
+  },
+  {
+    "id": 18002,
+    "userId": 6002,
+    "exchangeType": "gift",
+    "itemName": "Health Kit",
+    "coinsRequired": 3,
+    "status": "completed"
+  },
+  {
+    "id": 18003,
+    "userId": 6003,
+    "exchangeType": "service",
+    "itemName": "Home Visit Voucher",
+    "coinsRequired": 4,
+    "status": "completed"
+  },
+  {
+    "id": 18004,
+    "userId": 6004,
+    "exchangeType": "gift",
+    "itemName": "Health Kit",
+    "coinsRequired": 2,
+    "status": "completed"
+  },
+  {
+    "id": 18005,
+    "userId": 6005,
+    "exchangeType": "service",
+    "itemName": "Home Visit Voucher",
+    "coinsRequired": 3,
+    "status": "completed"
+  },
+  {
+    "id": 18006,
+    "userId": 6006,
+    "exchangeType": "gift",
+    "itemName": "Health Kit",
+    "coinsRequired": 4,
+    "status": "completed"
+  },
+  {
+    "id": 18007,
+    "userId": 6007,
+    "exchangeType": "service",
+    "itemName": "Home Visit Voucher",
+    "coinsRequired": 2,
+    "status": "completed"
+  },
+  {
+    "id": 18008,
+    "userId": 6008,
+    "exchangeType": "gift",
+    "itemName": "Health Kit",
+    "coinsRequired": 3,
+    "status": "completed"
+  },
+  {
+    "id": 18009,
+    "userId": 6009,
+    "exchangeType": "service",
+    "itemName": "Home Visit Voucher",
+    "coinsRequired": 4,
+    "status": "completed"
+  }
+]

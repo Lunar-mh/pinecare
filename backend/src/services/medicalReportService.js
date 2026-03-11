@@ -125,9 +125,10 @@ const medicalReportService = {
       const payload = includePagination ? paginate(synced, page, pageSize) : { list: synced };
 
       return withMeta('medical.reports.list', payload, {
-        source: typeof medicalApiService.getSourceTag === 'function'
-          ? medicalApiService.getSourceTag()
-          : 'third_party_stub',
+        source:
+          typeof medicalApiService.getSourceTag === 'function'
+            ? medicalApiService.getSourceTag()
+            : 'third_party_stub',
         reason: 'report_sync_complete',
       });
     } catch (error) {
@@ -156,7 +157,8 @@ const medicalReportService = {
           source: 'competition_dataset_sample',
           fallbackUsed: true,
           reason: 'sample_report_fallback',
-          detail: 'Using curated competition report samples because upstream medical sync is unavailable.',
+          detail:
+            'Using curated competition report samples because upstream medical sync is unavailable.',
         });
       }
 

@@ -1,0 +1,792 @@
+[
+  {
+    "id": 10001,
+    "userId": 7001,
+    "communityId": 101,
+    "medicationName": "Metformin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10002,
+    "userId": 7001,
+    "communityId": 101,
+    "medicationName": "Amlodipine",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10003,
+    "userId": 7002,
+    "communityId": 101,
+    "medicationName": "Atorvastatin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10004,
+    "userId": 7002,
+    "communityId": 101,
+    "medicationName": "Bisoprolol",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10005,
+    "userId": 7003,
+    "communityId": 101,
+    "medicationName": "Aspirin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10006,
+    "userId": 7003,
+    "communityId": 101,
+    "medicationName": "Metformin",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10007,
+    "userId": 7004,
+    "communityId": 101,
+    "medicationName": "Amlodipine",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10008,
+    "userId": 7004,
+    "communityId": 101,
+    "medicationName": "Atorvastatin",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10009,
+    "userId": 7005,
+    "communityId": 101,
+    "medicationName": "Bisoprolol",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10010,
+    "userId": 7005,
+    "communityId": 101,
+    "medicationName": "Aspirin",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10011,
+    "userId": 7006,
+    "communityId": 101,
+    "medicationName": "Metformin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10012,
+    "userId": 7006,
+    "communityId": 101,
+    "medicationName": "Amlodipine",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10013,
+    "userId": 7007,
+    "communityId": 101,
+    "medicationName": "Atorvastatin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10014,
+    "userId": 7007,
+    "communityId": 101,
+    "medicationName": "Bisoprolol",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10015,
+    "userId": 7008,
+    "communityId": 101,
+    "medicationName": "Aspirin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10016,
+    "userId": 7008,
+    "communityId": 101,
+    "medicationName": "Metformin",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10017,
+    "userId": 7009,
+    "communityId": 101,
+    "medicationName": "Amlodipine",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10018,
+    "userId": 7009,
+    "communityId": 101,
+    "medicationName": "Atorvastatin",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10019,
+    "userId": 7010,
+    "communityId": 101,
+    "medicationName": "Bisoprolol",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10020,
+    "userId": 7010,
+    "communityId": 101,
+    "medicationName": "Aspirin",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10021,
+    "userId": 7011,
+    "communityId": 101,
+    "medicationName": "Metformin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10022,
+    "userId": 7011,
+    "communityId": 101,
+    "medicationName": "Amlodipine",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10023,
+    "userId": 7012,
+    "communityId": 101,
+    "medicationName": "Atorvastatin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10024,
+    "userId": 7012,
+    "communityId": 101,
+    "medicationName": "Bisoprolol",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10025,
+    "userId": 7013,
+    "communityId": 101,
+    "medicationName": "Aspirin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10026,
+    "userId": 7013,
+    "communityId": 101,
+    "medicationName": "Metformin",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10027,
+    "userId": 7014,
+    "communityId": 101,
+    "medicationName": "Amlodipine",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10028,
+    "userId": 7014,
+    "communityId": 101,
+    "medicationName": "Atorvastatin",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10029,
+    "userId": 7015,
+    "communityId": 102,
+    "medicationName": "Bisoprolol",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10030,
+    "userId": 7015,
+    "communityId": 102,
+    "medicationName": "Aspirin",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10031,
+    "userId": 7016,
+    "communityId": 102,
+    "medicationName": "Metformin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10032,
+    "userId": 7016,
+    "communityId": 102,
+    "medicationName": "Amlodipine",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10033,
+    "userId": 7017,
+    "communityId": 102,
+    "medicationName": "Atorvastatin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10034,
+    "userId": 7017,
+    "communityId": 102,
+    "medicationName": "Bisoprolol",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10035,
+    "userId": 7018,
+    "communityId": 102,
+    "medicationName": "Aspirin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10036,
+    "userId": 7018,
+    "communityId": 102,
+    "medicationName": "Metformin",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10037,
+    "userId": 7019,
+    "communityId": 102,
+    "medicationName": "Amlodipine",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10038,
+    "userId": 7019,
+    "communityId": 102,
+    "medicationName": "Atorvastatin",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10039,
+    "userId": 7020,
+    "communityId": 102,
+    "medicationName": "Bisoprolol",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10040,
+    "userId": 7020,
+    "communityId": 102,
+    "medicationName": "Aspirin",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10041,
+    "userId": 7021,
+    "communityId": 102,
+    "medicationName": "Metformin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10042,
+    "userId": 7021,
+    "communityId": 102,
+    "medicationName": "Amlodipine",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10043,
+    "userId": 7022,
+    "communityId": 102,
+    "medicationName": "Atorvastatin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10044,
+    "userId": 7022,
+    "communityId": 102,
+    "medicationName": "Bisoprolol",
+    "dosage": "2 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "09:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10045,
+    "userId": 7023,
+    "communityId": 102,
+    "medicationName": "Aspirin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10046,
+    "userId": 7024,
+    "communityId": 102,
+    "medicationName": "Metformin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10047,
+    "userId": 7025,
+    "communityId": 102,
+    "medicationName": "Amlodipine",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10048,
+    "userId": 7026,
+    "communityId": 102,
+    "medicationName": "Atorvastatin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10049,
+    "userId": 7027,
+    "communityId": 103,
+    "medicationName": "Bisoprolol",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10050,
+    "userId": 7028,
+    "communityId": 103,
+    "medicationName": "Aspirin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10051,
+    "userId": 7029,
+    "communityId": 103,
+    "medicationName": "Metformin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10052,
+    "userId": 7030,
+    "communityId": 103,
+    "medicationName": "Amlodipine",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10053,
+    "userId": 7031,
+    "communityId": 103,
+    "medicationName": "Atorvastatin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10054,
+    "userId": 7032,
+    "communityId": 103,
+    "medicationName": "Bisoprolol",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10055,
+    "userId": 7033,
+    "communityId": 103,
+    "medicationName": "Aspirin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10056,
+    "userId": 7034,
+    "communityId": 103,
+    "medicationName": "Metformin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10057,
+    "userId": 7035,
+    "communityId": 103,
+    "medicationName": "Amlodipine",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  },
+  {
+    "id": 10058,
+    "userId": 7036,
+    "communityId": 103,
+    "medicationName": "Atorvastatin",
+    "dosage": "1 tablet",
+    "frequency": "daily",
+    "reminderTimes": [
+      "08:00",
+      "20:00"
+    ],
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-30"
+  }
+]

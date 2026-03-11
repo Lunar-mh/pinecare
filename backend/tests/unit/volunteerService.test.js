@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/models/volunteerModel', () => ({
   listTasksByVolunteer: jest.fn(),
@@ -11,14 +11,21 @@ jest.mock('../../src/models/volunteerModel', () => ({
   acceptTask: jest.fn(),
   updateOwnedTaskStatus: jest.fn(),
   upsertAttendance: jest.fn(),
+  getAttendanceByOrderId: jest.fn(),
 }));
 
 jest.mock('../../src/models/auditLog', () => ({
   create: jest.fn(),
 }));
 
+jest.mock('../../src/services/timeBankService', () => ({
+  recordService: jest.fn(),
+  confirmService: jest.fn(),
+}));
+
 const volunteerModel = require('../../src/models/volunteerModel');
 const AuditLogModel = require('../../src/models/auditLog');
+const timeBankService = require('../../src/services/timeBankService');
 const volunteerService = require('../../src/services/volunteerService');
 
 describe('volunteerService', () => {
@@ -112,14 +119,34 @@ describe('volunteerService', () => {
     expect(result.status).toBe('processing');
   });
 
-  it('completes owned task and closes attendance', async () => {
+  it('completes owned task, settles time bank, and returns settlement payload', async () => {
     volunteerModel.findTaskByIdForVolunteer.mockResolvedValue({
       id: 15,
       volunteer_id: 88,
+      elder_id: 201,
+      service_type: 'escort',
+      scheduled_at: '2026-03-11 09:00:00',
       status: 'processing',
     });
     volunteerModel.updateOwnedTaskStatus.mockResolvedValue({ affectedRows: 1 });
     volunteerModel.upsertAttendance.mockResolvedValue({ affectedRows: 1 });
+    volunteerModel.getAttendanceByOrderId.mockResolvedValue({
+      order_id: 15,
+      check_in_at: '2026-03-11 09:15:00',
+      check_out_at: '2026-03-11 10:10:00',
+    });
+    timeBankService.recordService.mockResolvedValue({
+      recordId: 701,
+      recordHash: 'hash-701',
+      prevHash: 'hash-700',
+      status: 'pending',
+      timeCoins: 2,
+    });
+    timeBankService.confirmService.mockResolvedValue({
+      recordId: 701,
+      status: 'confirmed',
+      account: { balance: 18, totalEarned: 20 },
+    });
     AuditLogModel.create.mockResolvedValue(1);
 
     const result = await volunteerService.completeTask(scope, 15);
@@ -132,8 +159,33 @@ describe('volunteerService', () => {
         completedAt: expect.any(String),
       })
     );
-    expect(result.status).toBe('completed');
-    expect(result.completed_at).toEqual(expect.any(String));
+    expect(timeBankService.recordService).toHaveBeenCalledWith(
+      88,
+      expect.objectContaining({
+        recipientId: 201,
+        type: 'escort',
+        communityId: 9,
+        startTime: expect.any(String),
+        endTime: expect.any(String),
+      })
+    );
+    expect(timeBankService.confirmService).toHaveBeenCalledWith(88, {
+      recordId: 701,
+      action: 'confirm',
+      communityId: 9,
+    });
+    expect(result).toMatchObject({
+      task_id: 15,
+      status: 'completed',
+      settlement: {
+        serviceRecord: {
+          recordId: 701,
+          status: 'confirmed',
+          timeCoins: 2,
+        },
+        account: { balance: 18, totalEarned: 20 },
+      },
+    });
   });
 
   it('returns volunteer training records', async () => {

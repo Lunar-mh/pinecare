@@ -12,6 +12,7 @@ jest.mock('../../src/models/appointmentModel', () => ({
 jest.mock('../../src/services/medicalApiService', () => ({
   createAppointment: jest.fn(),
   cancelAppointment: jest.fn(),
+  getSourceTag: jest.fn(() => 'third_party_live'),
 }));
 
 const appointmentModel = require('../../src/models/appointmentModel');
@@ -54,8 +55,12 @@ describe('appointmentService', () => {
       timeSlot: '09:00-09:30',
       requestId: 'req-001',
     });
-    expect(result.duplicate).toBe(false);
-    expect(result.idempotencyKey).toBe('req-001');
+    expect(result).toMatchObject({
+      duplicate: false,
+      idempotencyKey: 'req-001',
+      source: 'third_party_live',
+      fallbackUsed: false,
+    });
   });
 
   it('falls back to hashed idempotencyKey when no request key provided', async () => {
@@ -89,12 +94,35 @@ describe('appointmentService', () => {
       idempotencyKey: 'req-dup',
     });
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       duplicate: true,
       idempotencyKey: 'req-dup',
+      source: 'local',
       appointment: { id: 9, appointStatus: 'confirmed' },
     });
     expect(medicalApiService.createAppointment).not.toHaveBeenCalled();
+  });
+
+  it('lists appointments with local diagnostics envelope', async () => {
+    appointmentModel.listByUserId.mockResolvedValue({
+      list: [{ id: 12, appointStatus: 'confirmed' }],
+      total: 1,
+      page: 1,
+      pageSize: 10,
+    });
+
+    const result = await appointmentService.listByUser(1, {
+      status: 'confirmed',
+      page: 1,
+      pageSize: 10,
+    });
+
+    expect(result).toMatchObject({
+      source: 'local',
+      fallbackUsed: false,
+      list: [{ id: 12, appointStatus: 'confirmed' }],
+      total: 1,
+    });
   });
 
   it('cancel returns idempotent result when appointment already cancelled', async () => {
@@ -102,8 +130,9 @@ describe('appointmentService', () => {
 
     const result = await appointmentService.cancel(1, 11);
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       idempotent: true,
+      source: 'local',
       appointment: { id: 11, appointStatus: 'cancelled' },
     });
     expect(medicalApiService.cancelAppointment).not.toHaveBeenCalled();
@@ -128,8 +157,9 @@ describe('appointmentService', () => {
       requestId: 'cancel-12',
     });
     expect(appointmentModel.updateStatus).toHaveBeenCalledWith(12, 'cancelled');
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       idempotent: false,
+      source: 'third_party_live',
       appointment: { id: 12, appointStatus: 'cancelled', thirdPartyAppointId: 'tp-12' },
     });
   });

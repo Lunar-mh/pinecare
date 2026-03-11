@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/services/medicalApiService', () => ({
   fetchMedicalReports: jest.fn(),
@@ -45,8 +45,9 @@ describe('medicalReportService', () => {
       endDate: null,
     });
     expect(medicalReportModel.batchUpsert).toHaveBeenCalledWith(1001, [{ reportNo: 'R-1' }]);
-    expect(data).toEqual({
+    expect(data).toMatchObject({
       source: 'third_party_live',
+      fallbackUsed: false,
       list: [{ reportNo: 'R-1' }],
     });
   });
@@ -58,34 +59,25 @@ describe('medicalReportService', () => {
 
     const data = await medicalReportService.list(1001, {});
 
-    expect(data).toEqual({
+    expect(data).toMatchObject({
       source: 'cache',
+      fallbackUsed: true,
       list: local,
     });
     expect(logThirdPartyError).toHaveBeenCalled();
   });
 
-  it('rethrows coded upstream errors when no cache exists', async () => {
-    medicalReportModel.listByUserId.mockResolvedValue([]);
-    const upstream = new Error('timeout');
-    upstream.code = 504;
-    upstream.statusCode = 504;
-    medicalApiService.fetchMedicalReports.mockRejectedValue(upstream);
-
-    await expect(medicalReportService.list(1001, {})).rejects.toMatchObject({
-      code: 504,
-      statusCode: 504,
-    });
-  });
-
-  it('wraps unknown errors as 503 when no cache exists', async () => {
+  it('falls back to curated competition samples when no cache exists', async () => {
     medicalReportModel.listByUserId.mockResolvedValue([]);
     medicalApiService.fetchMedicalReports.mockRejectedValue(new Error('network down'));
 
-    await expect(medicalReportService.list(1001, {})).rejects.toMatchObject({
-      code: 503,
-      statusCode: 503,
+    const data = await medicalReportService.list(1001, { reportType: 'Lab' });
+
+    expect(data).toMatchObject({
+      source: 'competition_dataset_sample',
+      fallbackUsed: true,
     });
+    expect(data.list.length).toBeGreaterThan(0);
   });
 
   it('validates filter date format', async () => {

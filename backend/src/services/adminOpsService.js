@@ -6,6 +6,7 @@ const timeBankModel = require('../models/timeBank');
 const medicalApiService = require('./medicalApiService');
 const ossService = require('./ossService');
 const { DEMO_SCENARIOS, getDemoScenarioById } = require('../config/demoScenarios');
+const { COMPETITION_SEED_MANIFEST } = require('../data/competitionSeedManifest');
 const { resolveMode, isProductionLive } = require('../config/runtimeMode');
 const { getRecentThirdPartyErrors } = require('../utils/thirdParty');
 
@@ -139,20 +140,30 @@ function buildIntegrationRows() {
       effectiveMode: ossService.isLiveMode() ? 'live' : 'stub',
       fallbackAllowed: !productionLive,
     },
-    {
-      key: 'medical',
-      configured: hasEnv(['MEDICAL_API_BASE_URL', 'MEDICAL_API_KEY']),
-      mode: resolveServiceMode('MEDICAL_API_MODE'),
-      effectiveMode: medicalSource === 'third_party_live' ? 'live' : 'stub',
-      fallbackAllowed:
-        !productionLive &&
-        String(process.env.MEDICAL_API_ALLOW_STUB_FALLBACK || 'false').toLowerCase() === 'true',
-      source: medicalSource,
-      notes:
-        medicalSource === 'third_party_live'
-          ? 'Medical requests currently use the live upstream integration path.'
-          : 'Medical requests currently use deterministic stub data for competition replay.',
-    },
+    (() => {
+      const capability =
+        typeof medicalApiService.getCapabilityReport === 'function'
+          ? medicalApiService.getCapabilityReport()
+          : null;
+
+      return {
+        key: 'medical',
+        configured: hasEnv(['MEDICAL_API_BASE_URL', 'MEDICAL_API_KEY']),
+        mode: resolveServiceMode('MEDICAL_API_MODE'),
+        effectiveMode: medicalSource === 'third_party_live' ? 'live' : 'stub',
+        fallbackAllowed:
+          !productionLive &&
+          String(process.env.MEDICAL_API_ALLOW_STUB_FALLBACK || 'false').toLowerCase() === 'true',
+        source: medicalSource,
+        missingConfig:
+          capability && Array.isArray(capability.missingConfig) ? capability.missingConfig : [],
+        circuitOpen: Boolean(capability && capability.circuitOpen),
+        notes:
+          medicalSource === 'third_party_live'
+            ? 'Medical requests currently use the live upstream integration path.'
+            : 'Medical requests currently use curated dataset fallback or deterministic stub data for competition replay.',
+      };
+    })(),
     {
       key: 'wechat_notify',
       configured: hasEnv(['WX_ACCESS_TOKEN']) && hasEnv(['WX_MSG_TEMPLATE_ID']),
@@ -1040,6 +1051,7 @@ const adminOpsService = {
     return {
       runtimeMode: resolveMode(),
       generatedAt: new Date().toISOString(),
+      seedManifest: COMPETITION_SEED_MANIFEST,
       scenarios: DEMO_SCENARIOS.map((scenario, index) => ({
         ...scenario,
         order: index + 1,
@@ -1090,6 +1102,8 @@ const adminOpsService = {
       status: 'ready',
       bootstrap: scenario.bootstrap,
       preparedData: scenario.bootstrap,
+      seedManifest: COMPETITION_SEED_MANIFEST,
+      baselineCoverage: COMPETITION_SEED_MANIFEST.coverage,
       modules: scenario.modules,
       apiSequence: scenario.apiSequence,
       checklist: scenario.checklist,

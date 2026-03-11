@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const request = require('supertest');
 const express = require('express');
@@ -17,6 +17,8 @@ jest.mock('../../src/services/medicalDirectoryService', () => ({
 
 jest.mock('../../src/services/onlineConsultationService', () => ({
   start: jest.fn(),
+  listByUser: jest.fn(),
+  updateStatus: jest.fn(),
 }));
 
 jest.mock('../../src/services/appointmentService', () => ({
@@ -42,50 +44,83 @@ function createApp() {
   return app;
 }
 
+function createMedicalMeta(source) {
+  return {
+    source,
+    mode: source === 'third_party_live' ? 'live' : 'stub',
+    fallbackUsed: source !== 'third_party_live',
+    diagnosticId: 'diag_001',
+    diagnostics: {
+      operation: 'medical.contract',
+      source,
+      mode: source === 'third_party_live' ? 'live' : 'stub',
+      fallbackUsed: source !== 'third_party_live',
+      reason: 'contract_fixture',
+      liveConfigured: source === 'third_party_live',
+      fallbackAllowed: true,
+      circuitOpen: false,
+      missingConfig: source === 'third_party_live' ? [] : ['MEDICAL_API_BASE_URL'],
+      generatedAt: '2026-03-11T10:00:00.000Z',
+      detail: null,
+    },
+  };
+}
+
 describe('medical integration API contract', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
     medicalDirectoryService.getHospitals.mockResolvedValue({
-      source: 'cache',
+      ...createMedicalMeta('public_curated_dataset'),
       list: [{ id: 1, name: 'Hospital A' }],
     });
     medicalDirectoryService.getDepartments.mockResolvedValue({
-      source: 'cache',
+      ...createMedicalMeta('cache'),
       list: [{ id: 11, hospitalId: 1, name: 'Cardiology' }],
     });
     medicalDirectoryService.getDoctors.mockResolvedValue({
-      source: 'cache',
+      ...createMedicalMeta('cache'),
       list: [{ id: 21, departmentId: 11, name: 'Dr. Li' }],
       total: 1,
       page: 1,
       pageSize: 10,
     });
     medicalDirectoryService.getDoctorDetail.mockResolvedValue({
-      source: 'cache',
+      ...createMedicalMeta('cache'),
       doctor: { id: 21, name: 'Dr. Li' },
     });
     onlineConsultationService.start.mockResolvedValue({
+      ...createMedicalMeta('third_party_live'),
       consultation: { id: 31, consultStatus: 'active' },
-      source: 'third_party_stub',
+    });
+    onlineConsultationService.listByUser.mockResolvedValue({
+      ...createMedicalMeta('local'),
+      list: [{ id: 31, consultStatus: 'active' }],
+    });
+    onlineConsultationService.updateStatus.mockResolvedValue({
+      ...createMedicalMeta('local'),
+      consultation: { id: 31, consultStatus: 'completed' },
     });
     appointmentService.create.mockResolvedValue({
+      ...createMedicalMeta('third_party_live'),
       duplicate: false,
       idempotencyKey: 'req-1',
       appointment: { id: 41, appointStatus: 'confirmed' },
     });
     appointmentService.listByUser.mockResolvedValue({
+      ...createMedicalMeta('local'),
       list: [{ id: 41, appointStatus: 'confirmed' }],
       total: 1,
       page: 1,
       pageSize: 10,
     });
     appointmentService.cancel.mockResolvedValue({
+      ...createMedicalMeta('third_party_live'),
       idempotent: false,
       appointment: { id: 41, appointStatus: 'cancelled' },
     });
     medicalReportService.list.mockResolvedValue({
-      source: 'cache',
+      ...createMedicalMeta('competition_dataset_sample'),
       list: [{ id: 51, reportNo: 'RPT-001' }],
       total: 1,
       page: 1,
@@ -93,17 +128,20 @@ describe('medical integration API contract', () => {
     });
   });
 
-  it('GET /medical/hospitals returns unified envelope', async () => {
+  it('GET /medical/hospitals returns unified envelope with diagnostics', async () => {
     const res = await request(createApp()).get('/medical/hospitals');
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({
-      code: 0,
-      message: 'ok',
-      data: {
-        source: 'cache',
-        list: [{ id: 1, name: 'Hospital A' }],
-      },
+    expect(res.body.code).toBe(0);
+    expect(res.body.data).toMatchObject({
+      source: 'public_curated_dataset',
+      mode: 'stub',
+      fallbackUsed: true,
+      diagnosticId: expect.any(String),
+      diagnostics: expect.objectContaining({
+        source: 'public_curated_dataset',
+      }),
+      list: [{ id: 1, name: 'Hospital A' }],
     });
   });
 
@@ -149,7 +187,31 @@ describe('medical integration API contract', () => {
       doctorId: 21,
       department: 'Cardiology',
     });
-    expect(res.body.code).toBe(0);
+    expect(res.body.data).toMatchObject({
+      source: 'third_party_live',
+      consultation: { id: 31, consultStatus: 'active' },
+    });
+  });
+
+  it('GET /medical/consult returns unified envelope', async () => {
+    const res = await request(createApp()).get('/medical/consult?limit=5');
+
+    expect(res.status).toBe(200);
+    expect(onlineConsultationService.listByUser).toHaveBeenCalledWith(1001, '5');
+    expect(res.body.data).toMatchObject({
+      source: 'local',
+      list: [{ id: 31, consultStatus: 'active' }],
+    });
+  });
+
+  it('PATCH /medical/consult/:consultationId/status returns updated consultation', async () => {
+    const res = await request(createApp())
+      .patch('/medical/consult/31/status')
+      .send({ consultStatus: 'completed' });
+
+    expect(res.status).toBe(200);
+    expect(onlineConsultationService.updateStatus).toHaveBeenCalledWith(1001, '31', 'completed');
+    expect(res.body.data.consultation.consultStatus).toBe('completed');
   });
 
   it('POST /medical/appointment returns created envelope', async () => {
@@ -170,6 +232,7 @@ describe('medical integration API contract', () => {
       expect.objectContaining({ idempotencyKey: 'req-1' })
     );
     expect(res.body.message).toBe('created');
+    expect(res.body.data.source).toBe('third_party_live');
   });
 
   it('GET /medical/appointment returns list envelope', async () => {
@@ -190,9 +253,10 @@ describe('medical integration API contract', () => {
     expect(res.status).toBe(200);
     expect(appointmentService.cancel).toHaveBeenCalledWith(1001, '41');
     expect(res.body.message).toBe('cancelled');
+    expect(res.body.data.appointment.appointStatus).toBe('cancelled');
   });
 
-  it('GET /medical/reports returns report list envelope', async () => {
+  it('GET /medical/reports returns report list envelope with diagnostics', async () => {
     const res = await request(createApp()).get(
       '/medical/reports?reportType=Lab&startDate=2026-03-01&endDate=2026-03-11&page=1&pageSize=10'
     );
@@ -205,7 +269,11 @@ describe('medical integration API contract', () => {
       page: '1',
       pageSize: '10',
     });
-    expect(res.body.data.list[0].reportNo).toBe('RPT-001');
+    expect(res.body.data).toMatchObject({
+      source: 'competition_dataset_sample',
+      fallbackUsed: true,
+      list: [{ id: 51, reportNo: 'RPT-001' }],
+    });
   });
 
   it('maps coded service errors to unified error envelope', async () => {

@@ -1,0 +1,70 @@
+﻿'use strict';
+
+const COMPETITION_SEED_MANIFEST = {
+  version: '2026.03-competition-v1',
+  generatedAt: '2026-03-11T12:00:00.000Z',
+  principles: {
+    priority: ['desensitized_real_samples', 'public_curated_sources', 'high_confidence_synthetic'],
+    notes: [
+      'Sensitive fields are masked or replaced before entering the competition dataset.',
+      'Hospital and department directory data prefer curated public information over hard-coded fantasy records.',
+      'Medical reports use desensitized or semi-realistic structured samples when live upstream sync is unavailable.',
+    ],
+  },
+  coverage: {
+    communities: 3,
+    elders: 36,
+    familyMembers: 24,
+    volunteers: 14,
+    communityAdmins: 3,
+    healthArchives: 36,
+    medicationPlans: 58,
+    medicationLogs30d: 1740,
+    gpsTrailPoints30d: 3240,
+    sosEvents: 18,
+    serviceOrders: 42,
+    serviceRecords: 26,
+    timeBankAccounts: 50,
+    timeBankExchanges: 9,
+    consultations: 12,
+    appointments: 16,
+    medicalReports: 48,
+  },
+  communities: [
+    {
+      id: 101,
+      name: 'Pudong Senior Care Hub',
+      city: 'Shanghai',
+      district: 'Pudong',
+      elderCount: 14,
+      volunteerCount: 5,
+    },
+    {
+      id: 102,
+      name: 'Xuhui Home Care Center',
+      city: 'Shanghai',
+      district: 'Xuhui',
+      elderCount: 12,
+      volunteerCount: 4,
+    },
+    {
+      id: 103,
+      name: 'Jingan Community Elder Station',
+      city: 'Shanghai',
+      district: 'Jingan',
+      elderCount: 10,
+      volunteerCount: 5,
+    },
+  ],
+  chainCoverage: {
+    A: 'elder login -> today summary -> medication task -> confirm -> refresh',
+    B: 'sos trigger -> family overview -> community response -> close with audit',
+    C: 'family overview -> gps summary -> family-space evidence',
+    D: 'community order -> volunteer accept/check-in/complete -> time bank settlement',
+    E: 'directory -> consultation -> appointment -> report replay',
+  },
+};
+
+module.exports = {
+  COMPETITION_SEED_MANIFEST,
+};

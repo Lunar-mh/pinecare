@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const medicalApiService = require('./medicalApiService');
 const medicalDirectoryModel = require('../models/medicalDirectoryModel');
@@ -27,13 +27,6 @@ function normalizePage(value, fallback) {
     return fallback;
   }
   return parsed;
-}
-
-function rethrowAsServiceError(err, fallbackMessage) {
-  if (err && (typeof err.code === 'number' || typeof err.statusCode === 'number')) {
-    throw err;
-  }
-  throw createBizError(503, fallbackMessage, 503);
 }
 
 function filterDoctors(list, filters = {}) {
@@ -125,7 +118,8 @@ const medicalDirectoryService = {
           source: 'public_curated_dataset',
           fallbackUsed: true,
           reason: 'public_dataset_fallback',
-          detail: 'Using curated public hospital directory because live medical catalog is unavailable.',
+          detail:
+            'Using curated public hospital directory because live medical catalog is unavailable.',
         }
       );
     }
@@ -189,11 +183,10 @@ const medicalDirectoryService = {
     const cached = await medicalDirectoryModel.getDoctors(departmentIdNum);
     if (cached.length > 0) {
       const filtered = filterDoctors(cached, normalizedQuery);
-      return withMeta(
-        'medical.directory.doctors',
-        paginate(filtered, page, pageSize),
-        { source: 'cache', reason: 'cache_hit' }
-      );
+      return withMeta('medical.directory.doctors', paginate(filtered, page, pageSize), {
+        source: 'cache',
+        reason: 'cache_hit',
+      });
     }
 
     if (canUseLiveMedicalDirectory()) {
@@ -202,36 +195,28 @@ const medicalDirectoryService = {
         await medicalDirectoryModel.refreshDoctors(departmentIdNum, remote);
         const filtered = filterDoctors(remote, normalizedQuery);
 
-        return withMeta(
-          'medical.directory.doctors',
-          paginate(filtered, page, pageSize),
-          { source: medicalApiService.getSourceTag(), reason: 'live_sync' }
-        );
+        return withMeta('medical.directory.doctors', paginate(filtered, page, pageSize), {
+          source: medicalApiService.getSourceTag(),
+          reason: 'live_sync',
+        });
       } catch (err) {
         logThirdPartyError('medical-directory', err, {
           operation: 'getDoctors',
           departmentId: departmentIdNum,
         });
-
-        if (err && (typeof err.code === 'number' || typeof err.statusCode === 'number')) {
-          throw err;
-        }
       }
     }
 
-    const publicList = filterDoctors(publicMedicalDirectory.getDoctors(departmentIdNum), normalizedQuery);
+    const publicDoctors = publicMedicalDirectory.getDoctors(departmentIdNum);
+    const publicList = filterDoctors(publicDoctors, normalizedQuery);
     if (publicList.length > 0) {
-      await medicalDirectoryModel.refreshDoctors(departmentIdNum, publicMedicalDirectory.getDoctors(departmentIdNum));
-      return withMeta(
-        'medical.directory.doctors',
-        paginate(publicList, page, pageSize),
-        {
-          source: 'public_curated_dataset',
-          fallbackUsed: true,
-          reason: 'public_dataset_fallback',
-          detail: `Using curated public doctor directory for department ${departmentIdNum}.`,
-        }
-      );
+      await medicalDirectoryModel.refreshDoctors(departmentIdNum, publicDoctors);
+      return withMeta('medical.directory.doctors', paginate(publicList, page, pageSize), {
+        source: 'public_curated_dataset',
+        fallbackUsed: true,
+        reason: 'public_dataset_fallback',
+        detail: `Using curated public doctor directory for department ${departmentIdNum}.`,
+      });
     }
 
     throw createBizError(503, 'Medical doctors service is temporarily unavailable.', 503);
@@ -252,25 +237,19 @@ const medicalDirectoryService = {
     if (canUseLiveMedicalDirectory()) {
       try {
         const remote = await medicalApiService.fetchDoctorDetail(doctorIdNum);
-        if (!remote) {
-          throw createBizError(404, 'Doctor not found.', 404);
+        if (remote) {
+          await medicalDirectoryModel.upsertDoctor(remote);
+          return withMeta(
+            'medical.directory.doctor_detail',
+            { doctor: remote },
+            { source: medicalApiService.getSourceTag(), reason: 'live_sync' }
+          );
         }
-
-        await medicalDirectoryModel.upsertDoctor(remote);
-
-        return withMeta(
-          'medical.directory.doctor_detail',
-          { doctor: remote },
-          { source: medicalApiService.getSourceTag(), reason: 'live_sync' }
-        );
       } catch (err) {
         logThirdPartyError('medical-directory', err, {
           operation: 'getDoctorDetail',
           doctorId: doctorIdNum,
         });
-        if (err && (typeof err.code === 'number' || typeof err.statusCode === 'number')) {
-          throw err;
-        }
       }
     }
 

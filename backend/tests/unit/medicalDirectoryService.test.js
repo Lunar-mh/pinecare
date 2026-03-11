@@ -1,10 +1,12 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/services/medicalApiService', () => ({
   fetchHospitals: jest.fn(),
   fetchDepartments: jest.fn(),
   fetchDoctors: jest.fn(),
+  fetchDoctorDetail: jest.fn(),
   getSourceTag: jest.fn(() => 'third_party_live'),
+  hasLiveConfig: jest.fn(() => true),
 }));
 
 jest.mock('../../src/models/medicalDirectoryModel', () => ({
@@ -14,6 +16,8 @@ jest.mock('../../src/models/medicalDirectoryModel', () => ({
   refreshDepartments: jest.fn(),
   getDoctors: jest.fn(),
   refreshDoctors: jest.fn(),
+  findDoctorById: jest.fn(),
+  upsertDoctor: jest.fn(),
 }));
 
 jest.mock('../../src/utils/thirdParty', () => ({
@@ -35,8 +39,9 @@ describe('medicalDirectoryService', () => {
 
     const data = await medicalDirectoryService.getHospitals();
 
-    expect(data).toEqual({
+    expect(data).toMatchObject({
       source: 'cache',
+      fallbackUsed: false,
       list: [{ id: 1, name: 'cached hospital' }],
     });
     expect(medicalApiService.fetchHospitals).not.toHaveBeenCalled();
@@ -51,10 +56,23 @@ describe('medicalDirectoryService', () => {
     expect(medicalDirectoryModel.refreshHospitals).toHaveBeenCalledWith([
       { id: 11, name: 'remote hospital' },
     ]);
-    expect(data).toEqual({
+    expect(data).toMatchObject({
       source: 'third_party_live',
+      fallbackUsed: false,
       list: [{ id: 11, name: 'remote hospital' }],
     });
+  });
+
+  it('falls back to curated public hospitals when live directory is unavailable', async () => {
+    medicalDirectoryModel.getHospitals.mockResolvedValue([]);
+    medicalApiService.fetchHospitals.mockRejectedValue(new Error('network down'));
+
+    const data = await medicalDirectoryService.getHospitals();
+
+    expect(data.source).toBe('public_curated_dataset');
+    expect(data.fallbackUsed).toBe(true);
+    expect(data.list.length).toBeGreaterThan(0);
+    expect(logThirdPartyError).toHaveBeenCalled();
   });
 
   it('validates department query parameter', async () => {
@@ -64,31 +82,37 @@ describe('medicalDirectoryService', () => {
     });
   });
 
-  it('rethrows coded upstream error for doctors lookup', async () => {
+  it('falls back to curated public doctors when live lookup fails', async () => {
     medicalDirectoryModel.getDoctors.mockResolvedValue([]);
-    const upstreamError = new Error('timeout');
-    upstreamError.code = 504;
-    upstreamError.statusCode = 504;
-    medicalApiService.fetchDoctors.mockRejectedValue(upstreamError);
+    medicalApiService.fetchDoctors.mockRejectedValue(new Error('timeout'));
 
-    await expect(medicalDirectoryService.getDoctors(99)).rejects.toMatchObject({
-      code: 504,
-      statusCode: 504,
+    const data = await medicalDirectoryService.getDoctors({
+      departmentId: 32010001,
+      page: 1,
+      pageSize: 10,
     });
-    expect(logThirdPartyError).toHaveBeenCalledWith(
-      'medical-directory',
-      upstreamError,
-      expect.objectContaining({ operation: 'getDoctors', departmentId: 99 })
-    );
+
+    expect(data).toMatchObject({
+      source: 'public_curated_dataset',
+      fallbackUsed: true,
+      total: expect.any(Number),
+      page: 1,
+      pageSize: 10,
+    });
+    expect(data.list.length).toBeGreaterThan(0);
   });
 
-  it('wraps unknown remote errors as 503', async () => {
-    medicalDirectoryModel.getDepartments.mockResolvedValue([]);
-    medicalApiService.fetchDepartments.mockRejectedValue(new Error('network down'));
+  it('falls back to curated doctor detail when live detail fails', async () => {
+    medicalDirectoryModel.findDoctorById.mockResolvedValue(null);
+    medicalApiService.fetchDoctorDetail.mockRejectedValue(new Error('upstream fail'));
 
-    await expect(medicalDirectoryService.getDepartments(12)).rejects.toMatchObject({
-      code: 503,
-      statusCode: 503,
+    const data = await medicalDirectoryService.getDoctorDetail(33010001);
+
+    expect(data).toMatchObject({
+      source: 'public_curated_dataset',
+      fallbackUsed: true,
+      doctor: expect.objectContaining({ id: 33010001 }),
     });
+    expect(medicalDirectoryModel.upsertDoctor).toHaveBeenCalled();
   });
 });

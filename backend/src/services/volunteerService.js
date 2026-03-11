@@ -50,11 +50,12 @@ function toMySqlDateTime(date) {
 
 function resolveServiceTimeRange(task, attendanceLog, completedAt) {
   const endDate = completedAt ? new Date(completedAt.replace(' ', 'T') + 'Z') : new Date();
-  const startDate = attendanceLog && attendanceLog.check_in_at
-    ? new Date(String(attendanceLog.check_in_at).replace(' ', 'T') + 'Z')
-    : task && task.scheduled_at
-      ? new Date(String(task.scheduled_at).replace(' ', 'T') + 'Z')
-      : new Date(endDate.getTime() - 60 * 60 * 1000);
+  const startDate =
+    attendanceLog && attendanceLog.check_in_at
+      ? new Date(String(attendanceLog.check_in_at).replace(' ', 'T') + 'Z')
+      : task && task.scheduled_at
+        ? new Date(String(task.scheduled_at).replace(' ', 'T') + 'Z')
+        : new Date(endDate.getTime() - 60 * 60 * 1000);
 
   if (Number.isNaN(startDate.getTime()) || startDate.getTime() >= endDate.getTime()) {
     return {

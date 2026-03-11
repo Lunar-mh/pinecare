@@ -105,6 +105,25 @@ class MedicalApiService {
     return this.isLiveMode() ? 'third_party_live' : 'third_party_stub';
   }
 
+  getModeTag() {
+    return this.isLiveMode() ? 'live' : 'stub';
+  }
+
+  getCapabilityReport() {
+    const missingConfig = [];
+    if (!String(this.baseURL || '').trim()) missingConfig.push('MEDICAL_API_BASE_URL');
+    if (!String(this.apiKey || '').trim()) missingConfig.push('MEDICAL_API_KEY');
+
+    return {
+      source: this.getSourceTag(),
+      mode: this.getModeTag(),
+      liveConfigured: this.hasLiveConfig(),
+      fallbackAllowed: this.allowStubFallback,
+      circuitOpen: this.isCircuitOpen(),
+      missingConfig,
+    };
+  }
+
   toUpstreamError(err) {
     return createUpstreamError(err, {
       timeout: 'Third-party medical service timeout.',
