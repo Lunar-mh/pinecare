@@ -6,11 +6,32 @@ const SosNotificationModel = require('../../models/sosNotification');
 const FallModel = require('../../models/fall');
 const locationRecordModel = require('../../models/locationRecordModel');
 const { buildUnifiedTimeline } = require('../eventTimelineService');
-const {
-  createBizError,
-  parseDate,
-  parsePositiveInt,
-} = require('./shared');
+const { createBizError, parseDate, parsePositiveInt } = require('./shared');
+
+function compactReplayDelivery(item) {
+  if (!item.delivery) {
+    return item;
+  }
+
+  if (item.type === 'fall') {
+    return {
+      ...item,
+      delivery: {
+        failed: Number(item.delivery.failed) || 0,
+        total: Number(item.delivery.total) || 0,
+      },
+    };
+  }
+
+  if (item.type === 'sos' && item.delivery.total) {
+    return {
+      ...item,
+      delivery: { total: item.delivery.total },
+    };
+  }
+
+  return item;
+}
 
 async function getEventReplay(query = {}) {
   const userId = parsePositiveInt(query.userId, 'userId');
@@ -52,7 +73,7 @@ async function getEventReplay(query = {}) {
     fallEvents,
     fallNotificationsByEvent,
     auditLogs,
-  });
+  }).map(compactReplayDelivery);
 
   const activeIncidents = timeline.filter(
     (item) =>
@@ -99,3 +120,4 @@ async function getEventReplay(query = {}) {
 module.exports = {
   getEventReplay,
 };
+

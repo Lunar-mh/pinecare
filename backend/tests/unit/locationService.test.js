@@ -43,7 +43,7 @@ describe('locationService', () => {
       createdAt: '2026-03-11T10:00:00.000Z',
     });
     loaded.geoFenceModel.getActiveByUserId.mockResolvedValueOnce([
-      { id: 7, fenceType: 'circle', centerLatitude: 30.0, centerLongitude: 120.0, radius: 10, alertType: 'exit' },
+      { id: 7, fenceType: 'circle', centerLat: 30.0, centerLng: 120.0, radius: 10, alertType: 'exit', lastInside: true },
     ]);
     loaded.fenceAlertModel.create.mockResolvedValueOnce({ id: 55, alertType: 'exit' });
 
@@ -111,3 +111,4 @@ describe('locationService', () => {
     await expect(loaded.service.upload(12, { latitude: 30.1, longitude: 120.2, locationType: 'invalid' })).rejects.toMatchObject({ code: 400 });
   });
 });
+

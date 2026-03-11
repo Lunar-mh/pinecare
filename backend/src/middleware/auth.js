@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const jwt = require('jsonwebtoken');
 const { fail } = require('../utils/response');
@@ -15,12 +15,12 @@ function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return fail(res, 401, 'Unauthorized.', null, 401);
+    return fail(res, 401, '未授权。', null, 401);
   }
 
   const secret = getJwtSecret();
   if (!secret) {
-    return fail(res, 500, 'JWT_SECRET is not configured.', null, 500);
+    return fail(res, 500, 'JWT_SECRET未配置。', null, 500);
   }
 
   const token = authHeader.slice(7);
@@ -34,7 +34,7 @@ function authMiddleware(req, res, next) {
     };
     return next();
   } catch (_err) {
-    return fail(res, 401, 'Invalid token.', null, 401);
+    return fail(res, 401, '无效的令牌。', null, 401);
   }
 }
 

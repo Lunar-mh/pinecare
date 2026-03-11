@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const familyModel = require('../models/family');
 const familySpaceModel = require('../models/familySpace');
@@ -25,13 +25,12 @@ const {
 } = require('./family/overviewBuilders');
 
 function buildLatestMetrics(records = []) {
-  const latestMetrics = {};
-  records.forEach((item) => {
+  return records.reduce((latestMetrics, item) => {
     if (!latestMetrics[item.metricType]) {
       latestMetrics[item.metricType] = item;
     }
-  });
-  return latestMetrics;
+    return latestMetrics;
+  }, {});
 }
 
 function normalizeNotificationPayload(payload) {
@@ -39,17 +38,15 @@ function normalizeNotificationPayload(payload) {
     throw createBizError(422, 'Request body must be an object.', 422);
   }
 
-  const fieldMap = [
+  const updates = {};
+  [
     ['healthAlertEnabled', 'healthAlertEnabled'],
     ['medicationReminderEnabled', 'medicationReminderEnabled'],
     ['sosAlertEnabled', 'sosAlertEnabled'],
     ['health_alert_enabled', 'healthAlertEnabled'],
     ['medication_reminder_enabled', 'medicationReminderEnabled'],
     ['sos_alert_enabled', 'sosAlertEnabled'],
-  ];
-
-  const updates = {};
-  fieldMap.forEach(([inputKey, outputKey]) => {
+  ].forEach(([inputKey, outputKey]) => {
     if (Object.prototype.hasOwnProperty.call(payload, inputKey)) {
       updates[outputKey] = normalizeBoolean(payload[inputKey], inputKey);
     }
@@ -60,6 +57,49 @@ function normalizeNotificationPayload(payload) {
   }
 
   return updates;
+}
+
+async function getOverviewResources(elderId, familyId) {
+  const safeFetch = (task, fallback) => task.catch(() => fallback);
+  return Promise.all([
+    familyModel.getLatestHealthSnapshot(elderId),
+    safeFetch(medicationLogService.getTodaySchedule(elderId), []),
+    safeFetch(SosEventModel.listActiveByUser(elderId, 3), []),
+    safeFetch(familyModel.getLatestLocation(elderId), null),
+    safeFetch(familySpaceModel.getInteractionEvidenceSummary(familyId), null),
+  ]);
+}
+
+function buildOverviewAlerts(activeSosEvents, medicationSummary) {
+  const alerts = buildSosAlerts(activeSosEvents);
+  const medicationAlert = buildMedicationAlert(medicationSummary);
+  if (medicationAlert) {
+    alerts.push(medicationAlert);
+  }
+  return alerts;
+}
+
+function buildElderProfile(binding, elderId, familyId, lastActiveAt) {
+  const elderProfile = binding.elderProfile || {};
+  return {
+    elderId,
+    familyId,
+    name: elderProfile.realName || elderProfile.nickname || `User${elderId}`,
+    nickname: elderProfile.nickname || null,
+    realName: elderProfile.realName || null,
+    avatarUrl: elderProfile.avatarUrl || null,
+    isOnline: isRecentWithinHours(lastActiveAt, 24),
+    lastActiveAt,
+  };
+}
+
+function mergeNotificationSettings(current, updates) {
+  return {
+    healthAlertEnabled: updates.healthAlertEnabled ?? current.healthAlertEnabled,
+    medicationReminderEnabled:
+      updates.medicationReminderEnabled ?? current.medicationReminderEnabled,
+    sosAlertEnabled: updates.sosAlertEnabled ?? current.sosAlertEnabled,
+  };
 }
 
 const familyService = {
@@ -73,27 +113,14 @@ const familyService = {
       return null;
     }
 
-    const elderId = normalizeElderId(options.elderId);
-    const binding = selectBinding(bindings, elderId);
-    const selectedElderId = Number(binding.elderId);
-    const familyId = selectedElderId;
-
-    const [snapshot, todayMeds, activeSosEvents, location, interactionEvidence] = await Promise.all([
-      familyModel.getLatestHealthSnapshot(selectedElderId),
-      medicationLogService.getTodaySchedule(selectedElderId).catch(() => []),
-      SosEventModel.listActiveByUser(selectedElderId, 3).catch(() => []),
-      familyModel.getLatestLocation(selectedElderId).catch(() => null),
-      familySpaceModel.getInteractionEvidenceSummary(familyId).catch(() => null),
-    ]);
+    const binding = selectBinding(bindings, normalizeElderId(options.elderId));
+    const elderId = Number(binding.elderId);
+    const familyId = elderId;
+    const [snapshot, todayMeds, activeSosEvents, location, interactionEvidence] =
+      await getOverviewResources(elderId, familyId);
 
     const latestRecords = snapshot ? snapshot.latestRecords : [];
     const medicationSummary = buildMedicationSummary(todayMeds);
-    const alerts = buildSosAlerts(activeSosEvents);
-    const medicationAlert = buildMedicationAlert(medicationSummary);
-    if (medicationAlert) {
-      alerts.push(medicationAlert);
-    }
-
     const lastActiveAt = pickLatestTime([
       snapshot && snapshot.archive ? snapshot.archive.updatedAt : null,
       location ? location.updatedAt : null,
@@ -101,19 +128,8 @@ const familyService = {
       activeSosEvents[0] ? activeSosEvents[0].created_at : null,
     ]);
 
-    const elderProfile = binding.elderProfile || {};
-
     return {
-      elderProfile: {
-        elderId: selectedElderId,
-        familyId,
-        name: elderProfile.realName || elderProfile.nickname || `User${selectedElderId}`,
-        nickname: elderProfile.nickname || null,
-        realName: elderProfile.realName || null,
-        avatarUrl: elderProfile.avatarUrl || null,
-        isOnline: isRecentWithinHours(lastActiveAt, 24),
-        lastActiveAt,
-      },
+      elderProfile: buildElderProfile(binding, elderId, familyId, lastActiveAt),
       todayHealthSummary: {
         bloodPressure: buildBloodPressureSummary(latestRecords),
         heartRate: buildHeartRateSummary(latestRecords),
@@ -121,7 +137,7 @@ const familyService = {
       },
       medicationSummary,
       locationSummary: buildLocationSummary(location),
-      alerts,
+      alerts: buildOverviewAlerts(activeSosEvents, medicationSummary),
       interactionEvidenceSummary: buildInteractionEvidenceSummary(familyId, interactionEvidence),
     };
   },
@@ -149,26 +165,12 @@ const familyService = {
 
   async getNotificationSettings(userId) {
     const settings = await familyModel.findNotificationSettingsByUserId(Number(userId));
-    if (!settings) {
-      return {
-        userId: Number(userId),
-        ...DEFAULT_NOTIFICATION_SETTINGS,
-      };
-    }
-
-    return settings;
+    return settings || { userId: Number(userId), ...DEFAULT_NOTIFICATION_SETTINGS };
   },
 
   async updateNotificationSettings(userId, payload = {}) {
-    const updates = normalizeNotificationPayload(payload);
     const current = await this.getNotificationSettings(Number(userId));
-    const merged = {
-      healthAlertEnabled: updates.healthAlertEnabled ?? current.healthAlertEnabled,
-      medicationReminderEnabled:
-        updates.medicationReminderEnabled ?? current.medicationReminderEnabled,
-      sosAlertEnabled: updates.sosAlertEnabled ?? current.sosAlertEnabled,
-    };
-
+    const merged = mergeNotificationSettings(current, normalizeNotificationPayload(payload));
     const saved = await familyModel.upsertNotificationSettings(Number(userId), merged);
     return saved || { userId: Number(userId), ...merged };
   },

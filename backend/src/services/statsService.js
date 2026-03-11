@@ -1,4 +1,4 @@
 'use strict';
 
-// Compatibility shim. Prefer requiring ./statisticsService directly.
+// 兼容层，建议直接引用 ./statisticsService
 module.exports = require('./statisticsService');

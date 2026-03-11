@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const locationRecordModel = require('../models/locationRecordModel');
 const geoFenceModel = require('../models/geoFenceModel');
@@ -7,7 +7,7 @@ const locationCacheService = require('./locationCacheService');
 const { recordCareEvent } = require('./eventTimelineService');
 const { checkFenceViolation, isInsideFence } = require('../utils/geoFenceMath');
 
-const VALID_LOCATION_TYPES = ['gps', 'wifi', 'smart_band', 'é©è™¹ç¯'];
+const VALID_LOCATION_TYPES = ['gps', 'wifi', 'smart_band', 'cell_tower'];
 
 function createBizError(code, message, statusCode) {
   const err = new Error(message);
@@ -104,7 +104,7 @@ const locationService = {
     try {
       await locationCacheService.setCurrentLocation(userId, currentLocation);
     } catch (_error) {
-      // cache write is best-effort
+      // 缓存写入尽力而为
     }
 
     const alerts = await handleFenceAlerts(userId, currentLocation, previousLocation);
@@ -138,7 +138,7 @@ const locationService = {
         return cached;
       }
     } catch (_error) {
-      // cache read is best-effort
+      // 缓存读取尽力而为
     }
 
     const latest = await locationRecordModel.getLatest(userId);

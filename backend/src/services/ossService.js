@@ -110,10 +110,10 @@ async function simulateUpload(kind, key, content) {
 
 function toOssError(err) {
   return createUpstreamError(err, {
-    timeout: 'OSS upload timeout.',
-    rateLimited: 'OSS upload rate limited.',
-    unavailable: 'OSS upload service unavailable.',
-    failed: 'OSS upload failed.',
+    timeout: 'OSS上传超时。',
+    rateLimited: 'OSS上传被限流。',
+    unavailable: 'OSS服务不可用。',
+    failed: 'OSS上传失败。',
   });
 }
 
@@ -143,7 +143,7 @@ async function requestWithRetry(operation, requestFactory) {
 
 async function uploadWithLiveApi(kind, content, key, contentType) {
   if (!hasLiveConfig()) {
-    throw toOssError(new Error('OSS live mode requires OSS endpoint and credentials.'));
+    throw toOssError(new Error('OSS live模式需要配置OSS端点和凭证。'));
   }
 
   const payload = {
@@ -161,7 +161,7 @@ async function uploadWithLiveApi(kind, content, key, contentType) {
   const data = response.data || {};
   const url = data.url || (data.data && data.data.url);
   if (!url || typeof url !== 'string') {
-    const err = new Error('Invalid OSS upload response.');
+    const err = new Error('OSS上传响应无效。');
     err.code = 'INVALID_OSS_RESPONSE';
     throw toOssError(err);
   }
@@ -178,7 +178,7 @@ async function uploadByKind(kind, content, key, contentType) {
   }
 
   if (!strategy.stubAllowed) {
-    throw toOssError(new Error('OSS mock mode is disabled in PRODUCTION_LIVE mode.'));
+    throw toOssError(new Error('生产模式下OSS mock模式已禁用。'));
   }
 
   await simulateUpload(kind, safeKey, content);

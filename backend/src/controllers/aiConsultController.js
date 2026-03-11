@@ -7,7 +7,7 @@ const contentSafetyService = require('../services/contentSafetyService');
 const ConsultRecord = require('../models/consultRecord');
 const HealthProfile = require('../models/healthProfile');
 const { ok, fail } = require('../utils/response');
-
+const logger = require('../utils/logger');
 function handleError(res, err) {
   if (err && (err.code || err.statusCode)) {
     const code = err.code || err.statusCode;
@@ -159,7 +159,7 @@ async function voiceConsult(req, res) {
     try {
       replyAudio = await voiceService.textToSpeech(enrichedReply);
     } catch (ttsErr) {
-      console.error('voice_tts_failed', { message: ttsErr.message });
+      logger.warn('aiConsultController', 'voice_tts_failed', { requestId: req.requestId || null, error: ttsErr.message });
     }
 
     return ok(
@@ -228,3 +228,7 @@ module.exports = {
   getProfile,
   updateProfile,
 };
+
+
+
+

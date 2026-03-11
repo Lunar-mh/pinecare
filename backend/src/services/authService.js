@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -24,21 +24,39 @@ function createBusinessError(code, message, data = null, httpStatus = null) {
   return err;
 }
 
-function getJwtSecret() {
-  const secret = String(process.env.JWT_SECRET || '').trim();
-  if (!secret) {
-    throw createBusinessError(500, 'JWT_SECRET is not configured.', null, 500);
+function requiredEnv(name, message) {
+  const value = String(process.env[name] || '').trim();
+  if (!value) {
+    throw createBusinessError(500, message, null, 500);
   }
-  return secret;
+  return value;
+}
+
+function getJwtSecret() {
+  return requiredEnv('JWT_SECRET', 'JWT_SECRET is not configured.');
 }
 
 function getRefreshSecret() {
-  const refreshSecret = String(process.env.JWT_REFRESH_SECRET || '').trim();
-  return refreshSecret || getJwtSecret();
+  return String(process.env.JWT_REFRESH_SECRET || '').trim() || getJwtSecret();
+}
+
+function getAdminCredentials() {
+  const username = String(process.env.ADMIN_USERNAME || '').trim();
+  const password = String(process.env.ADMIN_PASSWORD || '').trim();
+
+  if (!username || !password) {
+    throw createBusinessError(503, 'Admin credentials are not configured.', null, 503);
+  }
+
+  return { username, password };
 }
 
 function refreshTokenKey(userId) {
   return `auth:refresh:${userId}`;
+}
+
+function createContext(ipAddress, userAgent, requestId) {
+  return { ipAddress, userAgent, requestId };
 }
 
 function toPublicUser(user) {
@@ -60,42 +78,27 @@ function toPublicUser(user) {
 }
 
 async function writeAuditLog(userId, action, context = {}, details = null) {
-  const mergedDetails = {
-    ...(details && typeof details === 'object' ? details : {}),
-    requestId: context.requestId || null,
-  };
-
   await AuditLogModel.create({
     userId: userId || null,
     action,
     ipAddress: context.ipAddress || null,
     userAgent: context.userAgent || null,
-    details: mergedDetails,
+    details: {
+      ...(details && typeof details === 'object' ? details : {}),
+      requestId: context.requestId || null,
+    },
   });
 }
 
-function getAdminCredentials() {
-  const username = String(process.env.ADMIN_USERNAME || '').trim();
-  const password = String(process.env.ADMIN_PASSWORD || '').trim();
-
-  if (!username || !password) {
-    throw createBusinessError(503, 'Admin credentials are not configured.', null, 503);
-  }
-
-  return { username, password };
-}
-
 async function issueTokens(userId, extraClaims = {}) {
-  const accessClaims = { userId, ...extraClaims };
-  const refreshClaims = {
-    userId,
-    token_type: 'refresh',
-    ...extraClaims,
-    jti: uuidv4(),
-  };
-
-  const accessToken = jwt.sign(accessClaims, getJwtSecret(), { expiresIn: ACCESS_EXPIRES_IN });
-  const refreshToken = jwt.sign(refreshClaims, getRefreshSecret(), { expiresIn: REFRESH_EXPIRES_IN });
+  const accessToken = jwt.sign({ userId, ...extraClaims }, getJwtSecret(), {
+    expiresIn: ACCESS_EXPIRES_IN,
+  });
+  const refreshToken = jwt.sign(
+    { userId, token_type: 'refresh', ...extraClaims, jti: uuidv4() },
+    getRefreshSecret(),
+    { expiresIn: REFRESH_EXPIRES_IN }
+  );
 
   await redis.set(refreshTokenKey(userId), refreshToken, 'EX', REFRESH_EXPIRES_SECONDS);
 
@@ -106,57 +109,32 @@ async function issueTokens(userId, extraClaims = {}) {
   };
 }
 
-async function sendSms(phone, purpose, context = {}) {
-  const result = await smsService.sendSms(phone, purpose);
-  await writeAuditLog(null, 'send_sms', context, { phone, purpose });
-  return result;
-}
-
-async function registerPhone({ phone, code, password, ipAddress, userAgent, requestId }) {
-  const context = { ipAddress, userAgent, requestId };
-  const existed = await UserModel.findByPhone(phone);
-  if (existed) {
-    throw createBusinessError(409, 'Phone already registered.', null, 409);
-  }
-
-  const verifyResult = await smsService.verifyAndConsumeCode(phone, code, 'register');
-  if (!verifyResult.valid) {
-    throw createBusinessError(400, verifyResult.message || 'Invalid SMS code.', null, 400);
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-  const user = await UserModel.createWithPhone({ phone, passwordHash });
-
-  const tokens = await issueTokens(user.id);
-  await writeAuditLog(user.id, 'register', context, { method: 'phone' });
-
-  return {
-    ...tokens,
-    user: toPublicUser(user),
-  };
-}
-
 function getLockUntilDate() {
   return new Date(Date.now() + LOCK_MINUTES * 60 * 1000);
 }
 
 function isLocked(user) {
-  if (user.account_status !== 'locked') return false;
-  if (!user.locked_until) return false;
-  return new Date(user.locked_until).getTime() > Date.now();
+  return (
+    user.account_status === 'locked' &&
+    user.locked_until &&
+    new Date(user.locked_until).getTime() > Date.now()
+  );
 }
 
-async function loginPhone({ phone, password, ipAddress, userAgent, requestId }) {
-  const context = { ipAddress, userAgent, requestId };
-  let user = await UserModel.findByPhone(phone);
-
-  if (!user) {
-    await writeAuditLog(null, 'login_fail', context, { phone, reason: 'not_found' });
-    throw createBusinessError(401, 'Invalid phone or password.', null, 401);
+async function reviveLockedAccount(user) {
+  if (user.account_status !== 'locked') {
+    return user;
   }
 
+  await UserModel.clearFailedAttempts(user.id);
+  return UserModel.findById(user.id);
+}
+
+async function resolveActiveUser(user, context, options = {}) {
   if (user.account_status === 'deleted') {
-    await writeAuditLog(user.id, 'login_fail', context, { reason: 'deleted' });
+    if (options.auditAction) {
+      await writeAuditLog(user.id, options.auditAction, context, { reason: 'deleted' });
+    }
     throw createBusinessError(403, 'Account has been deleted.', null, 403);
   }
 
@@ -164,18 +142,69 @@ async function loginPhone({ phone, password, ipAddress, userAgent, requestId }) 
     throw createBusinessError(423, 'Account is locked.', { locked_until: user.locked_until }, 423);
   }
 
-  if (user.account_status === 'locked') {
-    await UserModel.clearFailedAttempts(user.id);
-    user = await UserModel.findById(user.id);
+  return reviveLockedAccount(user);
+}
+
+function authResult(tokens, user) {
+  return { ...tokens, user: toPublicUser(user) };
+}
+
+async function finalizeUserLogin(user, context, auditAction, details, extraClaims = {}) {
+  await UserModel.markLoginSuccess(user.id);
+  const freshUser = (await UserModel.findById(user.id)) || user;
+  const tokens = await issueTokens(freshUser.id, extraClaims);
+  await writeAuditLog(freshUser.id, auditAction, context, details);
+  return authResult(tokens, freshUser);
+}
+
+async function verifySmsCode(phone, code, purpose, message) {
+  const verifyResult = await smsService.verifyAndConsumeCode(phone, code, purpose);
+  if (!verifyResult.valid) {
+    throw createBusinessError(400, verifyResult.message || message, null, 400);
   }
+}
+
+async function sendSms(phone, purpose, context = {}) {
+  const result = await smsService.sendSms(phone, purpose);
+  await writeAuditLog(null, 'send_sms', context, { phone, purpose });
+  return result;
+}
+
+async function registerPhone({ phone, code, password, ipAddress, userAgent, requestId }) {
+  const context = createContext(ipAddress, userAgent, requestId);
+
+  if (await UserModel.findByPhone(phone)) {
+    throw createBusinessError(409, 'Phone already registered.', null, 409);
+  }
+
+  await verifySmsCode(phone, code, 'register', 'Invalid SMS code.');
+  const user = await UserModel.createWithPhone({
+    phone,
+    passwordHash: await bcrypt.hash(password, 10),
+  });
+  const tokens = await issueTokens(user.id);
+  await writeAuditLog(user.id, 'register', context, { method: 'phone' });
+
+  return authResult(tokens, user);
+}
+
+async function loginPhone({ phone, password, ipAddress, userAgent, requestId }) {
+  const context = createContext(ipAddress, userAgent, requestId);
+  let user = await UserModel.findByPhone(phone);
+
+  if (!user) {
+    await writeAuditLog(null, 'login_fail', context, { phone, reason: 'not_found' });
+    throw createBusinessError(401, 'Invalid phone or password.', null, 401);
+  }
+
+  user = await resolveActiveUser(user, context, { auditAction: 'login_fail' });
 
   if (!user.password_hash) {
     await writeAuditLog(user.id, 'login_fail', context, { reason: 'no_password' });
     throw createBusinessError(401, 'Password login is unavailable for this account.', null, 401);
   }
 
-  const passOk = await bcrypt.compare(password, user.password_hash);
-  if (!passOk) {
+  if (!(await bcrypt.compare(password, user.password_hash))) {
     const failedAttempts = Number(user.failed_login_attempts || 0) + 1;
 
     if (failedAttempts >= LOCK_THRESHOLD) {
@@ -197,25 +226,17 @@ async function loginPhone({ phone, password, ipAddress, userAgent, requestId }) 
     throw createBusinessError(401, 'Invalid phone or password.', null, 401);
   }
 
-  await UserModel.markLoginSuccess(user.id);
-  user = await UserModel.findById(user.id);
-
-  const tokens = await issueTokens(user.id);
-  await writeAuditLog(user.id, 'login_success', context, { method: 'phone' });
-
-  return {
-    ...tokens,
-    user: toPublicUser(user),
-  };
+  return finalizeUserLogin(user, context, 'login_success', { method: 'phone' });
 }
 
 async function loginPhoneByCode({ phone, code, ipAddress, userAgent, requestId }) {
-  const context = { ipAddress, userAgent, requestId };
+  const context = createContext(ipAddress, userAgent, requestId);
 
-  const verifyResult = await smsService.verifyAndConsumeCode(phone, code, 'login');
-  if (!verifyResult.valid) {
+  try {
+    await verifySmsCode(phone, code, 'login', 'Invalid SMS code.');
+  } catch (error) {
     await writeAuditLog(null, 'login_fail', context, { phone, reason: 'sms_invalid' });
-    throw createBusinessError(400, verifyResult.message || 'Invalid SMS code.', null, 400);
+    throw error;
   }
 
   let user = await UserModel.findByPhone(phone);
@@ -224,63 +245,37 @@ async function loginPhoneByCode({ phone, code, ipAddress, userAgent, requestId }
     await writeAuditLog(user.id, 'register', context, { method: 'sms_login' });
   }
 
-  if (user.account_status === 'deleted') {
-    await writeAuditLog(user.id, 'login_fail', context, { reason: 'deleted' });
-    throw createBusinessError(403, 'Account has been deleted.', null, 403);
-  }
-
-  if (isLocked(user)) {
-    throw createBusinessError(423, 'Account is locked.', { locked_until: user.locked_until }, 423);
-  }
-
-  if (user.account_status === 'locked') {
-    await UserModel.clearFailedAttempts(user.id);
-    user = await UserModel.findById(user.id);
-  }
-
-  await UserModel.markLoginSuccess(user.id);
-  user = await UserModel.findById(user.id);
-
-  const tokens = await issueTokens(user.id);
-  await writeAuditLog(user.id, 'login_success', context, { method: 'sms_code' });
-
-  return {
-    ...tokens,
-    user: toPublicUser(user),
-  };
+  user = await resolveActiveUser(user, context, { auditAction: 'login_fail' });
+  return finalizeUserLogin(user, context, 'login_success', { method: 'sms_code' });
 }
 
 async function loginAdmin({ username, password, ipAddress, userAgent, requestId }) {
-  const context = { ipAddress, userAgent, requestId };
-  const { username: adminUsername, password: adminPassword } = getAdminCredentials();
+  const context = createContext(ipAddress, userAgent, requestId);
+  const admin = getAdminCredentials();
 
-  if (username !== adminUsername || password !== adminPassword) {
+  if (username !== admin.username || password !== admin.password) {
     await writeAuditLog(null, 'admin_login_fail', context, { username });
     throw createBusinessError(401, 'Invalid admin username or password.', null, 401);
   }
 
   const tokens = await issueTokens(0, { role: 'admin', isAdmin: true });
   await writeAuditLog(null, 'admin_login_success', context, { username });
-
-  return {
-    ...tokens,
-    username: adminUsername,
-    role: 'admin',
-  };
+  return { ...tokens, username: admin.username, role: 'admin' };
 }
 
-async function refreshToken(refreshTokenValue, context = {}) {
+function decodeRefreshToken(refreshTokenValue) {
   if (!refreshTokenValue) {
     throw createBusinessError(400, 'refresh_token is required.', null, 400);
   }
 
-  let decoded;
   try {
-    decoded = jwt.verify(refreshTokenValue, getRefreshSecret());
+    return jwt.verify(refreshTokenValue, getRefreshSecret());
   } catch (_err) {
     throw createBusinessError(401, 'Invalid refresh_token.', null, 401);
   }
+}
 
+function validateRefreshPayload(decoded) {
   if (
     typeof decoded.userId !== 'number' ||
     decoded.userId < 0 ||
@@ -288,19 +283,21 @@ async function refreshToken(refreshTokenValue, context = {}) {
   ) {
     throw createBusinessError(401, 'Invalid refresh_token.', null, 401);
   }
+}
 
-  const key = refreshTokenKey(decoded.userId);
-  const cachedToken = await redis.get(key);
+async function refreshToken(refreshTokenValue, context = {}) {
+  const decoded = decodeRefreshToken(refreshTokenValue);
+  validateRefreshPayload(decoded);
 
+  const cachedToken = await redis.get(refreshTokenKey(decoded.userId));
   if (!cachedToken || cachedToken !== refreshTokenValue) {
     throw createBusinessError(401, 'refresh_token mismatch.', null, 401);
   }
 
-  const extraClaims = {};
-  if (decoded.role) extraClaims.role = decoded.role;
-  if (decoded.isAdmin !== undefined) extraClaims.isAdmin = decoded.isAdmin;
-
-  const nextTokens = await issueTokens(decoded.userId, extraClaims);
+  const nextTokens = await issueTokens(decoded.userId, {
+    ...(decoded.role ? { role: decoded.role } : {}),
+    ...(decoded.isAdmin !== undefined ? { isAdmin: decoded.isAdmin } : {}),
+  });
   await writeAuditLog(decoded.userId, 'refresh', context, null);
 
   return {
@@ -311,54 +308,30 @@ async function refreshToken(refreshTokenValue, context = {}) {
 }
 
 async function loginWithWechat({ code, userInfo = {}, ipAddress, userAgent, requestId }) {
-  const context = { ipAddress, userAgent, requestId };
+  const context = createContext(ipAddress, userAgent, requestId);
   const session = await wechatService.code2Session(code);
-
   let user = await UserModel.findByOpenid(session.openid);
-  if (!user) {
-    user = await UserModel.createWithWechat({
-      openid: session.openid,
-      nickname: userInfo.nickName || null,
-      avatarUrl: userInfo.avatarUrl || null,
-    });
-  } else {
-    user = await UserModel.updateWechatProfile(user.id, {
-      nickname: userInfo.nickName,
-      avatarUrl: userInfo.avatarUrl,
-    });
-  }
 
-  if (user.account_status === 'deleted') {
-    throw createBusinessError(403, 'Account has been deleted.', null, 403);
-  }
+  user = user
+    ? await UserModel.updateWechatProfile(user.id, {
+        nickname: userInfo.nickName,
+        avatarUrl: userInfo.avatarUrl,
+      })
+    : await UserModel.createWithWechat({
+        openid: session.openid,
+        nickname: userInfo.nickName || null,
+        avatarUrl: userInfo.avatarUrl || null,
+      });
 
-  if (isLocked(user)) {
-    throw createBusinessError(423, 'Account is locked.', { locked_until: user.locked_until }, 423);
-  }
-
-  if (user.account_status === 'locked') {
-    await UserModel.clearFailedAttempts(user.id);
-    user = await UserModel.findById(user.id);
-  }
-
-  const tokens = await issueTokens(user.id);
-  await writeAuditLog(user.id, 'wechat_login', context, {
-    openid: session.openid,
-  });
-
-  return {
-    ...tokens,
-    user: toPublicUser(user),
-  };
+  user = await resolveActiveUser(user, context);
+  const result = await finalizeUserLogin(user, context, 'wechat_login', { openid: session.openid });
+  return result;
 }
 
 async function unlockAccountByCode(phone, code, context = {}) {
-  const verifyResult = await smsService.verifyAndConsumeCode(phone, code, 'login');
-  if (!verifyResult.valid) {
-    throw createBusinessError(400, verifyResult.message || 'Invalid SMS code.', null, 400);
-  }
-
+  await verifySmsCode(phone, code, 'login', 'Invalid SMS code.');
   const user = await UserModel.findByPhone(phone);
+
   if (!user) {
     throw createBusinessError(404, 'User not found.', null, 404);
   }
@@ -387,3 +360,4 @@ module.exports = {
   loginWithWechat,
   unlockAccountByCode,
 };
+

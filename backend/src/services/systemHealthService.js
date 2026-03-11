@@ -6,6 +6,7 @@ const { getServerRole } = require('../config/http');
 const { resolveMode } = require('../config/runtimeMode');
 const { getRecentThirdPartyErrors } = require('../utils/thirdParty');
 const { getJobStatus } = require('../jobs');
+const { getCareEventAuditDiagnostics } = require('./eventTimelineService');
 
 const KEY_TABLES = [
   'users',
@@ -72,6 +73,7 @@ async function getHealthStatus() {
   ]);
   const jobs = getJobStatus();
   const recentErrors = getRecentThirdPartyErrors(5);
+  const careEventAudit = getCareEventAuditDiagnostics(5);
   const workerHealthy = jobs.serverRole !== 'worker' || !jobs.enabled || jobs.started;
   const healthy =
     mysql.status === 'ok' &&
@@ -93,6 +95,7 @@ async function getHealthStatus() {
         recentCount: recentErrors.length,
         items: recentErrors,
       },
+      careEventAudit,
     },
   };
 }

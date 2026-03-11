@@ -9,12 +9,15 @@ const {
   buildFallDeliverySummary,
   buildSosDeliverySummary,
   buildUnifiedTimeline,
+  getCareEventAuditDiagnostics,
   recordCareEvent,
+  resetCareEventAuditDiagnostics,
 } = require('../../src/services/eventTimelineService');
 
 describe('eventTimelineService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    resetCareEventAuditDiagnostics();
     AuditLogModel.create.mockResolvedValue(1);
   });
 
@@ -38,6 +41,38 @@ describe('eventTimelineService', () => {
         occurredAt: '2026-03-11T10:00:00.000Z',
         latitude: 30.1,
       },
+    });
+  });
+
+  it('throttles repeated audit failure logs while keeping diagnostics visible', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'development';
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    AuditLogModel.create.mockRejectedValue(new Error('db unavailable'));
+
+    await recordCareEvent('sos.triggered', {
+      userId: 7,
+      entityType: 'sos',
+      entityId: 101,
+      status: 'triggered',
+    });
+    await recordCareEvent('sos.triggered', {
+      userId: 7,
+      entityType: 'sos',
+      entityId: 101,
+      status: 'triggered',
+    });
+
+    process.env.NODE_ENV = originalNodeEnv;
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(getCareEventAuditDiagnostics()).toEqual({
+      totalFailures: 2,
+      suppressedLogs: 1,
+      recentCount: 2,
+      items: [
+        expect.objectContaining({ action: 'sos.triggered', entityType: 'sos', message: 'db unavailable' }),
+        expect.objectContaining({ action: 'sos.triggered', entityType: 'sos', message: 'db unavailable' }),
+      ],
     });
   });
 
@@ -85,3 +120,4 @@ describe('eventTimelineService', () => {
     expect(timeline[3]).toMatchObject({ type: 'gps' });
   });
 });
+

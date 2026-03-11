@@ -1,10 +1,10 @@
-'use strict';
+﻿'use strict';
 
 const EARTH_RADIUS_METERS = 6371000;
 
 /**
- * 将角度转换为弧度
- * @param {number} degree 角度
+ * 灏嗚搴﹁浆鎹负寮у害
+ * @param {number} degree 瑙掑害
  * @returns {number}
  */
 function toRadians(degree) {
@@ -12,7 +12,7 @@ function toRadians(degree) {
 }
 
 /**
- * Haversine 公式计算两点间球面距离（米）
+ * Haversine 鍏紡璁＄畻涓ょ偣闂寸悆闈㈣窛绂伙紙绫筹級
  * @param {number} lat1
  * @param {number} lng1
  * @param {number} lat2
@@ -34,7 +34,7 @@ function haversineDistance(lat1, lng1, lat2, lng2) {
 }
 
 /**
- * 判断点是否在圆形围栏内
+ * 鍒ゆ柇鐐规槸鍚﹀湪鍦嗗舰鍥存爮鍐?
  * @param {number} lat
  * @param {number} lng
  * @param {number} centerLat
@@ -48,13 +48,13 @@ function isInsideCircle(lat, lng, centerLat, centerLng, radiusMeters) {
 }
 
 /**
- * 判断射线是否与边相交
- * @param {number} x 点经度
- * @param {number} y 点纬度
- * @param {number} x1 顶点1经度
- * @param {number} y1 顶点1纬度
- * @param {number} x2 顶点2经度
- * @param {number} y2 顶点2纬度
+ * 鍒ゆ柇灏勭嚎鏄惁涓庤竟鐩镐氦
+ * @param {number} x 鐐圭粡搴?
+ * @param {number} y 鐐圭含搴?
+ * @param {number} x1 椤剁偣1缁忓害
+ * @param {number} y1 椤剁偣1绾害
+ * @param {number} x2 椤剁偣2缁忓害
+ * @param {number} y2 椤剁偣2绾害
  * @returns {boolean}
  */
 function isRayIntersectSegment(x, y, x1, y1, x2, y2) {
@@ -68,7 +68,7 @@ function isRayIntersectSegment(x, y, x1, y1, x2, y2) {
 }
 
 /**
- * 射线法判断点是否在多边形内（奇数次交点为内部）
+ * 灏勭嚎娉曞垽鏂偣鏄惁鍦ㄥ杈瑰舰鍐咃紙濂囨暟娆′氦鐐逛负鍐呴儴锛?
  * @param {number} lat
  * @param {number} lng
  * @param {Array<{lat:number,lng:number}>} points
@@ -102,7 +102,7 @@ function isInsidePolygon(lat, lng, points) {
 }
 
 /**
- * 统一判断位置点是否在围栏内部
+ * 缁熶竴鍒ゆ柇浣嶇疆鐐规槸鍚﹀湪鍥存爮鍐呴儴
  * @param {{latitude:number, longitude:number}} location
  * @param {object} fence
  * @returns {boolean}
@@ -112,8 +112,8 @@ function isInsideFence(location, fence) {
   const lng = Number(location.longitude);
 
   if (fence.fenceType === 'circle' || fence.fence_type === 'circle') {
-    const centerLat = fence.centerLat ?? fence.center_lat;
-    const centerLng = fence.centerLng ?? fence.center_lng;
+    const centerLat = fence.centerLat ?? fence.center_lat ?? fence.centerLatitude;
+    const centerLng = fence.centerLng ?? fence.center_lng ?? fence.centerLongitude;
     return isInsideCircle(
       lat,
       lng,
@@ -127,7 +127,7 @@ function isInsideFence(location, fence) {
 }
 
 /**
- * 根据本次位置与上次状态判断是否触发围栏告警
+ * 鏍规嵁鏈浣嶇疆涓庝笂娆＄姸鎬佸垽鏂槸鍚﹁Е鍙戝洿鏍忓憡璀?
  * @param {{latitude:number, longitude:number}} location
  * @param {object} fence
  * @returns {{violated:boolean, alertType:'enter'|'exit'|null, isInside:boolean}}
@@ -168,3 +168,4 @@ module.exports = {
   checkFenceViolation,
   isInsideFence,
 };
+

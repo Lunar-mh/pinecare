@@ -12,11 +12,11 @@ function sanitizeMessage(message) {
 }
 
 function resolveStatusCode(err) {
-  if (String(err && err.message || '') === 'CORS origin not allowed.') {
+  if (String((err && err.message) || '') === 'CORS origin not allowed.') {
     return 403;
   }
 
-  return err.statusCode || err.status || 500;
+  return err.statusCode || err.status || err.code || 500;
 }
 
 // eslint-disable-next-line no-unused-vars

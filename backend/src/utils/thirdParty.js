@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
 const RECENT_ERROR_LIMIT = 20;
@@ -159,3 +159,5 @@ module.exports = {
   maskPhone,
   maskIdCard,
 };
+
+

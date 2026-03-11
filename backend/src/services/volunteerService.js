@@ -1,8 +1,10 @@
-'use strict';
+﻿'use strict';
 
 const AuditLogModel = require('../models/auditLog');
 const volunteerModel = require('../models/volunteerModel');
 const timeBankService = require('./timeBankService');
+
+const SQL_HOUR_MS = 60 * 60 * 1000;
 
 function createBizError(message, code = 400, statusCode = 400) {
   const error = new Error(message);
@@ -12,9 +14,18 @@ function createBizError(message, code = 400, statusCode = 400) {
 }
 
 function normalizePagination(query = {}) {
-  const page = Math.max(Number(query.page) || 1, 1);
-  const pageSize = Math.min(Math.max(Number(query.pageSize || query.page_size) || 10, 1), 100);
-  return { page, pageSize };
+  return {
+    page: Math.max(Number(query.page) || 1, 1),
+    pageSize: Math.min(Math.max(Number(query.pageSize || query.page_size) || 10, 1), 100),
+  };
+}
+
+function trimText(value) {
+  return value ? String(value).trim() : '';
+}
+
+function numberOrNull(value) {
+  return value == null ? null : Number(value);
 }
 
 function requireVolunteerScope(scope) {
@@ -23,19 +34,35 @@ function requireVolunteerScope(scope) {
   }
 }
 
-function ensureOwnedTask(scope, task) {
+function ensureTask(task) {
   if (!task) {
     throw createBizError('Task not found.', 404, 404);
   }
+}
 
+function ensureOwnedTask(scope, task) {
+  ensureTask(task);
   if (task.volunteer_id !== null && Number(task.volunteer_id) !== Number(scope.userId)) {
     throw createBizError('Forbidden.', 403, 403);
   }
 }
 
+function ensureAssignedToCurrentVolunteer(scope, task) {
+  if (Number(task.volunteer_id) !== Number(scope.userId)) {
+    throw createBizError('Forbidden.', 403, 403);
+  }
+}
+
+function ensureTaskStatus(task, statuses, message) {
+  const allowed = Array.isArray(statuses) ? statuses : [statuses];
+  if (!allowed.includes(task.status)) {
+    throw createBizError(message, 409, 409);
+  }
+}
+
 async function writeAuditLog(scope, action, details = null) {
   await AuditLogModel.create({
-    userId: scope && scope.userId ? Number(scope.userId) : null,
+    userId: numberOrNull(scope && scope.userId),
     action,
     details,
   });
@@ -48,18 +75,24 @@ function toMySqlDateTime(date) {
   )}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
+function nowMySqlDateTime() {
+  return new Date().toISOString().slice(0, 19).replace('T', ' ');
+}
+
+function parseSqlDateTime(value) {
+  return value ? new Date(String(value).replace(' ', 'T') + 'Z') : null;
+}
+
 function resolveServiceTimeRange(task, attendanceLog, completedAt) {
-  const endDate = completedAt ? new Date(completedAt.replace(' ', 'T') + 'Z') : new Date();
+  const endDate = parseSqlDateTime(completedAt) || new Date();
   const startDate =
-    attendanceLog && attendanceLog.check_in_at
-      ? new Date(String(attendanceLog.check_in_at).replace(' ', 'T') + 'Z')
-      : task && task.scheduled_at
-        ? new Date(String(task.scheduled_at).replace(' ', 'T') + 'Z')
-        : new Date(endDate.getTime() - 60 * 60 * 1000);
+    parseSqlDateTime(attendanceLog && attendanceLog.check_in_at) ||
+    parseSqlDateTime(task && task.scheduled_at) ||
+    new Date(endDate.getTime() - SQL_HOUR_MS);
 
   if (Number.isNaN(startDate.getTime()) || startDate.getTime() >= endDate.getTime()) {
     return {
-      startTime: toMySqlDateTime(new Date(endDate.getTime() - 60 * 60 * 1000)),
+      startTime: toMySqlDateTime(new Date(endDate.getTime() - SQL_HOUR_MS)),
       endTime: toMySqlDateTime(endDate),
     };
   }
@@ -70,13 +103,46 @@ function resolveServiceTimeRange(task, attendanceLog, completedAt) {
   };
 }
 
+function buildPagination(pagination, total) {
+  return {
+    page: pagination.page,
+    page_size: pagination.pageSize,
+    total,
+  };
+}
+
+function buildTaskAudit(scope, taskId, fromStatus, toStatus, extra = {}) {
+  return {
+    community_id: Number(scope.communityId),
+    order_id: Number(taskId),
+    volunteer_user_id: Number(scope.userId),
+    status_from: fromStatus,
+    status_to: toStatus,
+    ...extra,
+  };
+}
+
+function buildTaskState(taskId, status, extra = {}) {
+  return {
+    task_id: Number(taskId),
+    status,
+    ...extra,
+  };
+}
+
+async function loadOwnedTask(scope, taskId) {
+  const task = await volunteerModel.findTaskByIdForVolunteer(scope, taskId);
+  ensureOwnedTask(scope, task);
+  return task;
+}
+
 const volunteerService = {
   async getTasks(scope, query = {}) {
     requireVolunteerScope(scope);
     const pagination = normalizePagination(query);
     const filters = {
-      status: query.status ? String(query.status).trim() : '',
-      keyword: query.keyword ? String(query.keyword).trim() : '',
+      status: trimText(query.status),
+      keyword: trimText(query.keyword),
     };
 
     const [list, total, summary] = await Promise.all([
@@ -85,15 +151,7 @@ const volunteerService = {
       volunteerModel.countTaskSummary(scope),
     ]);
 
-    return {
-      list,
-      pagination: {
-        page: pagination.page,
-        page_size: pagination.pageSize,
-        total,
-      },
-      summary,
-    };
+    return { list, pagination: buildPagination(pagination, total), summary };
   },
 
   async getProfile(scope) {
@@ -121,72 +179,46 @@ const volunteerService = {
   async getTraining(scope, query = {}) {
     requireVolunteerScope(scope);
     const pagination = normalizePagination(query);
-    const filters = {
-      status: query.status ? String(query.status).trim() : '',
-    };
-
+    const filters = { status: trimText(query.status) };
     const [list, total] = await Promise.all([
       volunteerModel.listTrainingByVolunteerId(scope, filters, pagination),
       volunteerModel.countTrainingByVolunteerId(scope, filters),
     ]);
 
-    return {
-      list,
-      pagination: {
-        page: pagination.page,
-        page_size: pagination.pageSize,
-        total,
-      },
-    };
+    return { list, pagination: buildPagination(pagination, total) };
   },
 
   async acceptTask(scope, taskId) {
     requireVolunteerScope(scope);
-    const task = await volunteerModel.findTaskByIdForVolunteer(scope, taskId);
-    ensureOwnedTask(scope, task);
+    const task = await loadOwnedTask(scope, taskId);
 
-    if (task.volunteer_id !== null && Number(task.volunteer_id) === Number(scope.userId)) {
+    if (Number(task.volunteer_id) === Number(scope.userId)) {
       throw createBizError('Task already accepted.', 409, 409);
     }
 
-    if (task.status !== 'pending') {
-      throw createBizError('Only pending tasks can be accepted.', 409, 409);
-    }
+    ensureTaskStatus(task, 'pending', 'Only pending tasks can be accepted.');
 
     const result = await volunteerModel.acceptTask(taskId, scope);
     if (!result || result.affectedRows < 1) {
       throw createBizError('Task accept failed, please retry.', 409, 409);
     }
 
-    await writeAuditLog(scope, 'volunteer.task.accept', {
-      community_id: Number(scope.communityId),
-      order_id: Number(taskId),
-      volunteer_user_id: Number(scope.userId),
-      status_from: task.status,
-      status_to: 'assigned',
-    });
+    await writeAuditLog(
+      scope,
+      'volunteer.task.accept',
+      buildTaskAudit(scope, taskId, task.status, 'assigned')
+    );
 
-    return {
-      task_id: Number(taskId),
-      status: 'assigned',
-      volunteer_id: Number(scope.userId),
-    };
+    return buildTaskState(taskId, 'assigned', { volunteer_id: Number(scope.userId) });
   },
 
   async checkInTask(scope, taskId) {
     requireVolunteerScope(scope);
-    const task = await volunteerModel.findTaskByIdForVolunteer(scope, taskId);
-    ensureOwnedTask(scope, task);
+    const task = await loadOwnedTask(scope, taskId);
+    ensureAssignedToCurrentVolunteer(scope, task);
+    ensureTaskStatus(task, 'assigned', 'Only assigned tasks can be checked in.');
 
-    if (Number(task.volunteer_id) !== Number(scope.userId)) {
-      throw createBizError('Forbidden.', 403, 403);
-    }
-
-    if (task.status !== 'assigned') {
-      throw createBizError('Only assigned tasks can be checked in.', 409, 409);
-    }
-
-    const checkInAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const checkInAt = nowMySqlDateTime();
     await volunteerModel.updateOwnedTaskStatus(taskId, scope.userId, 'processing');
     await volunteerModel.upsertAttendance({
       orderId: taskId,
@@ -194,75 +226,45 @@ const volunteerService = {
       volunteerUserId: scope.userId,
       checkInAt,
     });
-    await writeAuditLog(scope, 'volunteer.task.check_in', {
-      community_id: Number(scope.communityId),
-      order_id: Number(taskId),
-      volunteer_user_id: Number(scope.userId),
-      status_from: task.status,
-      status_to: 'processing',
-      check_in_at: checkInAt,
-    });
+    await writeAuditLog(
+      scope,
+      'volunteer.task.check_in',
+      buildTaskAudit(scope, taskId, task.status, 'processing', { check_in_at: checkInAt })
+    );
 
-    return {
-      task_id: Number(taskId),
-      status: 'processing',
-      check_in_at: checkInAt,
-    };
+    return buildTaskState(taskId, 'processing', { check_in_at: checkInAt });
   },
 
   async checkOutTask(scope, taskId) {
     requireVolunteerScope(scope);
-    const task = await volunteerModel.findTaskByIdForVolunteer(scope, taskId);
-    ensureOwnedTask(scope, task);
+    const task = await loadOwnedTask(scope, taskId);
+    ensureAssignedToCurrentVolunteer(scope, task);
+    ensureTaskStatus(task, 'processing', 'Only processing tasks can be checked out.');
 
-    if (Number(task.volunteer_id) !== Number(scope.userId)) {
-      throw createBizError('Forbidden.', 403, 403);
-    }
-
-    if (task.status !== 'processing') {
-      throw createBizError('Only processing tasks can be checked out.', 409, 409);
-    }
-
-    const checkOutAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const checkOutAt = nowMySqlDateTime();
     await volunteerModel.upsertAttendance({
       orderId: taskId,
       communityId: scope.communityId,
       volunteerUserId: scope.userId,
       checkOutAt,
     });
-    await writeAuditLog(scope, 'volunteer.task.check_out', {
-      community_id: Number(scope.communityId),
-      order_id: Number(taskId),
-      volunteer_user_id: Number(scope.userId),
-      status_from: task.status,
-      status_to: task.status,
-      check_out_at: checkOutAt,
-    });
+    await writeAuditLog(
+      scope,
+      'volunteer.task.check_out',
+      buildTaskAudit(scope, taskId, task.status, task.status, { check_out_at: checkOutAt })
+    );
 
-    return {
-      task_id: Number(taskId),
-      status: 'processing',
-      check_out_at: checkOutAt,
-    };
+    return buildTaskState(taskId, 'processing', { check_out_at: checkOutAt });
   },
 
   async completeTask(scope, taskId) {
     requireVolunteerScope(scope);
-    const task = await volunteerModel.findTaskByIdForVolunteer(scope, taskId);
-    ensureOwnedTask(scope, task);
+    const task = await loadOwnedTask(scope, taskId);
+    ensureAssignedToCurrentVolunteer(scope, task);
+    ensureTaskStatus(task, ['assigned', 'processing'], 'Only assigned or processing tasks can be completed.');
 
-    if (Number(task.volunteer_id) !== Number(scope.userId)) {
-      throw createBizError('Forbidden.', 403, 403);
-    }
-
-    if (!['assigned', 'processing'].includes(task.status)) {
-      throw createBizError('Only assigned or processing tasks can be completed.', 409, 409);
-    }
-
-    const completedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    await volunteerModel.updateOwnedTaskStatus(taskId, scope.userId, 'completed', {
-      completedAt,
-    });
+    const completedAt = nowMySqlDateTime();
+    await volunteerModel.updateOwnedTaskStatus(taskId, scope.userId, 'completed', { completedAt });
     await volunteerModel.upsertAttendance({
       orderId: taskId,
       communityId: scope.communityId,
@@ -285,20 +287,17 @@ const volunteerService = {
       communityId: scope.communityId,
     });
 
-    await writeAuditLog(scope, 'volunteer.task.complete', {
-      community_id: Number(scope.communityId),
-      order_id: Number(taskId),
-      volunteer_user_id: Number(scope.userId),
-      status_from: task.status,
-      status_to: 'completed',
-      completed_at: completedAt,
-      service_record_id: Number(serviceRecord.recordId),
-      time_coins: Number(serviceRecord.timeCoins),
-    });
+    await writeAuditLog(
+      scope,
+      'volunteer.task.complete',
+      buildTaskAudit(scope, taskId, task.status, 'completed', {
+        completed_at: completedAt,
+        service_record_id: Number(serviceRecord.recordId),
+        time_coins: Number(serviceRecord.timeCoins),
+      })
+    );
 
-    return {
-      task_id: Number(taskId),
-      status: 'completed',
+    return buildTaskState(taskId, 'completed', {
       completed_at: completedAt,
       settlement: {
         serviceRecord: {
@@ -310,7 +309,7 @@ const volunteerService = {
         },
         account: settlement.account || null,
       },
-    };
+    });
   },
 };
 

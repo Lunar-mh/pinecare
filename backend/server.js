@@ -6,7 +6,7 @@ const { closePool } = require('./src/config/database');
 const redis = require('./src/config/redis');
 const { validateEnv } = require('./src/config/validateEnv');
 const { resolveMode } = require('./src/config/runtimeMode');
-const { stopMedicationJobs } = require('./src/jobs');
+const { stopBackgroundWorkers } = require('./src/jobs');
 const logger = require('./src/utils/logger');
 const app = require('./src/app');
 
@@ -40,7 +40,7 @@ async function gracefulShutdown(signal) {
   }, 10000);
 
   try {
-    stopMedicationJobs();
+    stopBackgroundWorkers();
     await closeHttpServer();
     await Promise.allSettled([closePool(), redis.closeRedis()]);
     clearTimeout(timeout);

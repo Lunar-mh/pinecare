@@ -1,6 +1,6 @@
 'use strict';
 
-// Unified API response envelope: { code, message, data }
+// 统一API响应格式: { code, message, data }
 
 const ok = (res, data = null, message = 'ok') => {
   return res.json({ code: 0, message, data });

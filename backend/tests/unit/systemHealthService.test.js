@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/config/database', () => ({
   query: jest.fn(),
@@ -25,7 +25,19 @@ jest.mock('../../src/jobs', () => ({
     serverRole: 'worker',
     enabled: true,
     started: true,
-    jobs: [{ key: 'medication_reminder', running: true }],
+    jobs: [
+      { key: 'medication_reminder', running: true },
+      { key: 'sos_notification_queue', running: true },
+    ],
+  })),
+}));
+
+jest.mock('../../src/services/eventTimelineService', () => ({
+  getCareEventAuditDiagnostics: jest.fn(() => ({
+    totalFailures: 2,
+    suppressedLogs: 1,
+    recentCount: 1,
+    items: [{ action: 'sos.triggered', message: 'db down' }],
   })),
 }));
 
@@ -81,11 +93,20 @@ describe('systemHealthService', () => {
           serverRole: 'worker',
           enabled: true,
           started: true,
-          jobs: [{ key: 'medication_reminder', running: true }],
+          jobs: [
+            { key: 'medication_reminder', running: true },
+            { key: 'sos_notification_queue', running: true },
+          ],
         },
         thirdPartyErrors: {
           recentCount: 1,
           items: [{ code: '503', message: 'upstream failed' }],
+        },
+        careEventAudit: {
+          totalFailures: 2,
+          suppressedLogs: 1,
+          recentCount: 1,
+          items: [{ action: 'sos.triggered', message: 'db down' }],
         },
       },
     });
@@ -104,7 +125,10 @@ describe('systemHealthService', () => {
       serverRole: 'worker',
       enabled: true,
       started: false,
-      jobs: [{ key: 'medication_reminder', running: false }],
+      jobs: [
+        { key: 'medication_reminder', running: false },
+        { key: 'sos_notification_queue', running: false },
+      ],
     });
 
     await expect(systemHealthService.getHealthStatus()).resolves.toEqual({
@@ -125,11 +149,20 @@ describe('systemHealthService', () => {
           serverRole: 'worker',
           enabled: true,
           started: false,
-          jobs: [{ key: 'medication_reminder', running: false }],
+          jobs: [
+            { key: 'medication_reminder', running: false },
+            { key: 'sos_notification_queue', running: false },
+          ],
         },
         thirdPartyErrors: {
           recentCount: 1,
           items: [{ code: '503', message: 'upstream failed' }],
+        },
+        careEventAudit: {
+          totalFailures: 2,
+          suppressedLogs: 1,
+          recentCount: 1,
+          items: [{ action: 'sos.triggered', message: 'db down' }],
         },
       },
     });
@@ -147,7 +180,10 @@ describe('systemHealthService', () => {
         serverRole: 'worker',
         enabled: true,
         started: true,
-        jobs: [{ key: 'medication_reminder', running: true }],
+        jobs: [
+          { key: 'medication_reminder', running: true },
+          { key: 'sos_notification_queue', running: true },
+        ],
       },
     });
 
@@ -168,11 +204,20 @@ describe('systemHealthService', () => {
           serverRole: 'worker',
           enabled: true,
           started: true,
-          jobs: [{ key: 'medication_reminder', running: true }],
+          jobs: [
+            { key: 'medication_reminder', running: true },
+            { key: 'sos_notification_queue', running: true },
+          ],
         },
         thirdPartyErrors: {
           recentCount: 1,
           items: [{ code: '503', message: 'upstream failed' }],
+        },
+        careEventAudit: {
+          totalFailures: 2,
+          suppressedLogs: 1,
+          recentCount: 1,
+          items: [{ action: 'sos.triggered', message: 'db down' }],
         },
       },
     });

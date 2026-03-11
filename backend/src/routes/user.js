@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const express = require('express');
 const auth = require('../middleware/auth');
@@ -10,7 +10,7 @@ const router = express.Router();
 router.get('/profile', auth, userController.getProfile);
 router.put('/profile', auth, userController.updateProfile);
 
-// Backward-compatible alias for legacy mini-program clients.
+// 兼容旧版小程序客户端的别名路由
 router.get('/info', auth, deprecatedRoute('/user/profile'), userController.getProfile);
 router.put('/info', auth, deprecatedRoute('/user/profile'), userController.updateProfile);
 
@@ -20,7 +20,7 @@ router.put('/emergency-contacts/:id', auth, userController.updateEmergencyContac
 router.put('/emergency-contacts/:id/primary', auth, userController.setPrimaryContact);
 router.delete('/emergency-contacts/:id', auth, userController.deleteEmergencyContact);
 
-// Backward-compatible alias for legacy delete call.
+// 兼容旧版删除调用的别名路由
 router.post(
   '/emergency-contacts/:id/delete',
   auth,

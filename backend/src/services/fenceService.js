@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const geoFenceModel = require('../models/geoFenceModel');
 
@@ -113,7 +113,7 @@ const fenceService = {
   async update(userId, fenceId, payload) {
     const existing = await geoFenceModel.findByIdAndUserId(fenceId, userId);
     if (!existing) {
-      throw createBizError(404, 'Fence not found.', 404);
+      throw createBizError(404, '围栏不存在。', 404);
     }
 
     const patch = {
@@ -147,7 +147,7 @@ const fenceService = {
     });
 
     if (!updated) {
-      throw createBizError(500, 'Failed to update fence.', 500);
+      throw createBizError(500, '围栏更新失败。', 500);
     }
 
     return updated;
@@ -156,7 +156,7 @@ const fenceService = {
   async remove(userId, fenceId) {
     const affectedRows = await geoFenceModel.deleteByIdAndUserId(fenceId, userId);
     if (!affectedRows) {
-      throw createBizError(404, 'Fence not found.', 404);
+      throw createBizError(404, '围栏不存在。', 404);
     }
 
     return null;
@@ -165,7 +165,7 @@ const fenceService = {
   async toggle(userId, fenceId, isActive) {
     const updated = await geoFenceModel.toggleByIdAndUserId(fenceId, userId, Boolean(isActive));
     if (!updated) {
-      throw createBizError(404, 'Fence not found.', 404);
+      throw createBizError(404, '围栏不存在。', 404);
     }
 
     return updated;

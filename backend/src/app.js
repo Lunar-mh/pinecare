@@ -8,7 +8,7 @@ const systemHealthRoutes = require('./routes/systemHealthRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const requestContext = require('./middleware/requestContext');
 const securityHeaders = require('./middleware/securityHeaders');
-const { startMedicationJobs } = require('./jobs');
+const { startBackgroundWorkers } = require('./jobs');
 const {
   buildCorsOptions,
   getJsonBodyLimit,
@@ -30,7 +30,7 @@ app.use('/api/v1', routes);
 app.use('/', routes);
 
 if (shouldStartMedicationJobs()) {
-  startMedicationJobs();
+  startBackgroundWorkers();
 }
 
 app.use(errorHandler);

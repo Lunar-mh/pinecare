@@ -36,7 +36,10 @@ function buildCorsOptions() {
         return callback(null, true);
       }
 
-      return callback(new Error('CORS origin not allowed.'));
+      const err = new Error('CORS origin not allowed.');
+      err.code = 403;
+      err.statusCode = 403;
+      return callback(err);
     },
     credentials: true,
     optionsSuccessStatus: 204,
@@ -87,3 +90,4 @@ module.exports = {
   isOriginAllowed,
   shouldStartMedicationJobs,
 };
+

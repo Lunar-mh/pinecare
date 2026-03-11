@@ -20,7 +20,7 @@ function getRequestedCommunityId(req) {
 async function adminAuth(req, res, next) {
   try {
     if (!req.user) {
-      return fail(res, 401, 'Unauthorized.', null, 401);
+      return fail(res, 401, '未授权。', null, 401);
     }
 
     const isGlobalAdmin = req.user.isAdmin === true || req.user.role === 'admin';
@@ -30,7 +30,7 @@ async function adminAuth(req, res, next) {
       const scopeCommunityId = requested === undefined ? fallbackCommunityId : parsePositiveInt(requested);
 
       if (!parsePositiveInt(scopeCommunityId)) {
-        return fail(res, 400, 'Invalid community_id.', null, 400);
+        return fail(res, 400, '无效的社区ID。', null, 400);
       }
 
       req.adminScope = {
@@ -45,12 +45,12 @@ async function adminAuth(req, res, next) {
 
     const userId = Number(req.user.userId);
     if (!Number.isInteger(userId) || userId <= 0) {
-      return fail(res, 401, 'Unauthorized.', null, 401);
+      return fail(res, 401, '未授权。', null, 401);
     }
 
     const scope = await adminScopeModel.findCommunityAdminScopeByUserId(userId);
     if (!scope) {
-      return fail(res, 403, 'Forbidden.', null, 403);
+      return fail(res, 403, '禁止访问。', null, 403);
     }
 
     req.adminScope = scope;

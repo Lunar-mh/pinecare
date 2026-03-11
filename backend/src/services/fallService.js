@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const redis = require('../config/redis');
 const logger = require('../utils/logger');
@@ -43,7 +43,7 @@ const fallService = {
   },
 
   async reportFall(userId, sensorData) {
-    if (!userId) throw createBizError(401, 'User is not authenticated.', 401);
+    if (!userId) throw createBizError(401, '用户未认证。', 401);
     const { sensitivity = 'medium' } = await this.getFallSettings(userId);
     const detection = this.detectFall(sensorData, sensitivity);
 
@@ -82,10 +82,10 @@ const fallService = {
     }
 
     const event = await FallModel.findEventByIdAndUser(numericEventId, userId);
-    if (!event) throw createBizError(404, 'Fall event does not exist.', 404);
-    if (event.status !== 'detecting') throw createBizError(409, 'Current status does not allow cancellation.', 409);
+    if (!event) throw createBizError(404, '跌倒事件不存在。', 404);
+    if (event.status !== 'detecting') throw createBizError(409, '当前状态不允许取消。', 409);
     if (!(await FallModel.markCancelled(numericEventId))) {
-      throw createBizError(409, 'Event was already processed and cannot be cancelled.', 409);
+      throw createBizError(409, '事件已处理，无法取消。', 409);
     }
 
     await redis.del(timerKey(numericEventId));

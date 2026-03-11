@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const medicalApiService = require('./medicalApiService');
 const medicalDirectoryModel = require('../models/medicalDirectoryModel');
@@ -124,7 +124,7 @@ const medicalDirectoryService = {
       );
     }
 
-    throw createBizError(503, 'Medical hospitals service is temporarily unavailable.', 503);
+    throw createBizError(503, '医院服务暂时不可用。', 503);
   },
 
   async getDepartments(hospitalId) {
@@ -171,7 +171,7 @@ const medicalDirectoryService = {
       );
     }
 
-    throw createBizError(503, 'Medical departments service is temporarily unavailable.', 503);
+    throw createBizError(503, '科室服务暂时不可用。', 503);
   },
 
   async getDoctors(query = {}) {
@@ -219,7 +219,7 @@ const medicalDirectoryService = {
       });
     }
 
-    throw createBizError(503, 'Medical doctors service is temporarily unavailable.', 503);
+    throw createBizError(503, '医生服务暂时不可用。', 503);
   },
 
   async getDoctorDetail(doctorId) {
@@ -268,7 +268,7 @@ const medicalDirectoryService = {
       );
     }
 
-    throw createBizError(404, 'Doctor not found.', 404);
+    throw createBizError(404, '医生不存在。', 404);
   },
 };
 

@@ -16,7 +16,7 @@ function safeUse(path, routeFile) {
     router.use(path, routeModule);
   } catch (err) {
     if (err.code === 'MODULE_NOT_FOUND' && String(err.message || '').includes(routeFile)) {
-      console.warn(`[safeUse] skipped ${path}, missing route module: ${routeFile}`);
+      console.warn(`[safeUse] 跳过 ${path}, 缺少路由模块: ${routeFile}`);
       return;
     }
     throw err;

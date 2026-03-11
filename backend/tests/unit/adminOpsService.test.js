@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const loadService = () => {
   jest.resetModules();
@@ -47,6 +47,7 @@ const loadService = () => {
   const smsNotifyService = { getCapabilityReport: jest.fn(() => ({ configured: true, mode: 'live', effectiveMode: 'live', fallbackAllowed: false, source: 'aliyun_sms', missingConfig: [], notes: 'ok', healthy: true })) };
   const wechatNotifyService = { getCapabilityReport: jest.fn(() => ({ configured: true, mode: 'live', effectiveMode: 'live', fallbackAllowed: false, source: 'wechat_subscribe_message', missingConfig: [], notes: 'ok', healthy: true })) };
   const systemHealthService = { getReadinessStatus: jest.fn(async () => ({ ready: true, data: { status: 'ok' } })) };
+  const eventTimelineService = { getCareEventAuditDiagnostics: jest.fn(() => ({ totalFailures: 2, suppressedLogs: 1, recentCount: 1, items: [{ action: 'sos.triggered', message: 'db down' }] })) };
   const runtimeMode = { resolveMode: jest.fn(() => 'COMPETITION_SANDBOX'), isProductionLive: jest.fn(() => false) };
   const thirdParty = { getRecentThirdPartyErrors: jest.fn(() => [{ code: '503' }]) };
   const DEMO_SCENARIOS = [{ id: 'demo-1', title: 'Demo One', bootstrap: { tables: 1 }, modules: ['medical'], apiSequence: ['/a', '/b'], checklist: ['step1'] }];
@@ -66,6 +67,7 @@ const loadService = () => {
   jest.doMock('../../src/data/competitionSeedManifest', () => ({ COMPETITION_SEED_MANIFEST: { coverage: 'baseline' } }));
   jest.doMock('../../src/data/competitionSeedAssets', () => ({ COMPETITION_SEED_ASSETS: { outputDir: 'generated/competition-seed', files: { bootstrapSql: 'bootstrap.sql', summary: 'summary.json', bootstrapSummary: 'bootstrap-summary.json' }, commands: ['npm run seed'] } }));
   jest.doMock('../../src/config/runtimeMode', () => runtimeMode);
+  jest.doMock('../../src/services/eventTimelineService', () => eventTimelineService);
   jest.doMock('../../src/utils/thirdParty', () => thirdParty);
   jest.doMock('../../src/utils/wechatNotifier', () => wechatNotifier);
   jest.doMock('../../src/services/smsNotifyService', () => smsNotifyService);
@@ -197,3 +199,4 @@ describe('adminOpsService', () => {
     await expect(loaded.service.bootstrapDemoScenario({ scenarioId: 'missing' })).rejects.toMatchObject({ code: 404 });
   });
 });
+

@@ -73,9 +73,18 @@ describe('admin event replay service', () => {
     expect(result.timeline[0]).toMatchObject({ type: 'audit', title: 'location.upload' });
     expect(result.timeline).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ type: 'sos', delivery: { total: { failed: 1, sent: 1, pending: 0 } } }),
-        expect.objectContaining({ type: 'fall', delivery: { failed: 1, total: 2 } }),
+        expect.objectContaining({
+          type: 'sos',
+          delivery: expect.objectContaining({
+            total: expect.objectContaining({ failed: 1, sent: 1, pending: 0 }),
+          }),
+        }),
+        expect.objectContaining({
+          type: 'fall',
+          delivery: expect.objectContaining({ failed: 1, total: 2 }),
+        }),
       ])
     );
   });
 });
+

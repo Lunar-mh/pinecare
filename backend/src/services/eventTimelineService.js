@@ -17,6 +17,22 @@ const CARE_EVENT_ACTIONS = new Set([
   'community.sos.cancel',
 ]);
 
+const AUDIT_FAILURE_HISTORY_LIMIT = Math.max(
+  5,
+  Number(process.env.CARE_EVENT_AUDIT_FAILURE_HISTORY_LIMIT || 20)
+);
+const AUDIT_FAILURE_LOG_COOLDOWN_MS = Math.max(
+  1000,
+  Number(process.env.CARE_EVENT_AUDIT_LOG_COOLDOWN_MS || 5000)
+);
+
+const auditFailureState = {
+  totalFailures: 0,
+  suppressedLogs: 0,
+  recentFailures: [],
+  lastLoggedAtByKey: new Map(),
+};
+
 function toDate(value) {
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
@@ -38,6 +54,62 @@ function sortTimeline(list) {
   });
 }
 
+function buildFailureEntry(action, payload, err) {
+  return {
+    occurredAt: new Date().toISOString(),
+    action,
+    userId: payload && payload.userId ? Number(payload.userId) : null,
+    entityType: payload && payload.entityType ? payload.entityType : null,
+    entityId: payload && payload.entityId ? payload.entityId : null,
+    status: payload && payload.status ? payload.status : null,
+    message: err && err.message ? String(err.message) : 'Unknown audit log write failure.',
+  };
+}
+
+function rememberFailure(entry) {
+  auditFailureState.totalFailures += 1;
+  auditFailureState.recentFailures.unshift(entry);
+  if (auditFailureState.recentFailures.length > AUDIT_FAILURE_HISTORY_LIMIT) {
+    auditFailureState.recentFailures = auditFailureState.recentFailures.slice(
+      0,
+      AUDIT_FAILURE_HISTORY_LIMIT
+    );
+  }
+
+  const key = `${entry.action}:${entry.message}`;
+  const now = Date.now();
+  const lastLoggedAt = auditFailureState.lastLoggedAtByKey.get(key) || 0;
+  if (now - lastLoggedAt < AUDIT_FAILURE_LOG_COOLDOWN_MS) {
+    auditFailureState.suppressedLogs += 1;
+    return false;
+  }
+
+  auditFailureState.lastLoggedAtByKey.set(key, now);
+  return true;
+}
+
+function getCareEventAuditDiagnostics(limit = 10) {
+  const safeLimit = Math.min(
+    AUDIT_FAILURE_HISTORY_LIMIT,
+    Math.max(1, Number(limit) || Math.min(10, AUDIT_FAILURE_HISTORY_LIMIT))
+  );
+  const items = auditFailureState.recentFailures.slice(0, safeLimit);
+
+  return {
+    totalFailures: auditFailureState.totalFailures,
+    suppressedLogs: auditFailureState.suppressedLogs,
+    recentCount: items.length,
+    items,
+  };
+}
+
+function resetCareEventAuditDiagnostics() {
+  auditFailureState.totalFailures = 0;
+  auditFailureState.suppressedLogs = 0;
+  auditFailureState.recentFailures = [];
+  auditFailureState.lastLoggedAtByKey.clear();
+}
+
 async function recordCareEvent(action, payload = {}) {
   try {
     await AuditLogModel.create({
@@ -52,7 +124,11 @@ async function recordCareEvent(action, payload = {}) {
       },
     });
   } catch (err) {
-    console.error('care_event_audit_failed', { action, message: err.message });
+    const entry = buildFailureEntry(action, payload, err);
+    const shouldLog = rememberFailure(entry);
+    if (shouldLog && process.env.NODE_ENV !== 'test') {
+      console.warn('care_event_audit_failed', entry);
+    }
   }
 }
 
@@ -170,8 +246,14 @@ module.exports = {
   buildFallDeliverySummary,
   buildSosDeliverySummary,
   buildUnifiedTimeline,
+  getCareEventAuditDiagnostics,
   isWithinRange,
   recordCareEvent,
+  resetCareEventAuditDiagnostics,
   sortTimeline,
   toDate,
 };
+
+
+
+

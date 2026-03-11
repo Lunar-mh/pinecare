@@ -38,7 +38,7 @@ router.get('/health/:elderId', validateElderId, familyController.getHealthByElde
 router.get('/settings', familyController.getSettings);
 router.put('/settings', validateSettingsPayload, familyController.updateSettings);
 
-// Expose family-space APIs on the spec-compatible /family prefix.
+// 在 /family 前缀下暴露家庭空间API
 router.post('/message/send', uploadAudio, validateSendMessage, familySpaceController.sendMessage);
 router.get('/message/list', validatePagination, familySpaceController.listMessages);
 router.post('/album/upload', uploadImage, validateUploadAlbum, familySpaceController.uploadAlbum);

@@ -1,7 +1,7 @@
 ﻿'use strict';
 
 const SensitiveRecord = require('../models/sensitiveRecord');
-
+const logger = require('../utils/logger');
 const HIGH_RISK_WORDS = ['自杀', '自残', '割腕', '轻生', '不想活', '去死', '活不下去'];
 const MEDIUM_RISK_WORDS = ['头晕', '胸痛', '呼吸困难', '晕倒', '昏迷'];
 
@@ -88,9 +88,13 @@ class ContentSafetyService {
     try {
       await SensitiveRecord.create({ userId, content, riskType, riskLevel });
     } catch (err) {
-      console.error('sensitive_content_record_failed', { message: err.message });
+      logger.error('contentSafetyService', 'record_risk_failed', { error: err.message });
     }
   }
 }
 
 module.exports = new ContentSafetyService();
+
+
+
+

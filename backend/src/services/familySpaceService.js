@@ -100,15 +100,15 @@ const familySpaceService = {
     const audioFile = payload.audioFile;
 
     if (!audioFile || !Buffer.isBuffer(audioFile.buffer)) {
-      throw createBizError(400, 'Audio file is required.', 400);
+      throw createBizError(400, '音频文件为必填项。', 400);
     }
     if (fromUserId === toUserId) {
-      throw createBizError(400, 'Cannot send a voice message to yourself.', 400);
+      throw createBizError(400, '不能给自己发送语音消息。', 400);
     }
 
     const sharedFamilyId = await familySpaceModel.findSharedFamilyId(fromUserId, toUserId);
     if (!sharedFamilyId) {
-      throw createBizError(403, 'Users are not in the same family space.', 403);
+      throw createBizError(403, '用户不在同一家庭空间。', 403);
     }
 
     const audioKey = buildStorageKey('family-space/audio', fromUserId, audioFile);
@@ -149,12 +149,12 @@ const familySpaceService = {
     const caption = payload.caption || '';
 
     if (!imageFile || !Buffer.isBuffer(imageFile.buffer)) {
-      throw createBizError(400, 'Image file is required.', 400);
+      throw createBizError(400, '图片文件为必填项。', 400);
     }
 
     const allowed = await familySpaceModel.checkUserInFamily(parsedUserId, familyId);
     if (!allowed) {
-      throw createBizError(403, 'User cannot access this family space.', 403);
+      throw createBizError(403, '用户无权访问该家庭空间。', 403);
     }
 
     const imageKey = buildStorageKey('family-space/album', parsedUserId, imageFile);
@@ -187,7 +187,7 @@ const familySpaceService = {
 
     const allowed = await familySpaceModel.checkUserInFamily(parsedUserId, familyId);
     if (!allowed) {
-      throw createBizError(403, 'User cannot access this family space.', 403);
+      throw createBizError(403, '用户无权访问该家庭空间。', 403);
     }
 
     const result = await familySpaceModel.listAlbumByFamilyId(familyId, page, pageSize);
