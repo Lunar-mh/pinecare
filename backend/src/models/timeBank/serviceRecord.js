@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { pool, query, generateRecordHash, ZERO_HASH, getCreditLevelByScore } = require('./shared');
 
@@ -12,17 +12,10 @@ module.exports = {
     );
 
     return rows.length > 0 ? rows[0].record_hash : ZERO_HASH;
-  }
-
-  /**
-   * 创建待确认服务记录，并计算 prev_hash/record_hash
-   * @param {object} data
-   * @returns {Promise<object>}
-   */
+  },
 
   async createServiceRecord(data) {
     const prevHash = await this.getLatestRecordHash();
-
     const payload = {
       prev_hash: prevHash,
       provider_id: Number(data.providerId),
@@ -35,7 +28,6 @@ module.exports = {
       location_hash: data.locationHash || null,
       status: 'pending',
     };
-
     const recordHash = generateRecordHash(payload);
 
     const [result] = await query(
@@ -76,13 +68,7 @@ module.exports = {
       status: 'pending',
       timeCoins: payload.time_coins,
     };
-  }
-
-  /**
-   * 按 ID 查询服务记录
-   * @param {number} id
-   * @returns {Promise<object|null>}
-   */
+  },
 
   async getServiceRecordById(id) {
     const [rows] = await query(
@@ -96,15 +82,7 @@ module.exports = {
     );
 
     return rows[0] || null;
-  }
-
-  /**
-   * 更新服务记录状态与签名
-   * @param {number} id
-   * @param {'confirmed'|'cancelled'} status
-   * @param {{providerSignature?: string, recipientSignature?: string, platformSignature?: string}} signatures
-   * @returns {Promise<boolean>}
-   */
+  },
 
   async updateServiceRecordStatus(id, status, signatures = {}) {
     const [result] = await query(
@@ -124,15 +102,7 @@ module.exports = {
     );
 
     return result.affectedRows > 0;
-  }
-
-  /**
-   * 原子更新服务记录状态并在确认时结算时间币
-   * @param {number} recordId
-   * @param {'confirm'|'cancel'} action
-   * @param {{providerSignature?: string, recipientSignature?: string, platformSignature?: string}} signatures
-   * @returns {Promise<{record: object, account: object|null}>}
-   */
+  },
 
   async settleServiceRecord(recordId, action, signatures = {}) {
     const conn = await pool.getConnection();
@@ -245,22 +215,13 @@ module.exports = {
     } finally {
       conn.release();
     }
-  }
-
-  /**
-   * 原子更新余额与累计统计
-   * @param {number} userId
-   * @param {number} coins
-   * @param {'earn'|'spend'} type
-   * @returns {Promise<object>}
-   */
+  },
 
   async listServiceHistory(userId, type, page = 1, pageSize = 10) {
     const uid = Number(userId);
     const pageNum = Math.max(1, Number(page) || 1);
     const size = Math.max(1, Math.min(100, Number(pageSize) || 10));
     const offset = (pageNum - 1) * size;
-
     const whereField = type === 'received' ? 'recipient_id' : 'provider_id';
 
     const [countRows] = await query(
@@ -292,12 +253,5 @@ module.exports = {
         totalPages: Math.ceil(total / size),
       },
     };
-  }
-
-  /**
-   * 查询兑换历史
-   * @param {number} userId
-   * @returns {Promise<Array>}
-   */
-
+  },
 };

@@ -1,5 +1,5 @@
-﻿// Test setup file
-// Add any global test setup logic here if needed
+// 测试配置文件
+// 如需添加全局测试配置逻辑请在此处添加
 
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
 process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;

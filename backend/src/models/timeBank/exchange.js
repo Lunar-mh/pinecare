@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { pool, query } = require('./shared');
 
@@ -13,24 +13,11 @@ module.exports = {
     );
 
     return rows;
-  }
-
-  /**
-   * 兑换历史别名方法（兼容任务命名）
-   * @param {number} userId
-   * @returns {Promise<Array>}
-   */
+  },
 
   async listExchangeHistoryByUser(userId) {
     return this.listExchangeHistory(userId);
-  }
-
-  /**
-   * 创建兑换记录并扣减余额（事务）
-   * @param {number} userId
-   * @param {{ exchangeType: string, itemName: string, coinsRequired: number }} payload
-   * @returns {Promise<object>}
-   */
+  },
 
   async createExchangeRecord(userId, payload) {
     const uid = Number(userId);
@@ -98,12 +85,5 @@ module.exports = {
     } finally {
       conn.release();
     }
-  }
-
-  /**
-   * 查询社区排行榜（余额降序）
-   * @param {number|string} communityId
-   * @returns {Promise<Array>}
-   */
-
+  },
 };

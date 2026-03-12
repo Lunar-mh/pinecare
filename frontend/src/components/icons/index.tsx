@@ -32,12 +32,12 @@ import {
 } from '@nutui/icons-react-taro'
 
 configure({
-  // WeChat miniprogram runtime has no built-in template for the HTML i tag.
-  // Force NutUI icons to render as view to avoid tmpl_0_i not found.
+  // 微信小程序运行时没有HTML i标签的内置模板
+  // 强制NutUI图标渲染为view以避免tmpl_0_i未找到错误
   tag: 'view',
 })
 
-// Icon name types
+// 图标名称类型
 export type IconName =
   | 'heart'
   | 'pill'
@@ -78,7 +78,7 @@ interface IconProps {
   onClick?: () => void
 }
 
-// NutUI icon 映射�?// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// NutUI icon 映射�?// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ICON_MAP: Record<IconName, React.ComponentType<any>> = {
   heart: HeartFill,
   pill: Health,
@@ -114,8 +114,8 @@ const ICON_MAP: Record<IconName, React.ComponentType<any>> = {
 }
 
 /**
- * Icon component �?基于 NutUI icons-react-taro
- * 不使�?<svg> 标签，避免微信小程序 tmpl_0_svg 编译错误
+ * 图标组件 - 基于NutUI icons-react-taro
+ * 不使用<svg>标签，避免微信小程序tmpl_0_svg编译错误
  */
 export function Icon({ name, size = 24, color = 'currentColor', className = '', onClick }: IconProps) {
   const NutIcon = ICON_MAP[name]
@@ -136,7 +136,7 @@ export function Icon({ name, size = 24, color = 'currentColor', className = '', 
   )
 }
 
-// Convenience components
+// 便捷组件
 export const HeartIcon = (props: Omit<IconProps, 'name'>) => <Icon name="heart" {...props} />
 export const PillIcon = (props: Omit<IconProps, 'name'>) => <Icon name="pill" {...props} />
 export const SosIcon = (props: Omit<IconProps, 'name'>) => <Icon name="sos" {...props} />

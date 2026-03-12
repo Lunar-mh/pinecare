@@ -1,8 +1,9 @@
-'use strict';
+﻿'use strict';
 
 const axios = require('axios');
 const { SOS_ERROR_CODES, createSosError } = require('../utils/errorCodes');
 const sosSmsDirectService = require('./sosSmsDirectService');
+const { mergeProviderRuntime, recordProviderSuccess } = require('../utils/providerRuntime');
 
 const DEFAULT_TIMEOUT_MS = parseInt(process.env.SOS_SMS_TIMEOUT_MS || '5000', 10);
 
@@ -10,19 +11,22 @@ function getCapabilityReport() {
   const endpoint = String(process.env.SOS_SMS_NOTIFY_URL || '').trim();
   const direct = sosSmsDirectService.getCapabilityReport();
 
-  return {
+  return mergeProviderRuntime('sos-sms-webhook', {
     key: 'sos_sms_notify',
     configured: Boolean(endpoint) || direct.liveConfigured,
     mode: endpoint ? 'webhook' : direct.requestedMode,
+    requestedMode: endpoint ? 'webhook' : direct.requestedMode,
     effectiveMode: endpoint ? 'webhook' : direct.effectiveMode,
     fallbackAllowed: endpoint ? true : direct.fallbackAllowed,
     source: endpoint ? 'external_webhook' : direct.provider,
     missingConfig: endpoint ? [] : direct.missingConfig,
+    runtimeMode: direct.runtimeMode || null,
+    liveConfigured: Boolean(endpoint) || direct.liveConfigured,
     notes: endpoint
       ? 'SOS SMS notifications are forwarded to the configured webhook endpoint.'
       : 'SOS SMS notifications use direct Aliyun SMS delivery when live credentials are present.',
     healthy: Boolean(endpoint) || direct.liveConfigured || direct.fallbackAllowed,
-  };
+  });
 }
 
 async function sendSmsNotification(payload) {
@@ -63,7 +67,12 @@ async function sendSmsNotification(payload) {
       { timeout: DEFAULT_TIMEOUT_MS }
     );
 
-    recordProviderSuccess('sos-sms-webhook', { operation: 'send', mode: 'webhook', endpoint });
+    recordProviderSuccess('sos-sms-webhook', {
+      operation: 'send',
+      mode: 'webhook',
+      endpoint,
+      eventId: payload.event_id || null,
+    });
     return response.data || { ok: true };
   } catch (err) {
     throw createSosError(
@@ -79,4 +88,3 @@ module.exports = {
   sendSmsNotification,
   getCapabilityReport,
 };
-

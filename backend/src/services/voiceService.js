@@ -1,10 +1,11 @@
-'use strict';
+Ôªø'use strict';
 
 const axios = require('axios');
 const ossService = require('./ossService');
 const { createUpstreamError, isRetryableError, logThirdPartyError } = require('../utils/thirdParty');
-const { mergeProviderRuntime, recordProviderSuccess } = require('../utils/providerRuntime');
+const { recordProviderSuccess } = require('../utils/providerRuntime');
 const { resolveIntegrationMode } = require('../config/integrationMode');
+const { buildCapabilityReport } = require('./integrationCapability/buildReport');
 
 const DASHSCOPE_BASE = 'https://dashscope.aliyuncs.com/api/v1';
 const REQUEST_TIMEOUT_MS = Number(process.env.VOICE_SERVICE_TIMEOUT_MS || 15000);
@@ -57,14 +58,7 @@ const buildStubAudio = (text) => Buffer.from(`stub-audio:${String(text || '').tr
 
 class VoiceService {
   getCapabilityReport() {
-    const strategy = getModeStrategy();
-    return {
-      requestedMode: strategy.requestedMode,
-      effectiveMode: strategy.effectiveMode,
-      liveConfigured: strategy.liveConfigured,
-      fallbackAllowed: strategy.fallbackAllowed,
-      runtimeMode: strategy.runtimeMode,
-    };
+    return buildCapabilityReport('dashscope-voice', getModeStrategy());
   }
 
   isLiveMode() {
@@ -121,9 +115,15 @@ class VoiceService {
     );
 
     const audioUrl = res && res.data && res.data.output && res.data.output.audio ? res.data.output.audio.url : null;
-    if (!audioUrl) throw createBizError('TTSœÏ”¶Œ¥∞¸∫¨“Ù∆µURL°£', 502, 502);
+    if (!audioUrl) throw createBizError('TTS response missing audio URL.', 502, 502);
 
     const audioRes = await withRetry('textToSpeech.download', () => axios.get(audioUrl, { responseType: 'arraybuffer', timeout: 10000 }));
+    recordProviderSuccess('dashscope-voice', {
+      operation: 'text_to_speech',
+      mode: 'live',
+      requestId: res.data && res.data.request_id ? res.data.request_id : null,
+      audioUrl,
+    });
     return Buffer.from(audioRes.data).toString('base64');
   }
 
@@ -146,22 +146,28 @@ class VoiceService {
         if (!transcriptionUrl) throw createBizError('ASR task completed without transcript URL.', 502, 502);
 
         const transcRes = await withRetry('speechToText.transcript', () => axios.get(transcriptionUrl, { timeout: 10000 }));
-        return (Array.isArray(transcRes.data && transcRes.data.transcripts) ? transcRes.data.transcripts : [])
+        const transcript = (Array.isArray(transcRes.data && transcRes.data.transcripts) ? transcRes.data.transcripts : [])
           .map((segment) => segment.text || segment.transcript || '')
           .join(' ')
           .trim();
+        recordProviderSuccess('dashscope-voice', {
+          operation: 'speech_to_text',
+          mode: 'live',
+          taskId,
+          transcriptLength: transcript.length,
+        });
+        return transcript;
       }
 
       if (status === 'FAILED') {
         const errMsg = res && res.data && res.data.output && Array.isArray(res.data.output.results) && res.data.output.results[0]
           ? res.data.output.results[0].message || 'ASR task failed.'
-          : 'ASR»ŒŒÒ ß∞‹°£';
+          : 'ASR task failed.';
         throw createBizError(errMsg, 502, 502);
       }
     }
-    throw createBizError('ASR»ŒŒÒ≥¨ ±°£', 504, 504);
+    throw createBizError('ASR task timed out.', 504, 504);
   }
 }
 
 module.exports = new VoiceService();
-

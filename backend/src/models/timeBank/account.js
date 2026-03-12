@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { pool, query, getCreditLevelByScore } = require('./shared');
 
@@ -25,19 +25,14 @@ module.exports = {
     );
 
     return rows[0] || null;
-  }
-
-  /**
-   * 获取最新服务记录哈希
-   * @returns {Promise<string>}
-   */
+  },
 
   async updateAccountBalance(userId, coins, type) {
     const uid = Number(userId);
     const amount = Number(coins);
 
     if (!uid || !amount || amount < 0) {
-      throw new Error('更新余额参数非法');
+      throw new Error('更新时间币余额参数非法');
     }
 
     const conn = await pool.getConnection();
@@ -111,15 +106,5 @@ module.exports = {
     } finally {
       conn.release();
     }
-  }
-
-  /**
-   * 查询服务历史（支持 provided/received 与分页）
-   * @param {number} userId
-   * @param {'provided'|'received'} type
-   * @param {number} page
-   * @param {number} pageSize
-   * @returns {Promise<{list: Array, pagination: object}>}
-   */
-
+  },
 };

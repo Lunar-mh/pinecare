@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const axios = require('axios');
 const ConsultRecord = require('../models/consultRecord');
@@ -9,6 +9,7 @@ const { createUpstreamError, isRetryableError, logThirdPartyError } = require('.
 const { mergeProviderRuntime, recordProviderSuccess } = require('../utils/providerRuntime');
 const { resolveIntegrationMode } = require('../config/integrationMode');
 const logger = require('../utils/logger');
+const { buildCapabilityReport } = require('./integrationCapability/buildReport');
 const DASHSCOPE_URL = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
 const REQUEST_TIMEOUT_MS = Number(process.env.AI_CONSULT_TIMEOUT_MS || 30000);
 const MAX_RETRY = Math.max(0, Number(process.env.AI_CONSULT_MAX_RETRY || 2));
@@ -132,6 +133,7 @@ class AIService {
 }
 
 module.exports = new AIService();
+
 
 
 

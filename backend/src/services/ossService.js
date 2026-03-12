@@ -1,13 +1,11 @@
-'use strict';
+﻿﻿'use strict';
 
 const axios = require('axios');
 const ossConfig = require('../config/oss');
-const {
-  createUpstreamError,
-  isRetryableError,
-  logThirdPartyError,
-} = require('../utils/thirdParty');
+const { createUpstreamError, isRetryableError, logThirdPartyError } = require('../utils/thirdParty');
+const { recordProviderSuccess } = require('../utils/providerRuntime');
 const { resolveIntegrationMode } = require('../config/integrationMode');
+const { buildCapabilityReport } = require('./integrationCapability/buildReport');
 
 const MAX_RETRY = Math.max(0, Number(process.env.OSS_MAX_RETRY || 2));
 
@@ -110,10 +108,10 @@ async function simulateUpload(kind, key, content) {
 
 function toOssError(err) {
   return createUpstreamError(err, {
-    timeout: 'OSS上传超时�?,
-    rateLimited: 'OSS上传被限流�?,
-    unavailable: 'OSS服务不可用�?,
-    failed: 'OSS上传失败�?,
+    timeout: 'OSS 上传超时。',
+    rateLimited: 'OSS 上传被限流。',
+    unavailable: 'OSS 服务不可用。',
+    failed: 'OSS 上传失败。',
   });
 }
 
@@ -125,10 +123,7 @@ async function requestWithRetry(operation, requestFactory) {
       return await requestFactory();
     } catch (err) {
       lastError = err;
-      logThirdPartyError('oss-upload', err, {
-        operation,
-        attempt: attempt + 1,
-      });
+      logThirdPartyError('oss-upload', err, { operation, attempt: attempt + 1 });
 
       if (!isRetryableError(err) || attempt >= MAX_RETRY) {
         throw toOssError(err);
@@ -143,7 +138,7 @@ async function requestWithRetry(operation, requestFactory) {
 
 async function uploadWithLiveApi(kind, content, key, contentType) {
   if (!hasLiveConfig()) {
-    throw toOssError(new Error('OSS live模式需要配置OSS端点和凭证�?));
+    throw toOssError(new Error('OSS live 模式需要配置 OSS 端点和凭证。'));
   }
 
   const payload = {
@@ -161,12 +156,19 @@ async function uploadWithLiveApi(kind, content, key, contentType) {
   const data = response.data || {};
   const url = data.url || (data.data && data.data.url);
   if (!url || typeof url !== 'string') {
-    const err = new Error('OSS上传响应无效�?);
+    const err = new Error('OSS 上传响应无效。');
     err.code = 'INVALID_OSS_RESPONSE';
     throw toOssError(err);
   }
 
-  recordProviderSuccess('oss-upload', { operation: 'upload', mode: 'live', kind, key: normalizeKey(key), bucket: ossConfig.bucket, url });
+  recordProviderSuccess('oss-upload', {
+    operation: 'upload',
+    mode: 'live',
+    kind,
+    key: normalizeKey(key),
+    bucket: ossConfig.bucket,
+    url,
+  });
   return url;
 }
 
@@ -179,7 +181,7 @@ async function uploadByKind(kind, content, key, contentType) {
   }
 
   if (!strategy.stubAllowed) {
-    throw toOssError(new Error('生产模式下OSS mock模式已禁用�?));
+    throw toOssError(new Error('生产模式下 OSS mock 模式已禁用。'));
   }
 
   await simulateUpload(kind, safeKey, content);
@@ -199,14 +201,7 @@ function isLiveMode() {
 }
 
 function getCapabilityReport() {
-  const strategy = getModeStrategy();
-  return {
-    requestedMode: strategy.requestedMode,
-    effectiveMode: strategy.effectiveMode,
-    liveConfigured: strategy.liveConfigured,
-    fallbackAllowed: strategy.fallbackAllowed,
-    runtimeMode: strategy.runtimeMode,
-  };
+  return buildCapabilityReport('oss-upload', getModeStrategy());
 }
 
 module.exports = {
@@ -216,4 +211,3 @@ module.exports = {
   isLiveMode,
   getCapabilityReport,
 };
-

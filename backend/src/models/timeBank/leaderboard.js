@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { query } = require('./shared');
 
@@ -6,7 +6,6 @@ module.exports = {
   async getCommunityLeaderboard(communityId) {
     const cid = communityId === undefined || communityId === null ? null : Number(communityId);
 
-    // 优先尝试按用户社区维度查询，若 users 表不存在则退化为全站排行
     try {
       if (cid) {
         const [rows] = await query(
@@ -21,7 +20,6 @@ module.exports = {
         return rows;
       }
     } catch (err) {
-      // users 表不存在时忽略，降级到全站排行
       if (err && err.code !== 'ER_NO_SUCH_TABLE') {
         throw err;
       }
@@ -35,7 +33,5 @@ module.exports = {
     );
 
     return rows;
-  }
-}
-
+  },
 };

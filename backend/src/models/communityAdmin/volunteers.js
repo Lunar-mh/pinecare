@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { query } = require('./shared');
 
@@ -36,13 +36,6 @@ module.exports = {
     return rows;
   },
 
-  /**
-   * 统计志愿者总数
-   * @param {number} communityId
-   * @param {object} filters
-   * @returns {Promise<number>}
-   */
-
   async countVolunteers(communityId, filters = {}) {
     const where = ['ca.community_id = ?', "ca.role = 'volunteer'"];
     const params = [communityId];
@@ -63,14 +56,6 @@ module.exports = {
     return rows[0] ? Number(rows[0].total) : 0;
   },
 
-  /**
-   * 分页查询工单
-   * @param {number} communityId
-   * @param {object} filters
-   * @param {{ page: number, pageSize: number }} pagination
-   * @returns {Promise<Array>}
-   */
-
   async findVolunteerInCommunity(communityId, volunteerUserId) {
     const [rows] = await query(
       `SELECT ca.id, ca.user_id, ca.community_id, ca.role, u.name, u.phone
@@ -88,3 +73,4 @@ module.exports = {
 
 
 };
+

@@ -1,8 +1,9 @@
-'use strict';
+﻿'use strict';
 
 const axios = require('axios');
 const { SOS_ERROR_CODES, createSosError } = require('../utils/errorCodes');
 const sosWechatDirectService = require('./sosWechatDirectService');
+const { mergeProviderRuntime, recordProviderSuccess } = require('../utils/providerRuntime');
 
 const DEFAULT_TIMEOUT_MS = parseInt(process.env.SOS_WECHAT_TIMEOUT_MS || '5000', 10);
 
@@ -10,19 +11,22 @@ function getCapabilityReport() {
   const endpoint = String(process.env.SOS_WECHAT_NOTIFY_URL || '').trim();
   const direct = sosWechatDirectService.getCapabilityReport();
 
-  return {
+  return mergeProviderRuntime('sos-wechat-webhook', {
     key: 'sos_wechat_notify',
     configured: Boolean(endpoint) || direct.liveConfigured,
     mode: endpoint ? 'webhook' : direct.requestedMode,
+    requestedMode: endpoint ? 'webhook' : direct.requestedMode,
     effectiveMode: endpoint ? 'webhook' : direct.effectiveMode,
     fallbackAllowed: endpoint ? true : direct.fallbackAllowed,
     source: endpoint ? 'external_webhook' : direct.provider,
     missingConfig: endpoint ? [] : direct.missingConfig,
+    runtimeMode: direct.runtimeMode || null,
+    liveConfigured: Boolean(endpoint) || direct.liveConfigured,
     notes: endpoint
       ? 'SOS WeChat notifications are forwarded to the configured webhook endpoint.'
       : 'SOS WeChat notifications use direct subscribe-message delivery when live credentials are present.',
     healthy: Boolean(endpoint) || direct.liveConfigured || direct.fallbackAllowed,
-  };
+  });
 }
 
 async function sendWechatNotification(payload) {
@@ -63,7 +67,12 @@ async function sendWechatNotification(payload) {
       { timeout: DEFAULT_TIMEOUT_MS }
     );
 
-    recordProviderSuccess('sos-wechat-webhook', { operation: 'send', mode: 'webhook', endpoint });
+    recordProviderSuccess('sos-wechat-webhook', {
+      operation: 'send',
+      mode: 'webhook',
+      endpoint,
+      eventId: payload.event_id || null,
+    });
     return response.data || { ok: true };
   } catch (err) {
     throw createSosError(
@@ -79,4 +88,3 @@ module.exports = {
   sendWechatNotification,
   getCapabilityReport,
 };
-

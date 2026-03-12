@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const fs = require('fs');
 const path = require('path');
@@ -233,7 +233,7 @@ if (require.main === module) {
       try {
         await pool.end();
       } catch (_err) {
-        // ignore pool shutdown errors
+        // 忽略连接池关闭错误
       }
     });
 }

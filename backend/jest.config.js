@@ -1,3 +1,9 @@
+﻿process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
+process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+process.env.RUNTIME_MODE = process.env.RUNTIME_MODE || 'COMPETITION_SANDBOX';
+process.env.COMPETITION_SANDBOX = process.env.COMPETITION_SANDBOX || '1';
+process.env.PRODUCTION_LIVE = process.env.PRODUCTION_LIVE || '0';
+
 module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/*.test.js'],
@@ -14,7 +20,6 @@ module.exports = {
   moduleNameMapper: {
     '@/(.*)': '<rootDir>/src/$1',
   },
-  setupFilesAfterEnv: ['<rootDir>/tests/helpers/setup.js'],
   coverageDirectory: 'coverage',
   verbose: true,
 };

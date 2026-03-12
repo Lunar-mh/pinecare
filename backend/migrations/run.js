@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const fs = require('fs');
 const path = require('path');
@@ -265,7 +265,7 @@ async function executeMigrationFile(filename) {
     try {
       await connection.rollback();
     } catch (_rollbackError) {
-      // Swallow rollback failures to preserve the original error.
+      // 忽略回滚失败以保留原始错误
     }
     throw err;
   } finally {

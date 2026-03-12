@@ -131,17 +131,17 @@ function toWechatError(err) {
 
 function normalizeWechatApiError(data) {
   const errCode = Number(data && data.errcode);
-  const errMsg = String((data && data.errmsg) || 'wechat api error');
+  const errMsg = String((data && data.errmsg) || '微信接口错误');
 
   if (errCode === -1 || errCode === 45009) {
-    return createBizError(`wechat rate limit: ${errMsg}`, 503, 503, data);
+    return createBizError(`微信限流: ${errMsg}`, 503, 503, data);
   }
 
   if (errCode === 40001 || errCode === 42001) {
-    return createBizError(`wechat access token invalid: ${errMsg}`, 502, 502, data);
+    return createBizError(`微信访问令牌无效: ${errMsg}`, 502, 502, data);
   }
 
-  return createBizError(`wechat notify failed: ${errMsg}`, 502, 502, data);
+  return createBizError(`微信通知失败: ${errMsg}`, 502, 502, data);
 }
 
 function isRetryableWechatError(err) {
@@ -165,12 +165,12 @@ async function requestWithRetry(payload, retryTimes, type) {
 
   if (strategy.effectiveMode !== 'live' || !apiUrl) {
     if (!strategy.stubAllowed) {
-      throw createBizError('WeChat notify stub mode is disabled in PRODUCTION_LIVE mode.', 503, 503);
+      throw createBizError('生产模式下微信通知沙箱模式已禁用。', 503, 503);
     }
 
     return {
       errcode: 0,
-      errmsg: 'mock success',
+      errmsg: '模拟成功',
       msgid: `mock-${Date.now()}`,
       mock: true,
     };
@@ -220,7 +220,7 @@ async function sendTemplateByOpenId(options) {
 
   if (!templateId) {
     if (!strategy.stubAllowed) {
-      throw createBizError('WeChat template id is required in PRODUCTION_LIVE mode.', 503, 503);
+      throw createBizError('生产模式下微信模板ID为必填项。', 503, 503);
     }
 
     return {

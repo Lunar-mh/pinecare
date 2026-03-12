@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { query } = require('../config/database');
 const redis = require('../config/redis');
@@ -10,7 +10,7 @@ const { getJobStatus } = require('../jobs');
 const { getCareEventAuditDiagnostics } = require('./eventTimelineService');
 const sosQueueService = require('./sosQueueService');
 
- KEY_TABLES = [
+const KEY_TABLES = [
   'users',
   'health_archives',
   'health_records',
@@ -159,4 +159,5 @@ module.exports = {
   getLivenessStatus,
   getReadinessStatus,
 };
+
 

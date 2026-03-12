@@ -1,4 +1,4 @@
-﻿'use strict';
+﻿﻿'use strict';
 
 const familyModel = require('../models/family');
 const familySpaceModel = require('../models/familySpace');

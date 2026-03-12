@@ -32,6 +32,7 @@ backend/coverage/
 # Generated competition assets
 backend/generated/competition-seed/
 !backend/generated/competition-seed/.gitkeep
+backend/generated/competition-package/
 
 # Frontend build cache
 frontend/.swc/
@@ -46,5 +47,6 @@ dump.rdb
 # Docker
 docker_data/
 
-# Local temporary patch files
+# Local temporary files
 tmp_patch_test*
+tmp-*.js
