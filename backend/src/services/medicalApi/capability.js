@@ -2,6 +2,7 @@
 
 const { resolveIntegrationMode } = require('../../config/integrationMode');
 const { CIRCUIT_BREAKER_COOLDOWN_MS, CIRCUIT_BREAKER_THRESHOLD, MAX_RETRY, createBizError, createUpstreamError, isRetryableError, logThirdPartyError, sleep, writeAudit } = require('./shared');
+const { mergeProviderRuntime, recordProviderSuccess } = require('../../utils/providerRuntime');
 
 function hasLiveConfig(service) {
   return Boolean(service.baseURL) && Boolean(service.apiKey);
@@ -166,3 +167,4 @@ module.exports = {
   isLiveMode,
   requestWithRetry,
 };
+

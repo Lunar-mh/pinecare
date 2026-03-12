@@ -1,4 +1,4 @@
-ï»¿'use strict';
+'use strict';
 
 const redis = require('../config/redis');
 const CompanionModel = require('../models/companion');
@@ -7,6 +7,7 @@ const qwenService = require('./qwenService');
 const emotionService = require('./emotionService');
 const contentSafetyService = require('./contentSafetyService');
 const { resolveIntegrationMode } = require('../config/integrationMode');
+const { mergeProviderRuntime, recordProviderSuccess } = require('../utils/providerRuntime');
 const logger = require('../utils/logger');
 
 const CONTEXT_PREFIX = 'companion:context:';
@@ -34,36 +35,36 @@ const nostalgia = (songList, movieList, photoList) => ({
 });
 
 const GAME_LIST = [
-  game('memory', 'æ•°å­—è®°å¿†', 'çŸ­æ—¶è®°å¿†è®­ç»ƒï¼Œå¸®åŠ©ä¿æŒæ³¨æ„åŠ›å’Œè®°å¿†åŠ›ã€‚', 'ç³»ç»Ÿå±•ç¤ºä¸€ç»„æ•°å­—ï¼ŒçŸ­æš‚è®°å¿†åæŒ‰é¡ºåºè¾“å…¥ã€‚'),
-  game('word_chain', 'è¯è¯­æ¥é¾™', 'è¯­è¨€è”æƒ³è®­ç»ƒï¼Œå¸®åŠ©ä¿æŒæ€ç»´æ´»è·ƒã€‚', 'æ ¹æ®ä¸Šä¸€ä¸ªè¯çš„æœ«å­—æ¥å‡ºä¸‹ä¸€ä¸ªè¯ã€‚'),
-  game('puzzle', 'æ‹¼å›¾', 'ç©ºé—´è®¤çŸ¥è®­ç»ƒï¼Œå¸®åŠ©ä¿æŒä¸“æ³¨å’Œè€å¿ƒã€‚', 'åœ¨é™å®šæ—¶é—´å†…å®Œæˆå›¾å—æ‹¼æ¥ã€‚'),
+  game('memory', 'Êı×Ö¼ÇÒä', '¶ÌÊ±¼ÇÒäÑµÁ·£¬°ïÖú±£³Ö×¢ÒâÁ¦ºÍ¼ÇÒäÁ¦¡£', 'ÏµÍ³Õ¹Ê¾Ò»×éÊı×Ö£¬¶ÌÔİ¼ÇÒäºó°´Ë³ĞòÊäÈë¡£'),
+  game('word_chain', '´ÊÓï½ÓÁú', 'ÓïÑÔÁªÏëÑµÁ·£¬°ïÖú±£³ÖË¼Î¬»îÔ¾¡£', '¸ù¾İÉÏÒ»¸ö´ÊµÄÄ©×Ö½Ó³öÏÂÒ»¸ö´Ê¡£'),
+  game('puzzle', 'Æ´Í¼', '¿Õ¼äÈÏÖªÑµÁ·£¬°ïÖú±£³Ö×¨×¢ºÍÄÍĞÄ¡£', 'ÔÚÏŞ¶¨Ê±¼äÄÚÍê³ÉÍ¼¿éÆ´½Ó¡£'),
 ];
 
 const NOSTALGIA_LIBRARY = {
   '1950s': nostalgia(
-    songs(['å—æ³¥æ¹¾', 'éƒ­å…°è‹±'], ['è®©æˆ‘ä»¬è¡èµ·åŒæ¡¨', 'åˆ˜æƒ èŠ³'], ['æˆ‘çš„ç¥–å›½', 'éƒ­å…°è‹±']),
-    movies(['ç™½æ¯›å¥³', 1951], ['ä¸Šç”˜å²­', 1956], ['æ—å®¶é“ºå­', 1959]),
-    photos(['è€å¼æ”¶éŸ³æœº', 'æœ¨è´¨æœºèº«ä¸æ—‹é’®è°ƒé¢‘ï¼Œæ˜¯å¾ˆå¤šå®¶åº­å…±åŒçš„æ—¶ä»£è®°å¿†ã€‚'], ['èƒ¡åŒç”Ÿæ´»ç…§', 'é‚»é‡Œå›´åèŠå¤©ï¼Œå……æ»¡çƒŸç«æ°”ã€‚'])
+    songs(['ÄÏÄàÍå', '¹ùÀ¼Ó¢'], ['ÈÃÎÒÃÇµ´ÆğË«½°', 'Áõ»İ·¼'], ['ÎÒµÄ×æ¹ú', '¹ùÀ¼Ó¢']),
+    movies(['°×Ã«Å®', 1951], ['ÉÏ¸ÊÁë', 1956], ['ÁÖ¼ÒÆÌ×Ó', 1959]),
+    photos(['ÀÏÊ½ÊÕÒô»ú', 'Ä¾ÖÊ»úÉíÓëĞıÅ¥µ÷Æµ£¬ÊÇºÜ¶à¼ÒÍ¥¹²Í¬µÄÊ±´ú¼ÇÒä¡£'], ['ºúÍ¬Éú»îÕÕ', 'ÁÚÀïÎ§×øÁÄÌì£¬³äÂúÑÌ»ğÆø¡£'])
   ),
   '1960s': nostalgia(
-    songs(['è‰åŸä¸Šå‡èµ·ä¸è½çš„å¤ªé˜³', 'èƒ¡æ¾å'], ['æ´ªæ¹–æ°´æµªæ‰“æµª', 'ç‹ç‰ç'], ['å­¦ä¹ é›·é”‹å¥½æ¦œæ ·', 'åˆå”±']),
-    movies(['è‹±é›„å„¿å¥³', 1964], ['åœ°é“æˆ˜', 1965], ['å°å…µå¼ å˜', 1963]),
-    photos(['é»‘ç™½å…¨å®¶ç¦', 'ç¿»é¢†è¡¬è¡«å’Œä¸­å±±è£…æ˜¯é‚£ä¸ªå¹´ä»£å¸¸è§ç©¿ç€ã€‚'], ['è€å¼è‡ªè¡Œè½¦', 'äºŒå…«å¤§æ æ˜¯å¾ˆå¤šäººçš„é€šå‹¤ä¸»åŠ›ã€‚'])
+    songs(['²İÔ­ÉÏÉıÆğ²»ÂäµÄÌ«Ñô', 'ºúËÉ»ª'], ['ºéºşË®ÀË´òÀË', 'ÍõÓñÕä'], ['Ñ§Ï°À×·æºÃ°ñÑù', 'ºÏ³ª']),
+    movies(['Ó¢ĞÛ¶ùÅ®', 1964], ['µØµÀÕ½', 1965], ['Ğ¡±øÕÅ¸Â', 1963]),
+    photos(['ºÚ°×È«¼Ò¸£', '·­Áì³ÄÉÀºÍÖĞÉ½×°ÊÇÄÇ¸öÄê´ú³£¼û´©×Å¡£'], ['ÀÏÊ½×ÔĞĞ³µ', '¶ş°Ë´ó¸ÜÊÇºÜ¶àÈËµÄÍ¨ÇÚÖ÷Á¦¡£'])
   ),
   '1970s': nostalgia(
-    songs(['çº¢æ˜Ÿæ­Œ', 'å°‘å¹´å¹¿æ’­åˆå”±å›¢'], ['æˆ‘çˆ±ä½ ä¸­å›½', 'å¶ä½©è‹±'], ['è¾¹ç–†çš„æ³‰æ°´æ¸…åˆçº¯', 'æè°·ä¸€']),
-    movies(['é—ªé—ªçš„çº¢æ˜Ÿ', 1974], ['å°èŠ±', 1979], ['åºå±±æ‹', 1980]),
-    photos(['æªç“·ç¼¸', 'å¸¸è§çš„ç”Ÿæ´»ç”¨å“ï¼Œæ‰¿è½½äº†å¾ˆå¤šå®¶åº­å›å¿†ã€‚'], ['å·¥å‚è½¦é—´ç…§', 'è®°å½•äº†é‚£ä¸ªå¹´ä»£æœ´ç´ è€Œçƒ­çƒˆçš„åŠ³åŠ¨åœºæ™¯ã€‚'])
+    songs(['ºìĞÇ¸è', 'ÉÙÄê¹ã²¥ºÏ³ªÍÅ'], ['ÎÒ°®ÄãÖĞ¹ú', 'Ò¶ÅåÓ¢'], ['±ß½®µÄÈªË®ÇåÓÖ´¿', 'Àî¹ÈÒ»']),
+    movies(['ÉÁÉÁµÄºìĞÇ', 1974], ['Ğ¡»¨', 1979], ['Â®É½Áµ', 1980]),
+    photos(['ÌÂ´É¸×', '³£¼ûµÄÉú»îÓÃÆ·£¬³ĞÔØÁËºÜ¶à¼ÒÍ¥»ØÒä¡£'], ['¹¤³§³µ¼äÕÕ', '¼ÇÂ¼ÁËÄÇ¸öÄê´úÆÓËØ¶øÈÈÁÒµÄÀÍ¶¯³¡¾°¡£'])
   ),
   '1980s': nostalgia(
-    songs(['å¹´è½»çš„æœ‹å‹æ¥ç›¸ä¼š', 'æè°·ä¸€'], ['å¤–å©†çš„æ¾æ¹–æ¹¾', 'æ½˜å®‰é‚¦'], ['ç”œèœœèœœ', 'é‚“ä¸½å›']),
-    movies(['ç‰§é©¬äºº', 1982], ['å°‘æ—å¯º', 1982], ['é«˜å±±ä¸‹çš„èŠ±ç¯', 1984]),
-    photos(['å¤§å¤´ç”µè§†æœº', 'ä¸€å®¶äººå›´åçœ‹ç”µè§†æ˜¯å¾ˆå¤šäººçš„å…±åŒè®°å¿†ã€‚'], ['è€å¼å½•éŸ³æœº', 'ç£å¸¦æ—¶ä»£çš„éŸ³ä¹å›å¿†ã€‚'])
+    songs(['ÄêÇáµÄÅóÓÑÀ´Ïà»á', 'Àî¹ÈÒ»'], ['ÍâÆÅµÄÅìºşÍå', 'ÅË°²°î'], ['ÌğÃÛÃÛ', 'µËÀö¾ı']),
+    movies(['ÄÁÂíÈË', 1982], ['ÉÙÁÖËÂ', 1982], ['¸ßÉ½ÏÂµÄ»¨»·', 1984]),
+    photos(['´óÍ·µçÊÓ»ú', 'Ò»¼ÒÈËÎ§×ø¿´µçÊÓÊÇºÜ¶àÈËµÄ¹²Í¬¼ÇÒä¡£'], ['ÀÏÊ½Â¼Òô»ú', '´Å´øÊ±´úµÄÒôÀÖ»ØÒä¡£'])
   ),
   '1990s': nostalgia(
-    songs(['æ¶›å£°ä¾æ—§', 'æ¯›å®'], ['åŒæ¡Œçš„ä½ ', 'è€ç‹¼'], ['åƒåƒé˜™æ­Œ', 'é™ˆæ…§å¨´']),
-    movies(['éœ¸ç‹åˆ«å§¬', 1993], ['é˜³å…‰ç¿çƒ‚çš„æ—¥å­', 1994], ['ä¸€ä¸ªéƒ½ä¸èƒ½å°‘', 1999]),
-    photos(['å½•åƒå…æµ·æŠ¥å¢™', 'å‘¨æœ«è§‚å½±å¨±ä¹çš„çƒ­é—¨å»å¤„ã€‚'], ['è¡—æœºå…', 'æ¸¸æˆæœºå’Œé’æ˜¥è®°å¿†äº¤ç»‡åœ¨ä¸€èµ·ã€‚'])
+    songs(['ÌÎÉùÒÀ¾É', 'Ã«Äş'], ['Í¬×ÀµÄÄã', 'ÀÏÀÇ'], ['Ç§Ç§ãÚ¸è', '³Â»Ûæµ']),
+    movies(['°ÔÍõ±ğ¼§', 1993], ['Ñô¹â²ÓÀÃµÄÈÕ×Ó', 1994], ['Ò»¸ö¶¼²»ÄÜÉÙ', 1999]),
+    photos(['Â¼ÏñÌüº£±¨Ç½', 'ÖÜÄ©¹ÛÓ°ÓéÀÖµÄÈÈÃÅÈ¥´¦¡£'], ['½Ö»úÌü', 'ÓÎÏ·»úºÍÇà´º¼ÇÒä½»Ö¯ÔÚÒ»Æğ¡£'])
   ),
 };
 
@@ -89,7 +90,7 @@ function normalizeDecade(input) {
   const raw = String(input || '').trim().toLowerCase();
   if (!raw) return DEFAULT_DECADE;
   if (/^19(50|60|70|80|90)s$/.test(raw)) return raw;
-  if (/^(50|60|70|80|90)å¹´ä»£$/.test(raw)) return `19${raw.slice(0, 2)}s`;
+  if (/^(50|60|70|80|90)Äê´ú$/.test(raw)) return `19${raw.slice(0, 2)}s`;
   if (/^(1950|1960|1970|1980|1990)$/.test(raw)) return `${raw}s`;
   return /^(50|60|70|80|90)s$/.test(raw) ? `19${raw}` : DEFAULT_DECADE;
 }
@@ -180,13 +181,13 @@ function validateGamePayload(payload) {
 class CompanionService {
   getCapabilityReport() {
     const strategy = getModeStrategy();
-    return {
+    return mergeProviderRuntime('dashscope-ai-companion', {
       requestedMode: strategy.requestedMode,
       effectiveMode: strategy.effectiveMode,
       liveConfigured: strategy.liveConfigured,
       fallbackAllowed: strategy.fallbackAllowed,
       runtimeMode: strategy.runtimeMode,
-    };
+    });
   }
 
   async chat(userId, message) {
@@ -252,6 +253,10 @@ class CompanionService {
         model: 'companion-stub',
         tokens: 0,
       };
+    }
+
+    if (strategy.effectiveMode === 'live' && !fallbackUsed) {
+      recordProviderSuccess('dashscope-ai-companion', { operation: 'chat', mode: 'live', model: qwenResult.model, tokens: qwenResult.tokens || 0, requestId: qwenResult.requestId || null });
     }
 
     const emotionScore = emotionService.analyzeDialogEmotion(cleanMessage, qwenResult.reply);
@@ -336,8 +341,8 @@ class CompanionService {
     if (userId) {
       await CompanionModel.createChatSession({
         userId,
-        message: `æ€€æ—§æ¨èè¯·æ±‚ï¼š${decadeKey}`,
-        reply: `ä¸ºæ‚¨æ¨è ${decadeKey} çš„æ€€æ—§å†…å®¹ï¼šè€æ­Œ ${data.songs.length} é¦–ã€è€ç”µå½± ${data.movies.length} éƒ¨ã€è€ç…§ç‰‡ ${data.photos.length} ç»„ã€‚`,
+        message: `»³¾ÉÍÆ¼öÇëÇó£º${decadeKey}`,
+        reply: `ÎªÄúÍÆ¼ö ${decadeKey} µÄ»³¾ÉÄÚÈİ£ºÀÏ¸è ${data.songs.length} Ê×¡¢ÀÏµçÓ° ${data.movies.length} ²¿¡¢ÀÏÕÕÆ¬ ${data.photos.length} ×é¡£`,
         emotionScore: 50,
         sessionType: 'nostalgia',
       });
@@ -359,5 +364,6 @@ module.exports.CompanionService = CompanionService;
 module.exports.GAME_LIST = GAME_LIST;
 module.exports.NOSTALGIA_LIBRARY = NOSTALGIA_LIBRARY;
 module.exports.createBizError = createBizError;
+
 
 

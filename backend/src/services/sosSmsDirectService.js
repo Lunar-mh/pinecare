@@ -1,9 +1,10 @@
-﻿'use strict';
+'use strict';
 
 const axios = require('axios');
 const crypto = require('crypto');
 const { resolveIntegrationMode } = require('../config/integrationMode');
 const { createUpstreamError, isRetryableError, logThirdPartyError } = require('../utils/thirdParty');
+const { mergeProviderRuntime, recordProviderSuccess } = require('../utils/providerRuntime');
 
 const DEFAULT_TIMEOUT_MS = Number(process.env.SOS_SMS_TIMEOUT_MS || 5000);
 const MAX_RETRY = Math.max(0, Number(process.env.SOS_NOTIFY_MAX_RETRY || 2));
@@ -259,3 +260,4 @@ module.exports = {
   sendSosSms,
   getCapabilityReport,
 };
+

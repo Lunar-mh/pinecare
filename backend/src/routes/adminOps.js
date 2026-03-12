@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const express = require('express');
 const auth = require('../middleware/auth');
@@ -93,3 +93,4 @@ router.get('/system/demo/scenarios', adminOpsController.demoScenarios);
 router.post('/system/demo/bootstrap', adminOpsController.demoBootstrap);
 
 module.exports = router;
+

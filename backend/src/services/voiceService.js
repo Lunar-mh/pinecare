@@ -1,8 +1,9 @@
-ï»¿'use strict';
+'use strict';
 
 const axios = require('axios');
 const ossService = require('./ossService');
 const { createUpstreamError, isRetryableError, logThirdPartyError } = require('../utils/thirdParty');
+const { mergeProviderRuntime, recordProviderSuccess } = require('../utils/providerRuntime');
 const { resolveIntegrationMode } = require('../config/integrationMode');
 
 const DASHSCOPE_BASE = 'https://dashscope.aliyuncs.com/api/v1';
@@ -120,7 +121,7 @@ class VoiceService {
     );
 
     const audioUrl = res && res.data && res.data.output && res.data.output.audio ? res.data.output.audio.url : null;
-    if (!audioUrl) throw createBizError('TTSå“åº”æœªåŒ…å«éŸ³é¢‘URLã€‚', 502, 502);
+    if (!audioUrl) throw createBizError('TTSÏìÓ¦Î´°üº¬ÒôÆµURL¡£', 502, 502);
 
     const audioRes = await withRetry('textToSpeech.download', () => axios.get(audioUrl, { responseType: 'arraybuffer', timeout: 10000 }));
     return Buffer.from(audioRes.data).toString('base64');
@@ -154,12 +155,13 @@ class VoiceService {
       if (status === 'FAILED') {
         const errMsg = res && res.data && res.data.output && Array.isArray(res.data.output.results) && res.data.output.results[0]
           ? res.data.output.results[0].message || 'ASR task failed.'
-          : 'ASRä»»åŠ¡å¤±è´¥ã€‚';
+          : 'ASRÈÎÎñÊ§°Ü¡£';
         throw createBizError(errMsg, 502, 502);
       }
     }
-    throw createBizError('ASRä»»åŠ¡è¶…æ—¶ã€‚', 504, 504);
+    throw createBizError('ASRÈÎÎñ³¬Ê±¡£', 504, 504);
   }
 }
 
 module.exports = new VoiceService();
+

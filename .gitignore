@@ -1,4 +1,4 @@
-# Dependencies
+﻿# Dependencies
 node_modules/
 
 # Build output
@@ -27,6 +27,14 @@ Thumbs.db
 
 # Test coverage
 coverage/
+backend/coverage/
+
+# Generated competition assets
+backend/generated/competition-seed/
+!backend/generated/competition-seed/.gitkeep
+
+# Frontend build cache
+frontend/.swc/
 
 # Private configs
 project.private.config.json
@@ -37,3 +45,6 @@ dump.rdb
 
 # Docker
 docker_data/
+
+# Local temporary patch files
+tmp_patch_test*

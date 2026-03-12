@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const axios = require('axios');
 const ConsultRecord = require('../models/consultRecord');
@@ -6,6 +6,7 @@ const AuditLogModel = require('../models/auditLog');
 const healthContextService = require('./healthContextService');
 const { buildSystemPrompt } = require('../utils/promptTemplate');
 const { createUpstreamError, isRetryableError, logThirdPartyError } = require('../utils/thirdParty');
+const { mergeProviderRuntime, recordProviderSuccess } = require('../utils/providerRuntime');
 const { resolveIntegrationMode } = require('../config/integrationMode');
 const logger = require('../utils/logger');
 const DASHSCOPE_URL = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
@@ -76,13 +77,13 @@ async function writeAudit(action, details) {
 class AIService {
   getCapabilityReport() {
     const strategy = getModeStrategy();
-    return {
+    return mergeProviderRuntime('dashscope-ai-consult', {
       requestedMode: strategy.requestedMode,
       effectiveMode: strategy.effectiveMode,
       liveConfigured: strategy.liveConfigured,
       fallbackAllowed: strategy.fallbackAllowed,
       runtimeMode: strategy.runtimeMode,
-    };
+    });
   }
 
   isLiveMode() {
@@ -108,6 +109,7 @@ class AIService {
         reply = choice && choice.message && typeof choice.message.content === 'string' && choice.message.content.trim() ? choice.message.content.trim() : null;
         if (!reply) throw createBizError('AI consult response is empty.', 503, 503);
         tokens = response.data && response.data.usage ? (response.data.usage.input_tokens || 0) + (response.data.usage.output_tokens || 0) : null;
+        recordProviderSuccess('dashscope-ai-consult', { operation: 'chat', mode: 'live', tokens, requestId: response.data && response.data.request_id ? response.data.request_id : null });
         diagnostics = { mode: 'live', source: 'dashscope_live', fallbackUsed: false, reason: 'live_response' };
       } catch (err) {
         if (!strategy.fallbackAllowed) throw err;
@@ -130,6 +132,7 @@ class AIService {
 }
 
 module.exports = new AIService();
+
 
 
 

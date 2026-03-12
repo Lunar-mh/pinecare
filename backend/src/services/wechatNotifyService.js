@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const axios = require('axios');
 const { SOS_ERROR_CODES, createSosError } = require('../utils/errorCodes');
@@ -63,6 +63,7 @@ async function sendWechatNotification(payload) {
       { timeout: DEFAULT_TIMEOUT_MS }
     );
 
+    recordProviderSuccess('sos-wechat-webhook', { operation: 'send', mode: 'webhook', endpoint });
     return response.data || { ok: true };
   } catch (err) {
     throw createSosError(
@@ -78,3 +79,4 @@ module.exports = {
   sendWechatNotification,
   getCapabilityReport,
 };
+

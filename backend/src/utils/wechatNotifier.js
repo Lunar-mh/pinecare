@@ -1,8 +1,9 @@
-﻿'use strict';
+'use strict';
 
 const axios = require('axios');
 const { query } = require('../config/database');
 const { createUpstreamError, isRetryableError, logThirdPartyError } = require('./thirdParty');
+const { mergeProviderRuntime, recordProviderSuccess } = require('./providerRuntime');
 const { resolveIntegrationMode } = require('../config/integrationMode');
 
 const DEFAULT_TIMEOUT = 5000;
@@ -189,6 +190,7 @@ async function requestWithRetry(payload, retryTimes, type) {
         throw normalizeWechatApiError(data);
       }
 
+      recordProviderSuccess('wechat-notify', { operation: 'template_send', mode: 'live', type, msgid: data.msgid || null });
       return data;
     } catch (err) {
       lastError = err;
@@ -298,3 +300,4 @@ const wechatNotifier = {
 };
 
 module.exports = wechatNotifier;
+

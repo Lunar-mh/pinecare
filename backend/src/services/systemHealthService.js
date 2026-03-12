@@ -1,15 +1,16 @@
-﻿'use strict';
+'use strict';
 
 const { query } = require('../config/database');
 const redis = require('../config/redis');
 const { getServerRole } = require('../config/http');
 const { resolveMode } = require('../config/runtimeMode');
 const { getRecentThirdPartyErrors } = require('../utils/thirdParty');
+const { listProviderRuntime } = require('../utils/providerRuntime');
 const { getJobStatus } = require('../jobs');
 const { getCareEventAuditDiagnostics } = require('./eventTimelineService');
 const sosQueueService = require('./sosQueueService');
 
-const KEY_TABLES = [
+ KEY_TABLES = [
   'users',
   'health_archives',
   'health_records',
@@ -158,3 +159,4 @@ module.exports = {
   getLivenessStatus,
   getReadinessStatus,
 };
+

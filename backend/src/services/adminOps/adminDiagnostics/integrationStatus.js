@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const fs = require('fs');
 const path = require('path');
@@ -231,3 +231,4 @@ function buildIntegrationRows() {
 module.exports = {
   buildIntegrationRows,
 };
+

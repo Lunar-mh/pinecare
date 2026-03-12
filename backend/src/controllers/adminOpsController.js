@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const { ok } = require('../utils/response');
 const { sendControllerError } = require('../utils/controllerError');
@@ -54,3 +54,4 @@ module.exports = {
     adminOpsService.bootstrapDemoScenario(req.body || {}, req.user || null)
   ),
 };
+
