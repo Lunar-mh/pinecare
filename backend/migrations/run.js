@@ -7,6 +7,40 @@ const { pool, query } = require('../src/config/database');
 
 const MIGRATIONS_DIR = __dirname;
 const STRICT_SEQUENCE_ENV = 'MIGRATION_STRICT_SEQUENCE';
+const MIGRATION_SEQUENCE_PLAN = [
+  '001_create_ai_consult_tables.sql',
+  '001_create_user_auth_tables.sql',
+  '001_create_community_admin_tables.sql',
+  '001_create_time_bank_tables.sql',
+  '001_create_fall_tables.sql',
+  '002_create_health_archives.sql',
+  '003_create_device_bindings.sql',
+  '003_create_medication_plans.sql',
+  '003_create_medication_logs.sql',
+  '003_create_medication_settings.sql',
+  '003_create_reminder_queue.sql',
+  '003_add_medication_indexes.sql',
+  '003_add_settings_queue_indexes.sql',
+  '003_add_calendar_index.sql',
+  '004_create_health_records.sql',
+  '004_create_sos_tables.sql',
+  '005_create_notification_settings.sql',
+  '005_add_health_archive_indexes.sql',
+  '006_create_voice_tables.sql',
+  '009_create_drug_interaction_tables.sql',
+  '011_create_companion_tables.sql',
+  '012_create_family_space_tables.sql',
+  '014_create_location_records.sql',
+  '014_create_geo_fences.sql',
+  '014_create_fence_alerts.sql',
+  '015_create_appointments.sql',
+  '015_create_medical_reports.sql',
+  '015_create_online_consultations.sql',
+  '016_create_volunteer_tables.sql',
+];
+const MIGRATION_SEQUENCE_INDEX = new Map(
+  MIGRATION_SEQUENCE_PLAN.map((filename, index) => [filename, index])
+);
 
 function getFilePrefix(filename) {
   const raw = filename.split('_')[0];
@@ -22,6 +56,28 @@ function getKindWeight(filename) {
     return 1;
   }
   return 2;
+}
+
+function getPlannedOrder(filename) {
+  return MIGRATION_SEQUENCE_INDEX.has(filename)
+    ? MIGRATION_SEQUENCE_INDEX.get(filename)
+    : Number.POSITIVE_INFINITY;
+}
+
+function baseSort(a, b) {
+  const prefixA = getFilePrefix(a);
+  const prefixB = getFilePrefix(b);
+  if (prefixA !== prefixB) {
+    return prefixA - prefixB;
+  }
+
+  const kindA = getKindWeight(a);
+  const kindB = getKindWeight(b);
+  if (kindA !== kindB) {
+    return kindA - kindB;
+  }
+
+  return a.localeCompare(b);
 }
 
 function splitSqlStatements(sqlText) {
@@ -56,19 +112,13 @@ function getMigrationFiles() {
     .readdirSync(MIGRATIONS_DIR)
     .filter((name) => name.endsWith('.sql'))
     .sort((a, b) => {
-      const prefixA = getFilePrefix(a);
-      const prefixB = getFilePrefix(b);
-      if (prefixA !== prefixB) {
-        return prefixA - prefixB;
+      const plannedA = getPlannedOrder(a);
+      const plannedB = getPlannedOrder(b);
+      if (plannedA !== plannedB) {
+        return plannedA - plannedB;
       }
 
-      const kindA = getKindWeight(a);
-      const kindB = getKindWeight(b);
-      if (kindA !== kindB) {
-        return kindA - kindB;
-      }
-
-      return a.localeCompare(b);
+      return baseSort(a, b);
     });
 }
 
@@ -102,7 +152,15 @@ function enforceMigrationPrefixPolicy(files) {
     return duplicates;
   }
 
-  const message = duplicates
+  const actionable = duplicates.filter((item) =>
+    item.files.some((filename) => !MIGRATION_SEQUENCE_INDEX.has(filename))
+  );
+
+  if (actionable.length === 0) {
+    return duplicates;
+  }
+
+  const message = actionable
     .map((item) => `prefix ${item.prefix}: ${item.files.join(', ')}`)
     .join('; ');
 
@@ -157,22 +215,6 @@ function topologicalSort(files, depsMap) {
       }
     });
   });
-
-  const baseSort = (a, b) => {
-    const prefixA = getFilePrefix(a);
-    const prefixB = getFilePrefix(b);
-    if (prefixA !== prefixB) {
-      return prefixA - prefixB;
-    }
-
-    const kindA = getKindWeight(a);
-    const kindB = getKindWeight(b);
-    if (kindA !== kindB) {
-      return kindA - kindB;
-    }
-
-    return a.localeCompare(b);
-  };
 
   const ready = files.filter((file) => (indegree.get(file) || 0) === 0).sort(baseSort);
   const ordered = [];
@@ -265,7 +307,7 @@ async function executeMigrationFile(filename) {
     try {
       await connection.rollback();
     } catch (_rollbackError) {
-      // 忽略回滚失败以保留原始错误
+      // Ignore rollback errors and keep the original migration failure.
     }
     throw err;
   } finally {
@@ -353,6 +395,7 @@ module.exports = {
   topologicalSort,
   getFilePrefix,
   getKindWeight,
+  getPlannedOrder,
   collectDuplicatePrefixes,
   enforceMigrationPrefixPolicy,
   allCreatedTablesExist,

@@ -89,21 +89,32 @@ function resolveCapabilitySource(key, capability) {
 }
 
 function buildCapabilityItem(key, capability, extra = {}) {
+  const merged = {
+    ...(capability || {}),
+    ...extra,
+  };
+
   return {
     key,
-    configured: Boolean(capability && capability.liveConfigured),
-    mode: capability ? capability.requestedMode || capability.mode : 'auto',
-    effectiveMode: capability ? capability.effectiveMode : 'stub',
-    fallbackAllowed: Boolean(capability && capability.fallbackAllowed),
-    runtimeMode: capability ? capability.runtimeMode || resolveMode() : resolveMode(),
-    source: extra.source || resolveCapabilitySource(key, capability),
-    missingConfig: Array.isArray(extra.missingConfig)
-      ? extra.missingConfig
-      : Array.isArray(capability && capability.missingConfig)
-        ? capability.missingConfig
-        : [],
-    circuitOpen: Boolean(extra.circuitOpen || (capability && capability.circuitOpen)),
-    notes: extra.notes || null,
+    configured: merged.configured !== undefined ? Boolean(merged.configured) : Boolean(merged.liveConfigured),
+    liveConfigured: merged.liveConfigured !== undefined ? Boolean(merged.liveConfigured) : Boolean(merged.configured),
+    mode: merged.requestedMode || merged.mode || 'auto',
+    requestedMode: merged.requestedMode || merged.mode || 'auto',
+    effectiveMode: merged.effectiveMode || 'stub',
+    fallbackAllowed: Boolean(merged.fallbackAllowed),
+    runtimeMode: merged.runtimeMode || resolveMode(),
+    source: merged.source || resolveCapabilitySource(key, merged),
+    missingConfig: Array.isArray(merged.missingConfig) ? merged.missingConfig : [],
+    circuitOpen: Boolean(merged.circuitOpen),
+    notes: merged.notes || null,
+    provider: merged.provider || null,
+    lastSuccessAt: merged.lastSuccessAt || null,
+    lastSuccess: merged.lastSuccess || null,
+    successCount: Number(merged.successCount || 0),
+    lastErrorAt: merged.lastErrorAt || null,
+    lastError: merged.lastError || null,
+    errorCount: Number(merged.errorCount || 0),
+    lastOutcome: merged.lastOutcome || null,
   };
 }
 
@@ -150,7 +161,9 @@ function buildIntegrationRows() {
     {
       key: 'competition_seed',
       configured: competitionSeed.generated,
+      liveConfigured: competitionSeed.generated,
       mode: 'local',
+      requestedMode: 'local',
       effectiveMode: competitionSeed.sqlReady
         ? 'ready'
         : competitionSeed.generated
@@ -169,6 +182,14 @@ function buildIntegrationRows() {
       commands: competitionSeed.commands,
       notes: buildCompetitionSeedNotes(competitionSeed),
       runtimeMode,
+      provider: null,
+      lastSuccessAt: competitionSeed.verification.verifiedAt || null,
+      lastSuccess: competitionSeed.verification.available ? competitionSeed.verification : null,
+      successCount: competitionSeed.verification.available ? 1 : 0,
+      lastErrorAt: null,
+      lastError: null,
+      errorCount: 0,
+      lastOutcome: competitionSeed.verification.available ? 'success' : null,
     },
     {
       ...buildCapabilityItem('medical', medicalCapability, {
@@ -194,28 +215,8 @@ function buildIntegrationRows() {
           ? 'WeChat template notify currently uses the live platform API path.'
           : 'WeChat template notify currently uses deterministic mock responses for sandbox replay.',
     }),
-    {
-      key: 'sos_sms_notify',
-      configured: sosSmsCapability.configured,
-      mode: sosSmsCapability.mode,
-      effectiveMode: sosSmsCapability.effectiveMode,
-      fallbackAllowed: sosSmsCapability.fallbackAllowed,
-      source: sosSmsCapability.source,
-      missingConfig: sosSmsCapability.missingConfig,
-      notes: sosSmsCapability.notes,
-      runtimeMode,
-    },
-    {
-      key: 'sos_wechat_notify',
-      configured: sosWechatCapability.configured,
-      mode: sosWechatCapability.mode,
-      effectiveMode: sosWechatCapability.effectiveMode,
-      fallbackAllowed: sosWechatCapability.fallbackAllowed,
-      source: sosWechatCapability.source,
-      missingConfig: sosWechatCapability.missingConfig,
-      notes: sosWechatCapability.notes,
-      runtimeMode,
-    },
+    buildCapabilityItem('sos_sms_notify', sosSmsCapability),
+    buildCapabilityItem('sos_wechat_notify', sosWechatCapability),
   ].map((item) => ({
     ...item,
     configState: item.configured ? 'ready' : 'missing',
@@ -231,4 +232,3 @@ function buildIntegrationRows() {
 module.exports = {
   buildIntegrationRows,
 };
-

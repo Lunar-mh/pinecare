@@ -3,7 +3,8 @@
 const axios = require('axios');
 const { query } = require('../config/database');
 const { createUpstreamError, isRetryableError, logThirdPartyError } = require('./thirdParty');
-const { mergeProviderRuntime, recordProviderSuccess } = require('./providerRuntime');
+const { recordProviderSuccess } = require('./providerRuntime');
+const { buildCapabilityReport } = require('../services/integrationCapability/buildReport');
 const { resolveIntegrationMode } = require('../config/integrationMode');
 
 const DEFAULT_TIMEOUT = 5000;
@@ -92,10 +93,12 @@ function hasLiveConfig() {
 }
 
 function getModeStrategy() {
-  return resolveIntegrationMode({
+  const strategy = resolveIntegrationMode({
     requestedMode: getRequestedMode(),
     liveConfigured: hasLiveConfig(),
   });
+  strategy.stubAllowed = strategy.stubAllowed !== undefined ? strategy.stubAllowed : strategy.fallbackAllowed;
+  return strategy;
 }
 
 function getCapabilityReport() {
@@ -110,14 +113,9 @@ function getCapabilityReport() {
     missingConfig.push('WX_MSG_TEMPLATE_ID');
   }
 
-  return {
-    requestedMode: strategy.requestedMode,
-    effectiveMode: strategy.effectiveMode,
-    liveConfigured: strategy.liveConfigured,
-    fallbackAllowed: strategy.fallbackAllowed,
-    runtimeMode: strategy.runtimeMode,
+  return buildCapabilityReport('wechat-notify', strategy, {
     missingConfig,
-  };
+  });
 }
 
 function toWechatError(err) {
@@ -131,17 +129,17 @@ function toWechatError(err) {
 
 function normalizeWechatApiError(data) {
   const errCode = Number(data && data.errcode);
-  const errMsg = String((data && data.errmsg) || '微信接口错误');
+  const errMsg = String((data && data.errmsg) || 'wechat api error');
 
   if (errCode === -1 || errCode === 45009) {
-    return createBizError(`微信限流: ${errMsg}`, 503, 503, data);
+    return createBizError(`WeChat notify rate limited: ${errMsg}`, 503, 503, data);
   }
 
   if (errCode === 40001 || errCode === 42001) {
-    return createBizError(`微信访问令牌无效: ${errMsg}`, 502, 502, data);
+    return createBizError(`WeChat access token invalid: ${errMsg}`, 502, 502, data);
   }
 
-  return createBizError(`微信通知失败: ${errMsg}`, 502, 502, data);
+  return createBizError(`WeChat notify failed: ${errMsg}`, 502, 502, data);
 }
 
 function isRetryableWechatError(err) {
@@ -165,12 +163,12 @@ async function requestWithRetry(payload, retryTimes, type) {
 
   if (strategy.effectiveMode !== 'live' || !apiUrl) {
     if (!strategy.stubAllowed) {
-      throw createBizError('生产模式下微信通知沙箱模式已禁用。', 503, 503);
+      throw createBizError('WeChat notify stub mode is disabled in PRODUCTION_LIVE mode.', 503, 503);
     }
 
     return {
       errcode: 0,
-      errmsg: '模拟成功',
+      errmsg: 'stub response',
       msgid: `mock-${Date.now()}`,
       mock: true,
     };
@@ -190,7 +188,12 @@ async function requestWithRetry(payload, retryTimes, type) {
         throw normalizeWechatApiError(data);
       }
 
-      recordProviderSuccess('wechat-notify', { operation: 'template_send', mode: 'live', type, msgid: data.msgid || null });
+      recordProviderSuccess('wechat-notify', {
+        operation: 'template_send',
+        mode: 'live',
+        type,
+        msgid: data.msgid || null,
+      });
       return data;
     } catch (err) {
       lastError = err;
@@ -220,7 +223,7 @@ async function sendTemplateByOpenId(options) {
 
   if (!templateId) {
     if (!strategy.stubAllowed) {
-      throw createBizError('生产模式下微信模板ID为必填项。', 503, 503);
+      throw createBizError('WeChat notify requires template configuration in PRODUCTION_LIVE mode.', 503, 503);
     }
 
     return {

@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/config/database', () => ({
   query: jest.fn(),
@@ -18,6 +18,21 @@ jest.mock('../../src/config/runtimeMode', () => ({
 
 jest.mock('../../src/utils/thirdParty', () => ({
   getRecentThirdPartyErrors: jest.fn(() => [{ code: '503', message: 'upstream failed' }]),
+}));
+
+jest.mock('../../src/utils/providerRuntime', () => ({
+  listProviderRuntime: jest.fn(() => [
+    {
+      provider: 'dashscope-ai-consult',
+      successCount: 1,
+      lastSuccessAt: '2026-03-12T00:00:00.000Z',
+      lastSuccess: { operation: 'chat', mode: 'live' },
+      lastErrorAt: null,
+      lastError: null,
+      errorCount: 0,
+      lastOutcome: 'success',
+    },
+  ]),
 }));
 
 jest.mock('../../src/jobs', () => ({
@@ -68,6 +83,19 @@ const KEY_TABLES = [
   'appointments',
   'medical_reports',
   'audit_logs',
+];
+
+const PROVIDERS = [
+  {
+    provider: 'dashscope-ai-consult',
+    successCount: 1,
+    lastSuccessAt: '2026-03-12T00:00:00.000Z',
+    lastSuccess: { operation: 'chat', mode: 'live' },
+    lastErrorAt: null,
+    lastError: null,
+    errorCount: 0,
+    lastOutcome: 'success',
+  },
 ];
 
 function mockHealthyQueries() {
@@ -121,6 +149,7 @@ describe('systemHealthService', () => {
         thirdPartyErrors: {
           recentCount: 1,
           items: [{ code: '503', message: 'upstream failed' }],
+          providers: PROVIDERS,
         },
         careEventAudit: {
           totalFailures: 2,
@@ -185,6 +214,7 @@ describe('systemHealthService', () => {
         thirdPartyErrors: {
           recentCount: 1,
           items: [{ code: '503', message: 'upstream failed' }],
+          providers: PROVIDERS,
         },
         careEventAudit: {
           totalFailures: 2,
@@ -247,6 +277,7 @@ describe('systemHealthService', () => {
         thirdPartyErrors: {
           recentCount: 1,
           items: [{ code: '503', message: 'upstream failed' }],
+          providers: PROVIDERS,
         },
         careEventAudit: {
           totalFailures: 2,
@@ -258,4 +289,3 @@ describe('systemHealthService', () => {
     });
   });
 });
-

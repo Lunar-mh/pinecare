@@ -3,7 +3,8 @@
 const axios = require('axios');
 const { resolveIntegrationMode } = require('../config/integrationMode');
 const { createUpstreamError, isRetryableError, logThirdPartyError } = require('../utils/thirdParty');
-const { mergeProviderRuntime, recordProviderSuccess } = require('../utils/providerRuntime');
+const { recordProviderSuccess } = require('../utils/providerRuntime');
+const { buildCapabilityReport } = require('./integrationCapability/buildReport');
 
 const DEFAULT_TIMEOUT_MS = Number(process.env.SOS_WECHAT_TIMEOUT_MS || 5000);
 const MAX_RETRY = Math.max(0, Number(process.env.SOS_NOTIFY_MAX_RETRY || 2));
@@ -52,15 +53,10 @@ function getCapabilityReport() {
   if (!String(process.env.WX_ACCESS_TOKEN || '').trim()) missingConfig.push('WX_ACCESS_TOKEN');
   if (!getTemplateId()) missingConfig.push('SOS_WX_MSG_TEMPLATE_ID|WX_MSG_TEMPLATE_ID_FAMILY|WX_MSG_TEMPLATE_ID');
 
-  return {
+  return buildCapabilityReport('sos-wechat-direct', strategy, {
     provider: 'wechat_subscribe_message',
-    requestedMode: strategy.requestedMode,
-    effectiveMode: strategy.effectiveMode,
-    liveConfigured: strategy.liveConfigured,
-    fallbackAllowed: strategy.fallbackAllowed,
-    runtimeMode: strategy.runtimeMode,
     missingConfig,
-  };
+  });
 }
 
 function buildApiUrl() {
@@ -128,11 +124,18 @@ async function requestWithRetry(payload) {
       if (Number(data.errcode || 0) !== 0) {
         throw normalizeWechatApiError(data);
       }
-      return {
+      const result = {
         provider: 'wechat_subscribe_message',
         msgid: data.msgid || null,
         requestId: data.requestId || null,
       };
+      recordProviderSuccess('sos-wechat-direct', {
+        operation: 'send',
+        mode: 'live',
+        msgid: result.msgid,
+        requestId: result.requestId,
+      });
+      return result;
     } catch (err) {
       lastError = err;
       logThirdPartyError('sos-wechat-direct', err, {
@@ -166,11 +169,17 @@ async function sendSosWechat(payload) {
       throw createBizError('SOS WeChat stub mode is disabled in PRODUCTION_LIVE mode.', 503, 503);
     }
 
-    return {
+    const result = {
       provider: 'wechat_subscribe_message',
       mock: true,
       msgid: `mock-${Date.now()}`,
     };
+    recordProviderSuccess('sos-wechat-direct', {
+      operation: 'send',
+      mode: 'stub',
+      msgid: result.msgid,
+    });
+    return result;
   }
 
   if (!hasLiveConfig()) {

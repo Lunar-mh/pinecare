@@ -29,6 +29,19 @@ const KEY_TABLES = [
   'audit_logs',
 ];
 
+const THIRD_PARTY_PROVIDERS = [
+  'dashscope-ai-consult',
+  'dashscope-ai-companion',
+  'dashscope-voice',
+  'medical-api',
+  'oss-upload',
+  'wechat-notify',
+  'sos-sms-webhook',
+  'sos-wechat-webhook',
+  'sos-sms-direct',
+  'sos-wechat-direct',
+];
+
 async function checkMysql() {
   try {
     await query('SELECT 1');
@@ -105,6 +118,7 @@ async function getHealthStatus() {
   const jobs = getJobStatus();
   const recentErrors = getRecentThirdPartyErrors(5);
   const careEventAudit = getCareEventAuditDiagnostics(5);
+  const providers = listProviderRuntime(THIRD_PARTY_PROVIDERS);
   const workerHealthy = jobs.serverRole !== 'worker' || !jobs.enabled || jobs.started;
   const healthy =
     mysql.status === 'ok' &&
@@ -127,6 +141,7 @@ async function getHealthStatus() {
       thirdPartyErrors: {
         recentCount: recentErrors.length,
         items: recentErrors,
+        providers,
       },
       careEventAudit,
     },
@@ -159,5 +174,3 @@ module.exports = {
   getLivenessStatus,
   getReadinessStatus,
 };
-
-

@@ -39,80 +39,110 @@ const loadService = () => {
   const timeBankModel = { settleServiceRecord: jest.fn() };
   const aiService = {
     getCapabilityReport: jest.fn(() => ({
+      provider: 'dashscope-ai-consult',
       liveConfigured: true,
       requestedMode: 'auto',
       effectiveMode: 'stub',
       fallbackAllowed: true,
+      lastSuccessAt: '2026-03-12T00:00:00.000Z',
+      lastOutcome: 'success',
+      successCount: 1,
+      errorCount: 0,
     })),
   };
   const companionService = {
     getCapabilityReport: jest.fn(() => ({
+      provider: 'dashscope-ai-companion',
       liveConfigured: false,
       requestedMode: 'auto',
       effectiveMode: 'stub',
       fallbackAllowed: true,
+      successCount: 0,
+      errorCount: 0,
     })),
   };
   const voiceService = {
     getCapabilityReport: jest.fn(() => ({
+      provider: 'dashscope-voice',
       liveConfigured: false,
       requestedMode: 'auto',
       effectiveMode: 'mock',
       fallbackAllowed: true,
+      successCount: 0,
+      errorCount: 1,
+      lastError: { code: '504' },
     })),
   };
   const medicalApiService = {
     getCapabilityReport: jest.fn(() => ({
+      provider: 'medical-api',
       liveConfigured: false,
       mode: 'auto',
+      requestedMode: 'auto',
       effectiveMode: 'stub',
       fallbackAllowed: true,
       missingConfig: ['MEDICAL_API_KEY'],
       circuitOpen: false,
+      successCount: 0,
+      errorCount: 1,
     })),
     getSourceTag: jest.fn(() => 'stub'),
   };
   const ossService = {
     getCapabilityReport: jest.fn(() => ({
+      provider: 'oss-upload',
       liveConfigured: true,
       requestedMode: 'live',
       effectiveMode: 'live',
       fallbackAllowed: false,
+      successCount: 2,
+      errorCount: 0,
     })),
   };
   const wechatNotifier = {
     getCapabilityReport: jest.fn(() => ({
+      provider: 'wechat-notify',
       liveConfigured: false,
       requestedMode: 'auto',
       effectiveMode: 'mock',
       fallbackAllowed: true,
       missingConfig: ['WECHAT_APP_ID'],
+      successCount: 0,
+      errorCount: 0,
     })),
   };
   const smsNotifyService = {
     getCapabilityReport: jest.fn(() => ({
+      provider: 'sos-sms-webhook',
       key: 'sos_sms_notify',
       configured: true,
-      mode: 'live',
-      effectiveMode: 'live',
+      requestedMode: 'webhook',
+      mode: 'webhook',
+      effectiveMode: 'webhook',
       fallbackAllowed: false,
       source: 'aliyun_sms',
       missingConfig: [],
       notes: 'ok',
       healthy: true,
+      successCount: 1,
+      errorCount: 0,
     })),
   };
   const wechatNotifyService = {
     getCapabilityReport: jest.fn(() => ({
+      provider: 'sos-wechat-webhook',
       key: 'sos_wechat_notify',
       configured: true,
-      mode: 'live',
-      effectiveMode: 'live',
+      requestedMode: 'webhook',
+      mode: 'webhook',
+      effectiveMode: 'webhook',
       fallbackAllowed: false,
       source: 'wechat_subscribe_message',
       missingConfig: [],
       notes: 'ok',
       healthy: true,
+      successCount: 1,
+      errorCount: 0,
     })),
   };
   const systemHealthService = {
@@ -144,6 +174,11 @@ const loadService = () => {
   const getDemoScenarioById = jest.fn(
     (id) => DEMO_SCENARIOS.find((item) => item.id === id) || null
   );
+  const getEventReplay = jest.fn(async (query = {}) => ({
+    userId: Number(query.userId),
+    summary: { totalTimelineItems: 3 },
+    timeline: [],
+  }));
 
   jest.doMock('fs', () => ({ existsSync, readFileSync }));
   jest.doMock('../../src/models/adminOpsModel', () => adminOpsModel);
@@ -175,6 +210,7 @@ const loadService = () => {
   }));
   jest.doMock('../../src/config/runtimeMode', () => runtimeMode);
   jest.doMock('../../src/services/eventTimelineService', () => eventTimelineService);
+  jest.doMock('../../src/services/adminOps/eventReplayService', () => ({ getEventReplay }));
   jest.doMock('../../src/utils/thirdParty', () => thirdParty);
   jest.doMock('../../src/utils/wechatNotifier', () => wechatNotifier);
   jest.doMock('../../src/services/smsNotifyService', () => smsNotifyService);
@@ -453,7 +489,7 @@ describe('adminOpsService', () => {
     });
   });
 
-  it('handles time bank views, diagnostics, audit logs, and demo scenarios', async () => {
+  it('handles time bank views, diagnostics, audit logs, evidence, and demo scenarios', async () => {
     let loaded = loadService();
     loaded.adminOpsModel.listTimeBankServiceHistory.mockResolvedValueOnce([
       {
@@ -544,6 +580,19 @@ describe('adminOpsService', () => {
         }),
       ]),
     });
+    await expect(loaded.service.getEvidenceBundle({ userId: '7' })).resolves.toMatchObject({
+      readiness: { ready: true },
+      competitionSeed: expect.objectContaining({ key: 'competition_seed' }),
+      replay: expect.objectContaining({ userId: 7 }),
+      evidenceDocuments: expect.arrayContaining([
+        expect.objectContaining({ key: 'deployment_playbook' }),
+        expect.objectContaining({ key: 'api_acceptance' }),
+      ]),
+      checklist: expect.arrayContaining([
+        expect.objectContaining({ key: 'runtime_mode' }),
+        expect.objectContaining({ key: 'live_integrations' }),
+      ]),
+    });
     await expect(loaded.service.getDemoScenarios()).resolves.toMatchObject({
       scenarios: [expect.objectContaining({ id: 'demo-1', order: 1 })],
     });
@@ -563,5 +612,3 @@ describe('adminOpsService', () => {
     await expect(loaded.service.bootstrapDemoScenario({ scenarioId: 'missing' })).rejects.toMatchObject({ code: 404 });
   });
 });
-
-

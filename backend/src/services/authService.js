@@ -1,12 +1,13 @@
-﻿'use strict';
+'use strict';
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const redis = require('../config/redis');
 const UserModel = require('../models/user');
-const AuditLogModel = require('../models/auditLog');
 const smsService = require('./smsService');
+const { createBizError } = require('../utils/serviceError');
+const { writeAuditLog: writeAuditEntry } = require('../utils/auditLogHelper');
 const wechatService = require('./wechatService');
 
 const ACCESS_EXPIRES_IN = '15m';
@@ -16,13 +17,9 @@ const REFRESH_EXPIRES_SECONDS = 7 * 24 * 60 * 60;
 const LOCK_THRESHOLD = 5;
 const LOCK_MINUTES = 30;
 
-function createBusinessError(code, message, data = null, httpStatus = null) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = httpStatus || code;
-  err.data = data;
-  return err;
-}
+const createBusinessError = (code, message, data = null, httpStatus = null) => (
+  createBizError(code, message, httpStatus || code, data)
+);
 
 function requiredEnv(name, message) {
   const value = String(process.env[name] || '').trim();
@@ -78,16 +75,7 @@ function toPublicUser(user) {
 }
 
 async function writeAuditLog(userId, action, context = {}, details = null) {
-  await AuditLogModel.create({
-    userId: userId || null,
-    action,
-    ipAddress: context.ipAddress || null,
-    userAgent: context.userAgent || null,
-    details: {
-      ...(details && typeof details === 'object' ? details : {}),
-      requestId: context.requestId || null,
-    },
-  });
+  await writeAuditEntry({ userId, action, context, details });
 }
 
 async function issueTokens(userId, extraClaims = {}) {
@@ -360,4 +348,6 @@ module.exports = {
   loginWithWechat,
   unlockAccountByCode,
 };
+
+
 

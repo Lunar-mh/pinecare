@@ -77,9 +77,18 @@ function getProviderRuntime(provider) {
 }
 
 function mergeProviderRuntime(provider, payload = {}) {
+  const runtime = getProviderRuntime(provider);
   return {
     ...payload,
-    ...getProviderRuntime(provider),
+    runtimeProvider: runtime.provider,
+    provider: payload.provider || runtime.provider,
+    lastSuccessAt: runtime.lastSuccessAt,
+    lastSuccess: runtime.lastSuccess,
+    successCount: runtime.successCount,
+    lastErrorAt: runtime.lastErrorAt,
+    lastError: runtime.lastError,
+    errorCount: runtime.errorCount,
+    lastOutcome: runtime.lastOutcome,
   };
 }
 

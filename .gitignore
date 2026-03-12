@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 
 # Build output
@@ -50,3 +50,8 @@ docker_data/
 # Local temporary files
 tmp_patch_test*
 tmp-*.js
+
+# Local agent tooling
+.opencode/
+__pycache__/
+

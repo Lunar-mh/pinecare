@@ -1,22 +1,10 @@
-﻿'use strict';
+'use strict';
 
-const AuditLogModel = require('../../models/auditLog');
+const { createBizErrorFromMessage } = require('../../utils/serviceError');
+const { normalizePagination: normalizePageQuery } = require('../../utils/pagination');
+const { writeAuditLog: writeAuditEntry } = require('../../utils/auditLogHelper');
 
 const SQL_HOUR_MS = 60 * 60 * 1000;
-
-function createBizError(message, code = 400, statusCode = 400) {
-  const error = new Error(message);
-  error.code = code;
-  error.statusCode = statusCode;
-  return error;
-}
-
-function normalizePagination(query = {}) {
-  return {
-    page: Math.max(Number(query.page) || 1, 1),
-    pageSize: Math.min(Math.max(Number(query.pageSize || query.page_size) || 10, 1), 100),
-  };
-}
 
 function trimText(value) {
   return value ? String(value).trim() : '';
@@ -28,40 +16,41 @@ function numberOrNull(value) {
 
 function requireVolunteerScope(scope) {
   if (!scope || !scope.communityId || !scope.userId) {
-    throw createBizError('Volunteer scope is required.', 403, 403);
+    throw createBizErrorFromMessage('Volunteer scope is required.', 403, 403);
   }
 }
 
 function ensureTask(task) {
   if (!task) {
-    throw createBizError('Task not found.', 404, 404);
+    throw createBizErrorFromMessage('Task not found.', 404, 404);
   }
 }
 
 function ensureOwnedTask(scope, task) {
   ensureTask(task);
   if (task.volunteer_id !== null && Number(task.volunteer_id) !== Number(scope.userId)) {
-    throw createBizError('Forbidden.', 403, 403);
+    throw createBizErrorFromMessage('Forbidden.', 403, 403);
   }
 }
 
 function ensureAssignedToCurrentVolunteer(scope, task) {
   if (Number(task.volunteer_id) !== Number(scope.userId)) {
-    throw createBizError('Forbidden.', 403, 403);
+    throw createBizErrorFromMessage('Forbidden.', 403, 403);
   }
 }
 
 function ensureTaskStatus(task, statuses, message) {
   const allowed = Array.isArray(statuses) ? statuses : [statuses];
   if (!allowed.includes(task.status)) {
-    throw createBizError(message, 409, 409);
+    throw createBizErrorFromMessage(message, 409, 409);
   }
 }
 
 async function writeAuditLog(scope, action, details = null) {
-  await AuditLogModel.create({
+  await writeAuditEntry({
     userId: numberOrNull(scope && scope.userId),
     action,
+    context: (scope && scope.context) || {},
     details,
   });
 }
@@ -127,8 +116,10 @@ function buildTaskState(taskId, status, extra = {}) {
 }
 
 module.exports = {
-  createBizError,
-  normalizePagination,
+  createBizError: createBizErrorFromMessage,
+  normalizePagination(query = {}) {
+    return normalizePageQuery(query, { includeOffset: false });
+  },
   trimText,
   requireVolunteerScope,
   ensureOwnedTask,
@@ -141,3 +132,4 @@ module.exports = {
   buildTaskAudit,
   buildTaskState,
 };
+

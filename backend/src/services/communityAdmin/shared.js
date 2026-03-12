@@ -1,34 +1,24 @@
 'use strict';
 
-const AuditLogModel = require('../../models/auditLog');
 const { buildSosNotificationSummaryMap, createEmptySosNotificationSummary } = require('../../utils/sosNotificationSummary');
+const { createBizErrorFromMessage } = require('../../utils/serviceError');
+const { normalizePagination: normalizePageQuery } = require('../../utils/pagination');
+const { writeAuditLog: writeAuditEntry } = require('../../utils/auditLogHelper');
 
 const ORDER_STATUS_ENUM = ['pending', 'assigned', 'processing', 'completed', 'cancelled'];
 const SOS_STATUS_ENUM = ['triggered', 'confirmed', 'resolved', 'cancelled'];
 
-function createBizError(message, code = 400, statusCode = 400) {
-  const error = new Error(message);
-  error.code = code;
-  error.statusCode = statusCode;
-  return error;
-}
-
 function requireCommunityScope(communityId) {
   if (!communityId) {
-    throw createBizError('Community scope is required.', 403, 403);
+    throw createBizErrorFromMessage('Community scope is required.', 403, 403);
   }
 }
 
-function normalizePagination(pagination = {}) {
-  const page = Math.max(Number(pagination.page) || 1, 1);
-  const pageSize = Math.min(Math.max(Number(pagination.pageSize) || 10, 1), 100);
-  return { page, pageSize };
-}
-
 async function writeAuditLog(actor = {}, action, details = null) {
-  await AuditLogModel.create({
+  await writeAuditEntry({
     userId: actor.userId || null,
     action,
+    context: actor.context || {},
     details,
   });
 }
@@ -85,9 +75,12 @@ module.exports = {
   ORDER_STATUS_ENUM,
   SOS_STATUS_ENUM,
   buildSosNotificationSummaryMap,
-  createBizError,
+  createBizError: createBizErrorFromMessage,
   mapSosEvent,
-  normalizePagination,
+  normalizePagination(query = {}) {
+    return normalizePageQuery(query, { includeOffset: false });
+  },
   requireCommunityScope,
   writeAuditLog,
 };
+

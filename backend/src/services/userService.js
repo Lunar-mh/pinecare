@@ -1,32 +1,23 @@
-﻿'use strict';
+'use strict';
 
 const { v4: uuidv4 } = require('uuid');
 const redis = require('../config/redis');
 const UserModel = require('../models/user');
 const EmergencyContactModel = require('../models/emergencyContact');
 const FamilyBindingModel = require('../models/familyBinding');
-const AuditLogModel = require('../models/auditLog');
 const smsService = require('./smsService');
+const { createBizError } = require('../utils/serviceError');
+const { writeAuditLog: writeAuditEntry } = require('../utils/auditLogHelper');
 
 const MAX_EMERGENCY_CONTACTS = 5;
 const BINDING_QR_TTL_MS = 15 * 60 * 1000;
 
-function createBusinessError(code, message, data = null, httpStatus = null) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = httpStatus || code;
-  err.data = data;
-  return err;
-}
+const createBusinessError = (code, message, data = null, httpStatus = null) => (
+  createBizError(code, message, httpStatus || code, data)
+);
 
 async function writeAuditLog(userId, action, context = {}, details = null) {
-  await AuditLogModel.create({
-    userId: userId || null,
-    action,
-    ipAddress: context.ipAddress || null,
-    userAgent: context.userAgent || null,
-    details,
-  });
+  await writeAuditEntry({ userId, action, context, details });
 }
 
 async function assertUserAvailable(userId) {
@@ -269,3 +260,4 @@ module.exports = {
   deleteAccountByCode,
   unlockAccount,
 };
+

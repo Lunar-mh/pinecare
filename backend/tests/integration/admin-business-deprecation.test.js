@@ -56,6 +56,7 @@ jest.mock('../../src/controllers/adminOpsController', () => ({
   integrationStatus: jest.fn(),
   auditLogs: jest.fn(),
   eventReplay: jest.fn(),
+  evidenceBundle: jest.fn(),
   demoScenarios: jest.fn(),
   demoBootstrap: jest.fn(),
 }));

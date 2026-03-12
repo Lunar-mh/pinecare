@@ -1,8 +1,19 @@
 'use strict';
 
 const { resolveIntegrationMode } = require('../../config/integrationMode');
-const { CIRCUIT_BREAKER_COOLDOWN_MS, CIRCUIT_BREAKER_THRESHOLD, MAX_RETRY, createBizError, createUpstreamError, isRetryableError, logThirdPartyError, sleep, writeAudit } = require('./shared');
-const { mergeProviderRuntime, recordProviderSuccess } = require('../../utils/providerRuntime');
+const {
+  CIRCUIT_BREAKER_COOLDOWN_MS,
+  CIRCUIT_BREAKER_THRESHOLD,
+  MAX_RETRY,
+  createBizError,
+  createUpstreamError,
+  isRetryableError,
+  logThirdPartyError,
+  sleep,
+  writeAudit,
+} = require('./shared');
+const { recordProviderSuccess } = require('../../utils/providerRuntime');
+const { buildCapabilityReport } = require('../integrationCapability/buildReport');
 
 function hasLiveConfig(service) {
   return Boolean(service.baseURL) && Boolean(service.apiKey);
@@ -33,16 +44,13 @@ function getCapabilityReport(service) {
   if (!String(service.baseURL || '').trim()) missingConfig.push('MEDICAL_API_BASE_URL');
   if (!String(service.apiKey || '').trim()) missingConfig.push('MEDICAL_API_KEY');
 
-  return {
+  return buildCapabilityReport('medical-api', strategy, {
     source: getSourceTag(service),
     mode: strategy.requestedMode,
-    effectiveMode: strategy.effectiveMode,
-    liveConfigured: strategy.liveConfigured,
     fallbackAllowed: strategy.fallbackAllowed && service.allowStubFallback,
     circuitOpen: isCircuitOpen(service),
     missingConfig,
-    runtimeMode: strategy.runtimeMode,
-  };
+  });
 }
 
 function toUpstreamError(err) {
@@ -96,6 +104,10 @@ async function requestWithRetry(service, operation, requestFactory) {
     try {
       const response = await requestFactory(service.client);
       recordSuccess(service);
+      recordProviderSuccess('medical-api', {
+        operation,
+        mode: 'live',
+      });
       return response;
     } catch (err) {
       lastError = err;

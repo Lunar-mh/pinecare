@@ -1,4 +1,4 @@
-﻿﻿'use strict';
+﻿'use strict';
 
 const axios = require('axios');
 const ossConfig = require('../config/oss');
@@ -108,10 +108,10 @@ async function simulateUpload(kind, key, content) {
 
 function toOssError(err) {
   return createUpstreamError(err, {
-    timeout: 'OSS 上传超时。',
-    rateLimited: 'OSS 上传被限流。',
-    unavailable: 'OSS 服务不可用。',
-    failed: 'OSS 上传失败。',
+    timeout: 'OSS upload timed out.',
+    rateLimited: 'OSS upload is rate limited.',
+    unavailable: 'OSS service is unavailable.',
+    failed: 'OSS upload failed.',
   });
 }
 
@@ -138,7 +138,7 @@ async function requestWithRetry(operation, requestFactory) {
 
 async function uploadWithLiveApi(kind, content, key, contentType) {
   if (!hasLiveConfig()) {
-    throw toOssError(new Error('OSS live 模式需要配置 OSS 端点和凭证。'));
+    throw toOssError(new Error('OSS live mode requires endpoint and credentials.'));
   }
 
   const payload = {
@@ -156,7 +156,7 @@ async function uploadWithLiveApi(kind, content, key, contentType) {
   const data = response.data || {};
   const url = data.url || (data.data && data.data.url);
   if (!url || typeof url !== 'string') {
-    const err = new Error('OSS 上传响应无效。');
+    const err = new Error('OSS upload response is invalid.');
     err.code = 'INVALID_OSS_RESPONSE';
     throw toOssError(err);
   }
@@ -181,11 +181,20 @@ async function uploadByKind(kind, content, key, contentType) {
   }
 
   if (!strategy.stubAllowed) {
-    throw toOssError(new Error('生产模式下 OSS mock 模式已禁用。'));
+    throw toOssError(new Error('OSS stub mode is disabled in PRODUCTION_LIVE mode.'));
   }
 
   await simulateUpload(kind, safeKey, content);
-  return buildPublicUrl(ossConfig.bucket, safeKey);
+  const url = buildPublicUrl(ossConfig.bucket, safeKey);
+  recordProviderSuccess('oss-upload', {
+    operation: 'upload',
+    mode: 'stub',
+    kind,
+    key: safeKey,
+    bucket: ossConfig.bucket,
+    url,
+  });
+  return url;
 }
 
 async function uploadAudio(content, key) {

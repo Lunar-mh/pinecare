@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const express = require('express');
 const auth = require('../middleware/auth');
@@ -89,8 +89,8 @@ router.get(
 router.get('/system/integrations', adminOpsController.integrationStatus);
 router.get('/system/audit-logs', adminOpsController.auditLogs);
 router.get('/system/event-replay', adminOpsController.eventReplay);
+router.get('/system/evidence', adminOpsController.evidenceBundle);
 router.get('/system/demo/scenarios', adminOpsController.demoScenarios);
 router.post('/system/demo/bootstrap', adminOpsController.demoBootstrap);
 
 module.exports = router;
-

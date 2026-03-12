@@ -4,7 +4,8 @@ const axios = require('axios');
 const crypto = require('crypto');
 const { resolveIntegrationMode } = require('../config/integrationMode');
 const { createUpstreamError, isRetryableError, logThirdPartyError } = require('../utils/thirdParty');
-const { mergeProviderRuntime, recordProviderSuccess } = require('../utils/providerRuntime');
+const { recordProviderSuccess } = require('../utils/providerRuntime');
+const { buildCapabilityReport } = require('./integrationCapability/buildReport');
 
 const DEFAULT_TIMEOUT_MS = Number(process.env.SOS_SMS_TIMEOUT_MS || 5000);
 const MAX_RETRY = Math.max(0, Number(process.env.SOS_NOTIFY_MAX_RETRY || 2));
@@ -72,15 +73,10 @@ function getCapabilityReport() {
   if (!getSignName()) missingConfig.push('SOS_SMS_SIGN_NAME|ALIYUN_SMS_SIGN_NAME');
   if (!getTemplateCode()) missingConfig.push('SOS_SMS_TEMPLATE_CODE|ALIYUN_SMS_TEMPLATE_CODE');
 
-  return {
+  return buildCapabilityReport('sos-sms-direct', strategy, {
     provider: 'aliyun_sms',
-    requestedMode: strategy.requestedMode,
-    effectiveMode: strategy.effectiveMode,
-    liveConfigured: strategy.liveConfigured,
-    fallbackAllowed: strategy.fallbackAllowed,
-    runtimeMode: strategy.runtimeMode,
     missingConfig,
-  };
+  });
 }
 
 function buildCanonicalQuery(params) {
@@ -201,13 +197,20 @@ async function requestWithRetry(payload) {
         throw normalizeApiError(data);
       }
 
-      return {
+      const result = {
         provider: 'aliyun_sms',
         code: data.Code,
         message: data.Message,
         bizId: data.BizId || null,
         requestId: data.RequestId || null,
       };
+      recordProviderSuccess('sos-sms-direct', {
+        operation: 'send',
+        mode: 'live',
+        bizId: result.bizId,
+        requestId: result.requestId,
+      });
+      return result;
     } catch (err) {
       lastError = err;
       logThirdPartyError('sos-sms-direct', err, {
@@ -241,12 +244,19 @@ async function sendSosSms(payload) {
       throw createBizError('SOS SMS stub mode is disabled in PRODUCTION_LIVE mode.', 503, 503);
     }
 
-    return {
+    const result = {
       provider: 'aliyun_sms',
       mock: true,
       bizId: `mock-${Date.now()}`,
       requestId: `mock-${Date.now()}`,
     };
+    recordProviderSuccess('sos-sms-direct', {
+      operation: 'send',
+      mode: 'stub',
+      bizId: result.bizId,
+      requestId: result.requestId,
+    });
+    return result;
   }
 
   if (!hasLiveConfig()) {

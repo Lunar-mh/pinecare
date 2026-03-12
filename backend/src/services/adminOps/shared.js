@@ -1,11 +1,7 @@
 'use strict';
 
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
+const { createBizError } = require('../../utils/serviceError');
+const { normalizePagination, buildPagination } = require('../../utils/pagination');
 
 function isSchemaMissingError(err) {
   if (!err) return false;
@@ -48,22 +44,6 @@ function parseSensorData(value) {
   } catch (_err) {
     return null;
   }
-}
-
-function normalizePagination(query = {}, defaultPageSize = 10, maxPageSize = 100) {
-  const page = Math.max(Number(query.page) || 1, 1);
-  const pageSize = Math.min(Math.max(Number(query.pageSize) || defaultPageSize, 1), maxPageSize);
-  const offset = (page - 1) * pageSize;
-  return { page, pageSize, offset };
-}
-
-function buildPagination(page, pageSize, total) {
-  return {
-    page,
-    pageSize,
-    total,
-    totalPages: Math.ceil(total / pageSize),
-  };
 }
 
 function buildEmptyPagedResult(page, pageSize) {
