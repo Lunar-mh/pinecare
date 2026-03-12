@@ -1,4 +1,4 @@
-﻿process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
 process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
 process.env.RUNTIME_MODE = process.env.RUNTIME_MODE || 'COMPETITION_SANDBOX';
 process.env.COMPETITION_SANDBOX = process.env.COMPETITION_SANDBOX || '1';
@@ -10,10 +10,10 @@ module.exports = {
   collectCoverageFrom: ['src/**/*.js', '!src/docs/**'],
   coverageThreshold: {
     global: {
-      statements: 70,
-      branches: 52,
-      functions: 70,
-      lines: 70,
+      statements: 80,
+      branches: 60,
+      functions: 80,
+      lines: 80,
     },
   },
   testTimeout: 30000,

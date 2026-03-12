@@ -19,6 +19,16 @@ describe('fresh install smoke', () => {
         status: 'ready',
       },
     });
+    expect(result.files.required).toEqual(
+      expect.arrayContaining([
+        'docs/privacy-policy.md',
+        'docs/user-agreement.md',
+        'docs/medical-disclaimer.md',
+        'docs/ai-usage-notice.md',
+        'docs/third-party-services-and-authorizations.md',
+        'docs/data-desensitization-note.md',
+      ])
+    );
     expect(result.migrations.total).toBeGreaterThan(0);
   });
 });
