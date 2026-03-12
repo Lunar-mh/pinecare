@@ -14,6 +14,22 @@ describe('medicalMeta', () => {
         fallbackAllowed: false,
         circuitOpen: false,
         missingConfig: [],
+        provider: 'medical-api',
+        lastSuccessAt: '2026-03-12T10:00:00.000Z',
+        lastSuccess: {
+          operation: 'create_appointment',
+          requestId: 'req-1',
+          thirdPartyAppointId: 'appt-1',
+          hasUrl: true,
+          url: 'https://sensitive.example/report',
+        },
+        lastErrorAt: '2026-03-12T09:00:00.000Z',
+        lastError: {
+          message: 'upstream failed',
+          extra: { token: 'secret' },
+        },
+        successCount: 3,
+        errorCount: 1,
       })),
     };
 
@@ -37,7 +53,58 @@ describe('medicalMeta', () => {
         circuitOpen: false,
         missingConfig: [],
         configState: 'ready',
+        provider: 'medical-api',
+        liveReady: true,
+        lastSuccessAt: '2026-03-12T10:00:00.000Z',
+        lastErrorAt: '2026-03-12T09:00:00.000Z',
+        successCount: 3,
+        errorCount: 1,
+        recentReceipt: {
+          operation: 'create_appointment',
+          requestId: 'req-1',
+          thirdPartyAppointId: 'appt-1',
+          hasUrl: true,
+        },
       },
+      evidence: {
+        provider: 'medical-api',
+        recentReceipt: {
+          operation: 'create_appointment',
+          requestId: 'req-1',
+          thirdPartyAppointId: 'appt-1',
+          hasUrl: true,
+        },
+      },
+    });
+    expect(result.diagnostics.recentReceipt.url).toBeUndefined();
+  });
+
+  it('prefers explicit receipt payloads when provided', () => {
+    const service = {
+      getSourceTag: jest.fn(() => 'third_party_live'),
+      getModeTag: jest.fn(() => 'live'),
+      getCapabilityReport: jest.fn(() => ({
+        mode: 'live',
+        effectiveMode: 'live',
+        liveConfigured: true,
+        fallbackAllowed: false,
+        circuitOpen: false,
+        missingConfig: [],
+      })),
+    };
+
+    const result = createMedicalMeta(service, 'medical.appointment.create', {
+      receipt: {
+        requestId: 'req-2',
+        thirdPartyAppointId: 'appt-2',
+        doctorId: 8,
+      },
+    });
+
+    expect(result.evidence.recentReceipt).toEqual({
+      requestId: 'req-2',
+      thirdPartyAppointId: 'appt-2',
+      doctorId: 8,
     });
   });
 
@@ -69,6 +136,7 @@ describe('medicalMeta', () => {
         missingConfig: ['MEDICAL_API_BASE_URL', 'MEDICAL_API_KEY'],
         configState: 'missing',
         detail: 'using dataset fallback',
+        liveReady: false,
       },
     });
 

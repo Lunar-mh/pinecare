@@ -6,10 +6,18 @@ const { getEventReplay } = require('./eventReplayService');
 const { buildIntegrationRows } = require('./adminDiagnostics/integrationStatus');
 const { DEMO_SCENARIOS, getDemoScenarioById } = require('../../config/demoScenarios');
 const { COMPETITION_SEED_MANIFEST } = require('../../data/competitionSeedManifest');
-const { COMPETITION_SEED_ASSETS } = require('../../data/competitionSeedAssets');
-const { resolveMode, isProductionLive } = require('../../config/runtimeMode');
+const { resolveMode } = require('../../config/runtimeMode');
 const { getRecentThirdPartyErrors } = require('../../utils/thirdParty');
 const { getCareEventAuditDiagnostics } = require('../eventTimelineService');
+const {
+  buildCompetitionAssetMetadata,
+  buildEvidenceChecklist,
+  buildEvidenceDocuments,
+  buildDefenseScripts,
+  buildDemoScenarioOverview,
+  buildProviderEvidence,
+  buildScenarioWarnings,
+} = require('./adminDiagnostics/evidenceBundle');
 const {
   buildEmptyPagedResult,
   buildPagination,
@@ -19,82 +27,56 @@ const {
   parsePositiveInt,
 } = require('./shared');
 
-function buildCompetitionAssetMetadata() {
+async function buildEvidenceBundle(query = {}) {
+  const integrations = buildIntegrationRows();
+  const readiness = await systemHealthService.getReadinessStatus();
+  const careEventAudit = getCareEventAuditDiagnostics(20);
+  const replay = query.userId ? await getEventReplay(query) : null;
+  const competitionSeed = integrations.find((item) => item.key === 'competition_seed') || null;
+  const providerEvidence = buildProviderEvidence(integrations);
+
   return {
-    outputDir: COMPETITION_SEED_ASSETS.outputDir,
-    commands: COMPETITION_SEED_ASSETS.commands,
-    files: COMPETITION_SEED_ASSETS.files,
+    runtimeMode: resolveMode(),
+    generatedAt: new Date().toISOString(),
+    readiness,
+    integrations,
+    competitionSeed,
+    recentErrors: getRecentThirdPartyErrors(20),
+    careEventAudit,
+    demoScenarios: buildDemoScenarioOverview(),
+    replay,
+    evidenceDocuments: buildEvidenceDocuments(),
+    competitionDataAssets: buildCompetitionAssetMetadata(),
+    checklist: buildEvidenceChecklist(integrations, readiness, replay),
+    providerEvidence,
+    defenseScripts: buildDefenseScripts(integrations, replay),
+    commands: {
+      install: 'npm install',
+      lint: 'npm run lint',
+      test: 'npm test',
+      migrate: 'npm run migrate',
+      freshInstallSmoke: 'npm run smoke:fresh-install',
+      competitionSeedVerify: 'npm run seed:competition:verify -- --dry-run',
+      competitionSeedSql: 'npm run seed:competition:sql',
+    },
+    contest: {
+      category: 'software_application_and_development',
+      positioning: 'smart elderly care platform with AI-assisted operations and community response',
+      reminders: [
+        'Prepare originality and authorization evidence before submission.',
+        'Keep at least two authors available for onsite national defense.',
+        'Provide a stable web entry or replay evidence package for judging.',
+      ],
+    },
+    summary: {
+      liveHealthyCount: providerEvidence.filter(
+        (item) => item.healthy && item.effectiveMode === 'live'
+      ).length,
+      fallbackCount: providerEvidence.filter((item) => item.effectiveMode !== 'live').length,
+      recentErrorCount: providerEvidence.filter((item) => item.recentError).length,
+    },
+    seedManifest: COMPETITION_SEED_MANIFEST,
   };
-}
-
-function buildScenarioWarnings() {
-  return [
-    isProductionLive()
-      ? 'PRODUCTION_LIVE enabled. Stub fallback paths are restricted.'
-      : 'Sandbox mode active. Demo fallback paths remain available.',
-  ];
-}
-
-function buildEvidenceDocuments() {
-  return [
-    {
-      key: 'deployment_playbook',
-      title: 'Backend deployment playbook',
-      path: 'backend/docs/deployment-playbook.md',
-    },
-    {
-      key: 'compliance_package',
-      title: 'Compliance and contest package',
-      path: 'backend/docs/compliance-and-contest-package.md',
-    },
-    {
-      key: 'real_data_evidence',
-      title: 'Real data evidence pack',
-      path: 'backend/docs/real-data-evidence-pack.md',
-    },
-    {
-      key: 'api_acceptance',
-      title: 'API acceptance checklist',
-      path: 'backend/docs/api-acceptance-checklist.md',
-    },
-  ];
-}
-
-function buildEvidenceChecklist(integrations, readiness, replay) {
-  const liveReady = integrations.filter((item) => item.effectiveMode === 'live' && item.healthy);
-  const fallbackOnly = integrations.filter((item) => item.effectiveMode !== 'live' && item.key !== 'competition_seed');
-
-  return [
-    {
-      key: 'runtime_mode',
-      status: readiness.ready ? 'ready' : 'attention',
-      detail: `Runtime mode: ${resolveMode()}.`,
-    },
-    {
-      key: 'live_integrations',
-      status: liveReady.length >= 3 ? 'ready' : 'attention',
-      detail: `${liveReady.length} integrations are currently live and healthy.`,
-    },
-    {
-      key: 'fallback_integrations',
-      status: fallbackOnly.length > 0 ? 'attention' : 'ready',
-      detail: `${fallbackOnly.length} integrations still rely on stub, webhook, or fallback paths.`,
-    },
-    {
-      key: 'competition_seed',
-      status: integrations.some((item) => item.key === 'competition_seed' && item.healthy)
-        ? 'ready'
-        : 'attention',
-      detail: 'Competition seed SQL, verification report, and replay assets should be present before defense.',
-    },
-    {
-      key: 'event_replay',
-      status: replay ? 'ready' : 'pending',
-      detail: replay
-        ? `Replay summary available for user ${replay.userId}.`
-        : 'Provide userId to include a care-event replay summary in the evidence bundle.',
-    },
-  ];
 }
 
 const adminDiagnosticsService = {
@@ -142,51 +124,7 @@ const adminDiagnosticsService = {
 
   getEventReplay,
 
-  async getEvidenceBundle(query = {}) {
-    const integrations = buildIntegrationRows();
-    const readiness = await systemHealthService.getReadinessStatus();
-    const careEventAudit = getCareEventAuditDiagnostics(20);
-    const replay = query.userId ? await getEventReplay(query) : null;
-    const competitionSeed = integrations.find((item) => item.key === 'competition_seed') || null;
-
-    return {
-      runtimeMode: resolveMode(),
-      generatedAt: new Date().toISOString(),
-      readiness,
-      integrations,
-      competitionSeed,
-      recentErrors: getRecentThirdPartyErrors(20),
-      careEventAudit,
-      demoScenarios: {
-        total: DEMO_SCENARIOS.length,
-        ids: DEMO_SCENARIOS.map((item) => item.id),
-        warnings: buildScenarioWarnings(),
-      },
-      replay,
-      evidenceDocuments: buildEvidenceDocuments(),
-      competitionDataAssets: buildCompetitionAssetMetadata(),
-      checklist: buildEvidenceChecklist(integrations, readiness, replay),
-      commands: {
-        install: 'npm install',
-        lint: 'npm run lint',
-        test: 'npm test',
-        migrate: 'npm run migrate',
-        freshInstallSmoke: 'npm run smoke:fresh-install',
-        competitionSeedVerify: 'npm run seed:competition:verify -- --dry-run',
-        competitionSeedSql: 'npm run seed:competition:sql',
-      },
-      contest: {
-        category: 'software_application_and_development',
-        positioning: 'smart elderly care platform with AI-assisted operations and community response',
-        reminders: [
-          'Prepare originality and authorization evidence before submission.',
-          'Keep at least two authors available for onsite national defense.',
-          'Provide a stable web entry or replay evidence package for judging.',
-        ],
-      },
-      seedManifest: COMPETITION_SEED_MANIFEST,
-    };
-  },
+  getEvidenceBundle: buildEvidenceBundle,
 
   async getDemoScenarios() {
     return {

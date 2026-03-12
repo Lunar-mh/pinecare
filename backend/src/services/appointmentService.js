@@ -165,6 +165,12 @@ const appointmentService = {
               : 'third_party_stub',
           reason: 'appointment_created',
           detail: 'Appointment request has been persisted after upstream scheduling.',
+          receipt: {
+            requestId: thirdPartyResult.requestId || idempotencyKey,
+            thirdPartyAppointId: thirdPartyResult.thirdPartyAppointId,
+            hospitalId,
+            doctorId,
+          },
         }
       );
     } catch (err) {
@@ -252,6 +258,10 @@ const appointmentService = {
             : 'third_party_stub',
         reason: 'appointment_cancelled',
         detail: 'Appointment cancellation was synchronized with the upstream scheduler.',
+        receipt: {
+          requestId: appointment.idempotencyKey || `cancel-${appointmentIdNum}`,
+          thirdPartyAppointId: appointment.thirdPartyAppointId,
+        },
       }
     );
   },

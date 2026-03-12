@@ -131,6 +131,9 @@ const medicalReportService = {
             : 'third_party_stub',
         reason: 'report_sync_complete',
         detail: 'Medical reports were synchronized from upstream and refreshed in local cache.',
+        receipt: {
+          reportCount: synced.length,
+        },
       });
     } catch (error) {
       logThirdPartyError('medical-report', error, {

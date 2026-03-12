@@ -1,5 +1,75 @@
 ﻿'use strict';
 
+function sanitizeEvidenceValue(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => sanitizeEvidenceValue(item))
+      .filter((item) => item !== null)
+      .slice(0, 10);
+  }
+
+  if (typeof value === 'object') {
+    const preferredKeys = [
+      'provider',
+      'operation',
+      'mode',
+      'requestId',
+      'taskId',
+      'thirdPartyAppointId',
+      'thirdPartySessionId',
+      'bizId',
+      'msgid',
+      'objectKey',
+      'key',
+      'bucket',
+      'reportCount',
+      'count',
+      'total',
+      'doctorId',
+      'hospitalId',
+      'departmentId',
+      'transcriptLength',
+      'audioBytes',
+      'hasUrl',
+    ];
+    const next = {};
+
+    preferredKeys.forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(value, key)) {
+        const sanitized = sanitizeEvidenceValue(value[key]);
+        if (sanitized !== null && sanitized !== '') {
+          next[key] = sanitized;
+        }
+      }
+    });
+
+    return Object.keys(next).length > 0 ? next : null;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    if (/^https?:\/\//i.test(trimmed)) {
+      return 'redacted-url';
+    }
+
+    return trimmed.length > 120 ? `${trimmed.slice(0, 117)}...` : trimmed;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return value;
+  }
+
+  return null;
+}
+
 function inferMode(service, source) {
   if (service && typeof service.getModeTag === 'function') {
     return service.getModeTag();
@@ -52,6 +122,10 @@ function createMedicalMeta(service, operation, options = {}) {
   const requestedMode = capability.mode || mode;
   const effectiveMode = capability.effectiveMode || mode;
   const missingConfig = Array.isArray(capability.missingConfig) ? capability.missingConfig : [];
+  const receipt = sanitizeEvidenceValue(options.receipt || capability.lastSuccess);
+  const lastError = sanitizeEvidenceValue(capability.lastError);
+  const provider = capability.provider || capability.runtimeProvider || 'medical-api';
+  const liveReady = Boolean(capability.liveConfigured) && effectiveMode === 'live';
 
   return {
     source,
@@ -71,8 +145,26 @@ function createMedicalMeta(service, operation, options = {}) {
       circuitOpen: Boolean(capability.circuitOpen),
       missingConfig,
       configState: capability.liveConfigured ? 'ready' : 'missing',
+      provider,
+      liveReady,
+      lastSuccessAt: capability.lastSuccessAt || null,
+      lastErrorAt: capability.lastErrorAt || null,
+      successCount: Number(capability.successCount || 0),
+      errorCount: Number(capability.errorCount || 0),
+      recentReceipt: receipt,
+      lastError,
       generatedAt: new Date().toISOString(),
       detail: options.detail || null,
+    },
+    evidence: {
+      provider,
+      liveReady,
+      lastSuccessAt: capability.lastSuccessAt || null,
+      lastErrorAt: capability.lastErrorAt || null,
+      successCount: Number(capability.successCount || 0),
+      errorCount: Number(capability.errorCount || 0),
+      recentReceipt: receipt,
+      lastError,
     },
   };
 }

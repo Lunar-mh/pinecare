@@ -1,6 +1,7 @@
-'use strict';
+﻿'use strict';
 
 const { createBizError, normalizeList } = require('./shared');
+const { recordProviderSuccess } = require('../../utils/providerRuntime');
 const {
   stubDepartments,
   stubDoctorDetail,
@@ -19,6 +20,11 @@ const catalogService = {
         );
         const list = normalizeList(response.data, 'hospitals');
         if (!list.length) throw createBizError(503, 'Empty hospitals response.', 503);
+        recordProviderSuccess('medical-api', {
+          operation: 'fetch_hospitals',
+          mode: 'live',
+          total: list.length,
+        });
         return list;
       }
     );
@@ -34,6 +40,12 @@ const catalogService = {
         );
         const list = normalizeList(response.data, 'departments');
         if (!list.length) throw createBizError(503, 'Empty departments response.', 503);
+        recordProviderSuccess('medical-api', {
+          operation: 'fetch_departments',
+          mode: 'live',
+          hospitalId,
+          total: list.length,
+        });
         return list;
       }
     );
@@ -49,6 +61,12 @@ const catalogService = {
         );
         const list = normalizeList(response.data, 'doctors');
         if (!list.length) throw createBizError(503, 'Empty doctors response.', 503);
+        recordProviderSuccess('medical-api', {
+          operation: 'fetch_doctors',
+          mode: 'live',
+          departmentId,
+          total: list.length,
+        });
         return list;
       }
     );
@@ -66,6 +84,11 @@ const catalogService = {
         if (!data.id) {
           throw createBizError(404, 'Doctor not found.', 404);
         }
+        recordProviderSuccess('medical-api', {
+          operation: 'fetch_doctor_detail',
+          mode: 'live',
+          doctorId,
+        });
         return data;
       }
     );

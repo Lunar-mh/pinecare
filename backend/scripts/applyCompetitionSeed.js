@@ -45,7 +45,7 @@ function ensureSqlBundle() {
 function buildConnectionConfig() {
   return {
     host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT, 10) || 3306,
+    port: parseInt(process.env.DB_PORT, 10) || 13307,
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'yinban',
@@ -110,3 +110,4 @@ module.exports = {
   applyCompetitionSeed,
   buildConnectionConfig,
 };
+
