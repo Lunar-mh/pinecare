@@ -1,3 +1,5 @@
+﻿'use strict';
+
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
 process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
 process.env.RUNTIME_MODE = process.env.RUNTIME_MODE || 'COMPETITION_SANDBOX';
@@ -17,6 +19,7 @@ module.exports = {
     },
   },
   testTimeout: 30000,
+  setupFilesAfterEnv: ['<rootDir>/tests/helpers/setup.js'],
   moduleNameMapper: {
     '@/(.*)': '<rootDir>/src/$1',
   },
