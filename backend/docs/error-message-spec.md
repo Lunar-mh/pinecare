@@ -6,14 +6,24 @@ This document freezes the backend-facing message contract for the non-live relea
 ## Contract rules
 - Backend responses continue to use `{ code, message, data }`.
 - Backend `message` is an English business or diagnostic string.
+- Backend `message` is for debugging, audit, and developer tooling. It is not a user-facing localization source.
 - Client applications must not display backend `message` directly to end users.
 - Frontend, admin, and volunteer clients must map `code` or `statusCode` to localized user-facing messages.
 - `debugMessage` may preserve the raw backend `message` for logs, troubleshooting, and developer tools.
+- Backend runtime messages must stay readable, stable, and free of garbled or mixed-encoding content.
 
 ## Route validation vs service failure
 - Route validation failures return deterministic validation messages in English.
 - Service-layer business failures return deterministic business messages in English.
+- Third-party upstream failures are normalized through shared upstream error helpers before they reach controllers.
 - The same feature must not expose multiple conflicting messages for the same failure path.
+
+## Security-sensitive configuration failures
+| Scenario | Code | Backend message |
+| --- | --- | --- |
+| Missing generic signing secret | `503` | `HASH_SECRET is required for signature generation.` |
+| Missing platform signing secret | `503` | `PLATFORM_PRIVATE_KEY is required for platform signature generation.` |
+| Missing voice credentials | `500` | `Voice service requires env vars: ALIYUN_ACCESS_KEY_ID, ALIYUN_ACCESS_KEY_SECRET.` |
 
 ## Core code mapping
 | Code | Meaning | Client-facing guidance |
@@ -26,7 +36,7 @@ This document freezes the backend-facing message contract for the non-live relea
 | `422` | Semantic validation failed | Show localized correction-needed message |
 | `429` | Rate limit hit | Show localized retry-later message |
 | `500` | Internal fallback or uncoded failure | Show localized generic failure message |
-| `503` | Downstream unavailable | Show localized service-unavailable message |
+| `503` | Downstream unavailable or required secure config missing | Show localized service-unavailable message |
 | `504` | Upstream timeout | Show localized timeout/service-unavailable message |
 
 ## Domain message table

@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 describe('voiceEnv', () => {
   let originalEnv;
@@ -40,10 +40,9 @@ describe('voiceEnv', () => {
       ALIYUN_ACCESS_KEY_SECRET: '',
     });
 
-    expect(() => voiceEnv.validateVoiceEnv()).toThrow(expect.objectContaining({
-      code: 500,
-      statusCode: 500,
-    }));
+    expect(() => voiceEnv.validateVoiceEnv()).toThrow(
+      'Voice service requires env vars: ALIYUN_ACCESS_KEY_ID, ALIYUN_ACCESS_KEY_SECRET'
+    );
 
     voiceEnv = loadModule({
       ALIYUN_ACCESS_KEY_ID: 'id',
@@ -53,9 +52,12 @@ describe('voiceEnv', () => {
     });
 
     expect(() => voiceEnv.validateVoiceEnv()).not.toThrow();
-    expect(voiceEnv.getVoiceEnv()).toEqual(expect.objectContaining({
-      asrEndpoint: 'https://example.com/asr',
-      ttsEndpoint: 'https://example.com/tts',
-    }));
+    expect(voiceEnv.getVoiceEnv()).toEqual(
+      expect.objectContaining({
+        asrEndpoint: 'https://example.com/asr',
+        ttsEndpoint: 'https://example.com/tts',
+      })
+    );
   });
 });
+

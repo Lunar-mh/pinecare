@@ -16,6 +16,21 @@ This handover describes the final step from the current `stub-ready / live-ready
 - `/readyz`
 - `/livez`
 
+## Shared secure prerequisites
+### Required env
+- `HASH_SECRET`
+- `PLATFORM_PRIVATE_KEY`
+
+### Expected validation
+- Time bank settlement and replay flows continue to return `code: 0`
+- Missing signing env values must fail closed with `503`
+- `/admin/system/evidence` continues to surface time bank and event evidence without silent fallback
+
+### Rollback
+- Restore the previous signing secrets from the last verified environment snapshot
+- Re-run the time bank confirm flow and `/readyz`
+- If signatures still fail, switch back to the last known good `.env` bundle before touching provider modes
+
 ## Medical
 ### Required env
 - `MEDICAL_API_MODE=live`
@@ -60,6 +75,8 @@ This handover describes the final step from the current `stub-ready / live-ready
 ### Required env
 - `VOICE_SERVICE_MODE=live`
 - `DASHSCOPE_API_KEY`
+- `ALIYUN_ACCESS_KEY_ID`
+- `ALIYUN_ACCESS_KEY_SECRET`
 - Any provider-specific timeout overrides as needed
 
 ### Expected validation

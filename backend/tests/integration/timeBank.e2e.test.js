@@ -1,9 +1,8 @@
-'use strict';
+﻿'use strict';
 
 const jwt = require('jsonwebtoken');
 const request = require('supertest');
 
-// 内存态数据，模拟数据库行为
 const state = {
   accounts: new Map(),
   serviceRecords: [],
@@ -12,10 +11,6 @@ const state = {
   nextExchangeId: 1,
 };
 
-/**
- * 获取或创建账户
- * @param {number} userId
- */
 function ensureAccount(userId) {
   if (!state.accounts.has(userId)) {
     state.accounts.set(userId, {
@@ -44,31 +39,24 @@ const mockDb = {
   query: jest.fn(async (sql, params = []) => {
     const norm = sql.replace(/\s+/g, ' ').trim().toLowerCase();
 
-    // 自动开户
     if (norm.startsWith('insert into time_accounts') && norm.includes('on duplicate key update')) {
       const userId = Number(params[0]);
       ensureAccount(userId);
       return [{ affectedRows: 1, insertId: 0 }, []];
     }
 
-    // 查询账户
     if (norm.includes('from time_accounts') && norm.includes('where user_id = ?') && norm.includes('limit 1')) {
       const userId = Number(params[0]);
-      const account = ensureAccount(userId);
-      return [[account], []];
+      return [[ensureAccount(userId)], []];
     }
 
-    // 获取最新记录哈希
     if (norm.includes('select record_hash') && norm.includes('from service_records')) {
       const last = state.serviceRecords[state.serviceRecords.length - 1];
       return [[last ? { record_hash: last.record_hash } : undefined].filter(Boolean), []];
     }
 
-    // 创建服务记录
     if (norm.startsWith('insert into service_records')) {
-      const [recordHash, prevHash, providerId, recipientId, serviceType, startTime, endTime, durationHours, timeCoins, locationHash] =
-        params;
-
+      const [recordHash, prevHash, providerId, recipientId, serviceType, startTime, endTime, durationHours, timeCoins, locationHash] = params;
       const row = {
         id: state.nextServiceId++,
         record_hash: recordHash,
@@ -91,14 +79,12 @@ const mockDb = {
       return [{ affectedRows: 1, insertId: row.id }, []];
     }
 
-    // 查询单条服务记录
     if (norm.includes('from service_records') && norm.includes('where id = ?') && norm.includes('limit 1')) {
       const id = Number(params[0]);
       const row = state.serviceRecords.find((item) => item.id === id);
       return [row ? [row] : [], []];
     }
 
-    // 统计服务历史
     if (norm.includes('select count(1) as total from service_records where provider_id = ?')) {
       const userId = Number(params[0]);
       const total = state.serviceRecords.filter((item) => item.provider_id === userId).length;
@@ -111,7 +97,6 @@ const mockDb = {
       return [[{ total }], []];
     }
 
-    // 查询服务历史列表
     if (norm.includes('from service_records') && norm.includes('where provider_id = ?') && norm.includes('limit ? offset ?')) {
       const [userId, limit, offset] = params.map(Number);
       const list = state.serviceRecords
@@ -130,7 +115,6 @@ const mockDb = {
       return [list, []];
     }
 
-    // 兑换历史
     if (norm.includes('from exchange_records') && norm.includes('where user_id = ?')) {
       const userId = Number(params[0]);
       const list = state.exchangeRecords
@@ -139,14 +123,12 @@ const mockDb = {
       return [list, []];
     }
 
-    // 排行榜（按社区查询失败，触发降级）
     if (norm.includes('from time_accounts ta inner join users u')) {
       const err = new Error('users table not found');
       err.code = 'ER_NO_SUCH_TABLE';
       throw err;
     }
 
-    // 全站排行榜
     if (norm.includes('select user_id, balance, total_earned, credit_score, credit_level from time_accounts')) {
       const list = Array.from(state.accounts.values())
         .sort((a, b) => b.balance - a.balance || b.total_earned - a.total_earned)
@@ -160,7 +142,7 @@ const mockDb = {
       return [list, []];
     }
 
-    throw new Error(`未实现的 query SQL: ${norm}`);
+    throw new Error(`Unimplemented query SQL: ${norm}`);
   }),
   pool: {
     getConnection: jest.fn(async () => ({
@@ -171,14 +153,12 @@ const mockDb = {
       execute: jest.fn(async (sql, params = []) => {
         const norm = sql.replace(/\s+/g, ' ').trim().toLowerCase();
 
-        // settleServiceRecord: 锁服务记录
         if (norm.includes('select id, provider_id, recipient_id, time_coins, status from service_records')) {
           const id = Number(params[0]);
           const row = state.serviceRecords.find((item) => item.id === id);
           return [row ? [row] : [], []];
         }
 
-        // settleServiceRecord: 更新记录状态与签名
         if (norm.startsWith('update service_records set status = ?')) {
           const [status, providerSig, recipientSig, platformSig, recordId] = params;
           const row = state.serviceRecords.find((item) => item.id === Number(recordId));
@@ -190,19 +170,16 @@ const mockDb = {
           return [{ affectedRows: 1 }, []];
         }
 
-        // 交易内自动开户
         if (norm.startsWith('insert into time_accounts') && norm.includes('on duplicate key update')) {
           ensureAccount(Number(params[0]));
           return [{ affectedRows: 1 }, []];
         }
 
-        // settleServiceRecord: 读取账户
         if (norm.includes('select balance, total_earned, total_spent, credit_score from time_accounts')) {
           const userId = Number(params[0]);
           return [[ensureAccount(userId)], []];
         }
 
-        // settleServiceRecord: 更新账户
         if (norm.startsWith('update time_accounts set balance = ?, total_earned = ?')) {
           const [balance, totalEarned, totalSpent, creditScore, creditLevel, userId] = params;
           const account = ensureAccount(Number(userId));
@@ -215,13 +192,11 @@ const mockDb = {
           return [{ affectedRows: 1 }, []];
         }
 
-        // createExchangeRecord: 查询余额
         if (norm.includes('select balance from time_accounts') && norm.includes('for update')) {
           const userId = Number(params[0]);
           return [[{ balance: ensureAccount(userId).balance }], []];
         }
 
-        // createExchangeRecord: 扣减余额
         if (norm.startsWith('update time_accounts set balance = balance - ?')) {
           const [coins, spentCoins, userId] = params.map(Number);
           const account = ensureAccount(userId);
@@ -233,7 +208,6 @@ const mockDb = {
           return [{ affectedRows: 1 }, []];
         }
 
-        // createExchangeRecord: 创建兑换记录
         if (norm.startsWith('insert into exchange_records')) {
           const [userId, exchangeType, itemName, coinsRequired] = params;
           const row = {
@@ -250,7 +224,7 @@ const mockDb = {
           return [{ affectedRows: 1, insertId: row.id }, []];
         }
 
-        throw new Error(`未实现的 execute SQL: ${norm}`);
+        throw new Error(`Unimplemented execute SQL: ${norm}`);
       }),
     })),
   },
@@ -264,23 +238,24 @@ jest.mock('../../src/config/redis', () => ({
   del: jest.fn(async () => 1),
 }));
 
+process.env.HASH_SECRET = process.env.HASH_SECRET || 'integration-hash-secret';
+process.env.PLATFORM_PRIVATE_KEY = process.env.PLATFORM_PRIVATE_KEY || 'integration-platform-secret';
+
 const app = require('../../src/app');
 
-describe('时间银行集成流程测试', () => {
+describe('timeBank integration flow', () => {
   const jwtSecret = process.env.JWT_SECRET || 'fallback_secret';
   const token = jwt.sign({ userId: 1001 }, jwtSecret);
 
-  it('account -> record -> confirm -> exchange -> history 全链路成功', async () => {
+  it('account -> record -> confirm -> exchange -> history works end-to-end', async () => {
     const authHeader = { Authorization: `Bearer ${token}` };
 
-    // 1) 自动开户
     const accountRes = await request(app).get('/time-bank/account').set(authHeader);
     expect(accountRes.status).toBe(200);
     expect(accountRes.body.code).toBe(0);
     expect(accountRes.body.data.userId).toBe(1001);
     expect(accountRes.body.data.balance).toBe(0);
 
-    // 2) 记录服务
     const recordRes = await request(app)
       .post('/time-bank/service/record')
       .set(authHeader)
@@ -297,7 +272,6 @@ describe('时间银行集成流程测试', () => {
     expect(recordRes.body.data.status).toBe('pending');
     const recordId = recordRes.body.data.recordId;
 
-    // 3) 确认服务
     const confirmRes = await request(app)
       .post('/time-bank/service/confirm')
       .set(authHeader)
@@ -311,13 +285,12 @@ describe('时间银行集成流程测试', () => {
     expect(confirmRes.body.data.status).toBe('confirmed');
     expect(confirmRes.body.data.account.balance).toBe(2);
 
-    // 4) 发起兑换
     const exchangeRes = await request(app)
       .post('/time-bank/exchange')
       .set(authHeader)
       .send({
         exchangeType: 'service',
-        itemName: '社区理发',
+        itemName: 'community haircut',
         coinsRequired: 1,
       });
 
@@ -325,13 +298,11 @@ describe('时间银行集成流程测试', () => {
     expect(exchangeRes.body.code).toBe(0);
     expect(exchangeRes.body.data.status).toBe('completed');
 
-    // 5) 查询余额
     const balanceRes = await request(app).get('/time-bank/balance').set(authHeader);
     expect(balanceRes.status).toBe(200);
     expect(balanceRes.body.code).toBe(0);
     expect(balanceRes.body.data.balance).toBe(1);
 
-    // 6) 服务历史
     const serviceHistoryRes = await request(app)
       .get('/time-bank/service/history?type=provided&page=1&pageSize=10')
       .set(authHeader);
@@ -342,14 +313,12 @@ describe('时间银行集成流程测试', () => {
     expect(serviceHistoryRes.body.data.list.length).toBeGreaterThan(0);
     expect(serviceHistoryRes.body.data.list[0].status).toBe('confirmed');
 
-    // 7) 兑换历史
     const exchangeHistoryRes = await request(app).get('/time-bank/exchange/history').set(authHeader);
     expect(exchangeHistoryRes.status).toBe(200);
     expect(exchangeHistoryRes.body.code).toBe(0);
     expect(Array.isArray(exchangeHistoryRes.body.data)).toBe(true);
     expect(exchangeHistoryRes.body.data.length).toBe(1);
 
-    // 8) 排行榜
     const leaderboardRes = await request(app).get('/time-bank/leaderboard').set(authHeader);
     expect(leaderboardRes.status).toBe(200);
     expect(leaderboardRes.body.code).toBe(0);

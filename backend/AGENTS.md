@@ -38,6 +38,8 @@ backend/
 - Controller 只能调用 Service，不直接查库
 - Service 只能调用 Model，不直接使用 `database.query()`
 - Model 是唯一允许访问 `database.js` 的层
+- `systemHealthService` is a documented diagnostics exception，可直接查库用于健康检查与可观测诊断
+- 签名、鉴权、回执生成禁止使用默认密钥回退；缺配置必须 fail-closed
 - 统一响应用 `src/utils/response.js` 的 `ok()` / `fail()`
 - 统一错误通过 `handleError` 或 `controllerError` 映射到响应格式
 
@@ -138,6 +140,7 @@ Jest 覆盖率门槛已提升为：
 - `docs/live-cutover-handover.md`
 - `docs/live-evidence-templates.md`
 - `docs/release-known-issues.md`
+- `docs/error-message-spec.md`
 
 ## 注意事项
 
@@ -145,3 +148,4 @@ Jest 覆盖率门槛已提升为：
 - medical stub/fallback 必须可见、可解释、可审计
 - 任何新增字段只能向后兼容追加，不能破坏现有响应结构
 - 如果开发者本地 `.env` 仍残留旧端口覆盖，dry-run 输出可能显示本地值；仓库默认模板已经统一为 `13307`
+- Backend `message` 统一使用英文调试语义；端侧必须通过 `code/statusCode` 做本地化

@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const path = require('path');
 
 function readProjectFile(relativePath) {
@@ -38,6 +38,21 @@ describe('backend architecture guardrails', () => {
     expect(adminAuth).toContain("require('../models/adminScopeModel')");
     expect(volunteerAuth).toContain("require('../models/adminScopeModel')");
     expect(healthRoutes).toContain("require('../services/systemHealthService')");
+  });
+
+  test('keeps selected business services off direct database access and documents diagnostics exception', () => {
+    const drugInteractionService = readProjectFile('src/services/drugInteractionService.js');
+    const familyNotificationService = readProjectFile('src/services/familyNotificationService.js');
+    const knowledgeGraphService = readProjectFile('src/services/knowledgeGraphService.js');
+    const systemHealthService = readProjectFile('src/services/systemHealthService.js');
+    const backendAgents = readProjectFile('../backend/AGENTS.md');
+
+    expect(drugInteractionService).not.toMatch(/config\/database|config\/db|\bquery\(/);
+    expect(familyNotificationService).not.toMatch(/config\/database|config\/db|\bquery\(/);
+    expect(knowledgeGraphService).not.toMatch(/config\/database|config\/db|\bquery\(/);
+
+    expect(systemHealthService).toContain("require('../config/database')");
+    expect(backendAgents).toContain('documented diagnostics exception');
   });
 
   test('keeps facades thin and subservices under bounded size limits', () => {

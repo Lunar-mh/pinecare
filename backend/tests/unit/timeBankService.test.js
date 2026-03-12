@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const loadService = () => {
   jest.resetModules();
@@ -18,6 +18,7 @@ const loadService = () => {
     getCommunityLeaderboard: jest.fn(),
   };
   const credentialService = {
+    createScopedSecret: jest.fn((scope, subjectId) => `scoped-${scope}-${subjectId}`),
     generateSignature: jest.fn((payload, secret) => `${payload.role}-${secret}`),
     generatePlatformSignature: jest.fn((recordId) => `platform-${recordId}`),
   };
@@ -94,7 +95,7 @@ describe('timeBankService', () => {
     await expect(loaded.service.recordService(7, {})).rejects.toMatchObject({ statusCode: 422 });
     await expect(loaded.service.recordService(7, { recipientId: 7, duration: 1 })).rejects.toMatchObject({ statusCode: 422 });
     await expect(
-      loaded.service.recordService(7, { recipientId: 8, startTime: '2026-03-11T10:00:00Z', endTime: '2026-03-11T09:00:00Z' })
+      loaded.service.recordService(7, { startTime: '2026-03-11T10:00:00Z', endTime: '2026-03-11T09:00:00Z', recipientId: 8 })
     ).rejects.toMatchObject({ statusCode: 422 });
 
     loaded = loadService();
@@ -181,12 +182,14 @@ describe('timeBankService', () => {
       recordId: 5,
       status: 'confirmed',
       signatures: {
-        providerSignature: 'provider-timebank:provider:7',
-        recipientSignature: 'recipient-timebank:recipient:9',
+        providerSignature: 'provider-scoped-provider-7',
+        recipientSignature: 'recipient-scoped-recipient-9',
         platformSignature: 'platform-5',
       },
       account: { balance: 12 },
     });
+    expect(loaded.credentialService.createScopedSecret).toHaveBeenNthCalledWith(1, 'provider', 7);
+    expect(loaded.credentialService.createScopedSecret).toHaveBeenNthCalledWith(2, 'recipient', 9);
     expect(loaded.redis.del).toHaveBeenCalledWith([
       'timebank:account:7',
       'timebank:balance:7',
@@ -280,7 +283,18 @@ describe('timeBankService', () => {
     ).resolves.toEqual({ id: 9, status: 'completed' });
 
     loaded = loadService();
-    loaded.model.listExchangeHistory.mockResolvedValueOnce([{ id: 1, user_id: 7, exchange_type: 'gift', item_name: 'Coupon', coins_required: 5, status: 'completed', created_at: 'c', completed_at: 'd' }]);
+    loaded.model.listExchangeHistory.mockResolvedValueOnce([
+      {
+        id: 1,
+        user_id: 7,
+        exchange_type: 'gift',
+        item_name: 'Coupon',
+        coins_required: 5,
+        status: 'completed',
+        created_at: 'c',
+        completed_at: 'd',
+      },
+    ]);
     await expect(loaded.service.getExchangeHistory(7)).resolves.toEqual([
       {
         id: 1,
@@ -300,7 +314,9 @@ describe('timeBankService', () => {
 
     loaded = loadService();
     loaded.redis.get.mockResolvedValueOnce(null);
-    loaded.model.getCommunityLeaderboard.mockResolvedValueOnce([{ user_id: 7, balance: 5, total_earned: 10, credit_score: 80, credit_level: 'gold' }]);
+    loaded.model.getCommunityLeaderboard.mockResolvedValueOnce([
+      { user_id: 7, balance: 5, total_earned: 10, credit_score: 80, credit_level: 'gold' },
+    ]);
     await expect(loaded.service.getLeaderboard(9)).resolves.toEqual([
       { rank: 1, userId: 7, balance: 5, totalEarned: 10, creditScore: 80, creditLevel: 'gold' },
     ]);

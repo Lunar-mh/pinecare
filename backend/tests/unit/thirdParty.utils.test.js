@@ -1,5 +1,12 @@
 ﻿'use strict';
 
+jest.mock('../../src/utils/logger', () => ({
+  error: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+}));
+
+const logger = require('../../src/utils/logger');
 const {
   sanitizeText,
   sanitizeObject,
@@ -14,12 +21,8 @@ const {
 
 describe('thirdParty utils', () => {
   beforeEach(() => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.clearAllMocks();
     clearRecentThirdPartyErrors();
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   it('sanitizeText should redact token and urls', () => {
@@ -95,7 +98,7 @@ describe('thirdParty utils', () => {
     expect(isRetryableError({ response: { status: 400 } })).toBe(false);
   });
 
-  it('logThirdPartyError should output sanitized payload', () => {
+  it('logThirdPartyError should send sanitized payload to unified logger', () => {
     logThirdPartyError(
       'medical',
       {
@@ -106,11 +109,16 @@ describe('thirdParty utils', () => {
       { sessionUrl: 'https://example.com/token/abc' }
     );
 
-    expect(console.error).toHaveBeenCalledWith(
-      'third_party_error',
+    expect(logger.error).toHaveBeenCalledWith(
+      'thirdParty',
+      'upstream_error',
       expect.objectContaining({
         provider: 'medical',
+        code: 'ECONNABORTED',
+        status: 429,
         message: expect.not.stringContaining('abc'),
+        response: expect.objectContaining({ api_key: '[REDACTED]' }),
+        extra: expect.objectContaining({ sessionUrl: '[REDACTED_URL]' }),
       })
     );
 

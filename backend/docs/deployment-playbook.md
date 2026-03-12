@@ -15,6 +15,7 @@ Prepare a reproducible four-end release candidate for defense rehearsal and nati
 - Copy `backend/.env.example` or `.env.production-live.example` to `backend/.env` according to the rehearsal mode.
 - Use `PRODUCTION_LIVE=1` only when real credentials are available.
 - Confirm MySQL, Redis, and the worker role are reachable from the target host.
+- Confirm `HASH_SECRET` and `PLATFORM_PRIVATE_KEY` are present before rehearsing time-bank settlement, signed receipts, or related evidence flows.
 - Ensure the mini program, admin, and volunteer builds are generated from a clean install before final rehearsal.
 
 ## Verified commands
@@ -54,6 +55,8 @@ Prepare a reproducible four-end release candidate for defense rehearsal and nati
 - Volunteer runs on API-driven task flows instead of static demo content.
 - Mini program core entries no longer show unfinished placeholder text.
 - Competition seed verification artifacts exist in `generated/competition-seed/`.
+- Missing signing env values fail closed instead of silently using defaults.
+- `systemHealthService` is the only documented diagnostics exception that can query the database directly.
 
 ## Defense stories
 1. Event story: `SOS / fall / GPS` anomaly -> notification -> community handling -> replay evidence.

@@ -107,14 +107,17 @@ const serviceRecordService = {
       timeCoins: record.time_coins,
     };
 
+    const providerSecret = credentialService.createScopedSecret('provider', record.provider_id);
+    const recipientSecret = credentialService.createScopedSecret('recipient', record.recipient_id);
+
     const providerSignature = credentialService.generateSignature(
       { ...baseSignData, role: 'provider' },
-      `${process.env.HASH_SECRET || 'timebank'}:provider:${record.provider_id}`
+      providerSecret
     );
 
     const recipientSignature = credentialService.generateSignature(
       { ...baseSignData, role: 'recipient' },
-      `${process.env.HASH_SECRET || 'timebank'}:recipient:${record.recipient_id}`
+      recipientSecret
     );
 
     const platformSignature = credentialService.generatePlatformSignature(record.id);

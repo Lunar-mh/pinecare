@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const express = require('express');
 const jwt = require('jsonwebtoken');
@@ -163,7 +163,7 @@ const mockDb = {
       return [[], []];
     }
 
-    throw new Error(`未实现的 SQL: ${norm}`);
+    throw new Error(`Unimplemented SQL: ${norm}`);
   }),
 };
 
@@ -179,7 +179,7 @@ function createApp() {
   return app;
 }
 
-describe('用药交互集成流程测试', () => {
+describe('drug interaction integration flow', () => {
   const jwtSecret = process.env.JWT_SECRET || 'fallback_secret';
   const token = jwt.sign({ userId: 9009 }, jwtSecret);
 
@@ -189,7 +189,7 @@ describe('用药交互集成流程测试', () => {
     state.contraindications = [];
   });
 
-  it('自动触发检测 -> 历史查询 -> 风险确认 全流程成功', async () => {
+  it('creates interaction history and acknowledges risk end-to-end', async () => {
     const app = createApp();
     const authHeader = { Authorization: `Bearer ${token}` };
 

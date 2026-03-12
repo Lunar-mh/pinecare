@@ -60,17 +60,16 @@ function percentile(sortedArr, p) {
   return sortedArr[Math.max(0, idx)];
 }
 
-describe('璇煶璇嗗埆鎺ュ彛鎬ц兘娴嬭瘯', () => {
+describe('voice recognition performance test', () => {
   jest.setTimeout(120000);
 
-  it(`POST /voice/recognize 鍦?${CONCURRENCY} 骞跺彂涓?p95 < 2s`, async () => {
+  it(`POST /voice/recognize keeps p95 below ${P95_THRESHOLD_MS}ms at ${CONCURRENCY} concurrent requests`, async () => {
     const results = await Promise.all(Array.from({ length: CONCURRENCY }, () => sendRequest()));
 
     const durations = results.map((item) => item.durationMs).sort((a, b) => a - b);
     const p95 = percentile(durations, 95);
 
-    console.log(`璇煶璇嗗埆鎬ц兘娴嬭瘯缁撴灉: p95=${p95}ms, 闃堝€?${P95_THRESHOLD_MS}ms`);
+    console.log(`voice recognition performance result: p95=${p95}ms, threshold=${P95_THRESHOLD_MS}ms`);
     expect(p95).toBeLessThan(P95_THRESHOLD_MS);
   });
 });
-

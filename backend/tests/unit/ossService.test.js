@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 describe('ossService', () => {
   let originalEnv;
@@ -135,9 +135,10 @@ describe('ossService', () => {
       },
     });
 
-    const url = await service.uploadAudio(Buffer.from('abc'), 'voice/���� path.wav');
+    const url = await service.uploadAudio(Buffer.from('abc'), 'voice/demo path.wav');
 
     expect(url).toContain('https://cdn.example.com/public/voice/');
     expect(url).toContain('path.wav');
   });
 });
+
