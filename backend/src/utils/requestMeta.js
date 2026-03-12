@@ -10,19 +10,39 @@ function takeFirstForwardedIp(value) {
 }
 
 function getClientIp(req) {
-  const forwarded = takeFirstForwardedIp(req && req.headers ? req.headers['x-forwarded-for'] : '');
-  if (forwarded) {
-    return forwarded;
+  const contextIp =
+    (req && req.requestContext && req.requestContext.ipAddress) || (req && req.ipAddress) || '';
+  if (contextIp) {
+    return String(contextIp);
   }
 
-  return (req && req.ip) || '';
+  const forwardedIp = takeFirstForwardedIp(req && req.headers ? req.headers['x-forwarded-for'] : '');
+  if (forwardedIp) {
+    return forwardedIp;
+  }
+
+  const requestIp =
+    (req && req.ip) ||
+    (req && req.socket && req.socket.remoteAddress) ||
+    (req && req.connection && req.connection.remoteAddress) ||
+    '';
+  if (requestIp) {
+    return String(requestIp);
+  }
+
+  return '';
 }
 
 function getRequestContext(req) {
   return {
     ipAddress: getClientIp(req),
-    userAgent: String((req && req.headers && req.headers['user-agent']) || ''),
-    requestId: (req && req.requestId) || null,
+    userAgent:
+      (req && req.requestContext && req.requestContext.userAgent) ||
+      String((req && req.headers && req.headers['user-agent']) || ''),
+    requestId:
+      (req && req.requestContext && req.requestContext.requestId) ||
+      (req && req.requestId) ||
+      null,
   };
 }
 

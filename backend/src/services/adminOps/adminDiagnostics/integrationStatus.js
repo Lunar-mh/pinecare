@@ -13,11 +13,30 @@ const wechatNotifier = require('../../../utils/wechatNotifier');
 const smsNotifyService = require('../../smsNotifyService');
 const wechatNotifyService = require('../../wechatNotifyService');
 
+function safeReadJson(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) {
+      return null;
+    }
+
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (_err) {
+    return null;
+  }
+}
+
 function getCompetitionSeedAssetStatus() {
   const outputDir = path.join(__dirname, '..', '..', '..', '..', 'generated', 'competition-seed');
   const bootstrapSqlPath = path.join(outputDir, COMPETITION_SEED_ASSETS.files.bootstrapSql);
   const summaryPath = path.join(outputDir, COMPETITION_SEED_ASSETS.files.summary);
   const bootstrapSummaryPath = path.join(outputDir, COMPETITION_SEED_ASSETS.files.bootstrapSummary);
+  const latestVerificationPath = path.join(outputDir, COMPETITION_SEED_ASSETS.files.latestVerification);
+  const latestSnapshotPath = path.join(outputDir, COMPETITION_SEED_ASSETS.files.latestSnapshot);
+  const latestRefreshReportPath = path.join(outputDir, COMPETITION_SEED_ASSETS.files.latestRefreshReport);
+
+  const latestVerification = safeReadJson(latestVerificationPath);
+  const latestSnapshot = safeReadJson(latestSnapshotPath);
+  const latestRefreshReport = safeReadJson(latestRefreshReportPath);
 
   return {
     outputDir: COMPETITION_SEED_ASSETS.outputDir,
@@ -25,6 +44,30 @@ function getCompetitionSeedAssetStatus() {
     sqlReady: fs.existsSync(bootstrapSqlPath),
     files: COMPETITION_SEED_ASSETS.files,
     commands: COMPETITION_SEED_ASSETS.commands,
+    verification: {
+      available: Boolean(latestVerification),
+      status: latestVerification && latestVerification.status ? latestVerification.status : 'missing',
+      verifiedAt: latestVerification && latestVerification.verifiedAt ? latestVerification.verifiedAt : null,
+      tableChecks:
+        latestVerification && Array.isArray(latestVerification.tableResults)
+          ? latestVerification.tableResults.length
+          : 0,
+      chainChecks:
+        latestVerification && Array.isArray(latestVerification.chainResults)
+          ? latestVerification.chainResults.length
+          : 0,
+    },
+    snapshot: {
+      available: Boolean(latestSnapshot),
+      generatedAt: latestSnapshot && latestSnapshot.generatedAt ? latestSnapshot.generatedAt : null,
+    },
+    refreshReport: {
+      available: Boolean(latestRefreshReport),
+      generatedAt:
+        latestRefreshReport && latestRefreshReport.generatedAt
+          ? latestRefreshReport.generatedAt
+          : null,
+    },
   };
 }
 
@@ -62,6 +105,22 @@ function buildCapabilityItem(key, capability, extra = {}) {
     circuitOpen: Boolean(extra.circuitOpen || (capability && capability.circuitOpen)),
     notes: extra.notes || null,
   };
+}
+
+function buildCompetitionSeedNotes(competitionSeed) {
+  if (competitionSeed.verification.available && competitionSeed.verification.status === 'verified') {
+    return 'Competition seed SQL, verification report, and defense snapshot are ready for replay and judging.';
+  }
+
+  if (competitionSeed.sqlReady && competitionSeed.verification.available) {
+    return `Competition seed SQL is ready and the latest verification status is ${competitionSeed.verification.status}.`;
+  }
+
+  if (competitionSeed.generated) {
+    return 'Competition seed JSON assets exist, but bootstrap SQL or verification evidence is still incomplete.';
+  }
+
+  return 'Competition seed assets have not been generated in this workspace yet.';
 }
 
 function buildIntegrationRows() {
@@ -103,13 +162,12 @@ function buildIntegrationRows() {
       circuitOpen: false,
       generated: competitionSeed.generated,
       sqlReady: competitionSeed.sqlReady,
+      verification: competitionSeed.verification,
+      snapshot: competitionSeed.snapshot,
+      refreshReport: competitionSeed.refreshReport,
       assetFiles: competitionSeed.files,
       commands: competitionSeed.commands,
-      notes: competitionSeed.sqlReady
-        ? 'Competition seed SQL is ready for direct MySQL bootstrap.'
-        : competitionSeed.generated
-          ? 'Competition seed JSON assets exist but bootstrap.sql has not been generated yet.'
-          : 'Competition seed assets have not been generated in this workspace yet.',
+      notes: buildCompetitionSeedNotes(competitionSeed),
       runtimeMode,
     },
     {
@@ -162,12 +220,14 @@ function buildIntegrationRows() {
     ...item,
     configState: item.configured ? 'ready' : 'missing',
     healthy:
-      item.effectiveMode === 'live' ? item.configured : item.fallbackAllowed || item.configured,
+      item.key === 'competition_seed'
+        ? Boolean(item.generated && item.sqlReady && item.verification.available)
+        : item.effectiveMode === 'live'
+          ? item.configured
+          : item.fallbackAllowed || item.configured,
   }));
 }
 
 module.exports = {
   buildIntegrationRows,
 };
-
-

@@ -2,6 +2,7 @@
 
 jest.mock('fs', () => ({
   existsSync: jest.fn(),
+  readFileSync: jest.fn(),
 }));
 
 jest.mock('../../src/services/aiService', () => ({
@@ -68,6 +69,7 @@ describe('integrationStatus', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     fs.existsSync.mockReturnValue(false);
+    fs.readFileSync.mockReturnValue('{}');
     aiService.getCapabilityReport.mockReturnValue(baseCapability());
     companionService.getCapabilityReport.mockReturnValue(baseCapability());
     voiceService.getCapabilityReport.mockReturnValue(baseCapability());
@@ -135,14 +137,43 @@ describe('integrationStatus', () => {
       effectiveMode: 'missing',
       healthy: false,
       source: 'local_generated_assets',
+      verification: {
+        available: false,
+        status: 'missing',
+        verifiedAt: null,
+        tableChecks: 0,
+        chainChecks: 0,
+      },
+      snapshot: {
+        available: false,
+        generatedAt: null,
+      },
     });
   });
 
-  it('builds live-ready rows when upstream capabilities are configured', () => {
-    fs.existsSync
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(true)
-      .mockReturnValueOnce(true);
+  it('builds live-ready rows when upstream capabilities and competition evidence are configured', () => {
+    fs.existsSync.mockImplementation((filePath) =>
+      /(summary|bootstrap-summary|bootstrap\.sql|latest-verification|latest-db-snapshot|latest-refresh-report)\.json?$/.test(String(filePath)) ||
+      /bootstrap\.sql$/.test(String(filePath))
+    );
+    fs.readFileSync.mockImplementation((filePath) => {
+      const normalized = String(filePath);
+      if (normalized.includes('latest-verification')) {
+        return JSON.stringify({
+          status: 'verified',
+          verifiedAt: '2026-03-11T12:30:00.000Z',
+          tableResults: [{ tableName: 'users' }],
+          chainResults: [{ id: 'A' }],
+        });
+      }
+      if (normalized.includes('latest-db-snapshot')) {
+        return JSON.stringify({ generatedAt: '2026-03-11T12:20:00.000Z' });
+      }
+      if (normalized.includes('latest-refresh-report')) {
+        return JSON.stringify({ generatedAt: '2026-03-11T12:10:00.000Z' });
+      }
+      return '{}';
+    });
     aiService.getCapabilityReport.mockReturnValue(baseCapability({
       effectiveMode: 'live',
       liveConfigured: true,
@@ -201,7 +232,11 @@ describe('integrationStatus', () => {
 
     expect(rowMap.get('ai_consult')).toMatchObject({ effectiveMode: 'live', healthy: true });
     expect(rowMap.get('voice')).toMatchObject({ effectiveMode: 'live', healthy: true });
-    expect(rowMap.get('medical')).toMatchObject({ effectiveMode: 'live', healthy: true, source: 'third_party_live' });
+    expect(rowMap.get('medical')).toMatchObject({
+      effectiveMode: 'live',
+      healthy: true,
+      source: 'third_party_live',
+    });
     expect(rowMap.get('wechat_notify')).toMatchObject({ effectiveMode: 'live', healthy: true });
     expect(rowMap.get('sos_sms_notify')).toMatchObject({ effectiveMode: 'live', healthy: true });
     expect(rowMap.get('sos_wechat_notify')).toMatchObject({ effectiveMode: 'live', healthy: true });
@@ -210,8 +245,21 @@ describe('integrationStatus', () => {
       generated: true,
       sqlReady: true,
       healthy: true,
+      verification: {
+        available: true,
+        status: 'verified',
+        verifiedAt: '2026-03-11T12:30:00.000Z',
+        tableChecks: 1,
+        chainChecks: 1,
+      },
+      snapshot: {
+        available: true,
+        generatedAt: '2026-03-11T12:20:00.000Z',
+      },
+      refreshReport: {
+        available: true,
+        generatedAt: '2026-03-11T12:10:00.000Z',
+      },
     });
   });
 });
-
-

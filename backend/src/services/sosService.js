@@ -6,6 +6,7 @@ const sosNotificationService = require('./sosNotificationService');
 const { recordCareEvent } = require('./eventTimelineService');
 const { assertTransition } = require('../utils/sosStateMachine');
 const { SOS_ERROR_CODES, SOS_ERROR_MESSAGES, createSosError } = require('../utils/errorCodes');
+const logger = require('../utils/logger');
 
 function ensureUserId(userId) {
   const numericUserId = Number(userId);
@@ -103,7 +104,11 @@ const sosService = {
       try {
         await sosNotificationService.createAndDispatch(event);
       } catch (err) {
-        console.error('sos_notification_dispatch_failed', err.message);
+        logger.error('sosService', 'notification_dispatch_failed', {
+          eventId: event.id,
+          userId: currentUserId,
+          message: err.message,
+        });
       }
     });
 

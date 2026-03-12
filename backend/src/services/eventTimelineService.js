@@ -1,6 +1,7 @@
 ﻿'use strict';
 
 const AuditLogModel = require('../models/auditLog');
+const logger = require('../utils/logger');
 
 const CARE_EVENT_ACTIONS = new Set([
   'location.upload',
@@ -127,7 +128,7 @@ async function recordCareEvent(action, payload = {}) {
     const entry = buildFailureEntry(action, payload, err);
     const shouldLog = rememberFailure(entry);
     if (shouldLog && process.env.NODE_ENV !== 'test') {
-      console.warn('care_event_audit_failed', entry);
+      logger.warn('eventTimelineService', 'care_event_audit_failed', entry);
     }
   }
 }
@@ -253,7 +254,3 @@ module.exports = {
   sortTimeline,
   toDate,
 };
-
-
-
-

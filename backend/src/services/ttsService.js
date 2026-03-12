@@ -1,7 +1,8 @@
-'use strict';
+﻿'use strict';
 
 const axios = require('axios');
 const { getVoiceEnv, validateVoiceEnv } = require('../config/voiceEnv');
+const logger = require('../utils/logger');
 
 const TARGET_SPEED_WPM = 150;
 
@@ -29,7 +30,7 @@ function parseAudioBase64FromData(data) {
       try {
         const parsed = JSON.parse(normalized);
         return parseAudioBase64FromData(parsed);
-      } catch (err) {
+      } catch (_err) {
         return normalized;
       }
     }
@@ -62,7 +63,7 @@ function parseAudioBase64FromData(data) {
 const ttsService = {
   async synthesize(text) {
     if (!text || typeof text !== 'string' || text.trim() === '') {
-      throw createBizError(400, '文本内容不能为空', 400);
+      throw createBizError(400, 'text is required.', 400);
     }
 
     validateVoiceEnv();
@@ -103,7 +104,7 @@ const ttsService = {
       }
 
       if (!audioBase64) {
-        throw createBizError(422, '语音合成结果为空', 422);
+        throw createBizError(422, 'Speech synthesis returned empty audio.', 422);
       }
 
       return audioBase64;
@@ -113,17 +114,17 @@ const ttsService = {
       }
 
       if (err.response) {
-        console.error('阿里云TTS接口返回异常:', err.response.status);
-        throw createBizError(502, '语音合成服务暂时不可用，请稍后重试', 502);
+        logger.error('ttsService', 'live_response_error', { status: err.response.status });
+        throw createBizError(502, 'Speech synthesis service is temporarily unavailable.', 502);
       }
 
       if (err.request) {
-        console.error('阿里云TTS接口请求失败:', err.message);
-        throw createBizError(504, '语音合成服务请求超时，请稍后重试', 504);
+        logger.error('ttsService', 'live_request_error', { message: err.message });
+        throw createBizError(504, 'Speech synthesis request timed out.', 504);
       }
 
-      console.error('阿里云TTS处理失败:', err.message);
-      throw createBizError(500, '语音合成处理失败', 500);
+      logger.error('ttsService', 'synthesize_failed', { message: err.message });
+      throw createBizError(500, 'Speech synthesis failed.', 500);
     }
   },
 };

@@ -41,18 +41,31 @@ jest.mock('../../src/services/eventTimelineService', () => ({
   })),
 }));
 
+jest.mock('../../src/services/sosQueueService', () => ({
+  getQueueLength: jest.fn(() => 4),
+}));
+
 const { query } = require('../../src/config/database');
 const redis = require('../../src/config/redis');
 const { getJobStatus } = require('../../src/jobs');
+const sosQueueService = require('../../src/services/sosQueueService');
 const systemHealthService = require('../../src/services/systemHealthService');
 
 const KEY_TABLES = [
   'users',
+  'health_archives',
   'health_records',
+  'family_bindings',
+  'medication_plans',
   'medication_logs',
   'sos_events',
+  'sos_notifications',
   'fall_events',
   'location_records',
+  'service_orders',
+  'time_accounts',
+  'online_consultations',
+  'appointments',
   'medical_reports',
   'audit_logs',
 ];
@@ -72,9 +85,10 @@ describe('systemHealthService', () => {
     jest.clearAllMocks();
   });
 
-  it('reports healthy when mysql, redis, key tables, and worker jobs are ready', async () => {
+  it('reports healthy when mysql, redis, key tables, queues, and worker jobs are ready', async () => {
     mockHealthyQueries();
     redis.ping.mockResolvedValueOnce('PONG');
+    sosQueueService.getQueueLength.mockResolvedValueOnce(4);
 
     await expect(systemHealthService.getHealthStatus()).resolves.toEqual({
       healthy: true,
@@ -88,6 +102,12 @@ describe('systemHealthService', () => {
           status: 'ok',
           checked: KEY_TABLES,
           missing: [],
+        },
+        queues: {
+          status: 'ok',
+          sosNotification: {
+            pending: 4,
+          },
         },
         jobs: {
           serverRole: 'worker',
@@ -112,7 +132,7 @@ describe('systemHealthService', () => {
     });
   });
 
-  it('reports degraded status when dependencies or job readiness fail', async () => {
+  it('reports degraded status when dependencies, queues, or job readiness fail', async () => {
     query.mockImplementation(async (sql) => {
       if (String(sql).includes('SELECT 1')) {
         throw new Error('mysql down');
@@ -121,6 +141,7 @@ describe('systemHealthService', () => {
       throw new Error('schema unavailable');
     });
     redis.ping.mockRejectedValueOnce(new Error('redis down'));
+    sosQueueService.getQueueLength.mockRejectedValueOnce(new Error('queue unavailable'));
     getJobStatus.mockReturnValueOnce({
       serverRole: 'worker',
       enabled: true,
@@ -145,6 +166,13 @@ describe('systemHealthService', () => {
           missing: KEY_TABLES,
           detail: 'schema unavailable',
         },
+        queues: {
+          status: 'error',
+          sosNotification: {
+            pending: null,
+            detail: 'queue unavailable',
+          },
+        },
         jobs: {
           serverRole: 'worker',
           enabled: true,
@@ -168,9 +196,10 @@ describe('systemHealthService', () => {
     });
   });
 
-  it('returns liveness and readiness payloads with job visibility', async () => {
+  it('returns liveness and readiness payloads with queue visibility', async () => {
     mockHealthyQueries();
     redis.ping.mockResolvedValueOnce('PONG');
+    sosQueueService.getQueueLength.mockResolvedValueOnce(0);
 
     expect(systemHealthService.getLivenessStatus()).toEqual({
       status: 'ok',
@@ -199,6 +228,12 @@ describe('systemHealthService', () => {
           status: 'ok',
           checked: KEY_TABLES,
           missing: [],
+        },
+        queues: {
+          status: 'ok',
+          sosNotification: {
+            pending: 0,
+          },
         },
         jobs: {
           serverRole: 'worker',

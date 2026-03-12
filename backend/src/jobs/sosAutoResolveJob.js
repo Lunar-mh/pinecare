@@ -1,8 +1,9 @@
-'use strict';
+﻿'use strict';
 
 const cron = require('node-cron');
 const sosService = require('../services/sosService');
 const sosQueueService = require('../services/sosQueueService');
+const logger = require('../utils/logger');
 
 const CRON_EXPRESSION = process.env.SOS_AUTO_RESOLVE_CRON || '*/1 * * * *';
 const TIMEOUT_MINUTES = parseInt(process.env.SOS_AUTO_RESOLVE_TIMEOUT_MINUTES || '30', 10);
@@ -14,16 +15,19 @@ let cronTask = null;
 async function runAutoResolveOnce() {
   const token = await sosQueueService.acquireLock(LOCK_KEY, LOCK_TTL_MS);
   if (!token) {
-    console.log('SOS 自动解决任务跳过：已有实例在执行');
+    logger.info('sosAutoResolveJob', 'run_skipped_locked');
     return { resolved_count: 0, skipped: true };
   }
 
   try {
     const result = await sosService.autoResolveTimeoutEvents(TIMEOUT_MINUTES);
-    console.log(`SOS 自动解决任务完成，本次处理 ${result.resolved_count} 条`);
+    logger.info('sosAutoResolveJob', 'run_completed', {
+      timeoutMinutes: TIMEOUT_MINUTES,
+      resolvedCount: result.resolved_count,
+    });
     return result;
   } catch (err) {
-    console.error('SOS 自动解决任务失败:', err.message);
+    logger.error('sosAutoResolveJob', 'run_failed', { message: err.message });
     throw err;
   } finally {
     await sosQueueService.releaseLock(LOCK_KEY, token);
@@ -32,20 +36,21 @@ async function runAutoResolveOnce() {
 
 function startAutoResolveJob() {
   if (cronTask) {
-    return;
+    return cronTask;
   }
 
   if (!cron.validate(CRON_EXPRESSION)) {
-    throw new Error(`SOS 自动解决 cron 表达式非法: ${CRON_EXPRESSION}`);
+    throw new Error(`SOS auto resolve cron expression is invalid: ${CRON_EXPRESSION}`);
   }
 
   cronTask = cron.schedule(CRON_EXPRESSION, () => {
     runAutoResolveOnce().catch((err) => {
-      console.error('SOS 自动解决调度执行失败:', err.message);
+      logger.error('sosAutoResolveJob', 'schedule_failed', { message: err.message });
     });
   });
 
-  console.log(`SOS 自动解决任务已启动: ${CRON_EXPRESSION}`);
+  logger.info('sosAutoResolveJob', 'started', { schedule: CRON_EXPRESSION });
+  return cronTask;
 }
 
 function stopAutoResolveJob() {
@@ -55,7 +60,7 @@ function stopAutoResolveJob() {
 
   cronTask.stop();
   cronTask = null;
-  console.log('SOS 自动解决任务已停止');
+  logger.info('sosAutoResolveJob', 'stopped');
 }
 
 module.exports = {

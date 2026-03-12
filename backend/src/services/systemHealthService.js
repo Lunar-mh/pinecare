@@ -7,14 +7,23 @@ const { resolveMode } = require('../config/runtimeMode');
 const { getRecentThirdPartyErrors } = require('../utils/thirdParty');
 const { getJobStatus } = require('../jobs');
 const { getCareEventAuditDiagnostics } = require('./eventTimelineService');
+const sosQueueService = require('./sosQueueService');
 
 const KEY_TABLES = [
   'users',
+  'health_archives',
   'health_records',
+  'family_bindings',
+  'medication_plans',
   'medication_logs',
   'sos_events',
+  'sos_notifications',
   'fall_events',
   'location_records',
+  'service_orders',
+  'time_accounts',
+  'online_consultations',
+  'appointments',
   'medical_reports',
   'audit_logs',
 ];
@@ -65,11 +74,32 @@ async function checkKeyTables() {
   }
 }
 
+async function checkQueues() {
+  try {
+    const pending = Number(await sosQueueService.getQueueLength()) || 0;
+    return {
+      status: 'ok',
+      sosNotification: {
+        pending,
+      },
+    };
+  } catch (err) {
+    return {
+      status: 'error',
+      sosNotification: {
+        pending: null,
+        detail: err.message,
+      },
+    };
+  }
+}
+
 async function getHealthStatus() {
-  const [mysql, redisState, keyTables] = await Promise.all([
+  const [mysql, redisState, keyTables, queues] = await Promise.all([
     checkMysql(),
     checkRedis(),
     checkKeyTables(),
+    checkQueues(),
   ]);
   const jobs = getJobStatus();
   const recentErrors = getRecentThirdPartyErrors(5);
@@ -79,6 +109,7 @@ async function getHealthStatus() {
     mysql.status === 'ok' &&
     redisState.status === 'ok' &&
     keyTables.status === 'ok' &&
+    queues.status === 'ok' &&
     workerHealthy;
 
   return {
@@ -90,6 +121,7 @@ async function getHealthStatus() {
       mysql,
       redis: redisState,
       keyTables,
+      queues,
       jobs,
       thirdPartyErrors: {
         recentCount: recentErrors.length,
@@ -121,6 +153,7 @@ module.exports = {
   checkMysql,
   checkRedis,
   checkKeyTables,
+  checkQueues,
   getHealthStatus,
   getLivenessStatus,
   getReadinessStatus,

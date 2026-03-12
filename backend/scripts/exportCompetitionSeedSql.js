@@ -5,18 +5,19 @@ const path = require('path');
 const { buildCompetitionSeedSqlBundle } = require('../src/data/competitionSeedSql');
 const { COMPETITION_SEED_ASSETS } = require('../src/data/competitionSeedAssets');
 
-const OUTPUT_DIR = path.join(__dirname, '..', 'generated', 'competition-seed');
+const DEFAULT_OUTPUT_DIR = path.join(__dirname, '..', 'generated', 'competition-seed');
 
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
-function writeText(filename, content) {
-  fs.writeFileSync(path.join(OUTPUT_DIR, filename), `${content.endsWith('\n') ? content : `${content}\n`}`, 'utf8');
+function writeText(outputDir, filename, content) {
+  const normalized = content.endsWith('\n') ? content : `${content}\n`;
+  fs.writeFileSync(path.join(outputDir, filename), normalized, 'utf8');
 }
 
-function writeJson(filename, data) {
-  fs.writeFileSync(path.join(OUTPUT_DIR, filename), `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+function writeJson(outputDir, filename, data) {
+  fs.writeFileSync(path.join(outputDir, filename), `${JSON.stringify(data, null, 2)}\n`, 'utf8');
 }
 
 function buildReadme(bundle) {
@@ -48,34 +49,41 @@ function buildReadme(bundle) {
   return lines.join('\n');
 }
 
-function main() {
+function generateCompetitionSeedSqlArtifacts(options = {}) {
+  const outputDir = options.outputDir ? path.resolve(options.outputDir) : DEFAULT_OUTPUT_DIR;
   const bundle = buildCompetitionSeedSqlBundle();
-  ensureDir(OUTPUT_DIR);
+  ensureDir(outputDir);
 
-  writeText(COMPETITION_SEED_ASSETS.files.bootstrapSql, bundle.sql);
-  writeText(COMPETITION_SEED_ASSETS.files.bootstrapReadme, buildReadme(bundle));
-  writeJson(COMPETITION_SEED_ASSETS.files.bootstrapSummary, {
+  writeText(outputDir, COMPETITION_SEED_ASSETS.files.bootstrapSql, bundle.sql);
+  writeText(outputDir, COMPETITION_SEED_ASSETS.files.bootstrapReadme, buildReadme(bundle));
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.bootstrapSummary, {
     generatedAt: bundle.generatedAt,
     manifestVersion: bundle.manifestVersion,
-    outputDir: OUTPUT_DIR,
+    outputDir,
     outputFiles: bundle.outputFiles,
     importOrder: bundle.importOrder,
     clearOrder: bundle.clearOrder,
     tableCounts: bundle.tableCounts,
   });
 
-  process.stdout.write(
-    `${JSON.stringify(
-      {
-        generatedAt: bundle.generatedAt,
-        outputDir: OUTPUT_DIR,
-        outputFiles: bundle.outputFiles,
-        tableCounts: bundle.tableCounts,
-      },
-      null,
-      2
-    )}\n`
-  );
+  return {
+    generatedAt: bundle.generatedAt,
+    outputDir,
+    outputFiles: bundle.outputFiles,
+    tableCounts: bundle.tableCounts,
+  };
 }
 
-main();
+function main() {
+  const result = generateCompetitionSeedSqlArtifacts();
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+}
+
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  buildReadme,
+  generateCompetitionSeedSqlArtifacts,
+};

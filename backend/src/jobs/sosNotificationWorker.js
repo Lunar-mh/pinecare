@@ -1,7 +1,8 @@
-'use strict';
+﻿'use strict';
 
 const sosQueueService = require('../services/sosQueueService');
 const sosNotificationService = require('../services/sosNotificationService');
+const logger = require('../utils/logger');
 
 const POLL_INTERVAL_MS = parseInt(process.env.SOS_QUEUE_POLL_INTERVAL_MS || '1000', 10);
 const BATCH_SIZE = parseInt(process.env.SOS_QUEUE_BATCH_SIZE || '20', 10);
@@ -24,7 +25,7 @@ async function runOnce() {
     await Promise.all(tasks.map((task) => sosNotificationService.consumeTask(task)));
     return { processed: tasks.length };
   } catch (err) {
-    console.error('SOS 通知 Worker 执行失败:', err.message);
+    logger.error('sosNotificationWorker', 'run_failed', { message: err.message });
     return { processed: 0, error: err.message };
   } finally {
     workerRunning = false;
@@ -33,12 +34,12 @@ async function runOnce() {
 
 function startWorker() {
   if (workerTimer) {
-    return;
+    return workerTimer;
   }
 
   workerTimer = setInterval(() => {
     runOnce().catch((err) => {
-      console.error('SOS 通知 Worker 轮询失败:', err.message);
+      logger.error('sosNotificationWorker', 'poll_failed', { message: err.message });
     });
   }, POLL_INTERVAL_MS);
 
@@ -46,7 +47,11 @@ function startWorker() {
     workerTimer.unref();
   }
 
-  console.log('SOS 通知 Worker 已启动');
+  logger.info('sosNotificationWorker', 'started', {
+    pollIntervalMs: POLL_INTERVAL_MS,
+    batchSize: BATCH_SIZE,
+  });
+  return workerTimer;
 }
 
 function stopWorker() {
@@ -56,7 +61,7 @@ function stopWorker() {
 
   clearInterval(workerTimer);
   workerTimer = null;
-  console.log('SOS 通知 Worker 已停止');
+  logger.info('sosNotificationWorker', 'stopped');
 }
 
 module.exports = {

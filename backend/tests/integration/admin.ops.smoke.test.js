@@ -228,6 +228,24 @@ describe('admin ops smoke', () => {
             failed_count: 0,
           },
         ],
+      ])
+      .mockResolvedValueOnce([
+        [
+          {
+            id: 900,
+            sos_event_id: 100,
+            contact_id: 77,
+            contact_name: 'Family One',
+            notify_type: 'wechat',
+            notify_target: 'openid-1',
+            status: 'sent',
+            retry_count: 0,
+            error_message: null,
+            sent_at: '2026-03-10 10:01:00',
+            created_at: '2026-03-10 10:00:00',
+            updated_at: '2026-03-10 10:01:00',
+          },
+        ],
       ]);
 
     const res = await request(app)
@@ -238,6 +256,7 @@ describe('admin ops smoke', () => {
     expect(res.body.code).toBe(0);
     expect(res.body.data.list[0].event_id).toBe(100);
     expect(res.body.data.list[0].notification_summary.total.sent).toBe(1);
+    expect(res.body.data.list[0].notification_delivery.sentCount).toBe(1);
   });
 
   it('GET /api/v1/admin/fall/events returns paged events', async () => {
@@ -468,3 +487,4 @@ describe('admin ops smoke', () => {
     expect(res.body.data.competitionDataAssets.commands).toContain('npm run seed:competition:sql');
   });
 });
+

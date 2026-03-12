@@ -1,7 +1,8 @@
-'use strict';
+﻿'use strict';
 
 const adminOpsModel = require('../../models/adminOpsModel');
-const { buildSosNotificationSummaryMap, createEmptySosNotificationSummary } = require('../../utils/sosNotificationSummary');
+const { buildSosNotificationSummaryMap } = require('../../utils/sosNotificationSummary');
+const { buildNotificationDetailMap, createEmptyDelivery, EMPTY_SUMMARY } = require('./notificationDelivery');
 const {
   createBizError,
   isSchemaMissingError,
@@ -9,7 +10,38 @@ const {
   parsePositiveInt,
 } = require('./shared');
 
-const EMPTY_SUMMARY = createEmptySosNotificationSummary();
+async function loadSosNotificationState(eventIds) {
+  const [summaryRows, detailRows] = await Promise.all([
+    adminOpsModel.summarizeSosNotifications(eventIds),
+    adminOpsModel.listSosNotificationDetails(eventIds),
+  ]);
+  const summaryMap = buildSosNotificationSummaryMap(summaryRows);
+
+  return {
+    summaryMap,
+    detailMap: buildNotificationDetailMap(detailRows, summaryMap),
+  };
+}
+
+function buildSosEventList(rows, summaryMap, detailMap) {
+  return rows.map((item) => ({
+    event_id: Number(item.id),
+    user_id: Number(item.user_id),
+    user_name: item.nickname || `User${item.user_id}`,
+    user_phone: item.phone || '',
+    event_status: item.event_status,
+    trigger_type: item.trigger_type,
+    latitude: item.latitude,
+    longitude: item.longitude,
+    address: item.address,
+    created_at: item.created_at,
+    confirmed_at: item.confirmed_at,
+    resolved_at: item.resolved_at,
+    cancelled_at: item.cancelled_at,
+    notification_summary: summaryMap[item.id] || EMPTY_SUMMARY,
+    notification_delivery: detailMap[item.id] || createEmptyDelivery(summaryMap[item.id] || EMPTY_SUMMARY),
+  }));
+}
 
 const adminIncidentOpsService = {
   async getSosEvents(query = {}) {
@@ -27,28 +59,11 @@ const adminIncidentOpsService = {
         adminOpsModel.listSosEvents({ search, status }, { pageSize, offset }),
         adminOpsModel.countSosEvents({ search, status }),
       ]);
-
       const eventIds = rows.map((item) => Number(item.id));
-      const summaryRows = await adminOpsModel.summarizeSosNotifications(eventIds);
-      const summaryMap = buildSosNotificationSummaryMap(summaryRows);
+      const { summaryMap, detailMap } = await loadSosNotificationState(eventIds);
 
       return {
-        list: rows.map((item) => ({
-          event_id: Number(item.id),
-          user_id: Number(item.user_id),
-          user_name: item.nickname || `User${item.user_id}`,
-          user_phone: item.phone || '',
-          event_status: item.event_status,
-          trigger_type: item.trigger_type,
-          latitude: item.latitude,
-          longitude: item.longitude,
-          address: item.address,
-          created_at: item.created_at,
-          confirmed_at: item.confirmed_at,
-          resolved_at: item.resolved_at,
-          cancelled_at: item.cancelled_at,
-          notification_summary: summaryMap[item.id] || EMPTY_SUMMARY,
-        })),
+        list: buildSosEventList(rows, summaryMap, detailMap),
         pagination: {
           page,
           page_size: pageSize,

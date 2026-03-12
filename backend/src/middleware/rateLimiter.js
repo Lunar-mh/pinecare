@@ -2,6 +2,7 @@
 
 const redis = require('../config/redis');
 const { fail } = require('../utils/response');
+const logger = require('../utils/logger');
 
 const WINDOW_SECONDS = 60;
 const MAX_REQUESTS = 30;
@@ -32,7 +33,7 @@ function createRateLimiter({
 
       return next();
     } catch (err) {
-      console.error('rate_limiter_redis_error', {
+      logger.error('rateLimiter', 'redis_error', {
         requestId: req.requestId || null,
         message: err.message,
       });
@@ -42,4 +43,3 @@ function createRateLimiter({
 }
 
 module.exports = { createRateLimiter };
-

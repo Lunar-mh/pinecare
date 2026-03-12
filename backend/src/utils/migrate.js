@@ -1,8 +1,9 @@
-'use strict';
+﻿'use strict';
 
 const fs = require('fs');
 const path = require('path');
 const { query } = require('../config/database');
+const logger = require('./logger');
 
 const MIGRATION_PREFIX = '003_';
 
@@ -21,7 +22,7 @@ async function runMigrations() {
     .sort((a, b) => a.localeCompare(b));
 
   if (files.length === 0) {
-    console.log('未找到可执行的003迁移文件');
+    logger.info('migrate', 'no_matching_files', { prefix: MIGRATION_PREFIX });
     return;
   }
 
@@ -30,16 +31,16 @@ async function runMigrations() {
     const sqlText = fs.readFileSync(fullPath, 'utf8');
     const statements = splitSqlStatements(sqlText);
 
-    console.log(`开始执行迁移: ${file}`);
+    logger.info('migrate', 'file_started', { file });
 
     for (const statement of statements) {
       await query(statement);
     }
 
-    console.log(`迁移执行完成: ${file}`);
+    logger.info('migrate', 'file_completed', { file });
   }
 
-  console.log('所有003迁移执行完成');
+  logger.info('migrate', 'completed', { prefix: MIGRATION_PREFIX, count: files.length });
 }
 
 if (require.main === module) {
@@ -48,7 +49,7 @@ if (require.main === module) {
       process.exit(0);
     })
     .catch((err) => {
-      console.error('迁移执行失败:', err.message);
+      logger.error('migrate', 'failed', { message: err.message });
       process.exit(1);
     });
 }

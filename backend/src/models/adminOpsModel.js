@@ -798,6 +798,33 @@ const adminOpsModel = {
 
     return Array.isArray(rows) ? rows : [];
   },
+  async listSosNotificationDetails(eventIds = []) {
+    if (!Array.isArray(eventIds) || eventIds.length === 0) {
+      return [];
+    }
+
+    const placeholders = eventIds.map(() => '?').join(', ');
+    const [rows] = await query(
+      `SELECT id,
+              sos_event_id,
+              contact_id,
+              contact_name,
+              notify_type,
+              notify_target,
+              status,
+              retry_count,
+              error_message,
+              sent_at,
+              created_at,
+              updated_at
+       FROM sos_notifications
+       WHERE sos_event_id IN (${placeholders})
+       ORDER BY sos_event_id ASC, id ASC`,
+      eventIds
+    );
+
+    return Array.isArray(rows) ? rows : [];
+  },
 
   async listFallEvents(
     { search = '', status = '', communityId = null },
@@ -1149,3 +1176,5 @@ const adminOpsModel = {
 };
 
 module.exports = adminOpsModel;
+
+

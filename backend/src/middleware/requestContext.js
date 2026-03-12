@@ -1,6 +1,7 @@
 ﻿'use strict';
 
 const { v4: uuidv4 } = require('uuid');
+const { getRequestContext } = require('../utils/requestMeta');
 
 function normalizeRequestId(value) {
   const raw = String(value || '').trim();
@@ -16,6 +17,9 @@ function requestContext(req, res, next) {
   req.requestId = requestId;
   req.id = requestId;
   res.setHeader('x-request-id', requestId);
+  req.requestContext = getRequestContext(req);
+  req.ipAddress = req.requestContext.ipAddress;
+  req.userAgent = req.requestContext.userAgent;
 
   next();
 }

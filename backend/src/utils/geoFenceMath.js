@@ -3,8 +3,8 @@
 const EARTH_RADIUS_METERS = 6371000;
 
 /**
- * 灏嗚搴﹁浆鎹负寮у害
- * @param {number} degree 瑙掑害
+ * Convert degrees to radians.
+ * @param {number} degree
  * @returns {number}
  */
 function toRadians(degree) {
@@ -12,7 +12,7 @@ function toRadians(degree) {
 }
 
 /**
- * Haversine 鍏紡璁＄畻涓ょ偣闂寸悆闈㈣窛绂伙紙绫筹級
+ * Calculate spherical distance in meters using the Haversine formula.
  * @param {number} lat1
  * @param {number} lng1
  * @param {number} lat2
@@ -34,7 +34,7 @@ function haversineDistance(lat1, lng1, lat2, lng2) {
 }
 
 /**
- * 鍒ゆ柇鐐规槸鍚﹀湪鍦嗗舰鍥存爮鍐?
+ * Check whether a point is inside a circular geofence.
  * @param {number} lat
  * @param {number} lng
  * @param {number} centerLat
@@ -48,13 +48,13 @@ function isInsideCircle(lat, lng, centerLat, centerLng, radiusMeters) {
 }
 
 /**
- * 鍒ゆ柇灏勭嚎鏄惁涓庤竟鐩镐氦
- * @param {number} x 鐐圭粡搴?
- * @param {number} y 鐐圭含搴?
- * @param {number} x1 椤剁偣1缁忓害
- * @param {number} y1 椤剁偣1绾害
- * @param {number} x2 椤剁偣2缁忓害
- * @param {number} y2 椤剁偣2绾害
+ * Check whether a horizontal ray intersects the segment.
+ * @param {number} x
+ * @param {number} y
+ * @param {number} x1
+ * @param {number} y1
+ * @param {number} x2
+ * @param {number} y2
  * @returns {boolean}
  */
 function isRayIntersectSegment(x, y, x1, y1, x2, y2) {
@@ -68,7 +68,7 @@ function isRayIntersectSegment(x, y, x1, y1, x2, y2) {
 }
 
 /**
- * 灏勭嚎娉曞垽鏂偣鏄惁鍦ㄥ杈瑰舰鍐咃紙濂囨暟娆′氦鐐逛负鍐呴儴锛?
+ * Use ray casting to determine whether a point is inside a polygon.
  * @param {number} lat
  * @param {number} lng
  * @param {Array<{lat:number,lng:number}>} points
@@ -102,7 +102,7 @@ function isInsidePolygon(lat, lng, points) {
 }
 
 /**
- * 缁熶竴鍒ゆ柇浣嶇疆鐐规槸鍚﹀湪鍥存爮鍐呴儴
+ * Check whether a location is inside any supported fence shape.
  * @param {{latitude:number, longitude:number}} location
  * @param {object} fence
  * @returns {boolean}
@@ -127,7 +127,7 @@ function isInsideFence(location, fence) {
 }
 
 /**
- * 鏍规嵁鏈浣嶇疆涓庝笂娆＄姸鎬佸垽鏂槸鍚﹁Е鍙戝洿鏍忓憡璀?
+ * Compare current and previous fence status to decide whether to alert.
  * @param {{latitude:number, longitude:number}} location
  * @param {object} fence
  * @returns {{violated:boolean, alertType:'enter'|'exit'|null, isInside:boolean}}
@@ -168,4 +168,3 @@ module.exports = {
   checkFenceViolation,
   isInsideFence,
 };
-

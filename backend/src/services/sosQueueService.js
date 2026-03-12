@@ -1,6 +1,7 @@
-'use strict';
+﻿'use strict';
 
 const redis = require('../config/redis');
+const logger = require('../utils/logger');
 
 const SOS_QUEUE_KEY = process.env.SOS_QUEUE_KEY || 'queue:sos:notification';
 const DEFAULT_LOCK_TTL_MS = parseInt(process.env.SOS_LOCK_TTL_MS || '15000', 10);
@@ -48,7 +49,7 @@ async function dequeue(batchSize = 20) {
     try {
       list.push(JSON.parse(raw));
     } catch (_err) {
-      console.warn('SOS 队列出现无法解析的任务，已跳过');
+      logger.warn('sosQueueService', 'invalid_task_skipped');
     }
   }
 

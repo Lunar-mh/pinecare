@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const cron = require('node-cron');
 const medicationLogModel = require('../models/medicationLogModel');
@@ -6,6 +6,7 @@ const medicationPlanModel = require('../models/medicationPlanModel');
 const reminderPolicyService = require('../services/reminderPolicyService');
 const reminderNotificationService = require('../services/reminderNotificationService');
 const familyNotificationService = require('../services/familyNotificationService');
+const logger = require('../utils/logger');
 
 let cronTask = null;
 
@@ -13,7 +14,7 @@ function makePlanFallback(log) {
   return {
     id: log.plan_id,
     user_id: log.user_id,
-    medication_name: log.medication_name || '用药提醒',
+    medication_name: log.medication_name || 'Medication reminder',
     dosage: log.dosage || '',
   };
 }
@@ -82,15 +83,13 @@ function start() {
   cronTask = cron.schedule('*/5 * * * *', async () => {
     try {
       const result = await runOnce(new Date());
-      console.log(
-        `[用药跟进任务] 二次提醒:${result.second_sent}/${result.second_total}，转missed:${result.marked_missed}，家属通知:${result.family_notified}`
-      );
+      logger.info('medicationFollowupJob', 'run_completed', result);
     } catch (err) {
-      console.error('[用药跟进任务] 执行失败:', err.message);
+      logger.error('medicationFollowupJob', 'run_failed', { message: err.message });
     }
   });
 
-  console.log('[用药跟进任务] 已启动（每5分钟执行）');
+  logger.info('medicationFollowupJob', 'started', { schedule: '*/5 * * * *' });
   return cronTask;
 }
 
@@ -98,7 +97,7 @@ function stop() {
   if (cronTask) {
     cronTask.stop();
     cronTask = null;
-    console.log('[用药跟进任务] 已停止');
+    logger.info('medicationFollowupJob', 'stopped');
   }
 }
 

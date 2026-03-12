@@ -1,7 +1,8 @@
-'use strict';
+﻿'use strict';
 
 const axios = require('axios');
 const { getVoiceEnv, validateVoiceEnv } = require('../config/voiceEnv');
+const logger = require('../utils/logger');
 
 function createBizError(code, message, statusCode) {
   const err = new Error(message);
@@ -47,7 +48,7 @@ function extractRecognizedText(payload) {
 const asrService = {
   async recognize(audioBase64) {
     if (!audioBase64 || typeof audioBase64 !== 'string') {
-      throw createBizError(400, '音频数据不能为空', 400);
+      throw createBizError(400, 'audio data is required.', 400);
     }
 
     validateVoiceEnv();
@@ -75,7 +76,7 @@ const asrService = {
 
       const recognizedText = extractRecognizedText(response.data);
       if (!recognizedText) {
-        throw createBizError(422, '语音识别结果为空', 422);
+        throw createBizError(422, 'Speech recognition returned an empty transcript.', 422);
       }
 
       return recognizedText;
@@ -85,17 +86,20 @@ const asrService = {
       }
 
       if (err.response) {
-        console.error('阿里云ASR接口返回异常:', err.response.status, err.response.data);
-        throw createBizError(502, '语音识别服务暂时不可用，请稍后重试', 502);
+        logger.error('asrService', 'live_response_error', {
+          status: err.response.status,
+          data: err.response.data,
+        });
+        throw createBizError(502, 'Speech recognition service is temporarily unavailable.', 502);
       }
 
       if (err.request) {
-        console.error('阿里云ASR接口请求失败:', err.message);
-        throw createBizError(504, '语音识别服务请求超时，请稍后重试', 504);
+        logger.error('asrService', 'live_request_error', { message: err.message });
+        throw createBizError(504, 'Speech recognition request timed out.', 504);
       }
 
-      console.error('阿里云ASR处理失败:', err.message);
-      throw createBizError(500, '语音识别处理失败', 500);
+      logger.error('asrService', 'recognize_failed', { message: err.message });
+      throw createBizError(500, 'Speech recognition failed.', 500);
     }
   },
 };

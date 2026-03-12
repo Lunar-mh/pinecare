@@ -1,7 +1,8 @@
-'use strict';
+﻿'use strict';
 
 const express = require('express');
 const { ok } = require('../utils/response');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -16,7 +17,7 @@ function safeUse(path, routeFile) {
     router.use(path, routeModule);
   } catch (err) {
     if (err.code === 'MODULE_NOT_FOUND' && String(err.message || '').includes(routeFile)) {
-      console.warn(`[safeUse] 跳过 ${path}, 缺少路由模块: ${routeFile}`);
+      logger.warn('routes', 'safe_use_skipped', { path, routeFile });
       return;
     }
     throw err;
