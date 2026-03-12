@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const loadService = () => {
   jest.resetModules();
@@ -563,4 +563,5 @@ describe('adminOpsService', () => {
     await expect(loaded.service.bootstrapDemoScenario({ scenarioId: 'missing' })).rejects.toMatchObject({ code: 404 });
   });
 });
+
 

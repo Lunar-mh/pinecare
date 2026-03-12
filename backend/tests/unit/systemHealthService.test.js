@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 jest.mock('../../src/config/database', () => ({
   query: jest.fn(),
@@ -258,3 +258,4 @@ describe('systemHealthService', () => {
     });
   });
 });
+

@@ -2,10 +2,12 @@
 
 const COMPETITION_SEED_ASSETS = {
   outputDir: 'backend/generated/competition-seed',
+  packageDir: 'backend/generated/competition-package',
   commands: [
     'npm run seed:competition',
     'npm run seed:competition:export',
     'npm run seed:competition:sql',
+    'npm run seed:competition:package',
     'npm run seed:competition:apply',
     'npm run seed:competition:verify',
     'npm run seed:competition:refresh',
@@ -37,7 +39,7 @@ const COMPETITION_SEED_ASSETS = {
     bootstrapSummary: 'bootstrap-summary.json',
     latestSnapshot: 'latest-db-snapshot.json',
     latestVerification: 'latest-verification.json',
-    latestRefreshReport: 'latest-refresh-report.json'
+    latestRefreshReport: 'latest-refresh-report.json',
   },
 };
 

@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 on:
   push:
@@ -56,6 +56,14 @@ jobs:
           DB_PASSWORD: ${{ env.DB_PASSWORD }}
           DB_NAME: ${{ env.DB_NAME }}
           REDIS_HOST: ${{ env.REDIS_HOST }}
+
+      - name: Run backend fresh-install smoke
+        working-directory: backend
+        run: npm run smoke:fresh-install
+
+      - name: Run competition seed dry-run verification
+        working-directory: backend
+        run: npm run seed:competition:verify -- --dry-run
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
@@ -136,4 +144,5 @@ jobs:
 
       - name: Build Docker image
         run: docker build ./backend -t app:${{ github.sha }}
+
 

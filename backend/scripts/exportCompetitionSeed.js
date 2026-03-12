@@ -5,21 +5,21 @@ const path = require('path');
 const { buildCompetitionSeedDataset } = require('../src/data/competitionSeedDataset');
 const { COMPETITION_SEED_ASSETS } = require('../src/data/competitionSeedAssets');
 
-const OUTPUT_DIR = path.join(__dirname, '..', 'generated', 'competition-seed');
+const DEFAULT_OUTPUT_DIR = path.join(__dirname, '..', 'generated', 'competition-seed');
 
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
-function writeJson(filename, data) {
-  fs.writeFileSync(path.join(OUTPUT_DIR, filename), `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+function writeJson(outputDir, filename, data) {
+  fs.writeFileSync(path.join(outputDir, filename), `${JSON.stringify(data, null, 2)}\n`, 'utf8');
 }
 
-function buildSummary(dataset) {
+function buildSummary(dataset, outputDir) {
   return {
     generatedAt: new Date().toISOString(),
-    outputDir: OUTPUT_DIR,
-    recommendedNextCommand: COMPETITION_SEED_ASSETS.commands[2],
+    outputDir,
+    recommendedNextCommand: 'npm run seed:competition:package',
     files: {
       manifest: COMPETITION_SEED_ASSETS.files.manifest,
       reference: COMPETITION_SEED_ASSETS.files.reference,
@@ -69,9 +69,10 @@ function buildSummary(dataset) {
   };
 }
 
-function main() {
+function generateCompetitionSeedJsonArtifacts(options = {}) {
+  const outputDir = options.outputDir ? path.resolve(options.outputDir) : DEFAULT_OUTPUT_DIR;
   const dataset = buildCompetitionSeedDataset();
-  ensureDir(OUTPUT_DIR);
+  ensureDir(outputDir);
 
   const users = [
     ...dataset.communityAdmins,
@@ -80,30 +81,43 @@ function main() {
     ...dataset.familyMembers,
   ];
 
-  writeJson(COMPETITION_SEED_ASSETS.files.manifest, dataset.manifest);
-  writeJson(COMPETITION_SEED_ASSETS.files.reference, dataset.reference);
-  writeJson(COMPETITION_SEED_ASSETS.files.communities, dataset.communities);
-  writeJson(COMPETITION_SEED_ASSETS.files.users, users);
-  writeJson(COMPETITION_SEED_ASSETS.files.emergencyContacts, dataset.emergencyContacts);
-  writeJson(COMPETITION_SEED_ASSETS.files.familyBindings, dataset.familyBindings);
-  writeJson(COMPETITION_SEED_ASSETS.files.healthArchives, dataset.healthArchives);
-  writeJson(COMPETITION_SEED_ASSETS.files.medicationPlans, dataset.medicationPlans);
-  writeJson(COMPETITION_SEED_ASSETS.files.medicationLogs, dataset.medicationLogs);
-  writeJson(COMPETITION_SEED_ASSETS.files.gpsTracks, dataset.gpsTracks);
-  writeJson(COMPETITION_SEED_ASSETS.files.sosEvents, dataset.sosEvents);
-  writeJson(COMPETITION_SEED_ASSETS.files.serviceOrders, dataset.serviceOrders);
-  writeJson(COMPETITION_SEED_ASSETS.files.volunteerAttendanceLogs, dataset.volunteerAttendanceLogs);
-  writeJson(COMPETITION_SEED_ASSETS.files.serviceRecords, dataset.serviceRecords);
-  writeJson(COMPETITION_SEED_ASSETS.files.timeBankAccounts, dataset.timeBankAccounts);
-  writeJson(COMPETITION_SEED_ASSETS.files.timeBankExchanges, dataset.timeBankExchanges);
-  writeJson(COMPETITION_SEED_ASSETS.files.consultations, dataset.consultations);
-  writeJson(COMPETITION_SEED_ASSETS.files.appointments, dataset.appointments);
-  writeJson(COMPETITION_SEED_ASSETS.files.medicalReports, dataset.medicalReports);
-  writeJson(COMPETITION_SEED_ASSETS.files.auditLogs, dataset.auditLogs);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.manifest, dataset.manifest);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.reference, dataset.reference);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.communities, dataset.communities);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.users, users);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.emergencyContacts, dataset.emergencyContacts);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.familyBindings, dataset.familyBindings);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.healthArchives, dataset.healthArchives);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.medicationPlans, dataset.medicationPlans);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.medicationLogs, dataset.medicationLogs);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.gpsTracks, dataset.gpsTracks);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.sosEvents, dataset.sosEvents);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.serviceOrders, dataset.serviceOrders);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.volunteerAttendanceLogs, dataset.volunteerAttendanceLogs);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.serviceRecords, dataset.serviceRecords);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.timeBankAccounts, dataset.timeBankAccounts);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.timeBankExchanges, dataset.timeBankExchanges);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.consultations, dataset.consultations);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.appointments, dataset.appointments);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.medicalReports, dataset.medicalReports);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.auditLogs, dataset.auditLogs);
 
-  const summary = buildSummary(dataset);
-  writeJson(COMPETITION_SEED_ASSETS.files.summary, summary);
-  process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
+  const summary = buildSummary(dataset, outputDir);
+  writeJson(outputDir, COMPETITION_SEED_ASSETS.files.summary, summary);
+
+  return summary;
 }
 
-main();
+function main() {
+  const result = generateCompetitionSeedJsonArtifacts();
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+}
+
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  buildSummary,
+  generateCompetitionSeedJsonArtifacts,
+};

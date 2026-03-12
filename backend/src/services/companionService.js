@@ -1,193 +1,30 @@
-'use strict';
+ï»¿'use strict';
 
-const redis = require('../config/redis');
 const CompanionModel = require('../models/companion');
-const AuditLogModel = require('../models/auditLog');
 const qwenService = require('./qwenService');
 const emotionService = require('./emotionService');
 const contentSafetyService = require('./contentSafetyService');
-const { resolveIntegrationMode } = require('../config/integrationMode');
-const { mergeProviderRuntime, recordProviderSuccess } = require('../utils/providerRuntime');
-const logger = require('../utils/logger');
+const { recordProviderSuccess } = require('../utils/providerRuntime');
+const { buildCapabilityReport } = require('./integrationCapability/buildReport');
+const { GAME_LIST, NOSTALGIA_LIBRARY } = require('./companion/content');
+const { getContextMessages, saveContextMessages } = require('./companion/contextStore');
+const {
+  createBizError,
+  getModeStrategy,
+  normalizeDecade,
+  buildFallbackReply,
+  writeAudit,
+  getDiagnostics,
+  validateGamePayload,
+} = require('./companion/shared');
 
-const CONTEXT_PREFIX = 'companion:context:';
-const CONTEXT_MAX_MESSAGES = 10;
-const CONTEXT_EXPIRE_SECONDS = 7 * 24 * 60 * 60;
 const TREND_DAYS = 30;
-const DEFAULT_DECADE = '1980s';
-const SYSTEM_PROMPT =
-  'You are a warm companion for older adults. Reply in concise, friendly, empathetic Chinese without medical jargon.';
-
-const game = (gameType, name, description, rules) => ({
-  gameType,
-  name,
-  description,
-  rules,
-  difficulties: [1, 2, 3, 4, 5],
-});
-const songs = (...items) => items.map(([title, artist]) => ({ title, artist }));
-const movies = (...items) => items.map(([title, year]) => ({ title, year }));
-const photos = (...items) => items.map(([title, description]) => ({ title, description }));
-const nostalgia = (songList, movieList, photoList) => ({
-  songs: songList,
-  movies: movieList,
-  photos: photoList,
-});
-
-const GAME_LIST = [
-  game('memory', 'Êı×Ö¼ÇÒä', '¶ÌÊ±¼ÇÒäÑµÁ·£¬°ïÖú±£³Ö×¢ÒâÁ¦ºÍ¼ÇÒäÁ¦¡£', 'ÏµÍ³Õ¹Ê¾Ò»×éÊı×Ö£¬¶ÌÔİ¼ÇÒäºó°´Ë³ĞòÊäÈë¡£'),
-  game('word_chain', '´ÊÓï½ÓÁú', 'ÓïÑÔÁªÏëÑµÁ·£¬°ïÖú±£³ÖË¼Î¬»îÔ¾¡£', '¸ù¾İÉÏÒ»¸ö´ÊµÄÄ©×Ö½Ó³öÏÂÒ»¸ö´Ê¡£'),
-  game('puzzle', 'Æ´Í¼', '¿Õ¼äÈÏÖªÑµÁ·£¬°ïÖú±£³Ö×¨×¢ºÍÄÍĞÄ¡£', 'ÔÚÏŞ¶¨Ê±¼äÄÚÍê³ÉÍ¼¿éÆ´½Ó¡£'),
-];
-
-const NOSTALGIA_LIBRARY = {
-  '1950s': nostalgia(
-    songs(['ÄÏÄàÍå', '¹ùÀ¼Ó¢'], ['ÈÃÎÒÃÇµ´ÆğË«½°', 'Áõ»İ·¼'], ['ÎÒµÄ×æ¹ú', '¹ùÀ¼Ó¢']),
-    movies(['°×Ã«Å®', 1951], ['ÉÏ¸ÊÁë', 1956], ['ÁÖ¼ÒÆÌ×Ó', 1959]),
-    photos(['ÀÏÊ½ÊÕÒô»ú', 'Ä¾ÖÊ»úÉíÓëĞıÅ¥µ÷Æµ£¬ÊÇºÜ¶à¼ÒÍ¥¹²Í¬µÄÊ±´ú¼ÇÒä¡£'], ['ºúÍ¬Éú»îÕÕ', 'ÁÚÀïÎ§×øÁÄÌì£¬³äÂúÑÌ»ğÆø¡£'])
-  ),
-  '1960s': nostalgia(
-    songs(['²İÔ­ÉÏÉıÆğ²»ÂäµÄÌ«Ñô', 'ºúËÉ»ª'], ['ºéºşË®ÀË´òÀË', 'ÍõÓñÕä'], ['Ñ§Ï°À×·æºÃ°ñÑù', 'ºÏ³ª']),
-    movies(['Ó¢ĞÛ¶ùÅ®', 1964], ['µØµÀÕ½', 1965], ['Ğ¡±øÕÅ¸Â', 1963]),
-    photos(['ºÚ°×È«¼Ò¸£', '·­Áì³ÄÉÀºÍÖĞÉ½×°ÊÇÄÇ¸öÄê´ú³£¼û´©×Å¡£'], ['ÀÏÊ½×ÔĞĞ³µ', '¶ş°Ë´ó¸ÜÊÇºÜ¶àÈËµÄÍ¨ÇÚÖ÷Á¦¡£'])
-  ),
-  '1970s': nostalgia(
-    songs(['ºìĞÇ¸è', 'ÉÙÄê¹ã²¥ºÏ³ªÍÅ'], ['ÎÒ°®ÄãÖĞ¹ú', 'Ò¶ÅåÓ¢'], ['±ß½®µÄÈªË®ÇåÓÖ´¿', 'Àî¹ÈÒ»']),
-    movies(['ÉÁÉÁµÄºìĞÇ', 1974], ['Ğ¡»¨', 1979], ['Â®É½Áµ', 1980]),
-    photos(['ÌÂ´É¸×', '³£¼ûµÄÉú»îÓÃÆ·£¬³ĞÔØÁËºÜ¶à¼ÒÍ¥»ØÒä¡£'], ['¹¤³§³µ¼äÕÕ', '¼ÇÂ¼ÁËÄÇ¸öÄê´úÆÓËØ¶øÈÈÁÒµÄÀÍ¶¯³¡¾°¡£'])
-  ),
-  '1980s': nostalgia(
-    songs(['ÄêÇáµÄÅóÓÑÀ´Ïà»á', 'Àî¹ÈÒ»'], ['ÍâÆÅµÄÅìºşÍå', 'ÅË°²°î'], ['ÌğÃÛÃÛ', 'µËÀö¾ı']),
-    movies(['ÄÁÂíÈË', 1982], ['ÉÙÁÖËÂ', 1982], ['¸ßÉ½ÏÂµÄ»¨»·', 1984]),
-    photos(['´óÍ·µçÊÓ»ú', 'Ò»¼ÒÈËÎ§×ø¿´µçÊÓÊÇºÜ¶àÈËµÄ¹²Í¬¼ÇÒä¡£'], ['ÀÏÊ½Â¼Òô»ú', '´Å´øÊ±´úµÄÒôÀÖ»ØÒä¡£'])
-  ),
-  '1990s': nostalgia(
-    songs(['ÌÎÉùÒÀ¾É', 'Ã«Äş'], ['Í¬×ÀµÄÄã', 'ÀÏÀÇ'], ['Ç§Ç§ãÚ¸è', '³Â»Ûæµ']),
-    movies(['°ÔÍõ±ğ¼§', 1993], ['Ñô¹â²ÓÀÃµÄÈÕ×Ó', 1994], ['Ò»¸ö¶¼²»ÄÜÉÙ', 1999]),
-    photos(['Â¼ÏñÌüº£±¨Ç½', 'ÖÜÄ©¹ÛÓ°ÓéÀÖµÄÈÈÃÅÈ¥´¦¡£'], ['½Ö»úÌü', 'ÓÎÏ·»úºÍÇà´º¼ÇÒä½»Ö¯ÔÚÒ»Æğ¡£'])
-  ),
-};
-
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
-
-const getModeStrategy = () =>
-  resolveIntegrationMode({
-    requestedMode: process.env.AI_COMPANION_MODE || process.env.DASHSCOPE_MODE || 'auto',
-    liveConfigured: Boolean(String(process.env.DASHSCOPE_API_KEY || '').trim()),
-  });
+const SYSTEM_PROMPT = 'You are a warm companion for older adults. Reply in concise, friendly, empathetic Chinese without medical jargon.';
 const formatDate = (dateObj) => dateObj.toISOString().slice(0, 10);
-const trimContext = (messages) =>
-  (Array.isArray(messages) ? messages : []).slice(-CONTEXT_MAX_MESSAGES);
-const logBestEffort = (action, err) =>
-  logger.warn('companionService', action, { error: err.message });
-
-function normalizeDecade(input) {
-  const raw = String(input || '').trim().toLowerCase();
-  if (!raw) return DEFAULT_DECADE;
-  if (/^19(50|60|70|80|90)s$/.test(raw)) return raw;
-  if (/^(50|60|70|80|90)Äê´ú$/.test(raw)) return `19${raw.slice(0, 2)}s`;
-  if (/^(1950|1960|1970|1980|1990)$/.test(raw)) return `${raw}s`;
-  return /^(50|60|70|80|90)s$/.test(raw) ? `19${raw}` : DEFAULT_DECADE;
-}
-
-async function getContextMessages(userId) {
-  try {
-    const parsed = JSON.parse((await redis.get(`${CONTEXT_PREFIX}${userId}`)) || '[]');
-    return Array.isArray(parsed)
-      ? parsed
-          .filter((item) => item && item.role && item.content)
-          .map((item) => ({ role: item.role, content: String(item.content) }))
-      : [];
-  } catch (err) {
-    logBestEffort('context_read_failed', err);
-    return [];
-  }
-}
-
-async function saveContextMessages(userId, messages) {
-  const finalMessages = trimContext(messages);
-  try {
-    await redis.set(
-      `${CONTEXT_PREFIX}${userId}`,
-      JSON.stringify(finalMessages),
-      'EX',
-      CONTEXT_EXPIRE_SECONDS
-    );
-  } catch (err) {
-    logBestEffort('context_write_failed', err);
-  }
-  return finalMessages;
-}
-
-function buildFallbackReply(message, safetyResult) {
-  const prompt = String(message || '').trim();
-  const suffix =
-    safetyResult && safetyResult.triage && safetyResult.triage.responseSuffix
-      ? ` ${safetyResult.triage.responseSuffix}`
-      : '';
-
-  return `I am here with you. For "${prompt}", let's take it one step at a time. You can drink some water, slow your breathing, and talk with a family member or caregiver if you want company.${suffix}`.trim();
-}
-
-async function writeAudit(action, details) {
-  try {
-    await AuditLogModel.create({
-      userId: details && details.userId ? Number(details.userId) : null,
-      action,
-      details,
-    });
-  } catch (err) {
-    logger.error('companionService', 'audit_failed', { action, error: err.message });
-  }
-}
-
-function getDiagnostics(strategy, fallbackUsed) {
-  const stub = fallbackUsed || strategy.effectiveMode !== 'live';
-  return {
-    mode: stub ? 'stub' : 'live',
-    source: stub ? 'companion_stub' : 'dashscope_live',
-    fallbackUsed,
-  };
-}
-
-function validateGamePayload(payload) {
-  const gameType = String(payload.gameType || '').trim();
-  const score = Number(payload.score);
-  const difficulty = Number(payload.difficulty);
-  const durationSeconds = Number(payload.durationSeconds);
-  const gameTypes = GAME_LIST.map((item) => item.gameType);
-
-  if (!gameTypes.includes(gameType)) {
-    throw createBizError(422, `gameType only supports ${gameTypes.join(', ')}`, 422);
-  }
-  if (!Number.isFinite(score) || score < 0) {
-    throw createBizError(422, 'score must be greater than or equal to 0.', 422);
-  }
-  if (!Number.isInteger(difficulty) || difficulty < 1 || difficulty > 5) {
-    throw createBizError(422, 'difficulty must be an integer between 1 and 5.', 422);
-  }
-  if (!Number.isFinite(durationSeconds) || durationSeconds < 0) {
-    throw createBizError(422, 'durationSeconds must be greater than or equal to 0.', 422);
-  }
-
-  return { gameType, score, difficulty, durationSeconds };
-}
 
 class CompanionService {
   getCapabilityReport() {
-    const strategy = getModeStrategy();
-    return mergeProviderRuntime('dashscope-ai-companion', {
-      requestedMode: strategy.requestedMode,
-      effectiveMode: strategy.effectiveMode,
-      liveConfigured: strategy.liveConfigured,
-      fallbackAllowed: strategy.fallbackAllowed,
-      runtimeMode: strategy.runtimeMode,
-    });
+    return buildCapabilityReport('dashscope-ai-companion', getModeStrategy());
   }
 
   async chat(userId, message) {
@@ -256,7 +93,13 @@ class CompanionService {
     }
 
     if (strategy.effectiveMode === 'live' && !fallbackUsed) {
-      recordProviderSuccess('dashscope-ai-companion', { operation: 'chat', mode: 'live', model: qwenResult.model, tokens: qwenResult.tokens || 0, requestId: qwenResult.requestId || null });
+      recordProviderSuccess('dashscope-ai-companion', {
+        operation: 'chat',
+        mode: 'live',
+        model: qwenResult.model,
+        tokens: qwenResult.tokens || 0,
+        requestId: qwenResult.requestId || null,
+      });
     }
 
     const emotionScore = emotionService.analyzeDialogEmotion(cleanMessage, qwenResult.reply);
@@ -308,10 +151,7 @@ class CompanionService {
     const rowMap = new Map(
       (await CompanionModel.getEmotionTracksByDays(userId, TREND_DAYS)).map((row) => [
         formatDate(new Date(row.track_date)),
-        {
-          avgScore: Number(row.avg_score),
-          recordCount: Number(row.record_count),
-        },
+        { avgScore: Number(row.avg_score), recordCount: Number(row.record_count) },
       ])
     );
 
@@ -320,11 +160,7 @@ class CompanionService {
       dateObj.setDate(dateObj.getDate() - (TREND_DAYS - 1 - index));
       const date = formatDate(dateObj);
       const found = rowMap.get(date);
-      return {
-        date,
-        avgScore: found ? found.avgScore : null,
-        recordCount: found ? found.recordCount : 0,
-      };
+      return { date, avgScore: found ? found.avgScore : null, recordCount: found ? found.recordCount : 0 };
     });
 
     return {
@@ -336,13 +172,13 @@ class CompanionService {
 
   async getNostalgia(decade, userId) {
     const decadeKey = normalizeDecade(decade);
-    const data = NOSTALGIA_LIBRARY[decadeKey] || NOSTALGIA_LIBRARY[DEFAULT_DECADE];
+    const data = NOSTALGIA_LIBRARY[decadeKey] || NOSTALGIA_LIBRARY['1980s'];
 
     if (userId) {
       await CompanionModel.createChatSession({
         userId,
-        message: `»³¾ÉÍÆ¼öÇëÇó£º${decadeKey}`,
-        reply: `ÎªÄúÍÆ¼ö ${decadeKey} µÄ»³¾ÉÄÚÈİ£ºÀÏ¸è ${data.songs.length} Ê×¡¢ÀÏµçÓ° ${data.movies.length} ²¿¡¢ÀÏÕÕÆ¬ ${data.photos.length} ×é¡£`,
+        message: `æ€€æ—§æ¨èè¯·æ±‚ï¼š${decadeKey}`,
+        reply: `ä¸ºæ‚¨æ¨è ${decadeKey} çš„æ€€æ—§å†…å®¹ï¼šè€æ­Œ ${data.songs.length} é¦–ã€è€ç”µå½± ${data.movies.length} éƒ¨ã€è€ç…§ç‰‡ ${data.photos.length} ç»„ã€‚`,
         emotionScore: 50,
         sessionType: 'nostalgia',
       });
@@ -364,6 +200,3 @@ module.exports.CompanionService = CompanionService;
 module.exports.GAME_LIST = GAME_LIST;
 module.exports.NOSTALGIA_LIBRARY = NOSTALGIA_LIBRARY;
 module.exports.createBizError = createBizError;
-
-
-
