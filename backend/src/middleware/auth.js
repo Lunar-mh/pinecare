@@ -15,12 +15,12 @@ function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return fail(res, 401, '未授权。', null, 401);
+    return fail(res, 401, 'Authentication token is missing.', null, 401);
   }
 
   const secret = getJwtSecret();
   if (!secret) {
-    return fail(res, 500, 'JWT_SECRET未配置。', null, 500);
+    return fail(res, 500, 'JWT_SECRET is required for token verification.', null, 500);
   }
 
   const token = authHeader.slice(7);
@@ -34,7 +34,7 @@ function authMiddleware(req, res, next) {
     };
     return next();
   } catch (_err) {
-    return fail(res, 401, '无效的令牌。', null, 401);
+    return fail(res, 401, 'Authentication token is invalid or expired.', null, 401);
   }
 }
 

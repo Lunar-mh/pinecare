@@ -41,10 +41,12 @@ describe('knowledgeGraphService', () => {
     const { service, drugInteractionModel } = loadService();
     drugInteractionModel.findTopInteractionByPair.mockResolvedValueOnce(null);
 
-    await expect(service.checkInteraction('华法林', '阿司匹林')).resolves.toEqual(
+    await expect(
+      service.checkInteraction('\u534e\u6cd5\u6797', '\u963f\u53f8\u5339\u6797')
+    ).resolves.toEqual(
       expect.objectContaining({
         level: 'X',
-        mechanism: '双重抗凝与抗血小板作用叠加',
+        mechanism: 'Dual anticoagulant and antiplatelet effects overlap.',
       })
     );
   });
@@ -52,15 +54,15 @@ describe('knowledgeGraphService', () => {
   it('returns contraindications for exact and normalized drug names', async () => {
     const { service } = loadService();
 
-    await expect(service.getContraindicationsByDrug('华法林')).resolves.toEqual(
+    await expect(service.getContraindicationsByDrug('\u534e\u6cd5\u6797')).resolves.toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ diseaseName: '活动性出血', severity: 'high' }),
+        expect.objectContaining({ diseaseName: 'active_bleeding', severity: 'high' }),
       ])
     );
 
-    await expect(service.getContraindicationsByDrug('  普萘洛尔  ')).resolves.toEqual(
+    await expect(service.getContraindicationsByDrug('  \u666e\u843d\u6d1b\u5c14  ')).resolves.toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ diseaseName: '支气管哮喘', severity: 'high' }),
+        expect.objectContaining({ diseaseName: 'asthma', severity: 'high' }),
       ])
     );
 

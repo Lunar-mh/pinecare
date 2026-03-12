@@ -1,12 +1,30 @@
 ﻿const fs = require('fs');
 const path = require('path');
 
+const PROJECT_ROOT = path.resolve(__dirname, '../../');
+const SRC_ROOT = path.join(PROJECT_ROOT, 'src');
+
 function readProjectFile(relativePath) {
-  return fs.readFileSync(path.resolve(__dirname, '../../', relativePath), 'utf8');
+  return fs.readFileSync(path.resolve(PROJECT_ROOT, relativePath), 'utf8');
 }
 
 function countLines(relativePath) {
   return readProjectFile(relativePath).split(/\r?\n/).length;
+}
+
+function listJsFiles(dirPath) {
+  const results = [];
+  for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...listJsFiles(fullPath));
+      continue;
+    }
+    if (entry.isFile() && entry.name.endsWith('.js')) {
+      results.push(fullPath);
+    }
+  }
+  return results;
 }
 
 describe('backend architecture guardrails', () => {
@@ -21,9 +39,9 @@ describe('backend architecture guardrails', () => {
     expect(routesIndex).not.toContain("safeUse('/location'");
     expect(routesIndex).not.toContain("safeUse('/companion'");
 
-    expect(fs.existsSync(path.resolve(__dirname, '../../src/routes/timeBankLegacy.js'))).toBe(false);
-    expect(fs.existsSync(path.resolve(__dirname, '../../src/routes/locationLegacy.js'))).toBe(false);
-    expect(fs.existsSync(path.resolve(__dirname, '../../src/routes/companionLegacy.js'))).toBe(false);
+    expect(fs.existsSync(path.join(SRC_ROOT, 'routes', 'timeBankLegacy.js'))).toBe(false);
+    expect(fs.existsSync(path.join(SRC_ROOT, 'routes', 'locationLegacy.js'))).toBe(false);
+    expect(fs.existsSync(path.join(SRC_ROOT, 'routes', 'companionLegacy.js'))).toBe(false);
   });
 
   test('keeps middleware and routes off direct database or redis access', () => {
@@ -40,19 +58,28 @@ describe('backend architecture guardrails', () => {
     expect(healthRoutes).toContain("require('../services/systemHealthService')");
   });
 
-  test('keeps selected business services off direct database access and documents diagnostics exception', () => {
+  test('keeps business services off direct database access and documents diagnostics exception', () => {
     const drugInteractionService = readProjectFile('src/services/drugInteractionService.js');
     const familyNotificationService = readProjectFile('src/services/familyNotificationService.js');
     const knowledgeGraphService = readProjectFile('src/services/knowledgeGraphService.js');
     const systemHealthService = readProjectFile('src/services/systemHealthService.js');
-    const backendAgents = readProjectFile('../backend/AGENTS.md');
+    const backendAgents = readProjectFile('AGENTS.md');
 
     expect(drugInteractionService).not.toMatch(/config\/database|config\/db|\bquery\(/);
     expect(familyNotificationService).not.toMatch(/config\/database|config\/db|\bquery\(/);
     expect(knowledgeGraphService).not.toMatch(/config\/database|config\/db|\bquery\(/);
 
     expect(systemHealthService).toContain("require('../config/database')");
-    expect(backendAgents).toContain('documented diagnostics exception');
+    expect(backendAgents).toContain('systemHealthService is the documented diagnostics exception');
+    expect(backendAgents).toContain('Signing, authentication, and receipt generation must fail closed');
+  });
+
+  test('avoids bare console.error outside the shared logger module', () => {
+    const offenders = listJsFiles(SRC_ROOT)
+      .filter((filePath) => !filePath.endsWith(path.join('src', 'utils', 'logger.js')))
+      .filter((filePath) => readProjectFile(path.relative(PROJECT_ROOT, filePath)).includes('console.error('));
+
+    expect(offenders).toEqual([]);
   });
 
   test('keeps facades thin and subservices under bounded size limits', () => {
@@ -87,4 +114,3 @@ describe('backend architecture guardrails', () => {
     }
   });
 });
-

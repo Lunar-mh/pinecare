@@ -1,10 +1,10 @@
 ﻿# Four-End Release Candidate
 
 ## Goal
-Freeze the project into a defense-ready non-live release candidate. After this stage, the remaining work should be limited to real credentials, real upstream endpoints, and live rehearsal assets.
+Freeze the project into a defense-ready non-live release candidate. After this stage, the remaining work should be limited to real credentials, real upstream endpoints, live-provider rehearsal, and evidence capture.
 
 ## Verified build matrix
-- `backend`: `npm run lint`, `npm test`, `npm run smoke:fresh-install`, `npm run seed:competition:verify -- --dry-run`, `npm run migrate`
+- `backend`: `npm run lint`, `npm test -- --silent`, `npm run test:security`, `npm run test:performance`, `npm run audit:performance`, `npm run smoke:fresh-install`, `npm run seed:competition:verify -- --dry-run`, `npm run migrate`
 - `frontend`: `npm ci`, `npm run typecheck`, `npm run build:weapp`
 - `admin`: `npm ci`, `npm run build`
 - `volunteer`: `npm ci`, `npm run typecheck`, `npm run build`
@@ -32,26 +32,26 @@ Freeze the project into a defense-ready non-live release candidate. After this s
 - No competition-facing document describes Neo4j or knowledge graph as an active release capability.
 - Signing and receipt generation fail closed when `HASH_SECRET` or `PLATFORM_PRIVATE_KEY` is missing.
 - Business services do not query `database.js` directly. `systemHealthService` is the documented diagnostics exception.
+- Performance, security, and test-quality reports are present under `backend/docs/`.
+
+## Release snapshot
+- Backend suites: `216`
+- Backend tests: `815`
+- Coverage: `Statements 82.15 / Branches 62.30 / Functions 81.93 / Lines 82.61`
+- Fresh install smoke: `status: ready`
+- Competition seed dry-run: `status: ready`
+- Migration replay: `executed=0, skipped=29`
+- Latest performance hotspot: `GET /time-bank/leaderboard` with `p95=214ms`
+
+## Supporting documents
+- `backend/docs/error-message-spec.md`
+- `backend/docs/test-quality-report.md`
+- `backend/docs/performance-audit-report.md`
+- `backend/docs/security-audit-report.md`
+- `backend/docs/live-cutover-handover.md`
 
 ## Remaining live-only work
 - Fill real credentials for medical upstream, notification providers, voice providers, and OSS.
 - Switch integrations from `stub-ready` to `live-ready verified` one by one.
 - Capture desensitized live receipts and attach them to the real-data evidence pack.
 - Rehearse the three defense stories with real providers enabled.
-
-## Release snapshot (2026-03-12)
-- Backend tests: `211` suites, `799` tests, all passing.
-- Coverage: `Statements 82.13 / Branches 62.22 / Functions 82.16 / Lines 82.58`.
-- Backend lint: passed.
-- Backend smoke: `npm run smoke:fresh-install` => `status: ready`.
-- Competition seed dry-run: `status: ready`.
-- Migration status: `executed=0, skipped=29` on the current rehearsal database.
-- Frontend checks: `npm run typecheck` and `npm run build:weapp` passed.
-- Admin checks: `npm run build` passed.
-- Volunteer checks: `npm run typecheck` and `npm run build` passed.
-
-## Message contract freeze
-- Backend business messages are standardized in English for debugging and audit consistency.
-- Frontend, admin, and volunteer clients must localize by `code` and keep raw backend messages only as `debugMessage`.
-- The frozen specification lives in `backend/docs/error-message-spec.md`.
-

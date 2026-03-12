@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { DEMO_SCENARIOS } = require('../../../config/demoScenarios');
 const { COMPETITION_SEED_ASSETS } = require('../../../data/competitionSeedAssets');
@@ -71,6 +71,21 @@ function buildEvidenceDocuments() {
       key: 'data_desensitization_note',
       title: 'Data desensitization note',
       path: 'backend/docs/data-desensitization-note.md',
+    },
+    {
+      key: 'test_quality_report',
+      title: 'Test quality report',
+      path: 'backend/docs/test-quality-report.md',
+    },
+    {
+      key: 'performance_audit_report',
+      title: 'Performance audit report',
+      path: 'backend/docs/performance-audit-report.md',
+    },
+    {
+      key: 'security_audit_report',
+      title: 'Security audit report',
+      path: 'backend/docs/security-audit-report.md',
     },
   ];
 }
@@ -185,3 +200,4 @@ module.exports = {
   buildEvidenceChecklist,
   buildDemoScenarioOverview,
 };
+

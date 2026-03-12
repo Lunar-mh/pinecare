@@ -57,6 +57,14 @@ jobs:
           DB_NAME: ${{ env.DB_NAME }}
           REDIS_HOST: ${{ env.REDIS_HOST }}
 
+      - name: Run backend security suite
+        working-directory: backend
+        run: npm run test:security
+
+      - name: Run backend performance audit
+        working-directory: backend
+        run: npm run audit:performance
+
       - name: Run backend fresh-install smoke
         working-directory: backend
         run: npm run smoke:fresh-install
@@ -71,6 +79,14 @@ jobs:
         with:
           name: coverage-report
           path: backend/coverage
+          retention-days: 7
+
+      - name: Upload performance audit
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-audit
+          path: backend/generated/audits/performance
           retention-days: 7
 
   admin-build:

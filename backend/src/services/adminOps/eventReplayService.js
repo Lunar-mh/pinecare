@@ -1,12 +1,18 @@
-﻿'use strict';
+'use strict';
 
 const AuditLogModel = require('../../models/auditLog');
 const SosEventModel = require('../../models/sosEvent');
 const SosNotificationModel = require('../../models/sosNotification');
 const FallModel = require('../../models/fall');
 const locationRecordModel = require('../../models/locationRecordModel');
+const { createTtlCache } = require('../../utils/runtimeCache');
 const { buildUnifiedTimeline } = require('../eventTimelineService');
 const { createBizError, parseDate, parsePositiveInt } = require('./shared');
+
+const replayCache = createTtlCache({
+  ttlMs: Math.max(1000, Number(process.env.EVENT_REPLAY_CACHE_TTL_MS || 5000)),
+  maxEntries: 20,
+});
 
 function compactReplayDelivery(item) {
   if (!item.delivery) {
@@ -33,7 +39,17 @@ function compactReplayDelivery(item) {
   return item;
 }
 
-async function getEventReplay(query = {}) {
+function buildReplayCacheKey(query = {}) {
+  return replayCache.stableKey('eventReplay', {
+    userId: query.userId || null,
+    startDate: query.startDate || null,
+    endDate: query.endDate || null,
+    locationLimit: query.locationLimit || null,
+    auditLimit: query.auditLimit || null,
+  });
+}
+
+async function buildEventReplay(query = {}) {
   const userId = parsePositiveInt(query.userId, 'userId');
   const endDate = query.endDate ? parseDate(query.endDate, 'endDate') : new Date();
   const startDate = query.startDate
@@ -57,11 +73,8 @@ async function getEventReplay(query = {}) {
   const sosSummaryRows = await SosNotificationModel.summarizeByEventIds(
     sosEvents.map((item) => Number(item.id)).filter(Boolean)
   );
-  const fallNotificationsByEvent = {};
-  await Promise.all(
-    fallEvents.map(async (item) => {
-      fallNotificationsByEvent[item.id] = await FallModel.findNotificationsByEventId(item.id);
-    })
+  const fallNotificationsByEvent = await FallModel.findNotificationsByEventIds(
+    fallEvents.map((item) => Number(item.id)).filter(Boolean)
   );
 
   const timeline = buildUnifiedTimeline({
@@ -117,7 +130,23 @@ async function getEventReplay(query = {}) {
   };
 }
 
+async function getEventReplay(query = {}) {
+  const cacheKey = buildReplayCacheKey(query);
+  const cached = replayCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const replay = await buildEventReplay(query);
+  replayCache.set(cacheKey, replay);
+  return replay;
+}
+
+function clearEventReplayCache() {
+  replayCache.clear();
+}
+
 module.exports = {
   getEventReplay,
+  clearEventReplayCache,
 };
-

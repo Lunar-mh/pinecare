@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/models/adminScopeModel', () => ({
   findCommunityAdminScopeByUserId: jest.fn(),
@@ -17,6 +17,17 @@ function createRes() {
 describe('adminAuth middleware', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  it('rejects missing auth context', async () => {
+    const req = { query: {}, body: {} };
+    const res = createRes();
+    const next = jest.fn();
+
+    await adminAuth(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(401);
   });
 
   it('allows global admin and injects scope from query', async () => {
@@ -49,6 +60,37 @@ describe('adminAuth middleware', () => {
 
     expect(next).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('rejects invalid token payload for scoped admin flow', async () => {
+    const req = {
+      user: { userId: 'NaN', role: 'user', isAdmin: false },
+      query: {},
+      body: {},
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await adminAuth(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  it('rejects users without an admin scope', async () => {
+    adminScopeModel.findCommunityAdminScopeByUserId.mockResolvedValueOnce(null);
+    const req = {
+      user: { userId: 1001, role: 'user', isAdmin: false },
+      query: {},
+      body: {},
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await adminAuth(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(403);
   });
 
   it('allows scoped community admin from the model layer', async () => {

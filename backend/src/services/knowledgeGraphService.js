@@ -4,78 +4,90 @@ const neo4j = require('../config/neo4j');
 const drugInteractionModel = require('../models/drugInteraction');
 const { normalizeDrugPair, normalizeDrugName } = require('../utils/drugDataParser');
 
+const DRUG_NAMES = {
+  aspirin: '\u963f\u53f8\u5339\u6797',
+  warfarin: '\u534e\u6cd5\u6797',
+  clarithromycin: '\u514b\u62c9\u9709\u7d20',
+  simvastatin: '\u8f9b\u4f10\u4ed6\u6c40',
+  omeprazole: '\u5965\u7f8e\u62c9\u5511',
+  clopidogrel: '\u6c2f\u5421\u683c\u96f7',
+  ibuprofen: '\u5e03\u6d1b\u82ac',
+  metformin: '\u4e8c\u7532\u53cc\u80cd',
+  propranolol: '\u666e\u843d\u6d1b\u5c14',
+};
+
 const FALLBACK_INTERACTION_MAP = {
-  '阿司匹林|华法林': {
+  [`${DRUG_NAMES.aspirin}|${DRUG_NAMES.warfarin}`]: {
     level: 'X',
-    mechanism: '双重抗凝与抗血小板作用叠加',
-    riskDescription: '出血风险显著升高，严重时可能危及生命。',
-    suggestion: '避免自行联用，必须联用时需严密监测凝血指标。',
+    mechanism: 'Dual anticoagulant and antiplatelet effects overlap.',
+    riskDescription: 'Bleeding risk rises significantly and may become life-threatening.',
+    suggestion: 'Avoid combining these drugs without physician supervision and coagulation monitoring.',
   },
-  '克拉霉素|辛伐他汀': {
+  [`${DRUG_NAMES.clarithromycin}|${DRUG_NAMES.simvastatin}`]: {
     level: 'D',
-    mechanism: '代谢酶抑制导致他汀血药浓度升高',
-    riskDescription: '肌痛、横纹肌溶解风险上升。',
-    suggestion: '优先更换抗生素或暂停他汀，并监测肌酸激酶。',
+    mechanism: 'Metabolic enzyme inhibition increases statin exposure.',
+    riskDescription: 'Myalgia and rhabdomyolysis risk increases.',
+    suggestion: 'Prefer an alternative antibiotic or pause the statin with CK monitoring.',
   },
-  '奥美拉唑|氯吡格雷': {
+  [`${DRUG_NAMES.omeprazole}|${DRUG_NAMES.clopidogrel}`]: {
     level: 'C',
-    mechanism: 'CYP2C19 代谢竞争',
-    riskDescription: '可能降低抗血小板活性。',
-    suggestion: '建议改用对 CYP2C19 影响较小的抑酸药。',
+    mechanism: 'CYP2C19 metabolic competition.',
+    riskDescription: 'Antiplatelet activity may be reduced.',
+    suggestion: 'Use an acid suppression option with lower CYP2C19 interaction risk.',
   },
 };
 
 const CONTRAINDICATION_KB = {
-  华法林: [
+  [DRUG_NAMES.warfarin]: [
     {
       diseaseCode: 'D-BLEED-HIGH',
-      diseaseName: '活动性出血',
+      diseaseName: 'active_bleeding',
       severity: 'high',
-      description: '活动性出血患者禁用华法林，出血风险极高。',
+      description: 'Active bleeding is a contraindication because anticoagulation risk is extreme.',
     },
     {
       diseaseCode: 'D-LIVER-SEV',
-      diseaseName: '重度肝功能不全',
+      diseaseName: 'severe_liver_impairment',
       severity: 'high',
-      description: '重度肝损害会显著增加抗凝不良反应风险。',
+      description: 'Severe hepatic impairment can markedly increase anticoagulation complications.',
     },
   ],
-  布洛芬: [
+  [DRUG_NAMES.ibuprofen]: [
     {
       diseaseCode: 'D-ULCER',
-      diseaseName: '消化性溃疡',
+      diseaseName: 'peptic_ulcer',
       severity: 'high',
-      description: '可能诱发或加重胃肠道出血。',
+      description: 'May trigger or worsen gastrointestinal bleeding.',
     },
     {
       diseaseCode: 'D-KIDNEY-CKD',
-      diseaseName: '慢性肾病',
+      diseaseName: 'chronic_kidney_disease',
       severity: 'medium',
-      description: '长期使用可能进一步损害肾功能。',
+      description: 'Long-term use may further impair renal function.',
     },
   ],
-  二甲双胍: [
+  [DRUG_NAMES.metformin]: [
     {
       diseaseCode: 'D-KIDNEY-SEV',
-      diseaseName: '重度肾功能不全',
+      diseaseName: 'severe_kidney_impairment',
       severity: 'high',
-      description: '存在乳酸性酸中毒风险，应避免使用。',
+      description: 'Use should be avoided because of lactic acidosis risk.',
     },
   ],
-  普萘洛尔: [
+  [DRUG_NAMES.propranolol]: [
     {
       diseaseCode: 'D-ASTHMA',
-      diseaseName: '支气管哮喘',
+      diseaseName: 'asthma',
       severity: 'high',
-      description: '非选择性β受体阻滞剂可能诱发支气管痉挛。',
+      description: 'Non-selective beta blockade may provoke bronchospasm.',
     },
   ],
 };
 
 function buildFallbackKey(drugA, drugB) {
   const pair = normalizeDrugPair(drugA, drugB);
-  const sorted = [pair.drugA, pair.drugB].sort((a, b) =>
-    normalizeDrugName(a).localeCompare(normalizeDrugName(b))
+  const sorted = [pair.drugA, pair.drugB].sort((left, right) =>
+    normalizeDrugName(left).localeCompare(normalizeDrugName(right))
   );
   return `${sorted[0]}|${sorted[1]}`;
 }
@@ -92,9 +104,12 @@ class KnowledgeGraphService {
     if (row) {
       return {
         level: row.level,
-        mechanism: row.mechanism || '已记录于系统知识库',
-        riskDescription: row.risk_description || '两药联合使用存在风险，请结合医嘱处理。',
-        suggestion: row.suggestion || '建议咨询医生或药师后再联合使用。',
+        mechanism: row.mechanism || 'Recorded in the local interaction knowledge base.',
+        riskDescription:
+          row.risk_description ||
+          'The combination carries medication risk and should be reviewed with a clinician.',
+        suggestion:
+          row.suggestion || 'Consult a physician or pharmacist before combining these drugs.',
       };
     }
 

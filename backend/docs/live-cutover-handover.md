@@ -3,6 +3,17 @@
 ## Goal
 This handover describes the final step from the current `stub-ready / live-ready` release candidate to a real-provider rehearsal build.
 
+## Required pre-cutover checks
+Run these commands before switching any provider to live mode:
+```bash
+npm run lint
+npm test -- --silent
+npm run test:security
+npm run audit:performance
+npm run smoke:fresh-install
+npm run seed:competition:verify -- --dry-run
+```
+
 ## Cutover order
 1. Medical directory and appointment
 2. WeChat notification and SOS SMS
@@ -23,7 +34,7 @@ This handover describes the final step from the current `stub-ready / live-ready
 
 ### Expected validation
 - Time bank settlement and replay flows continue to return `code: 0`
-- Missing signing env values must fail closed with `503`
+- Missing signing env values fail closed with `503`
 - `/admin/system/evidence` continues to surface time bank and event evidence without silent fallback
 
 ### Rollback
@@ -82,7 +93,7 @@ This handover describes the final step from the current `stub-ready / live-ready
 ### Expected validation
 - `voice` shows `effectiveMode=live`
 - `lastSuccessAt` updates after ASR/TTS call
-- voice receipt or request trace is captured in the evidence pack
+- Voice receipt or request trace is captured in the evidence pack
 
 ### Rollback
 - Restore `VOICE_SERVICE_MODE=auto`
@@ -97,7 +108,7 @@ This handover describes the final step from the current `stub-ready / live-ready
 
 ### Expected validation
 - `oss` shows `effectiveMode=live`
-- upload response contains desensitized object key or URL
+- Upload response contains desensitized object key or URL
 - `lastSuccessAt` updates after upload
 
 ### Rollback
@@ -106,5 +117,6 @@ This handover describes the final step from the current `stub-ready / live-ready
 
 ## Evidence preparation
 - Use `backend/docs/live-evidence-templates.md`
+- Use `backend/generated/audits/performance/latest.md` as the pre-live baseline reference
 - Capture request IDs, task IDs, receipt IDs, screenshots, and replay user IDs in desensitized form
 - Do not mix competition seed evidence with real live evidence

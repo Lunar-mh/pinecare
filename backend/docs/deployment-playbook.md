@@ -22,7 +22,10 @@ Prepare a reproducible four-end release candidate for defense rehearsal and nati
 ### Backend
 - `npm install`
 - `npm run lint`
-- `npm test`
+- `npm test -- --silent`
+- `npm run test:security`
+- `npm run test:performance`
+- `npm run audit:performance`
 - `npm run smoke:fresh-install`
 - `npm run seed:competition:verify -- --dry-run`
 - `npm run migrate`
@@ -44,8 +47,8 @@ Prepare a reproducible four-end release candidate for defense rehearsal and nati
 
 ## Runtime checks
 ### Backend health
-- `GET /health`
-- `GET /ready`
+- `GET /livez`
+- `GET /readyz`
 - `GET /api/v1/admin/system/integrations`
 - `GET /api/v1/admin/system/evidence`
 - `GET /api/v1/admin/system/event-replay?userId=<demoUserId>`
@@ -57,6 +60,7 @@ Prepare a reproducible four-end release candidate for defense rehearsal and nati
 - Competition seed verification artifacts exist in `generated/competition-seed/`.
 - Missing signing env values fail closed instead of silently using defaults.
 - `systemHealthService` is the only documented diagnostics exception that can query the database directly.
+- Performance baseline artifacts exist in `generated/audits/performance/`.
 
 ## Defense stories
 1. Event story: `SOS / fall / GPS` anomaly -> notification -> community handling -> replay evidence.
@@ -67,10 +71,13 @@ Prepare a reproducible four-end release candidate for defense rehearsal and nati
 - Stop only the API node first.
 - Keep the worker node isolated if medication and SOS jobs must continue.
 - Restore the previous `.env` and restart API plus worker.
-- Recheck `/ready` and `/admin/system/integrations` after rollback.
+- Recheck `/readyz` and `/admin/system/integrations` after rollback.
 
 ## Related documents
 - `backend/docs/four-end-release-candidate.md`
+- `backend/docs/test-quality-report.md`
+- `backend/docs/performance-audit-report.md`
+- `backend/docs/security-audit-report.md`
 - `backend/docs/release-known-issues.md`
 - `backend/docs/live-cutover-handover.md`
 - `backend/docs/live-evidence-templates.md`

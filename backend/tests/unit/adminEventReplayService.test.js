@@ -14,7 +14,7 @@ jest.mock('../../src/models/sosNotification', () => ({
 
 jest.mock('../../src/models/fall', () => ({
   listHistory: jest.fn(),
-  findNotificationsByEventId: jest.fn(),
+  findNotificationsByEventIds: jest.fn(),
 }));
 
 jest.mock('../../src/models/locationRecordModel', () => ({
@@ -26,11 +26,15 @@ const SosEventModel = require('../../src/models/sosEvent');
 const SosNotificationModel = require('../../src/models/sosNotification');
 const FallModel = require('../../src/models/fall');
 const locationRecordModel = require('../../src/models/locationRecordModel');
-const { getEventReplay } = require('../../src/services/adminOps/eventReplayService');
+const {
+  getEventReplay,
+  clearEventReplayCache,
+} = require('../../src/services/adminOps/eventReplayService');
 
 describe('admin event replay service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    clearEventReplayCache();
   });
 
   it('builds unified replay timeline with delivery summaries and active incident counts', async () => {
@@ -50,10 +54,9 @@ describe('admin event replay service', () => {
     SosNotificationModel.summarizeByEventIds.mockResolvedValueOnce([
       { sos_event_id: 20, notify_type: 'wechat', pending_count: 0, sent_count: 1, failed_count: 1 },
     ]);
-    FallModel.findNotificationsByEventId.mockResolvedValueOnce([
-      { status: 'sent' },
-      { status: 'failed' },
-    ]);
+    FallModel.findNotificationsByEventIds.mockResolvedValueOnce({
+      30: [{ status: 'sent' }, { status: 'failed' }],
+    });
 
     const result = await getEventReplay({
       userId: '7',
@@ -71,6 +74,7 @@ describe('admin event replay service', () => {
       totalTimelineItems: 4,
     });
     expect(result.timeline[0]).toMatchObject({ type: 'audit', title: 'location.upload' });
+    expect(FallModel.findNotificationsByEventIds).toHaveBeenCalledWith([30]);
     expect(result.timeline).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -86,5 +90,31 @@ describe('admin event replay service', () => {
       ])
     );
   });
-});
 
+  it('caches repeated replay queries within the TTL window', async () => {
+    locationRecordModel.getByTimeRange.mockResolvedValue([{ id: 10, createdAt: '2026-03-11T10:00:00.000Z' }]);
+    SosEventModel.listByUser.mockResolvedValue([]);
+    FallModel.listHistory.mockResolvedValue([]);
+    AuditLogModel.list.mockResolvedValue([]);
+    SosNotificationModel.summarizeByEventIds.mockResolvedValue([]);
+    FallModel.findNotificationsByEventIds.mockResolvedValue({});
+
+    const query = {
+      userId: '7',
+      startDate: '2026-03-11T00:00:00.000Z',
+      endDate: '2026-03-11T23:59:59.000Z',
+    };
+
+    const first = await getEventReplay(query);
+    const second = await getEventReplay(query);
+
+    expect(first).toEqual(second);
+    expect(locationRecordModel.getByTimeRange).toHaveBeenCalledTimes(1);
+    expect(SosEventModel.listByUser).toHaveBeenCalledTimes(1);
+
+    clearEventReplayCache();
+    await getEventReplay(query);
+
+    expect(locationRecordModel.getByTimeRange).toHaveBeenCalledTimes(2);
+  });
+});

@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/models/sosEvent', () => ({
   createEvent: jest.fn(),
@@ -22,41 +22,49 @@ jest.mock('../../src/services/sosNotificationService', () => ({
 
 const SosEventModel = require('../../src/models/sosEvent');
 const sosService = require('../../src/services/sosService');
+const {
+  summarizeSamples,
+  recordPerformanceBaseline,
+  printPerformanceBaseline,
+} = require('./shared');
 
-function percentile(values, p) {
-  const sorted = [...values].sort((a, b) => a - b);
-  const index = Math.ceil((p / 100) * sorted.length) - 1;
-  return sorted[Math.max(0, index)];
-}
+const ROUNDS = 30;
+const P95_THRESHOLD_MS = Number(process.env.PERF_SOS_TRIGGER_P95_MS || 3000);
 
-describe('SOS 触发性能测试', () => {
-  test('POST /sos/trigger 服务端 p95 应小于 3 秒', async () => {
-    SosEventModel.createEvent.mockImplementation(async (_payload) => ({
+describe('SOS trigger latency', () => {
+  test(`POST /sos/trigger keeps p95 under ${P95_THRESHOLD_MS}ms across ${ROUNDS} samples`, async () => {
+    SosEventModel.createEvent.mockImplementation(async () => ({
       id: Math.floor(Math.random() * 100000),
       user_id: 9001,
       event_status: 'triggered',
       created_at: new Date().toISOString(),
-      address: '测试地址',
+      address: 'Rehearsal location',
       latitude: 30.1,
       longitude: 120.1,
     }));
 
     const samples = [];
-    const rounds = 30;
 
-    for (let i = 0; i < rounds; i += 1) {
-      const start = Date.now();
+    for (let index = 0; index < ROUNDS; index += 1) {
+      const startAt = Date.now();
       const result = await sosService.triggerSos(9001, {
         latitude: 30.1,
         longitude: 120.1,
       });
-      const cost = Date.now() - start;
-      samples.push(cost);
-
+      samples.push(Date.now() - startAt);
       expect(result.event_status).toBe('triggered');
     }
 
-    const p95 = percentile(samples, 95);
-    expect(p95).toBeLessThan(3000);
+    const metrics = summarizeSamples(samples);
+    const record = recordPerformanceBaseline('sos-trigger', metrics, {
+      endpoint: 'POST /sos/trigger',
+      rounds: ROUNDS,
+      sqlCount: 1,
+      redisHits: 0,
+      fallbackTriggered: false,
+    });
+    printPerformanceBaseline(record);
+
+    expect(metrics.p95).toBeLessThan(P95_THRESHOLD_MS);
   }, 120000);
 });

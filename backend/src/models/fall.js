@@ -3,8 +3,7 @@
 const { query } = require('../config/database');
 
 /**
- * 跌倒检测数据模型
- */
+ * 跌倒检测数据模�? */
 class FallModel {
   /**
    * 创建检测中事件
@@ -39,8 +38,7 @@ class FallModel {
   }
 
   /**
-   * 根据事件与用户查询
-   * @param {number} eventId
+   * 根据事件与用户查�?   * @param {number} eventId
    * @param {number} userId
    * @returns {Promise<object|null>}
    */
@@ -84,8 +82,7 @@ class FallModel {
   }
 
   /**
-   * 标记已取消
-   * @param {number} eventId
+   * 标记已取�?   * @param {number} eventId
    * @returns {Promise<boolean>}
    */
   static async markCancelled(eventId) {
@@ -99,8 +96,7 @@ class FallModel {
   }
 
   /**
-   * 标记已确认
-   * @param {number} eventId
+   * 标记已确�?   * @param {number} eventId
    * @returns {Promise<boolean>}
    */
   static async markConfirmed(eventId) {
@@ -129,8 +125,7 @@ class FallModel {
   }
 
   /**
-   * 查询超过阈值仍处于 detecting 的事件
-   * @param {number} seconds
+   * 查询超过阈值仍处于 detecting 的事�?   * @param {number} seconds
    * @returns {Promise<object[]>}
    */
   static async findExpiredDetectingEvents(seconds) {
@@ -197,8 +192,7 @@ class FallModel {
   }
 
   /**
-   * 查询灵敏度设置
-   * @param {number} userId
+   * 查询灵敏度设�?   * @param {number} userId
    * @returns {Promise<object|null>}
    */
   static async getSensitivitySetting(userId) {
@@ -242,9 +236,7 @@ class FallModel {
   }
 
   /**
-   * 查询可通知联系人
-   * 说明：不同环境联系人表命名可能不同，按候选表逐个尝试。
-   * @param {number} userId
+   * 查询可通知联系�?   * 说明：不同环境联系人表命名可能不同，按候选表逐个尝试�?   * @param {number} userId
    * @returns {Promise<Array<{contactId:number,contactType:string,notifyMethod:string,phone:string|null,wechatOpenId:string|null}>>}
    */
   static async getNotificationContacts(userId) {
@@ -333,8 +325,7 @@ class FallModel {
   }
 
   /**
-   * 更新通知状态
-   * @param {number} notificationId
+   * 更新通知状�?   * @param {number} notificationId
    * @param {'pending'|'sent'|'failed'} status
    * @returns {Promise<void>}
    */
@@ -353,29 +344,50 @@ class FallModel {
    * @returns {Promise<object[]>}
    */
   static async findNotificationsByEventId(eventId) {
+    const grouped = await FallModel.findNotificationsByEventIds([eventId]);
+    return grouped[Number(eventId)] || [];
+  }
+
+  static async findNotificationsByEventIds(eventIds) {
+    const ids = Array.isArray(eventIds)
+      ? eventIds.map((item) => Number(item)).filter((item) => Number.isInteger(item) && item > 0)
+      : [];
+
+    if (ids.length === 0) {
+      return {};
+    }
+
+    const placeholders = ids.map(() => '?').join(', ');
     const [rows] = await query(
       `SELECT id, event_id, contact_id, contact_type, notify_method, status, sent_at, created_at
        FROM fall_notifications
-       WHERE event_id = ?
-       ORDER BY id ASC`,
-      [eventId]
+       WHERE event_id IN (${placeholders})
+       ORDER BY event_id ASC, id ASC`,
+      ids
     );
 
-    return rows.map((row) => ({
-      id: row.id,
-      eventId: row.event_id,
-      contactId: row.contact_id,
-      contactType: row.contact_type,
-      notifyMethod: row.notify_method,
-      status: row.status,
-      sentAt: row.sent_at,
-      createdAt: row.created_at,
-    }));
+    return rows.reduce((acc, row) => {
+      const eventId = Number(row.event_id);
+      if (!acc[eventId]) {
+        acc[eventId] = [];
+      }
+
+      acc[eventId].push({
+        id: row.id,
+        eventId: row.event_id,
+        contactId: row.contact_id,
+        contactType: row.contact_type,
+        notifyMethod: row.notify_method,
+        status: row.status,
+        sentAt: row.sent_at,
+        createdAt: row.created_at,
+      });
+      return acc;
+    }, {});
   }
 
   /**
-   * 格式化事件字段
-   * @param {object} row
+   * 格式化事件字�?   * @param {object} row
    * @returns {object}
    */
   static _formatEvent(row) {
@@ -413,8 +425,7 @@ class FallModel {
   }
 
   /**
-   * 判断是否为可容忍的库表兼容错误
-   * @param {Error} err
+   * 判断是否为可容忍的库表兼容错�?   * @param {Error} err
    * @returns {boolean}
    */
   static _isSchemaError(err) {
@@ -429,3 +440,4 @@ class FallModel {
 }
 
 module.exports = FallModel;
+

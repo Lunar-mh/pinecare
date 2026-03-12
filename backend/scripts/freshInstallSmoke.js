@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const fs = require('fs');
 const path = require('path');
@@ -18,6 +18,11 @@ async function runFreshInstallSmoke(options = {}) {
   const requiredScripts = [
     'lint',
     'test',
+    'test:unit',
+    'test:integration',
+    'test:security',
+    'test:performance',
+    'audit:performance',
     'migrate',
     'seed:competition:sql',
     'seed:competition:verify',
@@ -26,6 +31,7 @@ async function runFreshInstallSmoke(options = {}) {
   const requiredFiles = [
     '.env.example',
     '.env.production-live.example',
+    'AGENTS.md',
     'docs/deployment-playbook.md',
     'docs/compliance-and-contest-package.md',
     'docs/four-end-release-candidate.md',
@@ -41,6 +47,9 @@ async function runFreshInstallSmoke(options = {}) {
     'docs/ai-usage-notice.md',
     'docs/third-party-services-and-authorizations.md',
     'docs/data-desensitization-note.md',
+    'docs/test-quality-report.md',
+    'docs/performance-audit-report.md',
+    'docs/security-audit-report.md',
   ];
   const missingFiles = requiredFiles.filter((file) => !fs.existsSync(path.join(ROOT_DIR, file)));
   const migrationInfo = migrationRunner.getMigrationFilesInOrder();
