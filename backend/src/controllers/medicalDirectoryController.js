@@ -1,26 +1,20 @@
-﻿'use strict';
+'use strict';
 
 const medicalDirectoryService = require('../services/medicalDirectoryService');
-const { ok, fail } = require('../utils/response');
-
-function handleError(res, err) {
-  const code =
-    typeof err.code === 'number'
-      ? err.code
-      : typeof err.statusCode === 'number'
-        ? err.statusCode
-        : 500;
-  const status = typeof err.statusCode === 'number' ? err.statusCode : code;
-  const message = err.message || 'Medical directory request failed.';
-  return fail(res, code, message, null, status);
-}
+const { ok } = require('../utils/response');
+const { sendControllerError } = require('../utils/controllerError');
 
 async function hospitals(_req, res) {
   try {
     const data = await medicalDirectoryService.getHospitals();
     return ok(res, data, 'ok');
   } catch (err) {
-    return handleError(res, err);
+    return sendControllerError(res, err, {
+      action: 'hospitals_failed',
+      defaultMessage: 'Medical directory request failed.',
+      moduleName: 'medicalDirectoryController',
+      preferErrorMessage: true,
+    });
   }
 }
 
@@ -29,7 +23,12 @@ async function departments(req, res) {
     const data = await medicalDirectoryService.getDepartments(req.query.hospitalId);
     return ok(res, data, 'ok');
   } catch (err) {
-    return handleError(res, err);
+    return sendControllerError(res, err, {
+      action: 'departments_failed',
+      defaultMessage: 'Medical directory request failed.',
+      moduleName: 'medicalDirectoryController',
+      preferErrorMessage: true,
+    });
   }
 }
 
@@ -44,7 +43,12 @@ async function doctors(req, res) {
     });
     return ok(res, data, 'ok');
   } catch (err) {
-    return handleError(res, err);
+    return sendControllerError(res, err, {
+      action: 'doctors_failed',
+      defaultMessage: 'Medical directory request failed.',
+      moduleName: 'medicalDirectoryController',
+      preferErrorMessage: true,
+    });
   }
 }
 
@@ -53,7 +57,12 @@ async function doctorDetail(req, res) {
     const data = await medicalDirectoryService.getDoctorDetail(req.params.doctorId);
     return ok(res, data, 'ok');
   } catch (err) {
-    return handleError(res, err);
+    return sendControllerError(res, err, {
+      action: 'doctor_detail_failed',
+      defaultMessage: 'Medical directory request failed.',
+      moduleName: 'medicalDirectoryController',
+      preferErrorMessage: true,
+    });
   }
 }
 

@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const request = require('supertest');
 const express = require('express');
@@ -24,12 +24,12 @@ function createApp() {
   return app;
 }
 
-describe('手动录入接口集成测试', () => {
+describe('健康手动录入路由', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('POST /health-archive/manual 成功路径', async () => {
+  it('POST /health-archive/manual 创建记录成功', async () => {
     healthManualService.createManualRecord.mockResolvedValue({
       record: {
         id: 10,
@@ -50,8 +50,8 @@ describe('手动录入接口集成测试', () => {
     expect(res.body.data.record.source).toBe('manual');
   });
 
-  it('POST /health-archive/manual 失败路径', async () => {
-    const err = new Error('metric_type 不能为空');
+  it('POST /health-archive/manual 缺少指标类型时返回校验错误', async () => {
+    const err = new Error('metric_type is required.');
     err.code = 400;
     err.statusCode = 400;
     healthManualService.createManualRecord.mockRejectedValue(err);
@@ -61,6 +61,6 @@ describe('手动录入接口集成测试', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.code).toBe(400);
-    expect(res.body.message).toBe('metric_type 不能为空');
+    expect(res.body.message).toBe('metric_type is required.');
   });
 });

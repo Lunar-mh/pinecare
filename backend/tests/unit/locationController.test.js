@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 jest.mock('../../src/services/locationService', () => ({
   upload: jest.fn(),
@@ -100,7 +100,7 @@ describe('locationController', () => {
     });
   });
 
-  it('falls back to generic 500 for uncoded upload failures', async () => {
+  it('uses configured default message for uncoded upload failures', async () => {
     locationService.upload.mockRejectedValue(new Error('Upload exploded.'));
     const res = createRes();
 
@@ -115,7 +115,7 @@ describe('locationController', () => {
     expect(res.statusCode).toBe(500);
     expect(res.body).toEqual({
       code: 500,
-      message: 'Internal server error.',
+      message: 'Location upload failed.',
       data: null,
     });
   });

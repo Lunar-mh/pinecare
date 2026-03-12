@@ -1,19 +1,8 @@
 'use strict';
 
 const onlineConsultationService = require('../services/onlineConsultationService');
-const { ok, fail } = require('../utils/response');
-
-function handleError(res, err) {
-  const code =
-    typeof err.code === 'number'
-      ? err.code
-      : typeof err.statusCode === 'number'
-        ? err.statusCode
-        : 500;
-  const status = typeof err.statusCode === 'number' ? err.statusCode : code;
-  const message = err.message || 'Online consultation request failed.';
-  return fail(res, code, message, null, status);
-}
+const { ok } = require('../utils/response');
+const { sendControllerError } = require('../utils/controllerError');
 
 async function start(req, res) {
   try {
@@ -24,7 +13,12 @@ async function start(req, res) {
 
     return ok(res, data, 'created');
   } catch (err) {
-    return handleError(res, err);
+    return sendControllerError(res, err, {
+      action: 'consult_start_failed',
+      defaultMessage: 'Online consultation request failed.',
+      moduleName: 'onlineConsultationController',
+      preferErrorMessage: true,
+    });
   }
 }
 
@@ -33,7 +27,12 @@ async function list(req, res) {
     const data = await onlineConsultationService.listByUser(req.user.userId, req.query.limit);
     return ok(res, data, 'ok');
   } catch (err) {
-    return handleError(res, err);
+    return sendControllerError(res, err, {
+      action: 'consult_list_failed',
+      defaultMessage: 'Online consultation request failed.',
+      moduleName: 'onlineConsultationController',
+      preferErrorMessage: true,
+    });
   }
 }
 
@@ -47,7 +46,12 @@ async function updateStatus(req, res) {
 
     return ok(res, data, 'ok');
   } catch (err) {
-    return handleError(res, err);
+    return sendControllerError(res, err, {
+      action: 'consult_update_status_failed',
+      defaultMessage: 'Online consultation request failed.',
+      moduleName: 'onlineConsultationController',
+      preferErrorMessage: true,
+    });
   }
 }
 

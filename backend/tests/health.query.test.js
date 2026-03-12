@@ -4,14 +4,14 @@ const request = require('supertest');
 const express = require('express');
 
 jest.mock('../src/middleware/auth', () => {
-  return (req, res, next) => {
+  return (req, _res, next) => {
     req.user = { userId: 1001 };
     next();
   };
 });
 
 jest.mock('../src/middleware/familyAccess', () => {
-  return (req, res, next) => {
+  return (req, _res, next) => {
     req.targetUserId = Number(req.query.user_id || 1001);
     next();
   };
@@ -34,12 +34,12 @@ function createApp() {
   return app;
 }
 
-describe('健康查询接口集成测试', () => {
+describe('health archive query routing', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('GET /health-archive/today 返回统一格式', async () => {
+  it('GET /health-archive/today returns unified snapshot payload', async () => {
     healthArchiveService.getToday.mockResolvedValue({
       userId: 1001,
       date: '2026-02-21',
@@ -58,7 +58,7 @@ describe('健康查询接口集成测试', () => {
     expect(healthArchiveService.getToday).toHaveBeenCalledWith(1001);
   });
 
-  it('GET /health-archive/trend 空数据场景', async () => {
+  it('GET /health-archive/trend forwards validated query values', async () => {
     healthArchiveService.getTrend.mockResolvedValue({
       userId: 1001,
       metricType: 'heart_rate',
@@ -82,12 +82,13 @@ describe('健康查询接口集成测试', () => {
     });
   });
 
-  it('GET /health-archive/trend 缺少参数返回业务错误', async () => {
+  it('GET /health-archive/trend rejects missing metric_type before controller logic', async () => {
     const app = createApp();
     const res = await request(app).get('/health-archive/trend?period=7d');
 
     expect(res.status).toBe(400);
     expect(res.body.code).toBe(400);
-    expect(res.body.message).toBe('metric_type 不能为空');
+    expect(res.body.message).toBe('metric_type is required.');
+    expect(healthArchiveService.getTrend).not.toHaveBeenCalled();
   });
 });

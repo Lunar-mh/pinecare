@@ -1,5 +1,6 @@
 'use strict';
 
+const logger = require('./logger');
 const { fail } = require('./response');
 
 function sendControllerError(res, err, options = {}) {
@@ -7,6 +8,15 @@ function sendControllerError(res, err, options = {}) {
   const defaultStatus = Number(options.defaultStatus || defaultCode || 500);
   const defaultMessage = options.defaultMessage || 'Internal server error.';
   const includeData = options.includeData !== false;
+  const moduleName = options.moduleName || 'controller';
+  const action = options.action || 'request_failed';
+  const preferErrorMessage = options.preferErrorMessage === true;
+
+  logger.error(moduleName, action, {
+    coded: Boolean(err && (err.code || err.statusCode)),
+    code: err && (err.code || err.statusCode) ? Number(err.code || err.statusCode) : defaultCode,
+    message: err && err.message ? err.message : defaultMessage,
+  });
 
   if (err && (err.code || err.statusCode)) {
     const code = Number(err.code || err.statusCode || defaultCode);
@@ -16,7 +26,8 @@ function sendControllerError(res, err, options = {}) {
     return fail(res, code, message, data, status);
   }
 
-  return fail(res, defaultCode, defaultMessage, null, defaultStatus);
+  const message = preferErrorMessage && err && err.message ? err.message : defaultMessage;
+  return fail(res, defaultCode, message, null, defaultStatus);
 }
 
 module.exports = {

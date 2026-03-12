@@ -1,17 +1,9 @@
 'use strict';
 
-const { ok, fail } = require('../utils/response');
+const { ok } = require('../utils/response');
+const { sendControllerError } = require('../utils/controllerError');
 const locationService = require('../services/locationService');
 const locationTrailService = require('../services/locationTrailService');
-
-function handleError(res, err) {
-  if (err && (err.code || err.statusCode)) {
-    const code = err.code || err.statusCode;
-    const status = err.statusCode || code;
-    return fail(res, code, err.message, err.data || null, status);
-  }
-  return fail(res, 500, 'Internal server error.', null, 500);
-}
 
 const locationController = {
   async upload(req, res) {
@@ -24,7 +16,11 @@ const locationController = {
       });
       return ok(res, data, 'Upload successful.');
     } catch (err) {
-      return handleError(res, err);
+      return sendControllerError(res, err, {
+        action: 'upload_failed',
+        defaultMessage: 'Location upload failed.',
+        moduleName: 'locationController',
+      });
     }
   },
 
@@ -33,7 +29,11 @@ const locationController = {
       const data = await locationService.getCurrent(req.user.userId);
       return ok(res, data, 'Query successful.');
     } catch (err) {
-      return handleError(res, err);
+      return sendControllerError(res, err, {
+        action: 'current_failed',
+        defaultMessage: 'Location query failed.',
+        moduleName: 'locationController',
+      });
     }
   },
 
@@ -46,7 +46,11 @@ const locationController = {
       });
       return ok(res, data, 'Query successful.');
     } catch (err) {
-      return handleError(res, err);
+      return sendControllerError(res, err, {
+        action: 'trail_failed',
+        defaultMessage: 'Trail query failed.',
+        moduleName: 'locationController',
+      });
     }
   },
 };

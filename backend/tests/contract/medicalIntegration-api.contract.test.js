@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const request = require('supertest');
 const express = require('express');
@@ -145,26 +145,34 @@ describe('medical integration API contract', () => {
     });
   });
 
-  it('GET /medical/departments passes hospitalId query', async () => {
+  it('GET /medical/departments passes normalized hospitalId query', async () => {
     const res = await request(createApp()).get('/medical/departments?hospitalId=1');
 
     expect(res.status).toBe(200);
-    expect(medicalDirectoryService.getDepartments).toHaveBeenCalledWith('1');
+    expect(medicalDirectoryService.getDepartments).toHaveBeenCalledWith(1);
     expect(res.body.code).toBe(0);
   });
 
-  it('GET /medical/doctors passes filter queries', async () => {
+  it('GET /medical/departments rejects invalid hospitalId', async () => {
+    const res = await request(createApp()).get('/medical/departments?hospitalId=abc');
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('hospitalId must be a positive integer.');
+    expect(medicalDirectoryService.getDepartments).not.toHaveBeenCalled();
+  });
+
+  it('GET /medical/doctors passes normalized filter queries', async () => {
     const res = await request(createApp()).get(
-      '/medical/doctors?departmentId=11&hospitalId=1&keyword=li&page=1&pageSize=10'
+      '/medical/doctors?departmentId=11&hospitalId=1&keyword= li &page=1&pageSize=10'
     );
 
     expect(res.status).toBe(200);
     expect(medicalDirectoryService.getDoctors).toHaveBeenCalledWith({
-      departmentId: '11',
-      hospitalId: '1',
+      departmentId: 11,
+      hospitalId: 1,
       keyword: 'li',
-      page: '1',
-      pageSize: '10',
+      page: 1,
+      pageSize: 10,
     });
     expect(res.body.data.total).toBe(1);
   });
@@ -193,11 +201,21 @@ describe('medical integration API contract', () => {
     });
   });
 
+  it('PATCH /medical/consult/:consultationId/status rejects invalid status early', async () => {
+    const res = await request(createApp())
+      .patch('/medical/consult/31/status')
+      .send({ consultStatus: 'closed' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('consultStatus must be one of pending/active/completed/cancelled.');
+    expect(onlineConsultationService.updateStatus).not.toHaveBeenCalled();
+  });
+
   it('GET /medical/consult returns unified envelope', async () => {
     const res = await request(createApp()).get('/medical/consult?limit=5');
 
     expect(res.status).toBe(200);
-    expect(onlineConsultationService.listByUser).toHaveBeenCalledWith(1001, '5');
+    expect(onlineConsultationService.listByUser).toHaveBeenCalledWith(1001, 5);
     expect(res.body.data).toMatchObject({
       source: 'local',
       list: [{ id: 31, consultStatus: 'active' }],
@@ -235,14 +253,30 @@ describe('medical integration API contract', () => {
     expect(res.body.data.source).toBe('third_party_live');
   });
 
+  it('POST /medical/appointment rejects invalid appointment dates', async () => {
+    const res = await request(createApp())
+      .post('/medical/appointment')
+      .send({
+        hospitalId: 1,
+        department: 'Cardiology',
+        doctorId: 21,
+        appointmentDate: '03/11/2026',
+        timeSlot: '09:00',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('appointmentDate must use YYYY-MM-DD format.');
+    expect(appointmentService.create).not.toHaveBeenCalled();
+  });
+
   it('GET /medical/appointment returns list envelope', async () => {
     const res = await request(createApp()).get('/medical/appointment?status=confirmed&page=1');
 
     expect(res.status).toBe(200);
     expect(appointmentService.listByUser).toHaveBeenCalledWith(1001, {
       status: 'confirmed',
-      page: '1',
-      pageSize: undefined,
+      page: 1,
+      pageSize: 10,
     });
     expect(res.body.data.total).toBe(1);
   });
@@ -266,14 +300,22 @@ describe('medical integration API contract', () => {
       reportType: 'Lab',
       startDate: '2026-03-01',
       endDate: '2026-03-11',
-      page: '1',
-      pageSize: '10',
+      page: 1,
+      pageSize: 10,
     });
     expect(res.body.data).toMatchObject({
       source: 'competition_dataset_sample',
       fallbackUsed: true,
       list: [{ id: 51, reportNo: 'RPT-001' }],
     });
+  });
+
+  it('GET /medical/reports rejects invalid date filters early', async () => {
+    const res = await request(createApp()).get('/medical/reports?startDate=20260301');
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('startDate must use YYYY-MM-DD format.');
+    expect(medicalReportService.list).not.toHaveBeenCalled();
   });
 
   it('maps coded service errors to unified error envelope', async () => {

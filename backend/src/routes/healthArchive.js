@@ -6,6 +6,11 @@ const familyAccess = require('../middleware/familyAccess');
 const healthController = require('../controllers/healthController');
 const deviceController = require('../controllers/deviceController');
 const { deprecatedRoute } = require('../utils/deprecation');
+const {
+  validateManualPayload,
+  validateSyncPayload,
+  validateTrendQuery,
+} = require('../middleware/validateHealthArchive');
 
 const router = express.Router();
 
@@ -19,11 +24,11 @@ router.use(
 );
 
 router.get('/today', auth, familyAccess, healthController.today);
-router.get('/trend', auth, familyAccess, healthController.trend);
+router.get('/trend', auth, familyAccess, validateTrendQuery, healthController.trend);
 router.get('/blood-pressure/latest', auth, familyAccess, healthController.latestBloodPressure);
 router.get('/heart-rate/latest', auth, familyAccess, healthController.latestHeartRate);
-router.post('/sync', auth, healthController.sync);
-router.post('/manual', auth, healthController.manual);
+router.post('/sync', auth, validateSyncPayload, healthController.sync);
+router.post('/manual', auth, validateManualPayload, healthController.manual);
 
 router.post('/device/bind', auth, deviceController.bind);
 router.post('/device/unbind', auth, deviceController.unbind);

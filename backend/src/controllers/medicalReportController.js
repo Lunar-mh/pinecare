@@ -1,19 +1,8 @@
-﻿'use strict';
+'use strict';
 
 const medicalReportService = require('../services/medicalReportService');
-const { ok, fail } = require('../utils/response');
-
-function handleError(res, err) {
-  const code =
-    typeof err.code === 'number'
-      ? err.code
-      : typeof err.statusCode === 'number'
-        ? err.statusCode
-        : 500;
-  const status = typeof err.statusCode === 'number' ? err.statusCode : code;
-  const message = err.message || 'Medical reports request failed.';
-  return fail(res, code, message, null, status);
-}
+const { ok } = require('../utils/response');
+const { sendControllerError } = require('../utils/controllerError');
 
 async function list(req, res) {
   try {
@@ -27,7 +16,12 @@ async function list(req, res) {
 
     return ok(res, data, 'ok');
   } catch (err) {
-    return handleError(res, err);
+    return sendControllerError(res, err, {
+      action: 'reports_failed',
+      defaultMessage: 'Medical reports request failed.',
+      moduleName: 'medicalReportController',
+      preferErrorMessage: true,
+    });
   }
 }
 
