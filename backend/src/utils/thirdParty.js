@@ -137,7 +137,8 @@ function logThirdPartyError(provider, err, extra = {}) {
     recentThirdPartyErrors.length = RECENT_ERROR_LIMIT;
   }
 
-  console.error('third_party_error', payload);
+  const logger = require('./logger');
+  logger.error('thirdParty', 'upstream_error', payload);
 }
 
 function getRecentThirdPartyErrors(limit = 10) {
@@ -159,5 +160,3 @@ module.exports = {
   maskPhone,
   maskIdCard,
 };
-
-

@@ -1,6 +1,5 @@
-'use strict';
+﻿'use strict';
 
-const { query } = require('../config/database');
 const drugInteractionModel = require('../models/drugInteraction');
 const knowledgeGraphService = require('./knowledgeGraphService');
 const {
@@ -74,6 +73,14 @@ function formatInteractionRow(row) {
   };
 }
 
+function safeParseJSON(value) {
+  try {
+    return JSON.parse(value);
+  } catch (_err) {
+    return null;
+  }
+}
+
 function normalizeDiseaseList(rawValue) {
   if (!rawValue) return [];
 
@@ -98,21 +105,7 @@ function normalizeDiseaseList(rawValue) {
     .filter(Boolean);
 }
 
-function safeParseJSON(value) {
-  try {
-    return JSON.parse(value);
-  } catch (err) {
-    return null;
-  }
-}
-
 class DrugInteractionService {
-  /**
-   * 检测并落库药物相互作用
-   * @param {number} userId
-   * @param {Array<string>} drugList
-   * @returns {Promise<object>}
-   */
   async checkInteractions(userId, drugList) {
     const normalizedList = normalizeDrugList(drugList);
     const checkBatchId = createBatchId();
@@ -129,7 +122,7 @@ class DrugInteractionService {
         const interaction = await withTimeout(
           knowledgeGraphService.checkInteraction(pair.drugA, pair.drugB),
           QUERY_TIMEOUT_MS,
-          `查询 ${pair.drugA} 与 ${pair.drugB} 超时`
+          `Interaction lookup timed out for ${pair.drugA} and ${pair.drugB}.`
         );
 
         if (!interaction) {
@@ -150,12 +143,15 @@ class DrugInteractionService {
           degraded: true,
           drugA: pair.drugA,
           drugB: pair.drugB,
-          reason: err.message || '查询失败',
+          reason: err.message || 'Interaction lookup failed.',
         };
       }
     });
 
-    const rawResults = await runWithConcurrency(taskFactories, Math.min(CHECK_CONCURRENCY, pairList.length));
+    const rawResults = await runWithConcurrency(
+      taskFactories,
+      Math.min(CHECK_CONCURRENCY, pairList.length)
+    );
 
     const degradedPairs = rawResults.filter((item) => item && item.degraded);
     const interactions = rawResults.filter((item) => item && !item.degraded);
@@ -168,7 +164,6 @@ class DrugInteractionService {
     );
 
     const dataList = savedRows.map(formatInteractionRow);
-
     const highestRiskLevel = dataList.reduce((current, item) => {
       if (!current) return item.level;
       return (RISK_WEIGHT[item.level] || 0) > (RISK_WEIGHT[current] || 0) ? item.level : current;
@@ -185,42 +180,29 @@ class DrugInteractionService {
     };
   }
 
-  /**
-   * 获取历史检测记录
-   * @param {number} userId
-   * @param {string} status
-   * @returns {Promise<Array<object>>}
-   */
   async getHistory(userId, status) {
     const statusValue = status ? String(status).trim() : '';
     if (statusValue && !['pending', 'acknowledged'].includes(statusValue)) {
-      throw createBizError(422, 'status 仅支持 pending 或 acknowledged', 422);
+      throw createBizError(422, 'status only supports pending or acknowledged.', 422);
     }
 
     const rows = await drugInteractionModel.listHistoryByUser(userId, statusValue || null);
     return rows.map(formatInteractionRow);
   }
 
-  /**
-   * 确认风险
-   * @param {number} userId
-   * @param {number|string} interactionId
-   * @returns {Promise<object>}
-   */
   async acknowledgeRisk(userId, interactionId) {
     const interactionIdNum = Number(interactionId);
     if (!interactionIdNum || Number.isNaN(interactionIdNum)) {
-      throw createBizError(422, 'interactionId 必须是有效数字', 422);
+      throw createBizError(422, 'interactionId must be a valid number.', 422);
     }
 
     const row = await drugInteractionModel.findInteractionById(interactionIdNum);
-
     if (!row) {
-      throw createBizError(404, '风险记录不存在', 404);
+      throw createBizError(404, 'Drug interaction record not found.', 404);
     }
 
     if (Number(row.user_id) !== Number(userId)) {
-      throw createBizError(403, '无权确认该风险记录', 403);
+      throw createBizError(403, 'User is not allowed to acknowledge this interaction.', 403);
     }
 
     if (row.status === 'acknowledged') {
@@ -228,32 +210,18 @@ class DrugInteractionService {
     }
 
     await drugInteractionModel.updateInteractionStatus(interactionIdNum, 'acknowledged');
-
     const updated = await drugInteractionModel.findInteractionById(interactionIdNum);
     return formatInteractionRow(updated);
   }
 
-  /**
-   * 检测药物禁忌
-   * @param {number} userId
-   * @param {string} drugName
-   * @returns {Promise<Array<object>>}
-   */
   async checkContraindication(userId, drugName) {
     const targetDrug = String(drugName || '').trim();
     if (!targetDrug) {
-      throw createBizError(422, 'drugName 不能为空', 422);
+      throw createBizError(422, 'drugName is required.', 422);
     }
 
-    const [userRows] = await query(
-      `SELECT chronic_diseases
-       FROM users
-       WHERE id = ?
-       LIMIT 1`,
-      [userId]
-    );
-
-    const diseases = normalizeDiseaseList(userRows[0] && userRows[0].chronic_diseases);
+    const chronicDiseases = await drugInteractionModel.getUserChronicDiseases(userId);
+    const diseases = normalizeDiseaseList(chronicDiseases);
     if (diseases.length === 0) {
       return [];
     }
@@ -278,7 +246,6 @@ class DrugInteractionService {
     }
 
     await drugInteractionModel.batchInsertContraindications(userId, targetDrug, matched);
-
     return matched.map((item) => ({
       drugName: targetDrug,
       diseaseCode: item.diseaseCode,
@@ -288,20 +255,13 @@ class DrugInteractionService {
     }));
   }
 
-  /**
-   * 查询药物与食物相互作用
-   * @param {string} drugName
-   * @param {string} keyword
-   * @returns {Promise<Array<object>>}
-   */
   async getFoodInteractions(drugName, keyword) {
     const targetDrug = String(drugName || '').trim();
     if (!targetDrug) {
-      throw createBizError(422, 'drugName 不能为空', 422);
+      throw createBizError(422, 'drugName is required.', 422);
     }
 
     const rows = await drugInteractionModel.listFoodInteractions(targetDrug, keyword || null);
-
     return rows.map((row) => ({
       id: row.id,
       drugName: row.drug_name,

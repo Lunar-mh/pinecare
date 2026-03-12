@@ -1,12 +1,8 @@
-'use strict';
+﻿'use strict';
 
 const crypto = require('crypto');
+const logger = require('../utils/logger');
 
-/**
- * 将数据转换为稳定字符串，确保签名可重复验证
- * @param {any} data
- * @returns {string}
- */
 function toStableString(data) {
   if (data === null || data === undefined) {
     return '';
@@ -32,38 +28,70 @@ function toStableString(data) {
   return String(data);
 }
 
-/**
- * 数字签名服务：使用 HMAC-SHA256 生成与验证签名
- */
+function normalizeSecret(secret) {
+  return String(secret || '').trim();
+}
+
+function createConfigError(secretName, message) {
+  const err = new Error(message);
+  err.code = 503;
+  err.statusCode = 503;
+  err.secretName = secretName;
+  return err;
+}
+
 class CredentialService {
-  /**
-   * 生成签名
-   * @param {any} data
-   * @param {string} secret
-   * @returns {string}
-   */
+  getHashSecret() {
+    const hashSecret = normalizeSecret(process.env.HASH_SECRET);
+    if (hashSecret) {
+      return hashSecret;
+    }
+
+    const message = 'HASH_SECRET is required for signature generation.';
+    logger.error('credentialService', 'missing_hash_secret', { message, secretName: 'HASH_SECRET' });
+    throw createConfigError('HASH_SECRET', message);
+  }
+
+  getPlatformPrivateKey() {
+    const platformSecret = normalizeSecret(process.env.PLATFORM_PRIVATE_KEY);
+    if (platformSecret) {
+      return platformSecret;
+    }
+
+    const message = 'PLATFORM_PRIVATE_KEY is required for platform signature generation.';
+    logger.error('credentialService', 'missing_platform_private_key', {
+      message,
+      secretName: 'PLATFORM_PRIVATE_KEY',
+    });
+    throw createConfigError('PLATFORM_PRIVATE_KEY', message);
+  }
+
+  createScopedSecret(scope, subjectId) {
+    return `${this.getHashSecret()}:${scope}:${subjectId}`;
+  }
+
   generateSignature(data, secret) {
-    const secretKey = secret || process.env.HASH_SECRET || 'timebank_default_secret';
+    const secretKey = normalizeSecret(secret) || this.getHashSecret();
     const payload = toStableString(data);
 
     return crypto.createHmac('sha256', secretKey).update(payload).digest('hex');
   }
 
-  /**
-   * 验证签名
-   * @param {any} data
-   * @param {string} signature
-   * @param {string} secret
-   * @returns {boolean}
-   */
   verifySignature(data, signature, secret) {
     if (!signature || typeof signature !== 'string') {
       return false;
     }
 
-    const expected = this.generateSignature(data, secret);
+    let expected;
+    try {
+      expected = this.generateSignature(data, secret);
+    } catch (err) {
+      if (err && err.secretName) {
+        return false;
+      }
+      throw err;
+    }
 
-    // 使用 timingSafeEqual 防止时序攻击
     const expectedBuffer = Buffer.from(expected, 'utf8');
     const signatureBuffer = Buffer.from(signature, 'utf8');
 
@@ -74,16 +102,8 @@ class CredentialService {
     return crypto.timingSafeEqual(expectedBuffer, signatureBuffer);
   }
 
-  /**
-   * 生成平台签名
-   * @param {number|string} recordId
-   * @returns {string}
-   */
   generatePlatformSignature(recordId) {
-    const platformSecret =
-      process.env.PLATFORM_PRIVATE_KEY || process.env.HASH_SECRET || 'timebank_platform_secret';
-
-    return this.generateSignature({ recordId }, platformSecret);
+    return this.generateSignature({ recordId }, this.getPlatformPrivateKey());
   }
 }
 

@@ -1,10 +1,9 @@
-'use strict';
+﻿'use strict';
 
-const { query } = require('../config/database');
 const neo4j = require('../config/neo4j');
+const drugInteractionModel = require('../models/drugInteraction');
 const { normalizeDrugPair, normalizeDrugName } = require('../utils/drugDataParser');
 
-// 内置少量兜底知识，用于数据库无历史数据时提供基础检测能力
 const FALLBACK_INTERACTION_MAP = {
   '阿司匹林|华法林': {
     level: 'X',
@@ -86,30 +85,16 @@ class KnowledgeGraphService {
     this.neo4jStub = neo4j;
   }
 
-  /**
-   * 用 MySQL 模拟图谱查询：查询两药相互作用
-   * @param {string} drugA
-   * @param {string} drugB
-   * @returns {Promise<object|null>}
-   */
   async checkInteraction(drugA, drugB) {
     const pair = normalizeDrugPair(drugA, drugB);
+    const row = await drugInteractionModel.findTopInteractionByPair(pair.drugA, pair.drugB);
 
-    const [rows] = await query(
-      `SELECT level, mechanism, risk_description, suggestion
-       FROM drug_interactions
-       WHERE (drug_a = ? AND drug_b = ?) OR (drug_a = ? AND drug_b = ?)
-       ORDER BY FIELD(level, 'X', 'D', 'C', 'B', 'A'), id DESC
-       LIMIT 1`,
-      [pair.drugA, pair.drugB, pair.drugB, pair.drugA]
-    );
-
-    if (rows.length > 0) {
+    if (row) {
       return {
-        level: rows[0].level,
-        mechanism: rows[0].mechanism || '已记录于系统知识库',
-        riskDescription: rows[0].risk_description || '两药联合使用存在风险，请结合医嘱处理。',
-        suggestion: rows[0].suggestion || '建议咨询医生或药师后再联合使用。',
+        level: row.level,
+        mechanism: row.mechanism || '已记录于系统知识库',
+        riskDescription: row.risk_description || '两药联合使用存在风险，请结合医嘱处理。',
+        suggestion: row.suggestion || '建议咨询医生或药师后再联合使用。',
       };
     }
 
@@ -117,11 +102,6 @@ class KnowledgeGraphService {
     return FALLBACK_INTERACTION_MAP[fallbackKey] || null;
   }
 
-  /**
-   * 查询某药物在禁忌知识库中的记录
-   * @param {string} drugName
-   * @returns {Promise<Array<object>>}
-   */
   async getContraindicationsByDrug(drugName) {
     const target = String(drugName || '').trim();
     if (!target) {

@@ -1,24 +1,14 @@
-'use strict';
+﻿'use strict';
 
-const { query } = require('../config/database');
+const FamilyBindingModel = require('../models/familyBinding');
 const medicationLogModel = require('../models/medicationLogModel');
 const reminderQueueModel = require('../models/reminderQueueModel');
 const medicationSettingService = require('./medicationSettingService');
 const wechatNotifier = require('../utils/wechatNotifier');
 
-async function listFamilyReceivers(elderUserId) {
-  const [rows] = await query(
-    `SELECT u.id AS family_user_id
-     FROM family_bindings fb
-     INNER JOIN users u ON u.id = fb.family_user_id
-     WHERE fb.elder_user_id = ?
-       AND fb.binding_status = 'approved'
-       AND u.openid IS NOT NULL`,
-    [elderUserId]
-  );
-
-  return rows.map((item) => Number(item.family_user_id));
-}
+const SKIP_REASON_FAMILY_SYNC_DISABLED = 'Family sync disabled.';
+const SKIP_REASON_NO_RECEIVERS = 'No approved family receivers found.';
+const DEFAULT_DELIVERY_ERROR = 'Family notification delivery failed.';
 
 const familyNotificationService = {
   async notifyMissedMedication(log, plan) {
@@ -28,16 +18,16 @@ const familyNotificationService = {
       return {
         success: true,
         skipped: true,
-        reason: '家属同步未开启',
+        reason: SKIP_REASON_FAMILY_SYNC_DISABLED,
       };
     }
 
-    const familyUserIds = await listFamilyReceivers(log.user_id);
+    const familyUserIds = await FamilyBindingModel.listApprovedFamilyReceiverIds(log.user_id);
     if (familyUserIds.length === 0) {
       return {
         success: true,
         skipped: true,
-        reason: '未找到已绑定家属',
+        reason: SKIP_REASON_NO_RECEIVERS,
       };
     }
 
@@ -63,7 +53,7 @@ const familyNotificationService = {
         });
         successCount += 1;
       } catch (err) {
-        errors.push(err.message || '家属通知发送失败');
+        errors.push(err.message || DEFAULT_DELIVERY_ERROR);
       }
     }
 
@@ -78,7 +68,7 @@ const familyNotificationService = {
       };
     }
 
-    await reminderQueueModel.markFailed(queue.id, errors.join('；') || '家属通知发送失败');
+    await reminderQueueModel.markFailed(queue.id, errors.join('; ') || DEFAULT_DELIVERY_ERROR);
     return {
       success: false,
       queue_id: queue.id,

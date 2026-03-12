@@ -1,25 +1,16 @@
-'use strict';
+﻿'use strict';
 
 const { query } = require('../config/database');
 
 class DrugInteractionModel {
-  /**
-   * 批量写入药物相互作用记录
-   * @param {number} userId
-   * @param {Array<object>} interactions
-   * @param {string} checkBatchId
-   * @returns {Promise<Array<object>>}
-   */
   static async batchInsertInteractions(userId, interactions, checkBatchId) {
     if (!Array.isArray(interactions) || interactions.length === 0) {
       return [];
     }
 
-    const placeholders = interactions
-      .map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .join(', ');
-
+    const placeholders = interactions.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
     const params = [];
+
     interactions.forEach((item) => {
       params.push(
         userId,
@@ -44,12 +35,6 @@ class DrugInteractionModel {
     return this.listInteractionsByBatch(userId, checkBatchId);
   }
 
-  /**
-   * 按批次查询检测记录
-   * @param {number} userId
-   * @param {string} checkBatchId
-   * @returns {Promise<Array<object>>}
-   */
   static async listInteractionsByBatch(userId, checkBatchId) {
     const [rows] = await query(
       `SELECT id, user_id, drug_a, drug_b, level, mechanism, risk_description, suggestion,
@@ -63,12 +48,6 @@ class DrugInteractionModel {
     return rows;
   }
 
-  /**
-   * 按用户查询历史检测记录
-   * @param {number} userId
-   * @param {string|null} status
-   * @returns {Promise<Array<object>>}
-   */
   static async listHistoryByUser(userId, status = null) {
     const hasStatus = typeof status === 'string' && status.trim() !== '';
 
@@ -90,11 +69,6 @@ class DrugInteractionModel {
     return rows;
   }
 
-  /**
-   * 查询单条相互作用记录
-   * @param {number} interactionId
-   * @returns {Promise<object|null>}
-   */
   static async findInteractionById(interactionId) {
     const [rows] = await query(
       `SELECT id, user_id, drug_a, drug_b, level, mechanism, risk_description, suggestion,
@@ -108,12 +82,6 @@ class DrugInteractionModel {
     return rows[0] || null;
   }
 
-  /**
-   * 更新风险确认状态
-   * @param {number} interactionId
-   * @param {'acknowledged'} status
-   * @returns {Promise<boolean>}
-   */
   static async updateInteractionStatus(interactionId, status) {
     const [result] = await query(
       `UPDATE drug_interactions
@@ -125,13 +93,6 @@ class DrugInteractionModel {
     return result.affectedRows > 0;
   }
 
-  /**
-   * 批量写入药物禁忌记录
-   * @param {number} userId
-   * @param {string} drugName
-   * @param {Array<object>} contraindications
-   * @returns {Promise<Array<object>>}
-   */
   static async batchInsertContraindications(userId, drugName, contraindications) {
     if (!Array.isArray(contraindications) || contraindications.length === 0) {
       return [];
@@ -161,12 +122,6 @@ class DrugInteractionModel {
     return this.listContraindicationsByUserDrug(userId, drugName);
   }
 
-  /**
-   * 按用户和药物查询禁忌记录
-   * @param {number} userId
-   * @param {string} drugName
-   * @returns {Promise<Array<object>>}
-   */
   static async listContraindicationsByUserDrug(userId, drugName) {
     const [rows] = await query(
       `SELECT id, user_id, drug_name, disease_code, disease_name, severity, description, created_at
@@ -179,12 +134,6 @@ class DrugInteractionModel {
     return rows;
   }
 
-  /**
-   * 查询药物食物相互作用
-   * @param {string} drugName
-   * @param {string|null} keyword
-   * @returns {Promise<Array<object>>}
-   */
   static async listFoodInteractions(drugName, keyword = null) {
     const baseSql =
       'SELECT id, drug_name, food_name, interaction_type, description, suggestion FROM drug_food_interactions WHERE drug_name = ?';
@@ -200,6 +149,31 @@ class DrugInteractionModel {
 
     const [rows] = await query(`${baseSql} ORDER BY id DESC`, [drugName]);
     return rows;
+  }
+
+  static async findTopInteractionByPair(drugA, drugB) {
+    const [rows] = await query(
+      `SELECT level, mechanism, risk_description, suggestion
+       FROM drug_interactions
+       WHERE (drug_a = ? AND drug_b = ?) OR (drug_a = ? AND drug_b = ?)
+       ORDER BY FIELD(level, 'X', 'D', 'C', 'B', 'A'), id DESC
+       LIMIT 1`,
+      [drugA, drugB, drugB, drugA]
+    );
+
+    return rows[0] || null;
+  }
+
+  static async getUserChronicDiseases(userId) {
+    const [rows] = await query(
+      `SELECT chronic_diseases
+       FROM users
+       WHERE id = ?
+       LIMIT 1`,
+      [userId]
+    );
+
+    return rows[0] ? rows[0].chronic_diseases : null;
   }
 }
 

@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { query } = require('../config/database');
 
@@ -71,6 +71,20 @@ class FamilyBindingModel {
     }
 
     return this.findById(bindingId);
+  }
+
+  static async listApprovedFamilyReceiverIds(elderUserId) {
+    const [rows] = await query(
+      `SELECT u.id AS family_user_id
+       FROM family_bindings fb
+       INNER JOIN users u ON u.id = fb.family_user_id
+       WHERE fb.elder_user_id = ?
+         AND fb.binding_status = 'approved'
+         AND u.openid IS NOT NULL`,
+      [elderUserId]
+    );
+
+    return rows.map((item) => Number(item.family_user_id));
   }
 }
 

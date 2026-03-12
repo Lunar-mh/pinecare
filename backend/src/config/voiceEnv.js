@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const REQUIRED_VARS = ['ALIYUN_ACCESS_KEY_ID', 'ALIYUN_ACCESS_KEY_SECRET'];
 
@@ -17,7 +17,7 @@ function getVoiceEnv() {
 function validateVoiceEnv() {
   const missing = REQUIRED_VARS.filter((name) => !(process.env[name] || '').trim());
   if (missing.length > 0) {
-    const err = new Error(`语音模块缺少必要环境变量: ${missing.join(', ')}`);
+    const err = new Error(`Voice service requires env vars: ${missing.join(', ')}`);
     err.code = 500;
     err.statusCode = 500;
     throw err;
