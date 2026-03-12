@@ -1,98 +1,147 @@
-# backend/ — Express API 知识库
+﻿# backend/ — 银伴后端知识库
 
-**15 模块 REST API，Node.js 18 + Express 4 + MySQL 8 + Redis 7**
+**更新时间**: 2026-03-12  
+**状态**: non-live release candidate（stub-ready / live-ready）
 
-## 结构
+## 概述
 
-```
+`backend/` 是银伴平台的 Express REST API，当前覆盖 15 个业务模块，并已收口到“只差真实凭据和真实上游”的阶段。后端具备以下统一能力：
+- 双前缀路由：`/api/v1` 与 `/`
+- 统一响应与错误语义
+- 统一第三方运行态与证据接口
+- 统一 care event 审计与事件复盘
+- fresh install / migration / competition seed smoke
+
+## 关键目录
+
+```text
 backend/
-├── server.js           # 启动入口：env 校验 → 加载 app → 监听端口
+├── server.js
 ├── src/
-│   ├── app.js          # Express 实例：中间件链 + 路由挂载 + 启动 jobs
-│   ├── routes/         # 路由定义（22 文件）
-│   │   └── index.js    # 聚合器，safeUse 安全挂载所有模块
-│   ├── controllers/    # 请求处理（25 文件）
-│   ├── services/       # 业务逻辑（56 文件，最密集层）
-│   ├── models/         # 数据访问—raw SQL（32 文件）
-│   ├── middleware/     # 横切关注点（12 文件）
-│   │   └── validators/ # 路由级入参校验
-│   ├── jobs/           # 定时任务（node-cron）
-│   ├── utils/          # 共享工具（response, validators, errorCodes…）
-│   └── config/         # database.js + db.js（别名）+ validateEnv.js
-├── migrations/         # SQL 迁移脚本（001-029+），按编号顺序执行
-└── tests/
-    ├── integration/    # 主力测试（25 文件，按模块拆分）
-    ├── performance/    # 性能测试（15 文件，需服务已启动）
-    ├── contract/       # 契约测试（4 文件）
-    └── helpers/        # setup.js（Jest 全局配置）
+│   ├── app.js
+│   ├── config/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   ├── services/
+│   ├── jobs/
+│   └── utils/
+├── migrations/
+├── scripts/
+├── tests/
+└── docs/
 ```
 
-## 查找导航
+## 分层约束
 
-| 任务 | 位置 |
-|------|------|
-| 新增模块路由 | `routes/index.js` 用 `safeUse` 挂载，然后建 `routes/<module>.js` |
-| 新增接口逻辑 | `controllers/<module>Controller.js` → `services/<module>Service.js` → `models/<module>Model.js` |
-| 数据库连接池 | `config/database.js`（`db.js` 是其别名，等价） |
-| JWT 认证中间件 | `middleware/auth.js` |
-| 限流中间件 | `middleware/rateLimiter.js`（Redis 滑动窗口） |
-| 家属访问控制 | `middleware/familyAccess.js` |
-| 全局错误处理 | `middleware/errorHandler.js`（必须最后挂载） |
-| 统一响应工具 | `utils/response.js` → `ok()` / `fail()` |
-| 入参校验工具 | `utils/validators.js` → validatePhone / validateRequired 等 |
-| 业务错误码 | `utils/errorCodes.js` |
-| 定时任务入口 | `jobs/index.js`（`startMedicationJobs`） |
-| 执行 DB 迁移 | `npm run migrate`（runs `migrations/run.js`） |
+- Controller 只能调用 Service，不直接查库
+- Service 只能调用 Model，不直接使用 `database.query()`
+- Model 是唯一允许访问 `database.js` 的层
+- 统一响应用 `src/utils/response.js` 的 `ok()` / `fail()`
+- 统一错误通过 `handleError` 或 `controllerError` 映射到响应格式
 
-## 分层约束（严格，不得违反）
+## 重要模式
 
+### 双前缀路由
+
+```js
+app.use('/api/v1', routes);
+app.use('/', routes);
 ```
-Controller  →  Service  →  Model  →  database.js
-```
-- **Controller**：只调 Service + 用 `ok()`/`fail()`/`handleError()` 响应，不碰 DB
-- **Service**：只调 Model，不直接 `query()`，负责业务校验、审计日志
-- **Model**：唯一可调 `database.query()` 的层，负责 SQL + 行映射
 
-## 必须遵守的实现模式
+### safeUse 路由装配
 
-## 核心模式（必须遵守）
+在 `src/routes/index.js` 中使用 `safeUse('/module', './module')`，路由缺失时静默跳过，不让启动崩溃。
 
-**响应**：`ok(res, data)` / `fail(res, code, msg)` — 禁止裸 `res.json()`
+### 第三方运行态
 
-**错误**：Controller 用 `handleError(res, err)`；Service 抛 `err.code = 404`
+所有 live/stub 能力应尽量统一输出：
+- `requestedMode`
+- `effectiveMode`
+- `liveConfigured`
+- `fallbackAllowed`
+- `lastError`
+- `lastSuccessAt`
+- 成功/失败计数
 
-**路由**：`safeUse('/模块', './模块')` — 文件不存在时静默跳过
+对外叙事统一使用 `stub-ready / live-ready`，不要把 fallback 能力表述为稳定商用 live。
 
-**Model**：行映射时显式解析 JSON 字段；动态更新用 fieldMap 过滤 undefined
+### 统一事件证据
 
-**中间件顺序**：json(10mb) → cors → 路由 → errorHandler（最后）
+以下链路已经进入统一 care event / replay 体系：
+- SOS
+- 跌倒
+- GPS
+- 通知发送
+- 社区处置
+- 志愿者接单与执行
 
-**auth 用法**：`router.get('/x', auth, controller.x)`
+答辩期优先复用：
+- `/admin/system/integrations`
+- `/admin/system/evidence`
+- `/admin/system/event-replay`
+- `/readyz`
+- `/livez`
 
-## 命名约定
+## 默认环境口径
 
-| 元素 | 约定 | 示例 |
-|------|------|------|
-| 文件 | camelCase | `userService.js` |
-| 方法 | camelCase | `findByUserId()` |
-| DB 表/字段 | snake_case | `medication_plans`, `user_id` |
-| 路由路径 | kebab-case | `/health-archive` |
+- 后端对外基线：`http://127.0.0.1:3001`
+- 宿主机 MySQL：`127.0.0.1:13307`
+- 宿主机直连 `3000` 只作为显式覆盖方案保留
+- `.env.example` 和 `.env.production-live.example` 是默认模板
 
-## 测试
+## 常用命令
 
 ```bash
-npm test                        # 全量 Jest + coverage（阈值 50%）
-npx jest tests/integration/<module>.test.js  # 单模块测试
-npx jest tests/performance/<module>.perf.test.js --testTimeout=120000  # 性能测试（需服务启动）
+npm run lint
+npm test
+npm run migrate
+npm run smoke:fresh-install
+npm run seed:competition:verify -- --dry-run
 ```
 
-- 测试不启动 jobs（`NODE_ENV=test` 时 `startMedicationJobs` 被跳过）
-- `tests/helpers/setup.js` 包含全局 mock 和数据库清理逻辑
+需要本地 Docker 演示环境时：
+
+```bash
+docker compose up -d mysql backend
+```
+
+## 当前质量门槛
+
+Jest 覆盖率门槛已提升为：
+- Statements >= 80
+- Branches >= 60
+- Functions >= 80
+- Lines >= 80
+
+后端 release candidate 的最低要求：
+- `npm run lint` 通过
+- `npm test` 通过
+- `npm run smoke:fresh-install` 返回 `status: ready`
+- `npm run seed:competition:verify -- --dry-run` 返回 `status: ready`
+- `npm run migrate` 在标准环境下通过
+
+## 当前叙事边界
+
+- 医疗资源整合：目录、预约、报告都已完成模式治理和证据链，但真实上游仍待凭据接入
+- 微信通知、短信、语音、OSS：统一纳入 live/stub 诊断，但 non-live 阶段不宣称已经商用 live
+- `competition seed`：演示基线数据
+- Neo4j：当前保持 no-op 占位，不作为比赛亮点；除非未来接成真实能力并纳入诊断，否则继续从主叙事中移除
+
+## 关键文档
+
+- `docs/four-end-release-candidate.md`
+- `docs/deployment-playbook.md`
+- `docs/compliance-and-contest-package.md`
+- `docs/real-data-evidence-pack.md`
+- `docs/live-cutover-handover.md`
+- `docs/live-evidence-templates.md`
+- `docs/release-known-issues.md`
 
 ## 注意事项
 
-- `db.js` = `database.js` 别名，两者等价，新代码统一用 `database.js`
-- `medicalApiService.js` 是第三方医疗平台 stub，未对接真实 API
-- CI 的 Docker build job 被 `if: false` 禁用
-- 无 ESLint/Prettier，靠约定维护风格
-- 敏感字段脱敏：身份证号日志仅保留前3位+后2位，第三方密钥不回显前端
+- `src/config/db.js` 是 `database.js` 别名
+- medical stub/fallback 必须可见、可解释、可审计
+- 任何新增字段只能向后兼容追加，不能破坏现有响应结构
+- 如果开发者本地 `.env` 仍残留旧端口覆盖，dry-run 输出可能显示本地值；仓库默认模板已经统一为 `13307`

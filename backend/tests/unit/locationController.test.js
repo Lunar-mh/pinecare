@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/services/locationService', () => ({
   upload: jest.fn(),
@@ -58,6 +58,25 @@ describe('locationController', () => {
     });
   });
 
+  it('returns current location with unified response', async () => {
+    locationService.getCurrent.mockResolvedValue({ latitude: 30.1, longitude: 120.2 });
+    const res = createRes();
+
+    await locationController.current(
+      {
+        user: { userId: 12 },
+      },
+      res
+    );
+
+    expect(locationService.getCurrent).toHaveBeenCalledWith(12);
+    expect(res.body).toEqual({
+      code: 0,
+      message: 'Query successful.',
+      data: { latitude: 30.1, longitude: 120.2 },
+    });
+  });
+
   it('maps business errors for trail query', async () => {
     const err = new Error('Trail query failed.');
     err.code = 422;
@@ -77,6 +96,26 @@ describe('locationController', () => {
     expect(res.body).toEqual({
       code: 422,
       message: 'Trail query failed.',
+      data: null,
+    });
+  });
+
+  it('falls back to generic 500 for uncoded upload failures', async () => {
+    locationService.upload.mockRejectedValue(new Error('Upload exploded.'));
+    const res = createRes();
+
+    await locationController.upload(
+      {
+        user: { userId: 12 },
+        body: { latitude: 30.1, longitude: 120.2 },
+      },
+      res
+    );
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      code: 500,
+      message: 'Internal server error.',
       data: null,
     });
   });

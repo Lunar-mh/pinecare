@@ -28,6 +28,9 @@ describe('fresh install smoke', () => {
         'docs/third-party-services-and-authorizations.md',
         'docs/data-desensitization-note.md',
         'docs/four-end-release-candidate.md',
+        'docs/live-cutover-handover.md',
+        'docs/live-evidence-templates.md',
+        'docs/release-known-issues.md',
       ])
     );
     expect(result.migrations.total).toBeGreaterThan(0);

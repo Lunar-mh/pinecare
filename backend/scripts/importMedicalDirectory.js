@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const fs = require('fs');
 const path = require('path');
@@ -158,10 +158,10 @@ function buildSummary(filePath, dataset, dryRun) {
     dryRun,
     filePath,
     connection: {
-      host: process.env.DB_HOST || 'localhost',
-      port: Number(process.env.DB_PORT || 3306),
+      host: process.env.DB_HOST || '127.0.0.1',
+      port: Number(process.env.DB_PORT || 13307),
       database: process.env.DB_NAME || 'yinban',
-      user: process.env.DB_USER || 'root',
+      user: process.env.DB_USER || 'yinban',
     },
     counts: {
       hospitals: dataset.hospitals.length,
@@ -233,7 +233,7 @@ if (require.main === module) {
       try {
         await pool.end();
       } catch (_err) {
-        // 忽略连接池关闭错误
+        // Ignore pool shutdown failures during CLI teardown.
       }
     });
 }
@@ -243,3 +243,5 @@ module.exports = {
   loadDataset,
   buildSummary,
 };
+
+

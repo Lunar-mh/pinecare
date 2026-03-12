@@ -4,7 +4,7 @@
   userInfo: 'volunteer_user_info',
 }
 
-const DEFAULT_API_BASE = 'http://localhost:3000/api/v1'
+const DEFAULT_API_BASE = 'http://127.0.0.1:3001/api/v1'
 const TASK_FILTERS = ['all', 'pending', 'assigned', 'processing', 'completed']
 
 const state = {
@@ -305,7 +305,7 @@ function renderLogin() {
 
         <label class="form-field">
           <span class="form-field__label">API 地址</span>
-          <input class="form-field__input" data-field="apiBase" value="${escapeHtml(state.apiBase)}" placeholder="http://localhost:3000/api/v1" />
+          <input class="form-field__input" data-field="apiBase" value="${escapeHtml(state.apiBase)}" placeholder="http://127.0.0.1:3001/api/v1" />
         </label>
         <label class="form-field">
           <span class="form-field__label">手机号</span>
@@ -550,4 +550,5 @@ render()
 if (state.token) {
   loadVolunteerData()
 }
+
 

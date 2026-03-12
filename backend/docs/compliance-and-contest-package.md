@@ -4,6 +4,7 @@
 - Recommended category: software application and development.
 - AI is presented as an enabling capability, not the sole judging axis.
 - The defense focus is complete four-end delivery, real-vs-stub transparency, operational traceability, and emergency-care evidence chains.
+- Neo4j and knowledge graph are not part of the current release narrative. Do not present them as active judging highlights unless they are later implemented and added to diagnostics.
 
 ## Submission checks
 - Verify the work is original and all third-party assets are authorized.
@@ -25,6 +26,9 @@
 - Data desensitization note: `backend/docs/data-desensitization-note.md`
 - Four-end release candidate note: `backend/docs/four-end-release-candidate.md`
 - Deployment and defense playbook: `backend/docs/deployment-playbook.md`
+- Live cutover handover: `backend/docs/live-cutover-handover.md`
+- Evidence templates: `backend/docs/live-evidence-templates.md`
+- Known issues note: `backend/docs/release-known-issues.md`
 
 ## External services to document
 - DashScope

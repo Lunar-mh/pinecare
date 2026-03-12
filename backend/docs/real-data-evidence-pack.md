@@ -1,7 +1,7 @@
 ﻿# Real Data Evidence Pack
 
 ## Purpose
-This document tracks the evidence that proves the backend is not relying only on curated contest samples.
+This document tracks the evidence that proves the project is ready to switch from curated contest data to real upstream integrations.
 
 ## Required evidence
 - Real medical directory or appointment response with masked identifiers
@@ -28,4 +28,5 @@ For each item capture:
 ## Recommended collection path
 - Use `/api/v1/admin/system/evidence` to gather runtime status
 - Use `/api/v1/admin/system/event-replay?userId=<demoUserId>` to gather care-event proof
+- Use `backend/docs/live-evidence-templates.md` for receipt, screenshot, and log reference templates
 - Attach only desensitized screenshots or log references to the defense pack

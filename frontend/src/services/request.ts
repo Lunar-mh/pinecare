@@ -1,162 +1,122 @@
-/**
- * request.ts - HTTP请求封装
- * 基于Taro.request封装，支持拦截器、超时、错误处理
- */
-
-import Taro from '@tarojs/taro';
+﻿import Taro from '@tarojs/taro';
 
 function getEnvVersion(): string {
   try {
     const info = Taro.getAccountInfoSync();
     return info?.miniProgram?.envVersion || 'develop';
-  } catch (_) {
+  } catch (_error) {
     return 'develop';
   }
 }
 
-function isDevtools(): boolean {
-  try {
-    const info = Taro.getSystemInfoSync();
-    return info?.platform === 'devtools';
-  } catch (_) {
-    return false;
-  }
-}
+const DEFAULT_API_BASE = 'http://127.0.0.1:3001/api/v1';
+const EXPLICIT_API_BASE = String(process.env.TARO_APP_API_BASE_URL || '').trim();
+const BASE_URL = EXPLICIT_API_BASE || DEFAULT_API_BASE;
+const TIMEOUT = 15000;
 
-// API基础配置
-// 约定：release 才走线上域名，其它（develop/trial）一律走本地联调
-const BASE_URL = getEnvVersion() === 'release'
-  ? (isDevtools() ? 'http://localhost:3000/api/v1' : 'https://api.yinban.com/api/v1')
-  : 'http://localhost:3000/api/v1';
-
-const TIMEOUT = 15000; // 15秒超时
-
-// 请求配置接口
 interface RequestOptions {
   url: string;
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-  data?: any;
+  data?: unknown;
   header?: Record<string, string>;
   timeout?: number;
 }
 
-// 响应数据接口
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   code: number;
   message: string;
   data: T;
 }
 
-// 获取Token
 const getToken = (): string => {
   try {
     return Taro.getStorageSync('token') || '';
-  } catch (e) {
+  } catch (_error) {
     return '';
   }
 };
 
-// 请求拦截
 const requestInterceptor = (options: RequestOptions): RequestOptions => {
   const token = getToken();
-  
+
   return {
     ...options,
     header: {
       'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-      ...options.header
-    }
+      'X-App-Env': getEnvVersion(),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.header,
+    },
   };
 };
 
-// 响应拦截
 const responseInterceptor = <T>(response: Taro.request.SuccessCallbackResult<ApiResponse<T>>): T => {
   const { data, statusCode } = response;
-  
-  // HTTP错误处理
+
   if (statusCode < 200 || statusCode >= 300) {
-    throw new Error(`HTTP错误: ${statusCode}`);
+    throw new Error(`HTTP request failed: ${statusCode}`);
   }
-  
-  // 业务错误处理
-  // 后端成功码为 0；部分网关/第三方可能使用 200
+
   if (data.code !== 0 && data.code !== 200) {
-    // Token过期
     if (data.code === 401) {
       Taro.removeStorageSync('token');
       Taro.removeStorageSync('userInfo');
-      
-      // 跳转登录页（延迟执行避免阻塞）
       setTimeout(() => {
         Taro.reLaunch({ url: '/pages/login/index' });
       }, 100);
     }
-    
-    throw new Error(data.message || '请求失败');
+
+    throw new Error(data.message || 'Request failed.');
   }
-  
+
   return data.data;
 };
 
-// 统一请求方法
-export const request = async <T = any>(options: RequestOptions): Promise<T> => {
-  // 应用请求拦截
+export const request = async <T = unknown>(options: RequestOptions): Promise<T> => {
   const finalOptions = requestInterceptor(options);
-  
+
   try {
     const response = await Taro.request<ApiResponse<T>>({
       url: `${BASE_URL}${finalOptions.url}`,
       method: finalOptions.method || 'GET',
       data: finalOptions.data,
       header: finalOptions.header,
-      timeout: finalOptions.timeout || TIMEOUT
+      timeout: finalOptions.timeout || TIMEOUT,
     });
-    
-    // 应用响应拦截
+
     return responseInterceptor<T>(response);
   } catch (error: any) {
-    // 网络错误处理
     if (error.errMsg?.includes('timeout') || error.message?.includes('timeout')) {
       Taro.showToast({
-        title: '请求超时，请稍后重试',
+        title: '请求超时，请稍后再试',
         icon: 'none',
-        duration: 2000
+        duration: 2000,
       });
       throw new Error('请求超时');
     }
-    
+
     if (error.errMsg?.includes('fail')) {
       Taro.showToast({
-        title: '网络异常，请检查网络',
+        title: '网络异常，请检查连接后重试',
         icon: 'none',
-        duration: 2000
+        duration: 2000,
       });
       throw new Error('网络异常');
     }
-    
-    // 显示错误提示
+
     Taro.showToast({
       title: error.message || '请求失败',
       icon: 'none',
-      duration: 2000
+      duration: 2000,
     });
-    
+
     throw error;
   }
 };
 
-// 快捷方法
-export const get = <T>(url: string, params?: any) => 
-  request<T>({ url, method: 'GET', data: params });
-
-export const post = <T>(url: string, data?: any) => 
-  request<T>({ url, method: 'POST', data });
-
-export const put = <T>(url: string, data?: any) => 
-  request<T>({ url, method: 'PUT', data });
-
-export const del = <T>(url: string, params?: any) => 
-  request<T>({ url, method: 'DELETE', data: params });
+export const get = <T>(url: string, params?: unknown) => request<T>({ url, method: 'GET', data: params });
+export const post = <T>(url: string, data?: unknown) => request<T>({ url, method: 'POST', data });
+export const put = <T>(url: string, data?: unknown) => request<T>({ url, method: 'PUT', data });
+export const del = <T>(url: string, params?: unknown) => request<T>({ url, method: 'DELETE', data: params });
 
 export default request;

@@ -1,48 +1,28 @@
-# 银伴志愿者工作台
+﻿# volunteer/
 
-`volunteer/` 是轻量志愿者移动工作台，不是第二套完整小程序，也不是社区后台的镜像。它只服务链路 D 的任务执行闭环。
+志愿者任务执行端。当前版本已经从静态展示页改为接口驱动页面，使用统一后端完成登录、任务接单、签到、签退、完成任务与培训记录查询。
 
-## 当前定位
+## 默认环境
+- 默认 API 基线：`http://127.0.0.1:3001/api/v1`
+- 显式覆盖方式：登录页 API 地址输入框
+- 默认目标：在非 live 状态下完整复现志愿者任务执行链路
 
-- 今日任务入口
-- 接单与签到签退
-- 服务完成与工时回写
-- 培训提醒与个人成长摘要
-
-## 技术形态
-
-- 轻量 H5 工作台
-- 静态资源构建输出到 `dist/`
-- 不承担复杂管理配置能力
-
-## 运行方式
-
+## 常用命令
 ```bash
 npm install
-npm run build
 npm run typecheck
+npm run build
 ```
 
-## 当前页面结构
+## 当前收口状态
+- 已接入 `/auth/sms-code`、`/auth/phone`
+- 已接入 `/volunteer/profile`、`/volunteer/tasks`、`/volunteer/training`
+- 已接入任务接单、签到、签退、完成动作
+- 构建和类型检查已验证通过
 
-当前工作台围绕三类入口组织：
-
-- 首页：今日待办、工时、紧急协助、培训提醒
-- 任务：待接单、进行中、待确认、已完成
-- 我的：工时、等级、排班、培训
-
-## 与后端的关键接口
-
-- `GET /volunteer/profile`
-- `GET /volunteer/tasks`
-- `POST /volunteer/tasks/:taskId/accept`
-- `POST /volunteer/tasks/:taskId/check-in`
-- `POST /volunteer/tasks/:taskId/check-out`
-- `POST /volunteer/tasks/:taskId/complete`
-- `GET /volunteer/training`
-
-## 当前边界
-
-- 不承担社区审核、系统配置、老人全量档案浏览。
-- 只显示执行任务所需的最小必要信息。
-- 更复杂的排班、评级、跨社区调度属于试点阶段再扩展的能力。
+## 答辩链路
+1. 登录志愿者账号
+2. 查看待处理任务
+3. 接单并执行签到/签退
+4. 完成任务
+5. 在管理端查看状态同步和复盘结果

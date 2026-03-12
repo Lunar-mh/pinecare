@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 describe('config/database', () => {
   let originalEnv;
@@ -26,7 +26,7 @@ describe('config/database', () => {
     process.env = {
       ...originalEnv,
       DB_HOST: 'mysql.local',
-      DB_PORT: '3307',
+      DB_PORT: '13307',
       DB_USER: 'tester',
       DB_PASSWORD: 'secret',
       DB_NAME: 'yinban_test',
@@ -37,7 +37,7 @@ describe('config/database', () => {
 
     expect(createPool).toHaveBeenCalledWith({
       host: 'mysql.local',
-      port: 3307,
+      port: 13307,
       user: 'tester',
       password: 'secret',
       database: 'yinban_test',
@@ -52,7 +52,38 @@ describe('config/database', () => {
 
     const [, handler] = pool.on.mock.calls[0];
     handler({ message: 'db down' });
-    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('\"module\":\"database\"'));
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('"module":"database"'));
     expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('db down'));
+  });
+
+  it('uses repository defaults when db env vars are absent', () => {
+    const pool = {
+      on: jest.fn(),
+      execute: jest.fn(),
+    };
+    const createPool = jest.fn(() => pool);
+
+    jest.doMock('mysql2/promise', () => ({ createPool }));
+
+    process.env = {
+      ...originalEnv,
+    };
+    delete process.env.DB_HOST;
+    delete process.env.DB_PORT;
+    delete process.env.DB_USER;
+    delete process.env.DB_PASSWORD;
+    delete process.env.DB_NAME;
+
+    require('../../src/config/database');
+
+    expect(createPool).toHaveBeenCalledWith(
+      expect.objectContaining({
+        host: '127.0.0.1',
+        port: 13307,
+        user: 'yinban',
+        password: 'yinban_password',
+        database: 'yinban',
+      })
+    );
   });
 });

@@ -4,10 +4,10 @@ const mysql = require('mysql2/promise');
 const logger = require('../utils/logger');
 
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST || '127.0.0.1',
   port: parseInt(process.env.DB_PORT, 10) || 13307,
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
+  user: process.env.DB_USER || 'yinban',
+  password: process.env.DB_PASSWORD || 'yinban_password',
   database: process.env.DB_NAME || 'yinban',
   waitForConnections: true,
   connectionLimit: 10,
@@ -28,4 +28,3 @@ async function closePool() {
 }
 
 module.exports = { closePool, pool, query };
-

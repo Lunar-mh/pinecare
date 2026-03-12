@@ -13,6 +13,13 @@ dotenv.config({ path: path.join(ROOT_DIR, '.env') });
 const OUTPUT_DIR = path.join(ROOT_DIR, 'generated', 'competition-seed');
 const SQL_FILE = path.join(OUTPUT_DIR, COMPETITION_SEED_ASSETS.files.bootstrapSql);
 const SUMMARY_FILE = path.join(OUTPUT_DIR, COMPETITION_SEED_ASSETS.files.bootstrapSummary);
+const REPOSITORY_DEFAULT_CONNECTION = {
+  host: '127.0.0.1',
+  port: 13307,
+  user: 'yinban',
+  password: 'yinban_password',
+  database: 'yinban',
+};
 
 function ensureSqlBundle() {
   if (!fs.existsSync(SQL_FILE)) {
@@ -44,11 +51,11 @@ function ensureSqlBundle() {
 
 function buildConnectionConfig() {
   return {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT, 10) || 13307,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'yinban',
+    host: process.env.DB_HOST || REPOSITORY_DEFAULT_CONNECTION.host,
+    port: parseInt(process.env.DB_PORT, 10) || REPOSITORY_DEFAULT_CONNECTION.port,
+    user: process.env.DB_USER || REPOSITORY_DEFAULT_CONNECTION.user,
+    password: process.env.DB_PASSWORD || REPOSITORY_DEFAULT_CONNECTION.password,
+    database: process.env.DB_NAME || REPOSITORY_DEFAULT_CONNECTION.database,
     charset: 'utf8mb4',
     multipleStatements: true,
   };
@@ -63,6 +70,12 @@ async function applyCompetitionSeed({ dryRun = false } = {}) {
     generatedSql: Boolean(generatedBundle),
     sqlFile: SQL_FILE,
     summaryFile: SUMMARY_FILE,
+    repositoryDefaults: {
+      host: REPOSITORY_DEFAULT_CONNECTION.host,
+      port: REPOSITORY_DEFAULT_CONNECTION.port,
+      database: REPOSITORY_DEFAULT_CONNECTION.database,
+      user: REPOSITORY_DEFAULT_CONNECTION.user,
+    },
     connection: {
       host: connectionConfig.host,
       port: connectionConfig.port,
@@ -109,5 +122,5 @@ if (require.main === module) {
 module.exports = {
   applyCompetitionSeed,
   buildConnectionConfig,
+  REPOSITORY_DEFAULT_CONNECTION,
 };
-

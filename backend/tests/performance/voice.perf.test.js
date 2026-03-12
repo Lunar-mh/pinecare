@@ -1,10 +1,10 @@
-'use strict';
+﻿'use strict';
 
 const http = require('http');
 const https = require('https');
 const { URL } = require('url');
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
+const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:3001';
 const JWT_TOKEN = process.env.TEST_JWT_TOKEN || 'test-token-placeholder';
 const CONCURRENCY = 50;
 const P95_THRESHOLD_MS = 2000;
@@ -60,16 +60,17 @@ function percentile(sortedArr, p) {
   return sortedArr[Math.max(0, idx)];
 }
 
-describe('语音识别接口性能测试', () => {
+describe('璇煶璇嗗埆鎺ュ彛鎬ц兘娴嬭瘯', () => {
   jest.setTimeout(120000);
 
-  it(`POST /voice/recognize 在 ${CONCURRENCY} 并发下 p95 < 2s`, async () => {
+  it(`POST /voice/recognize 鍦?${CONCURRENCY} 骞跺彂涓?p95 < 2s`, async () => {
     const results = await Promise.all(Array.from({ length: CONCURRENCY }, () => sendRequest()));
 
     const durations = results.map((item) => item.durationMs).sort((a, b) => a - b);
     const p95 = percentile(durations, 95);
 
-    console.log(`语音识别性能测试结果: p95=${p95}ms, 阈值=${P95_THRESHOLD_MS}ms`);
+    console.log(`璇煶璇嗗埆鎬ц兘娴嬭瘯缁撴灉: p95=${p95}ms, 闃堝€?${P95_THRESHOLD_MS}ms`);
     expect(p95).toBeLessThan(P95_THRESHOLD_MS);
   });
 });
+

@@ -1,115 +1,31 @@
-# 银伴小程序前端
+﻿# frontend/
 
-前端采用 Taro 4 + React 18 + TypeScript，承载老人端和家属端两种前台角色。竞赛阶段继续共用一个小程序代码库，通过角色和信息架构区分体验，不拆成两个独立项目。
+微信小程序用户端，使用 Taro 4 + React 18 + TypeScript。当前版本已经完成非 live 收官，默认接入统一 Docker 演示基线。
 
-## 当前定位
+## 默认环境
+- 默认 API 基线：`http://127.0.0.1:3001/api/v1`
+- 显式覆盖方式：设置 `TARO_APP_API_BASE_URL`
+- 默认目标：在不接真实接口的情况下，完整跑通既有后端链路并展示稳定空态
 
-- 老人端：低认知负担的日常照护入口。
-- 家属端：远程守护与协同决策入口。
-- 同一套代码同时服务链路 A、B、C，并为链路 E 提供轻入口。
-
-## 技术栈
-
-- Taro 4
-- React 18
-- TypeScript
-- NutUI React Taro
-- 微信小程序
-
-## 当前目录结构
-
-```text
-frontend/
-├── src/
-│   ├── pages/               # 主包页面
-│   ├── subpackages/         # 功能分包
-│   ├── components/elderly/  # 老年友好组件
-│   ├── services/            # 请求封装与类型
-│   └── utils/               # 通用工具
-├── config/                  # Taro 构建配置
-└── scripts/                 # 清理与辅助脚本
-```
-
-## 当前主包页面
-
-当前主包保持精简，只保留高频入口：
-
-- `pages/login`
-- `pages/index`
-- `pages/services`
-- `pages/profile`
-
-## 当前分包
-
-截至 2026-03-11，`src/subpackages` 下共有 13 个分包：
-
-- `ai_companion`
-- `ai_consult`
-- `drug_check`
-- `family_health`
-- `family_space`
-- `health`
-- `location`
-- `medical`
-- `medication`
-- `settings`
-- `sos`
-- `timebank`
-- `voice_ai`
-
-## 与四端规划的关系
-
-### 老人端优先能力
-
-- 首页状态总览
-- 今日用药
-- 健康档案
-- SOS
-- 语音入口
-- 家庭空间轻互动
-
-### 家属端优先能力
-
-- 长辈状态概览
-- 用药进度
-- SOS 感知
-- 定位共享
-- 家庭空间互动
-
-## 运行方式
-
+## 常用命令
 ```bash
 npm install
-npm run dev:weapp
-npm run build:weapp
 npm run typecheck
+npm run build:weapp
+npm run dev:weapp
 ```
 
-微信开发者工具请打开 `dist/weapp`。
+## 当前收口状态
+- 医疗、定位、AI、语音、设置等核心入口已移除 unfinished 占位提示
+- 关于页已接入正式协议、隐私、免责声明和版本信息
+- 构建可通过，存在一个已记录的 CSS order warning，不影响产物正确性和答辩演示
 
-## 与后端的依赖关系
+## 关键目录
+- `src/pages/`：主包页面
+- `src/subpackages/`：业务分包
+- `src/services/request.ts`：统一 HTTP 入口
+- `src/components/elderly/`：适老化组件
 
-- 请求封装：`src/services/request.ts`
-- 类型定义：`src/services/types.ts`
-- 默认对接项目根后端的无前缀或 `/api/v1` 路由
-
-前端当前依赖的关键后端域包括：
-
-- `/auth`
-- `/health-archive`
-- `/medication`
-- `/sos`
-- `/family`
-- `/family-space`
-- `/gps`
-- `/medical`
-- `/voice`
-- `/ai-consult`
-- `/drug-interaction`
-- `/time-bank`
-
-## 当前边界
-
-- 老人端和家属端虽然共用一个代码库，但信息优先级必须区分，不能简单镜像。
-- 竞赛阶段不新增泛娱乐、商城、长链聊天等偏航能力。
-- 志愿者不是这个小程序的第三种前台角色，志愿者能力由独立轻量工作台承载。
+## 联调说明
+- 默认使用 `/api/v1` 路由
+- 如需切换到其他环境，只通过 `TARO_APP_API_BASE_URL` 覆盖，不修改代码中的默认值

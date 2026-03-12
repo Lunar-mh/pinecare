@@ -1,13 +1,20 @@
 ﻿# Deployment And Defense Playbook
 
 ## Goal
-Prepare a reproducible four-end release candidate for defense rehearsal and national judging. The current release candidate is designed to be `stub-ready / live-ready`: it is complete without real upstreams, and the remaining work is limited to replacing credentials and switching providers to live mode.
+Prepare a reproducible four-end release candidate for defense rehearsal and national judging. The current release candidate is `stub-ready / live-ready`: it is complete without real upstreams, and the remaining work is limited to replacing credentials and switching providers to live mode.
+
+## Unified baseline
+- Backend entry: `http://127.0.0.1:3001`
+- Frontend default API base: `http://127.0.0.1:3001/api/v1`
+- Admin default API base: `http://127.0.0.1:3001`
+- Volunteer default API base: `http://127.0.0.1:3001/api/v1`
+- Host-side MySQL rehearsal: `127.0.0.1:13307`
+- Any alternative host or provider endpoint must be introduced by explicit environment override only
 
 ## Preflight
 - Copy `backend/.env.example` or `.env.production-live.example` to `backend/.env` according to the rehearsal mode.
 - Use `PRODUCTION_LIVE=1` only when real credentials are available.
 - Confirm MySQL, Redis, and the worker role are reachable from the target host.
-- For local host rehearsal, align scripts to `127.0.0.1:13307` unless an explicit production DB port is configured.
 - Ensure the mini program, admin, and volunteer builds are generated from a clean install before final rehearsal.
 
 ## Verified commands
@@ -61,5 +68,6 @@ Prepare a reproducible four-end release candidate for defense rehearsal and nati
 
 ## Related documents
 - `backend/docs/four-end-release-candidate.md`
-- `backend/docs/compliance-and-contest-package.md`
-- `backend/docs/real-data-evidence-pack.md`
+- `backend/docs/release-known-issues.md`
+- `backend/docs/live-cutover-handover.md`
+- `backend/docs/live-evidence-templates.md`

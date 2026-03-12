@@ -13,7 +13,7 @@ describe('applyCompetitionSeed', () => {
     };
 
     process.env.DB_HOST = '127.0.0.1';
-    process.env.DB_PORT = '3307';
+    process.env.DB_PORT = '13307';
     process.env.DB_USER = 'yinban';
     process.env.DB_PASSWORD = 'secret';
     process.env.DB_NAME = 'yinban_demo';
@@ -22,7 +22,7 @@ describe('applyCompetitionSeed', () => {
     expect(config).toEqual(
       expect.objectContaining({
         host: '127.0.0.1',
-        port: 3307,
+        port: 13307,
         user: 'yinban',
         password: 'secret',
         database: 'yinban_demo',
@@ -42,3 +42,4 @@ describe('applyCompetitionSeed', () => {
     expect(result.statementsLength).toBeGreaterThan(1000);
   });
 });
+
