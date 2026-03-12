@@ -192,7 +192,7 @@ describe('medication controllers', () => {
     await medicationHistoryController.calendar(
       {
         user: { userId: 5 },
-        query: { month: ' 2026-03 ' },
+        query: { month: '2026-03' },
       },
       res
     );

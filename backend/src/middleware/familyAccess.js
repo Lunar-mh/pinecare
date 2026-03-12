@@ -1,28 +1,33 @@
-'use strict';
+﻿'use strict';
 
 const familyAccessService = require('../services/familyAccessService');
 const { fail } = require('../utils/response');
+const logger = require('../utils/logger');
 
-/**
- * 家属访问控制中间件
- * 仅对 today/trend 的 user_id 执行关系校验
- */
 async function familyAccess(req, res, next) {
   try {
     const currentUserId = req.user && req.user.userId;
     if (!currentUserId) {
-      return fail(res, 401, '未登录或登录已失效', null, 401);
+      return fail(res, 401, 'Authentication required.', null, 401);
     }
 
-    const targetUserId = familyAccessService.resolveTargetUserId(currentUserId, req.query.user_id);
-    req.targetUserId = targetUserId;
-
+    const targetUserId = familyAccessService.resolveTargetUserId(currentUserId, req.query && req.query.user_id);
     await familyAccessService.assertAccess(currentUserId, targetUserId);
+
+    req.targetUserId = targetUserId;
     return next();
-  } catch (err) {
-    const code = typeof err.code === 'number' ? err.code : 500;
-    const status = typeof err.statusCode === 'number' ? err.statusCode : 500;
-    return fail(res, code, err.message || '服务器内部错误', null, status);
+  } catch (error) {
+    const code = Number(error && (error.code || error.statusCode) ? error.code || error.statusCode : 500);
+    const status = Number(error && (error.statusCode || error.code) ? error.statusCode || error.code : 500);
+    const message = error && error.message ? error.message : 'Family access check failed.';
+
+    logger.error('familyAccess', 'access_denied', {
+      coded: Boolean(error && (error.code || error.statusCode)),
+      code,
+      message,
+    });
+
+    return fail(res, code, message, null, status);
   }
 }
 

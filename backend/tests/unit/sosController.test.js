@@ -1,4 +1,8 @@
-'use strict';
+﻿'use strict';
+
+jest.mock('../../src/utils/logger', () => ({
+  error: jest.fn(),
+}));
 
 jest.mock('../../src/services/sosService', () => ({
   triggerSos: jest.fn(),
@@ -45,7 +49,34 @@ describe('sosController', () => {
     });
   });
 
-  it('maps uncoded errors to 500 for cancel', async () => {
+  it('maps coded errors for history requests', async () => {
+    const error = new Error('History filter invalid.');
+    error.code = 422;
+    error.statusCode = 422;
+    sosService.getHistory.mockRejectedValue(error);
+    const res = createRes();
+
+    await sosController.history({ user: { userId: 5 }, query: { page: 0 } }, res);
+
+    expect(res.statusCode).toBe(422);
+    expect(res.body).toEqual({
+      code: 422,
+      message: 'History filter invalid.',
+      data: null,
+    });
+  });
+
+  it('confirms sos events successfully', async () => {
+    sosService.confirmSos.mockResolvedValue({ eventId: 88, status: 'confirmed' });
+    const res = createRes();
+
+    await sosController.confirm({ user: { userId: 5 }, body: { event_id: 88 } }, res);
+
+    expect(sosService.confirmSos).toHaveBeenCalledWith(5, 88);
+    expect(res.body.data.status).toBe('confirmed');
+  });
+
+  it('uses operation-specific default message for uncoded cancel errors', async () => {
     sosService.cancelSos.mockRejectedValue(new Error('unexpected'));
     const res = createRes();
 
@@ -54,7 +85,21 @@ describe('sosController', () => {
     expect(res.statusCode).toBe(500);
     expect(res.body).toEqual({
       code: 500,
-      message: 'unexpected',
+      message: 'Failed to cancel SOS event.',
+      data: null,
+    });
+  });
+
+  it('uses operation-specific default message for uncoded resolve errors', async () => {
+    sosService.resolveSos.mockRejectedValue(new Error('unexpected'));
+    const res = createRes();
+
+    await sosController.resolve({ user: { userId: 5 }, body: { event_id: 88 } }, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({
+      code: 500,
+      message: 'Failed to resolve SOS event.',
       data: null,
     });
   });

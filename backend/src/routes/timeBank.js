@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const express = require('express');
 const auth = require('../middleware/auth');
@@ -12,23 +12,26 @@ const {
   getExchangeHistory,
   getLeaderboard,
 } = require('../controllers/timeBankController');
+const {
+  validateConfirmService,
+  validateExchangeCreate,
+  validateLeaderboardQuery,
+  validateRecordService,
+  validateServiceHistoryQuery,
+} = require('../middleware/validateTimeBank');
 
 const router = express.Router();
 
-// 账户相关
 router.get('/account', auth, getAccount);
 router.get('/balance', auth, getBalance);
 
-// 服务记录
-router.post('/service/record', auth, recordService);
-router.post('/service/confirm', auth, confirmService);
-router.get('/service/history', auth, getServiceHistory);
+router.post('/service/record', auth, validateRecordService, recordService);
+router.post('/service/confirm', auth, validateConfirmService, confirmService);
+router.get('/service/history', auth, validateServiceHistoryQuery, getServiceHistory);
 
-// 兑换
-router.post('/exchange', auth, createExchange);
+router.post('/exchange', auth, validateExchangeCreate, createExchange);
 router.get('/exchange/history', auth, getExchangeHistory);
 
-// 排行榜
-router.get('/leaderboard', auth, getLeaderboard);
+router.get('/leaderboard', auth, validateLeaderboardQuery, getLeaderboard);
 
 module.exports = router;

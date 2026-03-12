@@ -8,6 +8,29 @@ const logger = require('../utils/logger');
 
 let cronTask = null;
 
+async function processReminderItem(item, current) {
+  const plan = item.plan || {};
+  const log = item.log || {};
+
+  try {
+    const policy = await reminderPolicyService.checkUserReminderPermission(plan.user_id, current);
+    if (!policy.allowed) {
+      return 'skipped';
+    }
+
+    const result = await reminderNotificationService.sendFirstReminder(plan, log);
+    return result && result.success ? 'sent' : 'failed';
+  } catch (error) {
+    logger.error('medicationReminderJob', 'item_failed', {
+      planId: plan.id || null,
+      userId: plan.user_id || null,
+      logId: log.id || null,
+      message: error.message,
+    });
+    return 'failed';
+  }
+}
+
 async function runOnce(now) {
   const current = now instanceof Date ? now : new Date(now || Date.now());
   const scheduleResult = await reminderScheduleService.collectDueReminders(current);
@@ -17,15 +40,11 @@ async function runOnce(now) {
   let failed = 0;
 
   for (const item of scheduleResult.items) {
-    const policy = await reminderPolicyService.checkUserReminderPermission(item.plan.user_id, current);
-    if (!policy.allowed) {
-      skipped += 1;
-      continue;
-    }
-
-    const result = await reminderNotificationService.sendFirstReminder(item.plan, item.log);
-    if (result.success) {
+    const status = await processReminderItem(item, current);
+    if (status === 'sent') {
       sent += 1;
+    } else if (status === 'skipped') {
+      skipped += 1;
     } else {
       failed += 1;
     }
@@ -49,8 +68,8 @@ function start() {
     try {
       const result = await runOnce(new Date());
       logger.info('medicationReminderJob', 'run_completed', result);
-    } catch (err) {
-      logger.error('medicationReminderJob', 'run_failed', { message: err.message });
+    } catch (error) {
+      logger.error('medicationReminderJob', 'run_failed', { message: error.message });
     }
   });
 

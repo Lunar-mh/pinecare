@@ -1,23 +1,23 @@
-'use strict';
+﻿'use strict';
 
 const sosService = require('../services/sosService');
-const { ok, fail } = require('../utils/response');
+const { ok } = require('../utils/response');
+const { sendControllerError } = require('../utils/controllerError');
 
-function mapError(res, err) {
-  const code = typeof err.code === 'number' ? err.code : 500;
-  const statusCode =
-    typeof err.statusCode === 'number' ? err.statusCode : code >= 400 && code < 600 ? code : 500;
-  const message = err.message || 'Internal server error.';
-  const data = err.data || null;
-  return fail(res, code, message, data, statusCode);
+function sendSosError(res, error, action, defaultMessage) {
+  return sendControllerError(res, error, {
+    moduleName: 'sosController',
+    action,
+    defaultMessage,
+  });
 }
 
 async function trigger(req, res) {
   try {
     const data = await sosService.triggerSos(req.user.userId, req.body || {});
     return ok(res, data, 'ok');
-  } catch (err) {
-    return mapError(res, err);
+  } catch (error) {
+    return sendSosError(res, error, 'trigger_failed', 'Failed to trigger SOS event.');
   }
 }
 
@@ -25,8 +25,8 @@ async function cancel(req, res) {
   try {
     const data = await sosService.cancelSos(req.user.userId, req.body.event_id);
     return ok(res, data, 'ok');
-  } catch (err) {
-    return mapError(res, err);
+  } catch (error) {
+    return sendSosError(res, error, 'cancel_failed', 'Failed to cancel SOS event.');
   }
 }
 
@@ -34,8 +34,8 @@ async function history(req, res) {
   try {
     const data = await sosService.getHistory(req.user.userId, req.query || {});
     return ok(res, data, 'ok');
-  } catch (err) {
-    return mapError(res, err);
+  } catch (error) {
+    return sendSosError(res, error, 'history_failed', 'Failed to load SOS history.');
   }
 }
 
@@ -43,8 +43,8 @@ async function confirm(req, res) {
   try {
     const data = await sosService.confirmSos(req.user.userId, req.body.event_id);
     return ok(res, data, 'ok');
-  } catch (err) {
-    return mapError(res, err);
+  } catch (error) {
+    return sendSosError(res, error, 'confirm_failed', 'Failed to confirm SOS event.');
   }
 }
 
@@ -52,8 +52,8 @@ async function resolve(req, res) {
   try {
     const data = await sosService.resolveSos(req.user.userId, req.body.event_id);
     return ok(res, data, 'ok');
-  } catch (err) {
-    return mapError(res, err);
+  } catch (error) {
+    return sendSosError(res, error, 'resolve_failed', 'Failed to resolve SOS event.');
   }
 }
 

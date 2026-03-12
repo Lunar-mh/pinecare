@@ -1,75 +1,67 @@
-'use strict';
+﻿'use strict';
 
 const { fail } = require('../utils/response');
+const { parseEnum, parsePagination, parsePositiveInt } = require('../utils/requestValidation');
 
 const TASK_STATUS_ENUM = ['pending', 'assigned', 'processing', 'completed', 'cancelled'];
 const TRAINING_STATUS_ENUM = ['pending', 'completed', 'expired'];
 const MAX_PAGE_SIZE = 100;
 
-function getPageSize(source = {}) {
-  return source.pageSize !== undefined ? source.pageSize : source.page_size;
-}
-
-function validatePagination(source = {}) {
-  if (source.page !== undefined) {
-    const page = Number(source.page);
-    if (!Number.isInteger(page) || page < 1) {
-      return { ok: false, message: 'page must be a positive integer.' };
-    }
-  }
-
-  const pageSize = getPageSize(source);
-  if (pageSize !== undefined) {
-    const parsed = Number(pageSize);
-    if (!Number.isInteger(parsed) || parsed < 1 || parsed > MAX_PAGE_SIZE) {
-      return { ok: false, message: `page_size/pageSize must be in 1-${MAX_PAGE_SIZE}.` };
-    }
-  }
-
-  return { ok: true };
-}
-
-function validateTaskId(taskId) {
-  const parsed = Number(taskId);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return null;
-  }
-  return parsed;
-}
-
 function validateTaskQuery(req, res, next) {
-  const pageResult = validatePagination(req.query || {});
-  if (!pageResult.ok) {
-    return fail(res, 400, pageResult.message, null, 400);
+  const paginationResult = parsePagination(req.query || {}, {
+    defaultPage: 1,
+    defaultPageSize: 20,
+    maxPageSize: MAX_PAGE_SIZE,
+  });
+  if (!paginationResult.ok) {
+    return fail(res, 400, paginationResult.message, null, 400);
   }
 
-  if (req.query.status !== undefined && !TASK_STATUS_ENUM.includes(req.query.status)) {
-    return fail(res, 400, 'status 枚举值非法', null, 400);
+  if (req.query.status !== undefined && String(req.query.status).trim() !== '') {
+    const statusResult = parseEnum(req.query.status, 'status', TASK_STATUS_ENUM);
+    if (!statusResult.ok) {
+      return fail(res, 400, statusResult.message, null, 400);
+    }
+    req.query.status = statusResult.data;
   }
 
+  req.query.page = paginationResult.data.page;
+  req.query.pageSize = paginationResult.data.pageSize;
+  req.query.page_size = paginationResult.data.pageSize;
   return next();
 }
 
 function validateTaskAction(req, res, next) {
-  const taskId = validateTaskId(req.params.taskId);
-  if (!taskId) {
-    return fail(res, 400, 'taskId must be a positive integer.', null, 400);
+  const taskIdResult = parsePositiveInt(req.params && req.params.taskId, 'taskId');
+  if (!taskIdResult.ok) {
+    return fail(res, 400, taskIdResult.message, null, 400);
   }
 
-  req.params.taskId = String(taskId);
+  req.params.taskId = String(taskIdResult.data);
   return next();
 }
 
 function validateTrainingQuery(req, res, next) {
-  const pageResult = validatePagination(req.query || {});
-  if (!pageResult.ok) {
-    return fail(res, 400, pageResult.message, null, 400);
+  const paginationResult = parsePagination(req.query || {}, {
+    defaultPage: 1,
+    defaultPageSize: 20,
+    maxPageSize: MAX_PAGE_SIZE,
+  });
+  if (!paginationResult.ok) {
+    return fail(res, 400, paginationResult.message, null, 400);
   }
 
-  if (req.query.status !== undefined && !TRAINING_STATUS_ENUM.includes(req.query.status)) {
-    return fail(res, 400, 'Invalid training status.', null, 400);
+  if (req.query.status !== undefined && String(req.query.status).trim() !== '') {
+    const statusResult = parseEnum(req.query.status, 'status', TRAINING_STATUS_ENUM);
+    if (!statusResult.ok) {
+      return fail(res, 400, statusResult.message, null, 400);
+    }
+    req.query.status = statusResult.data;
   }
 
+  req.query.page = paginationResult.data.page;
+  req.query.pageSize = paginationResult.data.pageSize;
+  req.query.page_size = paginationResult.data.pageSize;
   return next();
 }
 

@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const request = require('supertest');
 const express = require('express');
@@ -24,12 +24,12 @@ function createApp() {
   return app;
 }
 
-describe('用药历史日历接口集成测试', () => {
+describe('medication history calendar api', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('GET /medication/history/calendar 返回月历统计', async () => {
+  it('GET /medication/history/calendar returns month calendar data', async () => {
     medicationHistoryService.getCalendar.mockResolvedValue({
       month: '2026-02',
       days: [
@@ -43,17 +43,17 @@ describe('用药历史日历接口集成测试', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(res.body.message).toBe('获取用药历史日历成功');
+    expect(res.body.message).toBe('Medication history loaded.');
     expect(res.body.data.days.length).toBe(2);
   });
 
-  it('GET /medication/history/calendar month 非法返回 400', async () => {
+  it('GET /medication/history/calendar returns 400 for invalid month', async () => {
     const app = createApp();
     const res = await request(app).get('/medication/history/calendar?month=2026/02');
 
     expect(res.status).toBe(400);
     expect(res.body.code).toBe(400);
-    expect(res.body.message).toBe('month 格式必须为 YYYY-MM');
+    expect(res.body.message).toBe('month must use YYYY-MM format.');
     expect(medicationHistoryService.getCalendar).not.toHaveBeenCalled();
   });
 });
