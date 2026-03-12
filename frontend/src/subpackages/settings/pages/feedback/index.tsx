@@ -26,7 +26,7 @@ export default function FeedbackPage() {
 
   return (
     <PageShell roleTone="family" className="settings-detail-page">
-      <HeroHeader roleTone="family" eyebrow="帮助反馈" title="问题反馈和帮助入口放一页" subtitle="把留言动作做轻，把复杂 FAQ 留到下一阶段结构化接入。" />
+      <HeroHeader roleTone="family" eyebrow="帮助反馈" title="问题反馈和帮助入口放一页" subtitle="把留言和人工支持入口放在同一页，先保证问题反馈能直接闭环。" />
       <ScrollView className="detail-shell-scroll" scrollY>
         <SectionBlock title="反馈内容" description="告诉我们哪里不顺手、哪里需要补强。">
           <DataPanel tone="primary"><Text className="detail-label">输入建议</Text><Textarea className="detail-textarea" value={content} maxlength={500} placeholder="例如：家属首页想更快看到告警，或者某个页面信息太分散。" onInput={e => setContent(e.detail.value)} /><Text className="detail-meta">{content.length}/500</Text></DataPanel>
@@ -40,3 +40,4 @@ export default function FeedbackPage() {
     </PageShell>
   )
 }
+

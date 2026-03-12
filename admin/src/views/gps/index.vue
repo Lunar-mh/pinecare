@@ -1,12 +1,14 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
-import { getAdminGpsCurrent, getAdminGpsTrail } from '@/services'
-import type { AdminGpsCurrentItem, GpsTrailItem } from '@/services'
+import { bootstrapDemoScenario, getAdminGpsCurrent, getAdminGpsTrail, getSystemEventReplay } from '@/services'
+import type { AdminGpsCurrentItem, GpsTrailItem, SystemEventReplay } from '@/services'
 
 const loading = ref(false)
 const trailLoading = ref(false)
+const bootstrapLoading = ref(false)
+const replayLoading = ref(false)
 const search = ref('')
 const page = ref(1)
 const pageSize = ref(10)
@@ -14,6 +16,7 @@ const total = ref(0)
 const currentList = ref<AdminGpsCurrentItem[]>([])
 const selectedUserId = ref<number | null>(null)
 const trail = ref<GpsTrailItem[]>([])
+const replay = ref<SystemEventReplay | null>(null)
 const range = ref<[string, string]>(['', ''])
 
 const selectedUser = computed(() => currentList.value.find(item => item.userId === selectedUserId.value) || null)
@@ -50,7 +53,7 @@ async function fetchCurrentList() {
       selectedUserId.value = currentList.value[0]?.userId ?? null
     }
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : '定位列表加载失败')
+    ElMessage.error(err instanceof Error ? err.message : 'GPS 数据加载失败')
     currentList.value = []
     total.value = 0
   } finally {
@@ -61,6 +64,7 @@ async function fetchCurrentList() {
 async function fetchTrail() {
   if (!selectedUserId.value || !range.value[0] || !range.value[1]) {
     trail.value = []
+    replay.value = null
     return
   }
 
@@ -74,10 +78,31 @@ async function fetchTrail() {
     })
     trail.value = data.list || []
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : '轨迹数据加载失败')
+    ElMessage.error(err instanceof Error ? err.message : '轨迹加载失败')
     trail.value = []
   } finally {
     trailLoading.value = false
+  }
+}
+
+async function fetchReplay() {
+  if (!selectedUserId.value || !range.value[0] || !range.value[1]) {
+    replay.value = null
+    return
+  }
+
+  replayLoading.value = true
+  try {
+    replay.value = await getSystemEventReplay({
+      userId: selectedUserId.value,
+      startDate: range.value[0],
+      endDate: range.value[1],
+    })
+  } catch (err: unknown) {
+    ElMessage.error(err instanceof Error ? err.message : '事件复盘加载失败')
+    replay.value = null
+  } finally {
+    replayLoading.value = false
   }
 }
 
@@ -85,19 +110,34 @@ function handleSelectUser(row: AdminGpsCurrentItem) {
   selectedUserId.value = row.userId
 }
 
+async function handleBootstrap() {
+  bootstrapLoading.value = true
+  try {
+    const result = await bootstrapDemoScenario('gps-fence-fall')
+    ElMessage.success(`GPS/Fall 剧本已准备：${result.title}`)
+    await fetchReplay()
+  } catch (err: unknown) {
+    ElMessage.error(err instanceof Error ? err.message : 'GPS 剧本准备失败')
+  } finally {
+    bootstrapLoading.value = false
+  }
+}
+
 watch(search, () => {
   page.value = 1
   fetchCurrentList()
 })
 
-watch(selectedUserId, () => {
-  fetchTrail()
+watch(selectedUserId, async () => {
+  await fetchTrail()
+  await fetchReplay()
 })
 
 onMounted(async () => {
   initRange()
   await fetchCurrentList()
   await fetchTrail()
+  await fetchReplay()
 })
 </script>
 
@@ -105,39 +145,42 @@ onMounted(async () => {
   <div>
     <div class="wb-page-header">
       <div>
-        <span class="wb-page-title">定位守护</span>
-        <span class="wb-page-subtitle">当前定位、定位精度和历史轨迹集中在一页，方便值班人员快速判断是否需要联系家属。</span>
+        <span class="wb-page-title">GPS 追踪</span>
+        <span class="wb-page-subtitle">当前位置、轨迹和事件复盘放在同一页，答辩时可以直接按用户回放。</span>
       </div>
-      <el-button :icon="Refresh" @click="fetchCurrentList">刷新定位</el-button>
+      <div style="display:flex; gap:10px">
+        <el-button type="primary" :loading="bootstrapLoading" @click="handleBootstrap">准备 GPS 剧本</el-button>
+        <el-button :icon="Refresh" @click="fetchCurrentList">刷新位置</el-button>
+      </div>
     </div>
 
     <div class="wb-metric-grid">
       <div class="wb-metric-card">
-        <span class="wb-card-label">在线对象</span>
+        <span class="wb-card-label">位置总数</span>
         <div class="wb-card-value">{{ total }}</div>
-        <span class="wb-card-hint">具备当前位置上报的老人数量</span>
+        <span class="wb-card-hint">当前可见的最新位置记录</span>
       </div>
       <div class="wb-metric-card">
         <span class="wb-card-label">高精度定位</span>
         <div class="wb-card-value">{{ preciseCount }}</div>
-        <span class="wb-card-hint">精度 50 米以内，更适合异常判断</span>
+        <span class="wb-card-hint">精度 50 米以内的定位数</span>
       </div>
       <div class="wb-metric-card">
-        <span class="wb-card-label">已选对象</span>
+        <span class="wb-card-label">当前选中</span>
         <div class="wb-card-value">{{ selectedUser ? selectedUser.nickname : '-' }}</div>
-        <span class="wb-card-hint">点击列表可切换轨迹对象</span>
+        <span class="wb-card-hint">切换用户后会自动刷新轨迹和复盘</span>
       </div>
       <div class="wb-metric-card">
         <span class="wb-card-label">轨迹点数</span>
         <div class="wb-card-value">{{ trailPoints }}</div>
-        <span class="wb-card-hint">当前时间范围内的轨迹采样点</span>
+        <span class="wb-card-hint">当前时间窗口内的轨迹条目</span>
       </div>
     </div>
 
     <div class="wb-filter-card" style="margin-bottom: 20px">
       <el-row :gutter="12" align="middle">
         <el-col :span="8">
-          <el-input v-model="search" :prefix-icon="Search" placeholder="搜索老人、手机号或用户 ID" clearable />
+          <el-input v-model="search" :prefix-icon="Search" placeholder="搜索昵称、手机号或用户 ID" clearable />
         </el-col>
         <el-col :span="10">
           <el-date-picker
@@ -150,8 +193,8 @@ onMounted(async () => {
           />
         </el-col>
         <el-col :span="6" style="display: flex; justify-content: flex-end; gap: 10px">
-          <el-button @click="fetchTrail">查询轨迹</el-button>
-          <span class="wb-chip">优先关注长时间未更新或轨迹异常偏移</span>
+          <el-button @click="fetchTrail">刷新轨迹</el-button>
+          <el-button @click="fetchReplay">生成复盘</el-button>
         </el-col>
       </el-row>
     </div>
@@ -160,8 +203,8 @@ onMounted(async () => {
       <div class="wb-panel">
         <div class="wb-page-header" style="margin-bottom: 14px">
           <div>
-            <span class="wb-page-title" style="font-size: 22px">当前定位列表</span>
-            <span class="wb-page-subtitle">点击任意对象即可在右侧查看轨迹摘要。</span>
+            <span class="wb-page-title" style="font-size: 22px">当前位置列表</span>
+            <span class="wb-page-subtitle">点击任一用户即可切换右侧轨迹和事件复盘。</span>
           </div>
         </div>
         <el-table :data="currentList" stripe v-loading="loading" @row-click="handleSelectUser">
@@ -171,7 +214,7 @@ onMounted(async () => {
             </div>
           </template>
           <el-table-column prop="userId" label="用户 ID" width="100" />
-          <el-table-column label="关注对象" min-width="160">
+          <el-table-column label="用户" min-width="160">
             <template #default="{ row }">
               <div>{{ row.nickname }}</div>
               <div style="font-size: 12px; color: var(--wb-text-soft); margin-top: 4px">{{ row.phone }}</div>
@@ -198,35 +241,43 @@ onMounted(async () => {
       <div class="wb-panel">
         <div class="wb-page-header" style="margin-bottom: 14px">
           <div>
-            <span class="wb-page-title" style="font-size: 22px">轨迹摘要</span>
-            <span class="wb-page-subtitle">用于快速判断老人是否偏离熟悉路径或出现长时间停留。</span>
+            <span class="wb-page-title" style="font-size: 22px">轨迹与复盘摘要</span>
+            <span class="wb-page-subtitle">位置轨迹和统一事件复盘在同一处展示。</span>
           </div>
         </div>
         <div class="wb-list" style="margin-bottom: 16px">
           <div class="wb-list-item">
             <div>
-              <span class="wb-list-title">当前对象</span>
-              <span class="wb-list-desc">{{ selectedUser ? `${selectedUser.nickname} / ${selectedUser.phone}` : '请先从左侧选择对象' }}</span>
+              <span class="wb-list-title">当前用户</span>
+              <span class="wb-list-desc">{{ selectedUser ? `${selectedUser.nickname} / ${selectedUser.phone}` : '请先选择一位用户' }}</span>
             </div>
             <el-tag v-if="selectedUser" type="success">{{ selectedUser.locationType }}</el-tag>
           </div>
           <div class="wb-list-item">
             <div>
-              <span class="wb-list-title">当前位置</span>
+              <span class="wb-list-title">当前坐标</span>
               <span class="wb-list-desc">{{ selectedUser ? `${selectedUser.latitude}, ${selectedUser.longitude}` : '-' }}</span>
             </div>
           </div>
           <div class="wb-list-item">
             <div>
-              <span class="wb-list-title">轨迹时间窗</span>
-              <span class="wb-list-desc">{{ range[0] }} 至 {{ range[1] }}</span>
+              <span class="wb-list-title">事件复盘</span>
+              <span class="wb-list-desc">{{ replayLoading ? '复盘生成中...' : replay ? `告警 ${replay.summary.activeIncidents} · 失败投递 ${replay.summary.deliveryFailures}` : '当前没有复盘摘要' }}</span>
             </div>
           </div>
         </div>
-        <el-table :data="trail" stripe v-loading="trailLoading" max-height="480">
+        <div class="wb-list" v-if="replay">
+          <div class="wb-list-item" v-for="item in replay.recommendations" :key="item">
+            <div>
+              <span class="wb-list-title">复盘建议</span>
+              <span class="wb-list-desc">{{ item }}</span>
+            </div>
+          </div>
+        </div>
+        <el-table :data="trail" stripe v-loading="trailLoading" max-height="320" style="margin-top: 16px">
           <template #empty>
             <div style="padding: 28px; text-align: center; color: var(--wb-text-soft)">
-              {{ trailLoading ? '加载中...' : '当前时间范围暂无轨迹点' }}
+              {{ trailLoading ? '加载中...' : '当前时间范围没有轨迹数据' }}
             </div>
           </template>
           <el-table-column prop="createdAt" label="时间" width="180" />

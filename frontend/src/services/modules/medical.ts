@@ -1,60 +1,74 @@
-/**
- * medical.ts - 医疗服务相关API
+﻿/**
+ * medical.ts - 医疗资源相关 API
  */
 
-import { get, post } from '../request';
-import type { Doctor, Appointment, MedicalReport, PaginatedResult } from '../types';
+import { get, post } from '../request'
+import type { Doctor, Appointment, MedicalReport, PaginatedResult } from '../types'
 
-// 搜索医生
+export interface MedicalConsultation {
+  id: number
+  userId: number
+  doctorId: number
+  department: string
+  consultStatus: 'pending' | 'active' | 'completed' | 'cancelled'
+  sessionUrl: string | null
+  thirdPartySessionId: string | null
+  startedAt: string | null
+  endedAt: string | null
+}
+
 export const searchDoctors = (params?: {
-  keyword?: string;
-  department?: string;
-  hospital?: string;
-  isOnline?: boolean;
-  page?: number;
-  pageSize?: number;
+  keyword?: string
+  department?: string
+  hospital?: string
+  isOnline?: boolean
+  page?: number
+  pageSize?: number
 }) =>
-  get<PaginatedResult<Doctor>>('/medical/doctors', params);
+  get<PaginatedResult<Doctor>>('/medical/doctors', params)
 
-// 获取医生详情
 export const getDoctorDetail = (id: string) =>
-  get<Doctor>(`/medical/doctors/${id}`);
+  get<Doctor>(`/medical/doctors/${id}`)
 
-// 创建预约
 export const createAppointment = (data: {
-  doctorId: string;
-  scheduledAt: string;
-  type: 'online' | 'offline';
-  complaint?: string;
+  doctorId: string
+  scheduledAt: string
+  type: 'online' | 'offline'
+  complaint?: string
 }) =>
-  post<Appointment>('/medical/appointments', data);
+  post<Appointment>('/medical/appointments', data)
 
-// 获取我的预约列表
 export const getMyAppointments = (params?: {
-  status?: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  page?: number;
-  pageSize?: number;
+  status?: 'pending' | 'confirmed' | 'completed' | 'cancelled'
+  page?: number
+  pageSize?: number
 }) =>
-  get<PaginatedResult<Appointment>>('/medical/appointments', params);
+  get<PaginatedResult<Appointment>>('/medical/appointments', params)
 
-// 取消预约
 export const cancelAppointment = (id: string) =>
-  post<void>(`/medical/appointments/${id}/cancel`, {});
+  post<void>(`/medical/appointments/${id}/cancel`, {})
 
-// 获取检查报告列表
 export const getMedicalReports = (params?: {
-  type?: 'blood' | 'imaging' | 'ecg' | 'other';
-  page?: number;
-  pageSize?: number;
+  type?: 'blood' | 'imaging' | 'ecg' | 'other'
+  page?: number
+  pageSize?: number
 }) =>
-  get<PaginatedResult<MedicalReport>>('/medical/reports', params);
+  get<PaginatedResult<MedicalReport>>('/medical/reports', params)
 
-// 上传检查报告
 export const uploadMedicalReport = (data: {
-  title: string;
-  hospital: string;
-  reportDate: string;
-  type: 'blood' | 'imaging' | 'ecg' | 'other';
-  fileUrl: string;
+  title: string
+  hospital: string
+  reportDate: string
+  type: 'blood' | 'imaging' | 'ecg' | 'other'
+  fileUrl: string
 }) =>
-  post<MedicalReport>('/medical/reports', data);
+  post<MedicalReport>('/medical/reports', data)
+
+export const startMedicalConsultation = (data: {
+  doctorId: string
+  department: string
+}) =>
+  post<{ consultation: MedicalConsultation; requestedMode?: string; effectiveMode?: string; liveConfigured?: boolean; fallbackAllowed?: boolean; lastError?: string | null; lastSuccessAt?: string | null }>('/medical/consult/start', data)
+
+export const getMedicalConsultations = (limit = 10) =>
+  get<{ list: MedicalConsultation[]; requestedMode?: string; effectiveMode?: string; liveConfigured?: boolean; fallbackAllowed?: boolean; lastError?: string | null; lastSuccessAt?: string | null }>('/medical/consult', { limit })

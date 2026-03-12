@@ -1,6 +1,6 @@
 ﻿import { useCallback, useEffect, useState } from 'react'
 import Taro, { usePullDownRefresh } from '@tarojs/taro'
-import { View, Text, ScrollView, Switch } from '@tarojs/components'
+import { View, Text, ScrollView, Input, Switch } from '@tarojs/components'
 import { Location, Plus, User } from '@nutui/icons-react-taro'
 import {
   DataPanel,
@@ -11,7 +11,7 @@ import {
   StatusCard,
   StickyPrimaryAction,
 } from '@/components/shell'
-import { getCurrentLocation, getFamilyLocations, getSafeZones, toggleSafeZone, updateLocation } from '@/services/modules/location'
+import { createSafeZone, getCurrentLocation, getFamilyLocations, getSafeZones, toggleSafeZone, updateLocation } from '@/services/modules/location'
 import type { SafeZone } from '@/services/types'
 import type { FamilyMemberLocation } from '@/services/modules/location'
 import './index.scss'
@@ -26,6 +26,10 @@ export default function LocationIndex() {
   const [safeZones, setSafeZones] = useState<SafeZone[]>([])
   const [loading, setLoading] = useState(true)
   const [locating, setLocating] = useState(false)
+  const [creatingZone, setCreatingZone] = useState(false)
+  const [showCreateZone, setShowCreateZone] = useState(false)
+  const [zoneName, setZoneName] = useState('')
+  const [zoneRadius, setZoneRadius] = useState('300')
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -73,6 +77,41 @@ export default function LocationIndex() {
     } catch (toggleError) {
       console.error('toggle safe zone failed', toggleError)
       Taro.showToast({ title: '切换失败，请稍后再试', icon: 'none' })
+    }
+  }
+
+  const handleCreateZone = async () => {
+    const name = zoneName.trim()
+    const radius = Number(zoneRadius)
+    if (!name) {
+      Taro.showToast({ title: '请先填写安全区名称', icon: 'none' })
+      return
+    }
+    if (!Number.isFinite(radius) || radius < 100) {
+      Taro.showToast({ title: '半径至少填写 100 米', icon: 'none' })
+      return
+    }
+
+    setCreatingZone(true)
+    try {
+      const current = await Taro.getLocation({ type: 'gcj02' })
+      const created = await createSafeZone({
+        name,
+        latitude: current.latitude,
+        longitude: current.longitude,
+        radius,
+      })
+      setSafeZones(prev => [created, ...prev])
+      setZoneName('')
+      setZoneRadius('300')
+      setShowCreateZone(false)
+      setActiveTab('zones')
+      Taro.showToast({ title: '安全区已创建', icon: 'success' })
+    } catch (createError) {
+      console.error('create safe zone failed', createError)
+      Taro.showToast({ title: createError instanceof Error ? createError.message : '创建失败，请稍后再试', icon: 'none' })
+    } finally {
+      setCreatingZone(false)
     }
   }
 
@@ -134,7 +173,19 @@ export default function LocationIndex() {
         ) : null}
 
         {activeTab === 'zones' ? (
-          <SectionBlock title="安全区设置" description="把启用、停用和区域半径集中到同一屏。">
+          <SectionBlock title="安全区设置" description="把启用、停用、新增和区域半径集中到同一屏。">
+            {showCreateZone ? (
+              <DataPanel tone="primary">
+                <Text className="location-overview-page__title">新增安全区</Text>
+                <Text className="location-overview-page__meta">会使用当前手机定位作为安全区中心点。</Text>
+                <Input className="location-overview-page__input" value={zoneName} placeholder="例如：家里、社区活动中心" onInput={event => setZoneName(event.detail.value)} />
+                <Input className="location-overview-page__input" value={zoneRadius} type="number" placeholder="请输入半径（米）" onInput={event => setZoneRadius(event.detail.value)} />
+                <View className="location-overview-page__actions">
+                  <View className="location-overview-page__button location-overview-page__button--primary" onClick={handleCreateZone}><Text>{creatingZone ? '创建中...' : '使用当前位置创建'}</Text></View>
+                  <View className="location-overview-page__button" onClick={() => setShowCreateZone(false)}><Text>取消</Text></View>
+                </View>
+              </DataPanel>
+            ) : null}
             {safeZones.length === 0 ? (
               <EmptyState title="还没有安全区" description="建议至少设置一个常住地或社区范围，用于离开提醒。" icon={<Location size={28} />} />
             ) : (
@@ -158,8 +209,7 @@ export default function LocationIndex() {
         <View className="location-overview-page__bottom-space" />
       </ScrollView>
 
-      <StickyPrimaryAction tone="family" label="新增安全区" icon={<Plus size={22} />} onClick={() => Taro.showToast({ title: '下一阶段补充安全区创建表单', icon: 'none' })} />
+      <StickyPrimaryAction tone="family" label={showCreateZone ? '收起新增安全区' : '新增安全区'} icon={<Plus size={22} />} onClick={() => { setActiveTab('zones'); setShowCreateZone(prev => !prev) }} />
     </PageShell>
   )
 }
-

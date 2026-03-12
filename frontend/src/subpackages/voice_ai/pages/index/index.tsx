@@ -157,7 +157,7 @@ export default function VoiceAIIndex() {
           )}
         </SectionBlock>
 
-        <SectionBlock title="输入区" description="支持一句话直问，下一阶段可继续接入长按语音。">
+        <SectionBlock title="输入区" description="支持一句话直问，当前先把文字问答和语音助手上下文放在同一页。">
           <DataPanel tone="primary">
             <Input
               className="voice-overview-page__input"
@@ -180,3 +180,4 @@ export default function VoiceAIIndex() {
     </PageShell>
   )
 }
+

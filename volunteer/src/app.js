@@ -1,150 +1,553 @@
-const tabs = [
-  { key: 'home', label: '首页' },
-  { key: 'tasks', label: '任务' },
-  { key: 'profile', label: '我的' },
-]
-
-const homeMetrics = [
-  { label: '今日待办', value: '6', hint: '待接单 2，进行中 3，紧急协助 1' },
-  { label: '今日工时', value: '3.5h', hint: '已签到 2 次，待签退 1 次' },
-  { label: '紧急协助', value: '1', hint: '来自社区管理端派发的 SOS 协助任务' },
-  { label: '培训通知', value: '2', hint: '本周需要完成的培训和签到提醒' },
-]
-
-const taskColumns = {
-  pending: [
-    { title: '助餐服务', meta: '09:30 - 社区 A 栋 2 单元', badge: '待接单', tone: 'warning' },
-    { title: '陪诊协助', meta: '11:00 - 人民医院门诊楼', badge: '待接单', tone: 'warning' },
-  ],
-  active: [
-    { title: '上门探访', meta: '进行中 · 预计 14:00 签退', badge: '进行中', tone: 'success' },
-    { title: '药品代取', meta: '进行中 · 已完成取药', badge: '进行中', tone: 'success' },
-  ],
-  review: [
-    { title: '家务协助', meta: '待服务对象确认工时', badge: '待确认', tone: 'warning' },
-  ],
-  done: [
-    { title: '日常探访', meta: '昨天 16:30 已完成', badge: '已完成', tone: 'success' },
-  ],
+﻿const STORAGE_KEYS = {
+  apiBase: 'volunteer_api_base',
+  token: 'volunteer_token',
+  userInfo: 'volunteer_user_info',
 }
 
-const profileCards = [
-  { title: '本月工时', desc: '累计服务 28 小时，已确认 23 小时。', tag: '工时' },
-  { title: '服务等级', desc: '当前为四星志愿者，差 2 分进入五星。', tag: '等级' },
-  { title: '排班消息', desc: '本周还剩 3 个排班点位待确认。', tag: '排班' },
-  { title: '培训提醒', desc: '周四需要完成急救培训签到。', tag: '培训' },
-]
+const DEFAULT_API_BASE = 'http://localhost:3000/api/v1'
+const TASK_FILTERS = ['all', 'pending', 'assigned', 'processing', 'completed']
 
-let activeTab = 'home'
+const state = {
+  apiBase: localStorage.getItem(STORAGE_KEYS.apiBase) || DEFAULT_API_BASE,
+  token: localStorage.getItem(STORAGE_KEYS.token) || '',
+  userInfo: readJson(STORAGE_KEYS.userInfo),
+  profile: null,
+  tasks: [],
+  training: [],
+  loading: false,
+  error: '',
+  activeTab: 'home',
+  taskFilter: 'all',
+  taskActionId: null,
+  login: {
+    phone: '',
+    code: '',
+    sendingSms: false,
+    loggingIn: false,
+    countdown: 0,
+  },
+}
+
+let countdownTimer = null
 const app = document.getElementById('app')
 
-function badgeClass(tone) {
-  return `panel__badge panel__badge--${tone}`
+function readJson(key) {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : null
+  } catch (_error) {
+    return null
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function formatDateTime(value) {
+  if (!value) return '暂无时间'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return escapeHtml(value)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function formatTaskStatus(status) {
+  const map = {
+    pending: '待接单',
+    assigned: '已接单',
+    processing: '服务中',
+    completed: '已完成',
+  }
+  return map[status] || status
+}
+
+function formatTrainingStatus(status) {
+  const map = {
+    completed: '已通过',
+    pending: '待完成',
+    expired: '已过期',
+  }
+  return map[status] || status || '未知状态'
+}
+
+function badgeClass(status) {
+  if (status === 'pending') return 'panel__badge panel__badge--warning'
+  if (status === 'assigned' || status === 'processing') return 'panel__badge panel__badge--primary'
+  if (status === 'completed') return 'panel__badge panel__badge--success'
+  return 'panel__badge'
+}
+
+function buildUrl(path, params) {
+  const url = new URL(`${state.apiBase}${path}`)
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      url.searchParams.set(key, String(value))
+    }
+  })
+  return url.toString()
+}
+
+async function request(path, options = {}) {
+  const { method = 'GET', body, auth = true, query } = options
+  const headers = { 'Content-Type': 'application/json' }
+  if (auth && state.token) {
+    headers.Authorization = `Bearer ${state.token}`
+  }
+
+  const response = await fetch(buildUrl(path, query), {
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+
+  const payload = await response.json().catch(() => null)
+  if (response.status === 401) {
+    logout(false)
+    throw new Error((payload && payload.message) || '登录已失效，请重新登录。')
+  }
+
+  if (!response.ok) {
+    throw new Error((payload && payload.message) || `请求失败（${response.status}）`)
+  }
+
+  if (!payload || payload.code !== 0) {
+    throw new Error((payload && payload.message) || '请求返回异常。')
+  }
+
+  return payload.data
+}
+
+function saveApiBase() {
+  localStorage.setItem(STORAGE_KEYS.apiBase, state.apiBase)
+}
+
+function saveSession(token, userInfo) {
+  state.token = token
+  state.userInfo = userInfo || null
+  localStorage.setItem(STORAGE_KEYS.token, token)
+  localStorage.setItem(STORAGE_KEYS.userInfo, JSON.stringify(userInfo || null))
+}
+
+function logout(renderNow = true) {
+  state.token = ''
+  state.userInfo = null
+  state.profile = null
+  state.tasks = []
+  state.training = []
+  state.activeTab = 'home'
+  state.taskFilter = 'all'
+  localStorage.removeItem(STORAGE_KEYS.token)
+  localStorage.removeItem(STORAGE_KEYS.userInfo)
+  if (renderNow) render()
+}
+
+function setError(message) {
+  state.error = message || ''
+  render()
+}
+
+function clearError() {
+  if (state.error) {
+    state.error = ''
+    render()
+  }
+}
+
+function getTaskSummary() {
+  return state.profile && state.profile.task_summary
+    ? state.profile.task_summary
+    : { available_count: 0, assigned_count: 0, processing_count: 0, completed_count: 0 }
+}
+
+async function loadVolunteerData() {
+  if (!state.token) {
+    render()
+    return
+  }
+  state.loading = true
+  render()
+  try {
+    const [profile, tasksResult, trainingResult] = await Promise.all([
+      request('/volunteer/profile'),
+      request('/volunteer/tasks', { query: { page: 1, pageSize: 100 } }),
+      request('/volunteer/training', { query: { page: 1, pageSize: 20 } }),
+    ])
+    state.profile = profile
+    state.tasks = tasksResult.list || []
+    state.training = trainingResult.list || []
+    state.error = ''
+  } catch (error) {
+    state.error = error instanceof Error ? error.message : '加载志愿者数据失败。'
+  } finally {
+    state.loading = false
+    render()
+  }
+}
+
+function startCountdown(seconds) {
+  if (countdownTimer) clearInterval(countdownTimer)
+  state.login.countdown = seconds
+  countdownTimer = setInterval(() => {
+    state.login.countdown -= 1
+    if (state.login.countdown <= 0) {
+      clearInterval(countdownTimer)
+      countdownTimer = null
+      state.login.countdown = 0
+    }
+    render()
+  }, 1000)
+}
+
+async function sendSmsCode() {
+  if (state.login.sendingSms || state.login.countdown > 0) return
+  const phone = state.login.phone.trim()
+  if (!/^1[3-9]\d{9}$/.test(phone)) {
+    setError('请输入正确的手机号后再发送验证码。')
+    return
+  }
+
+  state.login.sendingSms = true
+  render()
+  try {
+    await request('/auth/sms-code', {
+      method: 'POST',
+      auth: false,
+      body: { phone, purpose: 'login' },
+    })
+    state.error = ''
+    startCountdown(60)
+  } catch (error) {
+    setError(error instanceof Error ? error.message : '验证码发送失败。')
+  } finally {
+    state.login.sendingSms = false
+    render()
+  }
+}
+
+async function loginVolunteer() {
+  if (state.login.loggingIn) return
+  const phone = state.login.phone.trim()
+  const code = state.login.code.trim()
+  if (!/^1[3-9]\d{9}$/.test(phone)) {
+    setError('请输入正确的手机号。')
+    return
+  }
+  if (!/^\d{6}$/.test(code)) {
+    setError('请输入 6 位验证码。')
+    return
+  }
+
+  state.login.loggingIn = true
+  render()
+  try {
+    const result = await request('/auth/phone', {
+      method: 'POST',
+      auth: false,
+      body: { phone, code },
+    })
+    saveSession(result.token, result.userInfo)
+    state.login.code = ''
+    state.error = ''
+    await loadVolunteerData()
+  } catch (error) {
+    setError(error instanceof Error ? error.message : '登录失败。')
+  } finally {
+    state.login.loggingIn = false
+    render()
+  }
+}
+
+async function runTaskAction(taskId, action) {
+  if (state.taskActionId) return
+  state.taskActionId = `${taskId}:${action}`
+  render()
+  try {
+    const path = {
+      accept: `/volunteer/tasks/${taskId}/accept`,
+      checkIn: `/volunteer/tasks/${taskId}/check-in`,
+      checkOut: `/volunteer/tasks/${taskId}/check-out`,
+      complete: `/volunteer/tasks/${taskId}/complete`,
+    }[action]
+    await request(path, { method: 'POST', body: {} })
+    state.error = ''
+    await loadVolunteerData()
+  } catch (error) {
+    setError(error instanceof Error ? error.message : '任务操作失败。')
+  } finally {
+    state.taskActionId = null
+    render()
+  }
+}
+
+function renderLogin() {
+  return `
+    <main class="app-shell app-shell--auth">
+      <section class="hero hero--auth">
+        <span class="hero__eyebrow">志愿者工作台</span>
+        <h1 class="hero__title">用同一套后端闭环承接接单、签到、签退和完成服务</h1>
+        <p class="hero__desc">登录后会自动恢复志愿者身份、任务列表、培训记录和当前工作状态。</p>
+      </section>
+
+      <section class="panel form-card">
+        <div class="section__title">登录与环境</div>
+        <div class="section__desc">默认连接本地联调后端；需要切换环境时可直接修改 API 地址。</div>
+
+        <label class="form-field">
+          <span class="form-field__label">API 地址</span>
+          <input class="form-field__input" data-field="apiBase" value="${escapeHtml(state.apiBase)}" placeholder="http://localhost:3000/api/v1" />
+        </label>
+        <label class="form-field">
+          <span class="form-field__label">手机号</span>
+          <input class="form-field__input" data-field="phone" value="${escapeHtml(state.login.phone)}" placeholder="请输入志愿者手机号" inputmode="numeric" />
+        </label>
+        <label class="form-field">
+          <span class="form-field__label">验证码</span>
+          <div class="form-field__row">
+            <input class="form-field__input" data-field="code" value="${escapeHtml(state.login.code)}" placeholder="请输入 6 位验证码" inputmode="numeric" />
+            <button class="ghost-button" data-action="send-code">${state.login.countdown > 0 ? `${state.login.countdown}s` : state.login.sendingSms ? '发送中...' : '发送验证码'}</button>
+          </div>
+        </label>
+
+        <div class="notice notice--info">开发环境可继续使用固定验证码 000000。</div>
+        <button class="primary-button primary-button--full" data-action="login">${state.login.loggingIn ? '登录中...' : '进入志愿者端'}</button>
+      </section>
+    </main>
+  `
+}
+
+function renderSummaryCards() {
+  const summary = getTaskSummary()
+  const trainingPending = state.training.filter((item) => item.training_status !== 'completed').length
+  return `
+    <section class="metrics">
+      <article class="metric"><div class="metric__label">待接单</div><div class="metric__value">${summary.available_count}</div><div class="metric__hint">本社区当前可领取任务</div></article>
+      <article class="metric"><div class="metric__label">已接单</div><div class="metric__value">${summary.assigned_count}</div><div class="metric__hint">等待签到或准备出发</div></article>
+      <article class="metric"><div class="metric__label">服务中</div><div class="metric__value">${summary.processing_count}</div><div class="metric__hint">正在执行中的照护任务</div></article>
+      <article class="metric"><div class="metric__label">培训待跟进</div><div class="metric__value">${trainingPending}</div><div class="metric__hint">建议优先补齐的培训记录</div></article>
+    </section>
+  `
+}
+
+function buildTaskActions(task) {
+  const buttons = []
+  if (task.status === 'pending') {
+    buttons.push({ key: 'accept', label: '接单', tone: 'primary' })
+  }
+  if (task.status === 'assigned') {
+    buttons.push({ key: 'checkIn', label: '签到', tone: 'primary' })
+    buttons.push({ key: 'complete', label: '直接完成', tone: 'success' })
+  }
+  if (task.status === 'processing') {
+    buttons.push({ key: 'checkOut', label: '签退', tone: 'warning' })
+    buttons.push({ key: 'complete', label: '完成任务', tone: 'success' })
+  }
+  return buttons
+    .map((button) => {
+      const active = state.taskActionId === `${task.id}:${button.key}`
+      return `<button class="action-button action-button--${button.tone}" data-action="task" data-task-id="${task.id}" data-task-op="${button.key}">${active ? '处理中...' : button.label}</button>`
+    })
+    .join('')
+}
+
+function renderTaskCard(task) {
+  return `
+    <article class="panel task-card">
+      <div class="task-card__header">
+        <div>
+          <div class="panel__title">${escapeHtml(task.service_type)} · ${escapeHtml(task.elder_name || '待分配老人')}</div>
+          <div class="panel__meta">工单 ${escapeHtml(task.order_no)} · 手机 ${escapeHtml(task.elder_phone || '未填写')}</div>
+        </div>
+        <span class="${badgeClass(task.status)}">${formatTaskStatus(task.status)}</span>
+      </div>
+      <div class="task-card__meta-grid">
+        <div><span>计划时间</span><strong>${formatDateTime(task.scheduled_at || task.created_at)}</strong></div>
+        <div><span>完成时间</span><strong>${formatDateTime(task.completed_at || '')}</strong></div>
+      </div>
+      <div class="task-card__actions">${buildTaskActions(task) || '<span class="task-card__done">当前状态无需额外操作</span>'}</div>
+    </article>
+  `
+}
+
+function renderTaskSections() {
+  const list = state.tasks.filter((task) => state.taskFilter === 'all' || task.status === state.taskFilter)
+  if (list.length === 0) {
+    return '<div class="empty-state">当前筛选条件下没有任务，先到首页刷新看看最新派单。</div>'
+  }
+
+  return list.map(renderTaskCard).join('')
+}
+
+function renderTraining() {
+  if (!state.training.length) {
+    return '<div class="empty-state">当前没有培训记录，后续补充的课程会自动同步到这里。</div>'
+  }
+
+  return state.training.map((item) => `
+    <article class="panel training-card">
+      <div class="task-card__header">
+        <div>
+          <div class="panel__title">${escapeHtml(item.training_title)}</div>
+          <div class="panel__meta">培训时间 ${formatDateTime(item.training_at)}</div>
+        </div>
+        <span class="${badgeClass(item.training_status === 'completed' ? 'completed' : 'pending')}">${formatTrainingStatus(item.training_status)}</span>
+      </div>
+      <div class="task-card__meta-grid">
+        <div><span>有效期至</span><strong>${formatDateTime(item.expires_at)}</strong></div>
+        <div><span>证书链接</span><strong>${item.certificate_url ? '已登记' : '暂无'}</strong></div>
+      </div>
+    </article>
+  `).join('')
 }
 
 function renderHome() {
+  const nextTasks = state.tasks.filter((item) => item.status === 'assigned' || item.status === 'processing').slice(0, 3)
   return `
     <section class="hero">
-      <span class="hero__eyebrow">志愿者端</span>
-      <h1 class="hero__title">今天先看排班、待办和紧急协助</h1>
-      <p class="hero__desc">志愿者端只保留执行任务必须的能力，不再混入长辈全量健康、家庭空间或社区配置。</p>
+      <span class="hero__eyebrow">今日任务态势</span>
+      <h1 class="hero__title">${escapeHtml(state.profile?.name || '志愿者')}，把接单、签到和完成服务都收在一个入口里</h1>
+      <p class="hero__desc">所属社区：${escapeHtml(state.profile?.community_id || '--')} · 当前角色：${escapeHtml(state.profile?.role || 'volunteer')} · Build: ${escapeHtml(window.__BUILD_TIME__ || 'dev')}</p>
     </section>
-    <section class="metrics">
-      ${homeMetrics.map(item => `
-        <article class="metric">
-          <div class="metric__label">${item.label}</div>
-          <div class="metric__value">${item.value}</div>
-          <div class="metric__hint">${item.hint}</div>
-        </article>
-      `).join('')}
-    </section>
+    ${renderSummaryCards()}
     <section class="section">
-      <div class="section__title">今日焦点</div>
-      <div class="section__desc">首页只保留排班、签到、任务和紧急协助，帮助志愿者更快进入执行状态。</div>
-      <div class="card-grid">
-        <article class="card"><div class="card__title">今日排班</div><div class="card__desc">09:30 助餐，11:00 陪诊，14:30 上门探访。</div><div class="card__tag">排班</div></article>
-        <article class="card"><div class="card__title">签到签退</div><div class="card__desc">签到信息和服务开始/结束动作收敛在同一路径。</div><div class="card__tag">签到</div></article>
-        <article class="card"><div class="card__title">紧急协助</div><div class="card__desc">只有被派发给当前志愿者的 SOS 协助任务会出现在这里。</div><div class="card__tag">SOS</div></article>
-        <article class="card"><div class="card__title">工时结算</div><div class="card__desc">服务完成后进入待确认，再进入工时和时长币结算。</div><div class="card__tag">结算</div></article>
-      </div>
+      <div class="section__title">优先处理</div>
+      <div class="section__desc">先看已接单和服务中的任务，保证签到和处置链路完整。</div>
+      ${nextTasks.length ? nextTasks.map(renderTaskCard).join('') : '<div class="empty-state">当前没有需要立刻处理的任务，可以去任务页查看待接单列表。</div>'}
     </section>
   `
 }
 
 function renderTasks() {
   return `
-    <section class="hero">
-      <span class="hero__eyebrow">任务中心</span>
-      <h1 class="hero__title">按任务状态，而不是按功能堆入口</h1>
-      <p class="hero__desc">任务页固定分为待接单、进行中、待确认、已完成，帮助志愿者按执行阶段处理事务。</p>
+    <section class="hero hero--compact">
+      <span class="hero__eyebrow">任务执行闭环</span>
+      <h1 class="hero__title">任务、签到、签退、完成都在这一页</h1>
+      <p class="hero__desc">只展示与你相关的可接任务和已分配任务，避免出现越权数据。</p>
     </section>
     <section class="section">
-      <div class="section__title">待接单 / 进行中 / 待确认 / 已完成</div>
-      <div class="section__desc">这是独立志愿者端的核心信息架构，避免和社区后台审核视角混在一起。</div>
-      ${Object.entries(taskColumns).map(([key, items]) => `
-        <article class="panel">
-          <div class="section__title">${({ pending: '待接单', active: '进行中', review: '待确认', done: '已完成' })[key]}</div>
-          ${items.map(item => `
-            <div class="panel__row">
-              <div>
-                <div class="panel__title">${item.title}</div>
-                <div class="panel__meta">${item.meta}</div>
-              </div>
-              <span class="${badgeClass(item.tone)}">${item.badge}</span>
-            </div>
-          `).join('')}
-        </article>
-      `).join('')}
+      <div class="filter-row">
+        ${TASK_FILTERS.map((filter) => `<button class="filter-chip ${state.taskFilter === filter ? 'filter-chip--active' : ''}" data-action="task-filter" data-task-filter="${filter}">${({ all: '全部', pending: '待接单', assigned: '已接单', processing: '服务中', completed: '已完成' })[filter]}</button>`).join('')}
+      </div>
+      ${renderTaskSections()}
     </section>
   `
 }
 
 function renderProfile() {
   return `
-    <section class="hero">
-      <span class="hero__eyebrow">我的</span>
-      <h1 class="hero__title">工时、等级、培训和个人设置</h1>
-      <p class="hero__desc">我的页只服务志愿者本人，不承担社区配置，也不展示长辈隐私信息。</p>
+    <section class="hero hero--compact">
+      <span class="hero__eyebrow">我的资料</span>
+      <h1 class="hero__title">个人身份、任务摘要和培训记录</h1>
+      <p class="hero__desc">登录态会自动恢复，下次打开仍能继续当前工作。</p>
+    </section>
+    <section class="card-grid">
+      <article class="card"><div class="card__title">姓名</div><div class="card__desc">${escapeHtml(state.profile?.name || '--')}</div><div class="card__tag">志愿者</div></article>
+      <article class="card"><div class="card__title">手机号</div><div class="card__desc">${escapeHtml(state.profile?.phone || '--')}</div><div class="card__tag">登录账号</div></article>
+      <article class="card"><div class="card__title">加入时间</div><div class="card__desc">${formatDateTime(state.profile?.joined_at)}</div><div class="card__tag">社区成员</div></article>
+      <article class="card"><div class="card__title">完成任务</div><div class="card__desc">${getTaskSummary().completed_count} 单</div><div class="card__tag">时间银行已联动</div></article>
     </section>
     <section class="section">
-      <div class="section__title">个人工作摘要</div>
-      <div class="section__desc">将工时、等级、培训、消息和设置集中到个人中心。</div>
-      <div class="card-grid">
-        ${profileCards.map(item => `
-          <article class="card">
-            <div class="card__title">${item.title}</div>
-            <div class="card__desc">${item.desc}</div>
-            <div class="card__tag">${item.tag}</div>
-          </article>
-        `).join('')}
-      </div>
-      <div class="meta-note">Build: ${window.__BUILD_TIME__ || 'dev'}</div>
+      <div class="section__title">培训记录</div>
+      <div class="section__desc">补齐培训和证书后，这里会自动同步最新状态。</div>
+      ${renderTraining()}
+      <button class="ghost-button ghost-button--danger" data-action="logout">退出登录</button>
     </section>
   `
 }
 
-function renderTabContent() {
-  if (activeTab === 'tasks') return renderTasks()
-  if (activeTab === 'profile') return renderProfile()
-  return renderHome()
-}
-
-function render() {
-  app.innerHTML = `
+function renderApp() {
+  const tabContent = state.activeTab === 'tasks' ? renderTasks() : state.activeTab === 'profile' ? renderProfile() : renderHome()
+  return `
     <main class="app-shell">
-      ${renderTabContent()}
+      ${state.error ? `<div class="notice notice--danger">${escapeHtml(state.error)}</div>` : ''}
+      ${state.loading ? '<div class="notice notice--info">正在同步志愿者数据...</div>' : ''}
+      <div class="toolbar">
+        <div class="toolbar__meta">当前 API：${escapeHtml(state.apiBase)}</div>
+        <div class="toolbar__actions">
+          <button class="ghost-button" data-action="refresh">刷新数据</button>
+        </div>
+      </div>
+      ${tabContent}
       <nav class="bottom-nav">
-        ${tabs.map(tab => `<button class="bottom-nav__item ${tab.key === activeTab ? 'bottom-nav__item--active' : ''}" data-tab="${tab.key}">${tab.label}</button>`).join('')}
+        <button class="bottom-nav__item ${state.activeTab === 'home' ? 'bottom-nav__item--active' : ''}" data-action="tab" data-tab="home">首页</button>
+        <button class="bottom-nav__item ${state.activeTab === 'tasks' ? 'bottom-nav__item--active' : ''}" data-action="tab" data-tab="tasks">任务</button>
+        <button class="bottom-nav__item ${state.activeTab === 'profile' ? 'bottom-nav__item--active' : ''}" data-action="tab" data-tab="profile">我的</button>
       </nav>
     </main>
   `
-
-  document.querySelectorAll('[data-tab]').forEach(button => {
-    button.addEventListener('click', () => {
-      activeTab = button.getAttribute('data-tab')
-      render()
-    })
-  })
 }
 
+function render() {
+  app.innerHTML = state.token ? renderApp() : renderLogin()
+}
+
+app.addEventListener('click', (event) => {
+  const target = event.target.closest('[data-action]')
+  if (!target) return
+  const { action } = target.dataset
+
+  if (action === 'tab') {
+    state.activeTab = target.dataset.tab
+    render()
+    return
+  }
+
+  if (action === 'task-filter') {
+    state.taskFilter = target.dataset.taskFilter || 'all'
+    render()
+    return
+  }
+
+  if (action === 'send-code') {
+    sendSmsCode()
+    return
+  }
+
+  if (action === 'login') {
+    loginVolunteer()
+    return
+  }
+
+  if (action === 'refresh') {
+    loadVolunteerData()
+    return
+  }
+
+  if (action === 'logout') {
+    logout(true)
+    return
+  }
+
+  if (action === 'task') {
+    runTaskAction(target.dataset.taskId, target.dataset.taskOp)
+  }
+})
+
+app.addEventListener('input', (event) => {
+  const target = event.target
+  const field = target.dataset.field
+  if (!field) return
+
+  if (field === 'apiBase') {
+    state.apiBase = target.value.trim() || DEFAULT_API_BASE
+    saveApiBase()
+  }
+  if (field === 'phone') state.login.phone = target.value
+  if (field === 'code') state.login.code = target.value
+})
+
 render()
+if (state.token) {
+  loadVolunteerData()
+}
+

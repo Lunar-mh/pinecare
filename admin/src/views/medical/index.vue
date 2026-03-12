@@ -1,17 +1,19 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
-import { getAdminMedicalReports, getMedicalDepartments, getMedicalDoctors, getMedicalHospitals } from '@/services'
-import type { MedicalDepartmentItem, MedicalDoctorItem, MedicalHospitalItem, MedicalReportItem } from '@/services'
+import { bootstrapDemoScenario, getAdminMedicalReports, getMedicalDepartments, getMedicalDoctors, getMedicalHospitals, getSystemEvidence } from '@/services'
+import type { MedicalDepartmentItem, MedicalDoctorItem, MedicalHospitalItem, MedicalReportItem, SystemEvidenceBundle } from '@/services'
 
 const loading = ref(false)
 const reportsLoading = ref(false)
+const bootstrapLoading = ref(false)
 const activeTab = ref<'directory' | 'reports'>('directory')
 const hospitals = ref<MedicalHospitalItem[]>([])
 const departments = ref<MedicalDepartmentItem[]>([])
 const doctors = ref<MedicalDoctorItem[]>([])
 const reports = ref<MedicalReportItem[]>([])
+const evidence = ref<SystemEvidenceBundle | null>(null)
 const reportSearch = ref('')
 const reportType = ref('')
 const reportStartDate = ref('')
@@ -24,6 +26,7 @@ const departmentId = ref<number | null>(null)
 
 const directoryTotal = computed(() => hospitals.value.length + departments.value.length + doctors.value.length)
 const reportLinkedCount = computed(() => reports.value.filter(item => item.reportUrl).length)
+const medicalProvider = computed(() => evidence.value?.providerEvidence.find(item => item.key === 'medical') || null)
 
 function syncTagType(value: string): 'success' | 'warning' | 'info' {
   if (value.includes('success') || value.includes('completed')) return 'success'
@@ -39,7 +42,7 @@ async function fetchHospitals() {
       hospitalId.value = Number(hospitals.value[0]?.id) || null
     }
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : '医院目录加载失败')
+    ElMessage.error(err instanceof Error ? err.message : '医疗目录加载失败')
     hospitals.value = []
   }
 }
@@ -97,15 +100,37 @@ async function fetchReports() {
   }
 }
 
+async function fetchEvidence() {
+  try {
+    evidence.value = await getSystemEvidence()
+  } catch (err: unknown) {
+    ElMessage.error(err instanceof Error ? err.message : '医疗证据加载失败')
+    evidence.value = null
+  }
+}
+
 async function fetchAll() {
   loading.value = true
   try {
     await fetchHospitals()
     await fetchDepartments()
     await fetchDoctors()
-    await fetchReports()
+    await Promise.all([fetchReports(), fetchEvidence()])
   } finally {
     loading.value = false
+  }
+}
+
+async function handleBootstrap() {
+  bootstrapLoading.value = true
+  try {
+    const result = await bootstrapDemoScenario('medical-consultation')
+    ElMessage.success(`医疗剧本已准备：${result.title}`)
+    await fetchEvidence()
+  } catch (err: unknown) {
+    ElMessage.error(err instanceof Error ? err.message : '医疗剧本准备失败')
+  } finally {
+    bootstrapLoading.value = false
   }
 }
 
@@ -127,38 +152,91 @@ onMounted(fetchAll)
   <div>
     <div class="wb-page-header">
       <div>
-        <span class="wb-page-title">医疗资源</span>
-        <span class="wb-page-subtitle">把医疗目录、科室医生和同步报告收在同一个资源枢纽里，方便社区与医院协同。</span>
+        <span class="wb-page-title">医疗资源整合</span>
+        <span class="wb-page-subtitle">目录、报告和运行模式放在一处查看，答辩时也能直接说明当前是 live-ready 还是 stub-ready。</span>
       </div>
-      <el-button :icon="Refresh" @click="fetchAll">刷新资源</el-button>
+      <div style="display:flex; gap:10px">
+        <el-button :icon="Refresh" @click="fetchAll">刷新</el-button>
+        <el-button type="primary" :loading="bootstrapLoading" @click="handleBootstrap">准备医疗剧本</el-button>
+      </div>
     </div>
 
     <div class="wb-metric-grid">
       <div class="wb-metric-card">
-        <span class="wb-card-label">医院数</span>
+        <span class="wb-card-label">医院</span>
         <div class="wb-card-value">{{ hospitals.length }}</div>
-        <span class="wb-card-hint">当前医疗目录已接入的医院资源</span>
+        <span class="wb-card-hint">当前可用于演示的医院目录</span>
       </div>
       <div class="wb-metric-card">
-        <span class="wb-card-label">科室数</span>
+        <span class="wb-card-label">科室</span>
         <div class="wb-card-value">{{ departments.length }}</div>
-        <span class="wb-card-hint">随当前医院切换动态更新</span>
+        <span class="wb-card-hint">所选医院下的科室数量</span>
       </div>
       <div class="wb-metric-card">
-        <span class="wb-card-label">医生数</span>
+        <span class="wb-card-label">医生</span>
         <div class="wb-card-value">{{ doctors.length }}</div>
-        <span class="wb-card-hint">用于安排就诊与转诊连接</span>
+        <span class="wb-card-hint">当前目录中的医生数量</span>
       </div>
       <div class="wb-metric-card">
-        <span class="wb-card-label">报告数</span>
-        <div class="wb-card-value">{{ reportTotal }}</div>
-        <span class="wb-card-hint">同步过来的报告记录总量</span>
+        <span class="wb-card-label">能力模式</span>
+        <div class="wb-card-value">{{ medicalProvider?.effectiveMode || 'unknown' }}</div>
+        <span class="wb-card-hint">{{ medicalProvider?.lastError || '最近没有记录到错误' }}</span>
+      </div>
+    </div>
+
+    <div class="wb-grid-2" style="margin-bottom: 20px">
+      <div class="wb-panel">
+        <div class="wb-page-header" style="margin-bottom: 14px">
+          <div>
+            <span class="wb-page-title" style="font-size: 22px">运行态证据</span>
+            <span class="wb-page-subtitle">保留当前医疗模式、最近成功和回退说明。</span>
+          </div>
+        </div>
+        <div class="wb-list">
+          <div class="wb-list-item">
+            <div>
+              <span class="wb-list-title">请求模式</span>
+              <span class="wb-list-desc">{{ medicalProvider?.requestedMode || 'auto' }}</span>
+            </div>
+            <el-tag :type="medicalProvider?.effectiveMode === 'live' ? 'success' : 'warning'">{{ medicalProvider?.effectiveMode || 'stub' }}</el-tag>
+          </div>
+          <div class="wb-list-item">
+            <div>
+              <span class="wb-list-title">最近成功</span>
+              <span class="wb-list-desc">{{ medicalProvider?.lastSuccessAt || '暂无成功记录' }}</span>
+            </div>
+          </div>
+          <div class="wb-list-item">
+            <div>
+              <span class="wb-list-title">回退策略</span>
+              <span class="wb-list-desc">{{ medicalProvider?.fallbackAllowed ? '允许受控 fallback' : '当前不允许 fallback' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wb-panel">
+        <div class="wb-page-header" style="margin-bottom: 14px">
+          <div>
+            <span class="wb-page-title" style="font-size: 22px">答辩提醒</span>
+            <span class="wb-page-subtitle">说明 live-ready / stub-ready 状态时可直接引用。</span>
+          </div>
+        </div>
+        <div class="wb-list">
+          <div class="wb-list-item" v-for="item in evidence?.checklist || []" :key="item.key">
+            <div>
+              <span class="wb-list-title">{{ item.key }}</span>
+              <span class="wb-list-desc">{{ item.detail }}</span>
+            </div>
+            <el-tag :type="item.status === 'ready' ? 'success' : item.status === 'attention' ? 'warning' : 'info'">{{ item.status }}</el-tag>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="wb-panel">
       <el-tabs v-model="activeTab">
-        <el-tab-pane label="资源目录" name="directory">
+        <el-tab-pane label="医疗目录" name="directory">
           <div class="wb-filter-card" style="margin-bottom: 16px">
             <el-row :gutter="12" align="middle">
               <el-col :span="8">
@@ -172,7 +250,7 @@ onMounted(fetchAll)
                 </el-select>
               </el-col>
               <el-col :span="8" style="display: flex; justify-content: flex-end">
-                <span class="wb-chip">目录总项 {{ directoryTotal }}</span>
+                <span class="wb-chip">目录总量 {{ directoryTotal }}</span>
               </el-col>
             </el-row>
           </div>
@@ -182,7 +260,7 @@ onMounted(fetchAll)
               <div class="wb-page-header" style="margin-bottom: 14px">
                 <div>
                   <span class="wb-page-title" style="font-size: 22px">医院目录</span>
-                  <span class="wb-page-subtitle">从这里决定科室和医生的过滤上下文。</span>
+                  <span class="wb-page-subtitle">用于答辩时展示当前可查询的医院清单。</span>
                 </div>
               </div>
               <el-table :data="hospitals" stripe v-loading="loading" max-height="340">
@@ -196,7 +274,7 @@ onMounted(fetchAll)
               <div class="wb-page-header" style="margin-bottom: 14px">
                 <div>
                   <span class="wb-page-title" style="font-size: 22px">医生目录</span>
-                  <span class="wb-page-subtitle">随所选科室更新，便于快速衔接服务。</span>
+                  <span class="wb-page-subtitle">和所选科室联动，便于现场切换查看。</span>
                 </div>
               </div>
               <el-table :data="doctors" stripe v-loading="loading" max-height="340">
@@ -210,7 +288,7 @@ onMounted(fetchAll)
             <div class="wb-page-header" style="margin-bottom: 14px">
               <div>
                 <span class="wb-page-title" style="font-size: 22px">科室目录</span>
-                <span class="wb-page-subtitle">保留完整的医院到科室映射，方便维护导流关系。</span>
+                <span class="wb-page-subtitle">保留和医院联动的一张简洁表格。</span>
               </div>
             </div>
             <el-table :data="departments" stripe v-loading="loading">
@@ -221,11 +299,11 @@ onMounted(fetchAll)
           </div>
         </el-tab-pane>
 
-        <el-tab-pane label="同步报告" name="reports">
+        <el-tab-pane label="医疗报告" name="reports">
           <div class="wb-filter-card" style="margin-bottom: 16px">
             <el-row :gutter="12" align="middle">
               <el-col :span="6">
-                <el-input v-model="reportSearch" :prefix-icon="Search" placeholder="搜索用户、手机号、报告号" clearable />
+                <el-input v-model="reportSearch" :prefix-icon="Search" placeholder="搜索用户、手机号或报告号" clearable />
               </el-col>
               <el-col :span="4">
                 <el-input v-model="reportType" placeholder="报告类型" clearable />
@@ -237,7 +315,7 @@ onMounted(fetchAll)
                 <el-date-picker v-model="reportEndDate" type="date" value-format="YYYY-MM-DD" placeholder="结束日期" style="width: 100%" />
               </el-col>
               <el-col :span="6" style="display: flex; justify-content: flex-end">
-                <span class="wb-chip">含链接报告 {{ reportLinkedCount }}</span>
+                <span class="wb-chip">已挂载报告 {{ reportLinkedCount }}</span>
               </el-col>
             </el-row>
           </div>
@@ -260,7 +338,7 @@ onMounted(fetchAll)
             </el-table-column>
             <el-table-column label="报告链接" min-width="220">
               <template #default="{ row }">
-                <a v-if="row.reportUrl" :href="row.reportUrl" target="_blank" rel="noreferrer">查看原始报告</a>
+                <a v-if="row.reportUrl" :href="row.reportUrl" target="_blank" rel="noreferrer">查看报告</a>
                 <span v-else>-</span>
               </template>
             </el-table-column>

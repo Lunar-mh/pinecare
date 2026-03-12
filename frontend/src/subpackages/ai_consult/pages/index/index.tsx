@@ -102,7 +102,7 @@ export default function AiConsultIndex() {
           )}
         </SectionBlock>
 
-        <SectionBlock title="输入区" description="支持一句话直问，后续可继续接入语音提问。">
+        <SectionBlock title="输入区" description="支持一句话直问，当前先把核心健康问答和背景资料放在同一页。">
           <DataPanel tone="primary">
             <Text className="detail-label">输入你的问题</Text>
             <Input className="detail-input" value={inputText} placeholder="例如：今天这个数值严重吗？" onInput={e => setInputText(e.detail.value)} confirmType="send" onConfirm={() => handleSend()} />
@@ -115,3 +115,4 @@ export default function AiConsultIndex() {
     </PageShell>
   )
 }
+

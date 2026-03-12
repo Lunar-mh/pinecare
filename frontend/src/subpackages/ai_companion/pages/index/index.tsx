@@ -83,15 +83,15 @@ export default function AiCompanionIndex() {
 
         {tab === 'games' ? (
           <SectionBlock title="轻练习" description="不做复杂操作，只保留轻量入口。">
-            {games.length === 0 ? <EmptyState title="暂时没有练习内容" description="后续会继续扩展记忆、配对和词语练习。" icon={<Star size={28} />} /> : <View className="detail-stack">{games.map(game => <DataPanel key={game.id} tone="success"><Text className="detail-title">{game.name}</Text><Text className="detail-text">{game.description}</Text><Text className="detail-meta">难度 {game.difficulty}</Text><View className="detail-actions"><View className="detail-button detail-button--primary" onClick={() => handleSend(`我们来玩一下${game.name}。`)}><Text>开始</Text></View></View></DataPanel>)}</View>}
+            {games.length === 0 ? <EmptyState title="暂时没有练习内容" description="当前保留轻量练习入口，避免给长辈增加额外操作负担。" icon={<Star size={28} />} /> : <View className="detail-stack">{games.map(game => <DataPanel key={game.id} tone="success"><Text className="detail-title">{game.name}</Text><Text className="detail-text">{game.description}</Text><Text className="detail-meta">难度 {game.difficulty}</Text><View className="detail-actions"><View className="detail-button detail-button--primary" onClick={() => handleSend(`我们来玩一下${game.name}。`)}><Text>开始</Text></View></View></DataPanel>)}</View>}
           </SectionBlock>
         ) : null}
 
         {tab === 'nostalgia' ? (
           <SectionBlock title="怀旧内容" description="图片、故事、老歌入口先统一成推荐卡。">
             <View className="detail-stack">
-              {nostalgia.length === 0 ? <EmptyState title="暂时没有怀旧推荐" description="后续会根据年代偏好继续补充。" icon={<Heart size={28} />} /> : nostalgia.map((item, index) => <DataPanel key={item.id || index} tone="warning"><Text className="detail-title">{item.title || '怀旧推荐'}</Text><Text className="detail-text">{item.description || '适合陪长辈一起回忆和聊天。'}</Text></DataPanel>)}
-              <DataPanel tone="info"><Text className="detail-title">最近情绪趋势</Text><Text className="detail-text">近 7 天记录 {emotionTrend.length} 条，可继续在下一阶段接入更清晰的图表展示。</Text></DataPanel>
+              {nostalgia.length === 0 ? <EmptyState title="暂时没有怀旧推荐" description="会结合当前偏好持续补充适合回看的内容。" icon={<Heart size={28} />} /> : nostalgia.map((item, index) => <DataPanel key={item.id || index} tone="warning"><Text className="detail-title">{item.title || '怀旧推荐'}</Text><Text className="detail-text">{item.description || '适合陪长辈一起回忆和聊天。'}</Text></DataPanel>)}
+              <DataPanel tone="info"><Text className="detail-title">最近情绪趋势</Text><Text className="detail-text">近 7 天记录 {emotionTrend.length} 条，先用统一的数据卡片回看情绪变化。</Text></DataPanel>
             </View>
           </SectionBlock>
         ) : null}
@@ -101,4 +101,5 @@ export default function AiCompanionIndex() {
     </PageShell>
   )
 }
+
 

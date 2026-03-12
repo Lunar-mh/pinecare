@@ -123,3 +123,15 @@ export type {
   AdminGpsCurrentResult,
   AdminGpsTrailResult,
 } from './gps'
+
+export {
+  getSystemEvidence,
+  getSystemEventReplay,
+  bootstrapDemoScenario,
+} from './ops'
+export type {
+  SystemIntegrationItem,
+  SystemEvidenceBundle,
+  SystemEventReplay,
+  DemoBootstrapResult,
+} from './ops'

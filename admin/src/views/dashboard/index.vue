@@ -1,15 +1,21 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { getDashboardStats, getRecentActivities } from '@/services'
-import type { DashboardStats } from '@/services/dashboard'
+import { ElMessage } from 'element-plus'
+import { Refresh } from '@element-plus/icons-vue'
+import { bootstrapDemoScenario, getDashboardStats, getRecentActivities, getSystemEvidence } from '@/services'
+import type { DashboardStats, SystemEvidenceBundle } from '@/services'
 import { buildRiskItems, buildWorkbenchCards } from '@/view-models/workbench'
 
 const dashboard = ref<DashboardStats>({ stats: [], recentActivities: [] })
+const evidence = ref<SystemEvidenceBundle | null>(null)
 const loading = ref(true)
+const bootstrapLoading = ref(false)
 
 const cards = computed(() => buildWorkbenchCards(dashboard.value.stats || []))
 const risks = computed(() => buildRiskItems(dashboard.value.recentActivities || []))
 const recentActivities = computed(() => dashboard.value.recentActivities || [])
+const providerRows = computed(() => (evidence.value?.providerEvidence || []).slice(0, 6))
+const defenseScripts = computed(() => evidence.value?.defenseScripts || [])
 
 function statusTagType(status: string): string {
   if (status.includes('正常') || status.includes('完成')) return 'success'
@@ -18,21 +24,46 @@ function statusTagType(status: string): string {
   return 'info'
 }
 
-onMounted(async () => {
+function providerTagType(mode?: string): 'success' | 'warning' | 'info' | 'danger' {
+  if (mode === 'live') return 'success'
+  if (mode === 'stub') return 'warning'
+  return 'info'
+}
+
+async function fetchDashboard() {
   loading.value = true
   try {
-    const [stats, activities] = await Promise.all([
+    const [stats, activities, evidenceBundle] = await Promise.all([
       getDashboardStats(),
       getRecentActivities(8),
+      getSystemEvidence(),
     ])
     dashboard.value = {
       stats: stats.stats || [],
       recentActivities: activities || [],
     }
+    evidence.value = evidenceBundle
+  } catch (error: unknown) {
+    ElMessage.error(error instanceof Error ? error.message : '工作台数据加载失败')
   } finally {
     loading.value = false
   }
-})
+}
+
+async function handleBootstrap() {
+  bootstrapLoading.value = true
+  try {
+    const result = await bootstrapDemoScenario('competition-full-loop')
+    ElMessage.success(`剧本已准备：${result.title}`)
+    await fetchDashboard()
+  } catch (error: unknown) {
+    ElMessage.error(error instanceof Error ? error.message : '准备答辩剧本失败')
+  } finally {
+    bootstrapLoading.value = false
+  }
+}
+
+onMounted(fetchDashboard)
 </script>
 
 <template>
@@ -42,7 +73,11 @@ onMounted(async () => {
         <span class="wb-page-title">今日态势总览</span>
         <span class="wb-page-subtitle">先看活跃、告警、待处理，再进入各业务页做细分操作。</span>
       </div>
-      <div class="wb-chip">值班建议：先处理 SOS 与离线异常</div>
+      <div style="display:flex; gap:10px; align-items:center">
+        <div class="wb-chip">值班建议：先处理 SOS 与离线异常</div>
+        <el-button :icon="Refresh" @click="fetchDashboard">刷新</el-button>
+        <el-button type="primary" :loading="bootstrapLoading" @click="handleBootstrap">准备整项答辩剧本</el-button>
+      </div>
     </div>
 
     <div class="wb-metric-grid">
@@ -75,31 +110,63 @@ onMounted(async () => {
       <div class="wb-panel">
         <div class="wb-page-header" style="margin-bottom: 14px">
           <div>
-            <span class="wb-page-title" style="font-size: 22px">待处理提醒</span>
-            <span class="wb-page-subtitle">结合近期动态，快速判断下一步工作。</span>
+            <span class="wb-page-title" style="font-size: 22px">证据与运行态</span>
+            <span class="wb-page-subtitle">直接展示第三方模式、准备度和答辩脚本状态。</span>
           </div>
         </div>
         <div class="wb-list">
           <div class="wb-list-item">
             <div>
-              <span class="wb-list-title">SOS 与位置异常</span>
-              <span class="wb-list-desc">优先确认高风险事件是否已被接单和跟进。</span>
+              <span class="wb-list-title">运行模式</span>
+              <span class="wb-list-desc">{{ evidence?.runtimeMode || 'unknown' }}</span>
             </div>
-            <el-tag type="danger">优先</el-tag>
+            <el-tag :type="evidence?.summary.liveHealthyCount ? 'success' : 'warning'">{{ evidence?.summary.liveHealthyCount || 0 }} live</el-tag>
           </div>
-          <div class="wb-list-item">
+          <div class="wb-list-item" v-for="item in defenseScripts" :key="item.id">
             <div>
-              <span class="wb-list-title">长辈离线与弱网</span>
-              <span class="wb-list-desc">检查位置共享、设备在线状态和告警是否重复触发。</span>
+              <span class="wb-list-title">{{ item.title }}</span>
+              <span class="wb-list-desc">{{ item.proof }}</span>
             </div>
-            <el-tag type="warning">关注</el-tag>
+            <el-tag :type="item.ready ? 'success' : 'warning'">{{ item.ready ? '已准备' : '待补证据' }}</el-tag>
           </div>
-          <div class="wb-list-item">
+        </div>
+      </div>
+    </div>
+
+    <div class="wb-grid-2" style="margin-top: 20px">
+      <div class="wb-panel">
+        <div class="wb-page-header" style="margin-bottom: 14px">
+          <div>
+            <span class="wb-page-title" style="font-size: 22px">第三方能力总览</span>
+            <span class="wb-page-subtitle">优先看模式、最近成功和最近错误。</span>
+          </div>
+        </div>
+        <el-table :data="providerRows" stripe v-loading="loading">
+          <el-table-column prop="key" label="能力" min-width="150" />
+          <el-table-column label="模式" width="110">
+            <template #default="{ row }">
+              <el-tag :type="providerTagType(row.effectiveMode)">{{ row.effectiveMode || 'unknown' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="lastSuccessAt" label="最近成功" min-width="180" />
+          <el-table-column prop="lastError" label="最近错误" min-width="220" show-overflow-tooltip />
+        </el-table>
+      </div>
+
+      <div class="wb-panel">
+        <div class="wb-page-header" style="margin-bottom: 14px">
+          <div>
+            <span class="wb-page-title" style="font-size: 22px">待处理提醒</span>
+            <span class="wb-page-subtitle">结合近期动态，快速判断下一步工作。</span>
+          </div>
+        </div>
+        <div class="wb-list">
+          <div class="wb-list-item" v-for="item in evidence?.checklist || []" :key="item.key">
             <div>
-              <span class="wb-list-title">志愿者调度</span>
-              <span class="wb-list-desc">核对志愿者班次、服务时长和工单饱和度。</span>
+              <span class="wb-list-title">{{ item.key }}</span>
+              <span class="wb-list-desc">{{ item.detail }}</span>
             </div>
-            <el-tag type="success">平稳</el-tag>
+            <el-tag :type="item.status === 'ready' ? 'success' : item.status === 'pending' ? 'info' : 'warning'">{{ item.status }}</el-tag>
           </div>
         </div>
       </div>
@@ -130,4 +197,3 @@ onMounted(async () => {
     </div>
   </div>
 </template>
-
