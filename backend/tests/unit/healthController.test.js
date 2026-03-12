@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 jest.mock('../../src/services/healthArchiveService', () => ({
   getToday: jest.fn(),
@@ -60,7 +60,7 @@ describe('healthController', () => {
 
     expect(familyAccessService.resolveTargetUserId).not.toHaveBeenCalled();
     expect(healthArchiveService.getToday).toHaveBeenCalledWith(99);
-    expect(res.body).toEqual({ code: 0, message: 'ok', data: { alerts: [] } });
+    expect(res.body).toEqual({ code: 0, message: 'Health overview loaded.', data: { alerts: [] } });
   });
 
   it('validates missing trend metric_type', async () => {

@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 jest.mock('../../src/config/redis', () => ({
   zremrangebyscore: jest.fn(),
@@ -77,7 +77,7 @@ describe('rateLimiter middleware', () => {
 
     expect(next).not.toHaveBeenCalled();
     expect(res.statusCode).toBe(429);
-    expect(res.body.message).toBe('Too many requests, max 5 per minute.');
+    expect(res.body.message).toBe('Too many requests. Maximum 5 per minute.');
     expect(req.rateLimit.remaining).toBe(0);
   });
 

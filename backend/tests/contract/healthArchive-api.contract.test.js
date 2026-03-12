@@ -166,7 +166,7 @@ describe('health archive API contract', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       code: 0,
-      message: 'ok',
+      message: 'Health overview loaded.',
       data: expect.objectContaining({
         userId: 1001,
         date: expect.any(String),

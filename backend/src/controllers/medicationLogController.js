@@ -7,7 +7,7 @@ const { ok, fail } = require('../utils/response');
 function handleError(res, err) {
   const code = typeof err.code === 'number' ? err.code : 500;
   const status = typeof err.statusCode === 'number' ? err.statusCode : 500;
-  return fail(res, code, err.message || '用药记录服务暂时不可用，请稍后重试。', err.data || null, status);
+  return fail(res, code, err.message || 'Medication log service is temporarily unavailable.', err.data || null, status);
 }
 
 const medicationLogController = {
@@ -17,7 +17,7 @@ const medicationLogController = {
         req.user.userId,
         req.query && req.query.date
       );
-      return ok(res, data, '今日用药日程获取成功。');
+      return ok(res, data, 'Today medication schedule loaded.');
     } catch (err) {
       return handleError(res, err);
     }
@@ -26,7 +26,7 @@ const medicationLogController = {
   async list(req, res) {
     try {
       const data = await medicationLogService.getLogs(req.user.userId, req.query || {});
-      return ok(res, data, '用药记录获取成功。');
+      return ok(res, data, 'Medication logs loaded.');
     } catch (err) {
       return handleError(res, err);
     }
@@ -37,10 +37,10 @@ const medicationLogController = {
       const data = await medicationConfirmService.confirm(req.user.userId, req.body || {});
 
       if (data.idempotent) {
-        return ok(res, data, '本次用药记录已确认，无需重复提交。');
+        return ok(res, data, 'Medication log already confirmed.');
       }
 
-      return ok(res, data, '用药确认成功。');
+      return ok(res, data, 'Medication confirmation completed.');
     } catch (err) {
       return handleError(res, err);
     }

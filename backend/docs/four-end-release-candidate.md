@@ -36,3 +36,19 @@ Freeze the project into a defense-ready non-live release candidate. After this s
 - Switch integrations from `stub-ready` to `live-ready verified` one by one.
 - Capture desensitized live receipts and attach them to the real-data evidence pack.
 - Rehearse the three defense stories with real providers enabled.
+
+## Release snapshot (2026-03-12)
+- Backend tests: `208` suites, `788` tests, all passing.
+- Coverage: `Statements 81.93 / Branches 61.97 / Functions 82.04 / Lines 82.37`.
+- Backend lint: passed.
+- Backend smoke: `npm run smoke:fresh-install` => `status: ready`.
+- Competition seed dry-run: `status: ready`.
+- Migration status: `executed=0, skipped=29` on the current rehearsal database.
+- Frontend checks: `npm run typecheck` and `npm run build:weapp` passed.
+- Admin checks: `npm run build` passed.
+- Volunteer checks: `npm run typecheck` and `npm run build` passed.
+
+## Message contract freeze
+- Backend business messages are standardized in English for debugging and audit consistency.
+- Frontend, admin, and volunteer clients must localize by `code` and keep raw backend messages only as `debugMessage`.
+- The frozen specification lives in `backend/docs/error-message-spec.md`.

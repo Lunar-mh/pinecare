@@ -51,7 +51,7 @@ describe('gps tracking route validation', () => {
     const res = await request(createApp()).post('/gps/upload').send({ latitude: 120, longitude: 121.5 });
 
     expect(res.status).toBe(400);
-    expect(res.body.message).toBe('latitude must be in -90-90.');
+    expect(res.body.message).toBe('latitude must be between -90 and 90.');
     expect(locationService.upload).not.toHaveBeenCalled();
   });
 

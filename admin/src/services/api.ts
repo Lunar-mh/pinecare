@@ -46,7 +46,7 @@ async function request<T = unknown>(method: string, path: string, body?: unknown
   }
 
   if (token) {
-    headers.Authorization = Bearer 
+    headers.Authorization = `Bearer ${token}`
   }
 
   const options: RequestInit = {
@@ -58,7 +58,7 @@ async function request<T = unknown>(method: string, path: string, body?: unknown
     options.body = JSON.stringify(body)
   }
 
-  const res = await fetch(${BASE_URL}, options)
+  const res = await fetch(`${BASE_URL}${path}`, options)
   const json = await parseJsonSafe<T>(res)
 
   if (res.status === 401) {
@@ -68,7 +68,7 @@ async function request<T = unknown>(method: string, path: string, body?: unknown
   }
 
   if (!res.ok) {
-    throw new ApiError(res.status, toUserFacingMessage(res.status), json?.message || HTTP )
+    throw new ApiError(res.status, toUserFacingMessage(res.status), json?.message || `HTTP ${res.status}`)
   }
 
   if (!json) {

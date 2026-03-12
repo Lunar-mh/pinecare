@@ -1,10 +1,10 @@
-'use strict';
+﻿'use strict';
 
 const request = require('supertest');
 const express = require('express');
 
 jest.mock('../src/middleware/auth', () => {
-  return (req, res, next) => {
+  return (req, _res, next) => {
     req.user = { userId: 1001 };
     next();
   };
@@ -40,8 +40,8 @@ describe('medication log and confirm routes', () => {
       {
         log_id: 10,
         medication_id: '1',
-        name: '降压药',
-        dosage: '1片',
+        name: 'Aspirin',
+        dosage: '1 tablet',
         time: '08:00',
         scheduled_time: '2026-02-21 08:00:00',
         status: 'pending',
@@ -54,7 +54,7 @@ describe('medication log and confirm routes', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(res.body.message).toBe('获取今日用药安排成功');
+    expect(res.body.message).toBe('Today medication schedule loaded.');
     expect(res.body.data[0].log_id).toBe(10);
     expect(res.body.data[0].status).toBe('pending');
   });
@@ -66,7 +66,7 @@ describe('medication log and confirm routes', () => {
           id: 10,
           user_id: 1001,
           plan_id: 1,
-          medication_name: '降压药',
+          medication_name: 'Aspirin',
           scheduled_time: '2026-02-21 08:00:00',
           status: 'taken',
         },

@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const express = require('express');
 const jwt = require('jsonwebtoken');
@@ -23,12 +23,12 @@ function createApp() {
   return app;
 }
 
-describe('SOS 触发与取消集成测试', () => {
+describe('SOS trigger and cancel integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  test('POST /sos/trigger 未鉴权应返回 401', async () => {
+  test('POST /sos/trigger returns 401 without token', async () => {
     const app = createApp();
 
     const res = await request(app)
@@ -39,7 +39,7 @@ describe('SOS 触发与取消集成测试', () => {
     expect(res.body.code).toBe(401);
   });
 
-  test('POST /sos/trigger 成功返回统一结构', async () => {
+  test('POST /sos/trigger returns unified success envelope', async () => {
     const app = createApp();
     const token = jwt.sign({ userId: 9001 }, process.env.JWT_SECRET || 'fallback_secret');
 
@@ -51,26 +51,26 @@ describe('SOS 触发与取消集成测试', () => {
     const res = await request(app)
       .post('/sos/trigger')
       .set('Authorization', `Bearer ${token}`)
-      .send({ latitude: 30.1, longitude: 120.1, address: '杭州市西湖区' });
+      .send({ latitude: 30.1, longitude: 120.1, address: 'Demo address' });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       code: 0,
-      message: 'ok',
+      message: 'SOS event created.',
       data: { event_id: 501, event_status: 'triggered' },
     });
     expect(sosService.triggerSos).toHaveBeenCalledWith(9001, {
       latitude: 30.1,
       longitude: 120.1,
-      address: '杭州市西湖区',
+      address: 'Demo address',
     });
   });
 
-  test('POST /sos/cancel 业务失败返回 4xx', async () => {
+  test('POST /sos/cancel forwards business errors as 4xx', async () => {
     const app = createApp();
     const token = jwt.sign({ userId: 9001 }, process.env.JWT_SECRET || 'fallback_secret');
 
-    const bizErr = new Error('取消窗口已超时');
+    const bizErr = new Error('SOS event cannot be canceled.');
     bizErr.code = 408;
     bizErr.statusCode = 408;
     sosService.cancelSos.mockRejectedValue(bizErr);
@@ -83,7 +83,7 @@ describe('SOS 触发与取消集成测试', () => {
     expect(res.status).toBe(408);
     expect(res.body).toEqual({
       code: 408,
-      message: '取消窗口已超时',
+      message: 'SOS event cannot be canceled.',
       data: null,
     });
   });

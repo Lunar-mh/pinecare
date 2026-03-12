@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 jest.mock('../../src/services/adminOpsService', () => ({
   getHealthOverview: jest.fn(),
@@ -96,7 +96,7 @@ describe('adminOpsController', () => {
     expect(res.statusCode).toBe(500);
     expect(res.body).toEqual({
       code: 500,
-      message: 'Internal server error.',
+      message: 'Service is temporarily unavailable.',
       data: null,
     });
   });

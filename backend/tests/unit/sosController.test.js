@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 jest.mock('../../src/utils/logger', () => ({
   error: jest.fn(),
@@ -44,7 +44,7 @@ describe('sosController', () => {
     expect(sosService.triggerSos).toHaveBeenCalledWith(5, { reason: 'fall' });
     expect(res.body).toEqual({
       code: 0,
-      message: 'ok',
+      message: 'SOS event created.',
       data: { eventId: 88, status: 'triggered' },
     });
   });

@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 jest.mock('../../src/utils/logger', () => ({
   error: jest.fn(),
@@ -46,7 +46,7 @@ describe('volunteerController', () => {
     expect(volunteerService.getProfile).toHaveBeenCalledWith({ volunteerId: 11 });
     expect(res.body).toEqual({
       code: 0,
-      message: 'success',
+      message: 'Volunteer profile loaded.',
       data: { volunteerId: 11, name: 'Lin' },
     });
   });
@@ -96,7 +96,7 @@ describe('volunteerController', () => {
 
     expect(res.body).toEqual({
       code: 0,
-      message: 'success',
+      message: 'Volunteer task completed.',
       data: { task_id: 77, status: 'completed' },
     });
   });

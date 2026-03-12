@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 jest.mock('../../src/services/onlineConsultationService', () => ({
   start: jest.fn(),
@@ -45,7 +45,7 @@ describe('onlineConsultationController', () => {
       doctorId: 'doctor-1',
       department: 'Cardiology',
     });
-    expect(res.body).toEqual({ code: 0, message: 'created', data: { id: 8, consultStatus: 'pending' } });
+    expect(res.body).toEqual({ code: 0, message: 'Online consultation created.', data: { id: 8, consultStatus: 'pending' } });
   });
 
   it('returns coded errors for consultation list', async () => {

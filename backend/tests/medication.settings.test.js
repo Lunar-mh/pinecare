@@ -1,10 +1,10 @@
-'use strict';
+﻿'use strict';
 
 const request = require('supertest');
 const express = require('express');
 
 jest.mock('../src/middleware/auth', () => {
-  return (req, res, next) => {
+  return (req, _res, next) => {
     req.user = { userId: 1001 };
     next();
   };
@@ -25,12 +25,12 @@ function createApp() {
   return app;
 }
 
-describe('用药提醒设置接口集成测试', () => {
+describe('medication settings routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('GET /medication/settings 返回默认设置', async () => {
+  it('GET /medication/settings returns current settings', async () => {
     medicationSettingService.getSettings.mockResolvedValue({
       user_id: 1001,
       reminder_enabled: 1,
@@ -44,11 +44,11 @@ describe('用药提醒设置接口集成测试', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(res.body.message).toBe('获取提醒设置成功');
+    expect(res.body.message).toBe('Medication settings loaded.');
     expect(res.body.data.reminder_enabled).toBe(1);
   });
 
-  it('PUT /medication/settings 更新设置成功', async () => {
+  it('PUT /medication/settings updates settings successfully', async () => {
     medicationSettingService.updateSettings.mockResolvedValue({
       user_id: 1001,
       reminder_enabled: 1,
@@ -66,7 +66,7 @@ describe('用药提醒设置接口集成测试', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(res.body.message).toBe('更新提醒设置成功');
+    expect(res.body.message).toBe('Medication settings updated.');
     expect(res.body.data.family_sync_enabled).toBe(1);
   });
 });

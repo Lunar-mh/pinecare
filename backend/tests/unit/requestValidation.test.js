@@ -41,7 +41,7 @@ describe('requestValidation', () => {
     });
     expect(parsePagination({ pageSize: '101' })).toEqual({
       ok: false,
-      message: 'pageSize must be in 1-100.',
+      message: 'pageSize must be between 1 and 100.',
     });
   });
 });

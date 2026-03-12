@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const express = require('express');
 const request = require('supertest');
@@ -72,7 +72,7 @@ describe('volunteer API contract', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       code: 0,
-      message: 'success',
+      message: 'Volunteer task completed.',
       data: {
         task_id: 9,
         status: 'completed',

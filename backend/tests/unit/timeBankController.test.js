@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 jest.mock('../../src/services/timeBankService', () => ({
   getAccount: jest.fn(),
@@ -44,11 +44,11 @@ describe('timeBankController', () => {
 
     const accountRes = createRes();
     await timeBankController.getAccount({ user: { userId: 7 } }, accountRes);
-    expect(accountRes.body).toEqual({ code: 0, message: 'success', data: { id: 1, balance: 8 } });
+    expect(accountRes.body).toEqual({ code: 0, message: 'Time bank account loaded.', data: { id: 1, balance: 8 } });
 
     const balanceRes = createRes();
     await timeBankController.getBalance({ user: { userId: 7 } }, balanceRes);
-    expect(balanceRes.body).toEqual({ code: 0, message: 'success', data: { balance: 8 } });
+    expect(balanceRes.body).toEqual({ code: 0, message: 'Time bank balance loaded.', data: { balance: 8 } });
   });
 
   it('records service payloads after route normalization', async () => {

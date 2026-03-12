@@ -53,7 +53,7 @@ describe('health archive query routing', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(res.body.message).toBe('ok');
+    expect(res.body.message).toBe('Health overview loaded.');
     expect(res.body.data.userId).toBe(1001);
     expect(healthArchiveService.getToday).toHaveBeenCalledWith(1001);
   });
@@ -73,7 +73,7 @@ describe('health archive query routing', () => {
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
       code: 0,
-      message: 'ok',
+      message: 'Health trend loaded.',
       data: {
         metricType: 'heart_rate',
         period: '7d',

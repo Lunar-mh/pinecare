@@ -54,7 +54,7 @@ describe('medicalReportController', () => {
     });
     expect(res.body).toEqual({
       code: 0,
-      message: 'ok',
+      message: 'Medical reports loaded.',
       data: { list: [{ id: 1 }], total: 1 },
     });
   });

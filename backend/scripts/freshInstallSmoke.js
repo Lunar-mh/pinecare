@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const fs = require('fs');
 const path = require('path');
@@ -32,6 +32,8 @@ async function runFreshInstallSmoke(options = {}) {
     'docs/real-data-evidence-pack.md',
     'docs/live-cutover-handover.md',
     'docs/live-evidence-templates.md',
+    'docs/error-message-spec.md',
+    'docs/defense-evidence-checklist.md',
     'docs/release-known-issues.md',
     'docs/privacy-policy.md',
     'docs/user-agreement.md',

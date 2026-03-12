@@ -1,4 +1,4 @@
-﻿const STORAGE_KEYS = {
+const STORAGE_KEYS = {
   apiBase: 'volunteer_api_base',
   token: 'volunteer_token',
   userInfo: 'volunteer_user_info',
@@ -118,12 +118,11 @@ function createRequestError(message, options = {}) {
   return error
 }
 
-
 async function request(path, options = {}) {
   const { method = 'GET', body, auth = true, query } = options
   const headers = { 'Content-Type': 'application/json' }
   if (auth && state.token) {
-    headers.Authorization = Bearer 
+    headers.Authorization = `Bearer ${state.token}`
   }
 
   let response

@@ -71,7 +71,7 @@ const requestInterceptor = (options: RequestOptions): RequestOptions => {
     header: {
       'Content-Type': 'application/json',
       'X-App-Env': getEnvVersion(),
-      ...(token ? { Authorization: Bearer  } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.header,
     },
   };
@@ -83,7 +83,7 @@ const responseInterceptor = <T>(response: Taro.request.SuccessCallbackResult<Api
   if (statusCode < 200 || statusCode >= 300) {
     throw new ClientRequestError(getUserFacingMessage(statusCode, statusCode), {
       statusCode,
-      debugMessage: HTTP request failed: ,
+      debugMessage: `HTTP request failed: ${statusCode}`,
     });
   }
 
@@ -111,7 +111,7 @@ export const request = async <T = unknown>(options: RequestOptions): Promise<T> 
 
   try {
     const response = await Taro.request<ApiResponse<T>>({
-      url: ${BASE_URL},
+      url: `${BASE_URL}${finalOptions.url}`,
       method: finalOptions.method || 'GET',
       data: finalOptions.data,
       header: finalOptions.header,
@@ -135,7 +135,9 @@ export const request = async <T = unknown>(options: RequestOptions): Promise<T> 
         icon: 'none',
         duration: 2000,
       });
-      throw new ClientRequestError('网络异常，请检查连接后重试', { debugMessage: error.message || error.errMsg });
+      throw new ClientRequestError('网络异常，请检查连接后重试', {
+        debugMessage: error.message || error.errMsg,
+      });
     }
 
     const normalized = error instanceof ClientRequestError
