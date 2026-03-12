@@ -98,31 +98,71 @@ function buildUrl(path, params) {
   return url.toString()
 }
 
+function getUserFacingRequestMessage(status, code) {
+  const mergedCode = Number(code || status || 0)
+  if (mergedCode === 400 || mergedCode === 422) return '提交的信息有误，请检查后重试。'
+  if (mergedCode === 401) return '登录状态已失效，请重新登录。'
+  if (mergedCode === 403) return '当前账号暂无该操作权限。'
+  if (mergedCode === 404) return '请求的数据不存在。'
+  if (mergedCode === 409) return '数据状态已变化，请刷新后重试。'
+  if (mergedCode === 429) return '操作过于频繁，请稍后再试。'
+  if (mergedCode === 503 || mergedCode === 504) return '服务暂时不可用，请稍后再试。'
+  return '请求失败，请稍后重试。'
+}
+
+function createRequestError(message, options = {}) {
+  const error = new Error(message)
+  error.code = options.code || null
+  error.statusCode = options.statusCode || null
+  error.debugMessage = options.debugMessage || ''
+  return error
+}
+
+
 async function request(path, options = {}) {
   const { method = 'GET', body, auth = true, query } = options
   const headers = { 'Content-Type': 'application/json' }
   if (auth && state.token) {
-    headers.Authorization = `Bearer ${state.token}`
+    headers.Authorization = Bearer 
   }
 
-  const response = await fetch(buildUrl(path, query), {
-    method,
-    headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
-  })
+  let response
+  try {
+    response = await fetch(buildUrl(path, query), {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+  } catch (error) {
+    throw createRequestError('网络异常，请检查连接后重试。', {
+      debugMessage: error instanceof Error ? error.message : String(error || ''),
+    })
+  }
 
   const payload = await response.json().catch(() => null)
   if (response.status === 401) {
     logout(false)
-    throw new Error((payload && payload.message) || '登录已失效，请重新登录。')
+    throw createRequestError('登录状态已失效，请重新登录。', {
+      code: payload && payload.code,
+      statusCode: response.status,
+      debugMessage: payload && payload.message,
+    })
   }
 
   if (!response.ok) {
-    throw new Error((payload && payload.message) || `请求失败（${response.status}）`)
+    throw createRequestError(getUserFacingRequestMessage(response.status, payload && payload.code), {
+      code: payload && payload.code,
+      statusCode: response.status,
+      debugMessage: payload && payload.message,
+    })
   }
 
   if (!payload || payload.code !== 0) {
-    throw new Error((payload && payload.message) || '请求返回异常。')
+    throw createRequestError(getUserFacingRequestMessage(payload && payload.code, response.status), {
+      code: payload && payload.code,
+      statusCode: response.status,
+      debugMessage: payload && payload.message,
+    })
   }
 
   return payload.data

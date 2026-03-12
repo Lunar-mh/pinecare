@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { buildRequestOptions, createBizError, normalizeList } = require('./shared');
 const { recordProviderSuccess } = require('../../utils/providerRuntime');

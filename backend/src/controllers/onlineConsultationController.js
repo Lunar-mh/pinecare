@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const onlineConsultationService = require('../services/onlineConsultationService');
 const { ok } = require('../utils/response');
@@ -11,11 +11,11 @@ async function start(req, res) {
       department: req.body.department,
     });
 
-    return ok(res, data, 'created');
+    return ok(res, data, 'Online consultation created.');
   } catch (err) {
     return sendControllerError(res, err, {
       action: 'consult_start_failed',
-      defaultMessage: 'Online consultation request failed.',
+      defaultMessage: 'Failed to create online consultation.',
       moduleName: 'onlineConsultationController',
       preferErrorMessage: true,
     });
@@ -25,11 +25,11 @@ async function start(req, res) {
 async function list(req, res) {
   try {
     const data = await onlineConsultationService.listByUser(req.user.userId, req.query.limit);
-    return ok(res, data, 'ok');
+    return ok(res, data, 'Online consultation history loaded.');
   } catch (err) {
     return sendControllerError(res, err, {
       action: 'consult_list_failed',
-      defaultMessage: 'Online consultation request failed.',
+      defaultMessage: 'Failed to load online consultation history.',
       moduleName: 'onlineConsultationController',
       preferErrorMessage: true,
     });
@@ -44,11 +44,11 @@ async function updateStatus(req, res) {
       req.body.consultStatus
     );
 
-    return ok(res, data, 'ok');
+    return ok(res, data, 'Online consultation status updated.');
   } catch (err) {
     return sendControllerError(res, err, {
       action: 'consult_update_status_failed',
-      defaultMessage: 'Online consultation request failed.',
+      defaultMessage: 'Failed to update online consultation status.',
       moduleName: 'onlineConsultationController',
       preferErrorMessage: true,
     });

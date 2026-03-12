@@ -31,7 +31,7 @@ function normalizeDepartment(value) {
 
 function validateStatusTransition(fromStatus, toStatus) {
   if (!ALLOWED_CONSULT_STATUS.includes(toStatus)) {
-    throw createBizError(422, 'Invalid consultStatus.', 422);
+    throw createBizError(422, 'consultStatus is invalid.', 422);
   }
 
   const transitions = {

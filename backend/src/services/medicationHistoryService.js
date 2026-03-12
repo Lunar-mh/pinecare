@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const medicationLogModel = require('../models/medicationLogModel');
 
@@ -14,7 +14,7 @@ function parseMonth(month) {
   const regex = /^(\d{4})-(0[1-9]|1[0-2])$/;
 
   if (!regex.test(text)) {
-    throw createBizError(400, 'month 格式必须为 YYYY-MM', 400);
+    throw createBizError(400, 'month必须使用 YYYY-MM 格式。', 400);
   }
 
   const year = Number(text.slice(0, 4));

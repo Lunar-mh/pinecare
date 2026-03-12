@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 function ok(data) {
   return { ok: true, data };
@@ -53,7 +53,7 @@ function parseNumberInRange(value, fieldName, min, max, options = {}) {
 
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed < min || parsed > max) {
-    return failResult(`${fieldName} must be in ${min}-${max}.`);
+    return failResult(`${fieldName} must be between ${min} and ${max}.`);
   }
 
   return ok(parsed);
@@ -118,7 +118,7 @@ function parsePagination(query = {}, options = {}) {
   const page = pageResult.data || fallbackPage;
   const pageSize = pageSizeResult.data || fallbackPageSize;
   if (pageSize > maxPageSize) {
-    return failResult(`pageSize must be in 1-${maxPageSize}.`);
+    return failResult(`pageSize must be between 1 and ${maxPageSize}.`);
   }
 
   return ok({

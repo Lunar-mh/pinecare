@@ -15,7 +15,7 @@ function sendSosError(res, error, action, defaultMessage) {
 async function trigger(req, res) {
   try {
     const data = await sosService.triggerSos(req.user.userId, req.body || {});
-    return ok(res, data, 'ok');
+    return ok(res, data, 'SOS event created.');
   } catch (error) {
     return sendSosError(res, error, 'trigger_failed', 'Failed to trigger SOS event.');
   }
@@ -24,7 +24,7 @@ async function trigger(req, res) {
 async function cancel(req, res) {
   try {
     const data = await sosService.cancelSos(req.user.userId, req.body.event_id);
-    return ok(res, data, 'ok');
+    return ok(res, data, 'SOS event cancelled.');
   } catch (error) {
     return sendSosError(res, error, 'cancel_failed', 'Failed to cancel SOS event.');
   }
@@ -33,7 +33,7 @@ async function cancel(req, res) {
 async function history(req, res) {
   try {
     const data = await sosService.getHistory(req.user.userId, req.query || {});
-    return ok(res, data, 'ok');
+    return ok(res, data, 'SOS history loaded.');
   } catch (error) {
     return sendSosError(res, error, 'history_failed', 'Failed to load SOS history.');
   }
@@ -42,7 +42,7 @@ async function history(req, res) {
 async function confirm(req, res) {
   try {
     const data = await sosService.confirmSos(req.user.userId, req.body.event_id);
-    return ok(res, data, 'ok');
+    return ok(res, data, 'SOS event confirmed.');
   } catch (error) {
     return sendSosError(res, error, 'confirm_failed', 'Failed to confirm SOS event.');
   }
@@ -51,7 +51,7 @@ async function confirm(req, res) {
 async function resolve(req, res) {
   try {
     const data = await sosService.resolveSos(req.user.userId, req.body.event_id);
-    return ok(res, data, 'ok');
+    return ok(res, data, 'SOS event resolved.');
   } catch (error) {
     return sendSosError(res, error, 'resolve_failed', 'Failed to resolve SOS event.');
   }

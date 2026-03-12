@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const medicalReportService = require('../services/medicalReportService');
 const { ok } = require('../utils/response');
@@ -14,11 +14,11 @@ async function list(req, res) {
       pageSize: req.query.pageSize,
     });
 
-    return ok(res, data, 'ok');
+    return ok(res, data, 'Medical reports loaded.');
   } catch (err) {
     return sendControllerError(res, err, {
       action: 'reports_failed',
-      defaultMessage: 'Medical reports request failed.',
+      defaultMessage: 'Failed to load medical reports.',
       moduleName: 'medicalReportController',
       preferErrorMessage: true,
     });

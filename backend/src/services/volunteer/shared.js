@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { createBizErrorFromMessage } = require('../../utils/serviceError');
 const { normalizePagination: normalizePageQuery } = require('../../utils/pagination');
@@ -16,26 +16,26 @@ function numberOrNull(value) {
 
 function requireVolunteerScope(scope) {
   if (!scope || !scope.communityId || !scope.userId) {
-    throw createBizErrorFromMessage('Volunteer scope is required.', 403, 403);
+    throw createBizErrorFromMessage('缺少志愿者身份范围。', 403, 403);
   }
 }
 
 function ensureTask(task) {
   if (!task) {
-    throw createBizErrorFromMessage('Task not found.', 404, 404);
+    throw createBizErrorFromMessage('未找到对应任务。', 404, 404);
   }
 }
 
 function ensureOwnedTask(scope, task) {
   ensureTask(task);
   if (task.volunteer_id !== null && Number(task.volunteer_id) !== Number(scope.userId)) {
-    throw createBizErrorFromMessage('Forbidden.', 403, 403);
+    throw createBizErrorFromMessage('当前账号无权操作该任务。', 403, 403);
   }
 }
 
 function ensureAssignedToCurrentVolunteer(scope, task) {
   if (Number(task.volunteer_id) !== Number(scope.userId)) {
-    throw createBizErrorFromMessage('Forbidden.', 403, 403);
+    throw createBizErrorFromMessage('当前账号无权操作该任务。', 403, 403);
   }
 }
 
@@ -132,4 +132,3 @@ module.exports = {
   buildTaskAudit,
   buildTaskState,
 };
-

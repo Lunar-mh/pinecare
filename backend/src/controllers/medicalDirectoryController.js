@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const medicalDirectoryService = require('../services/medicalDirectoryService');
 const { ok } = require('../utils/response');
@@ -7,11 +7,11 @@ const { sendControllerError } = require('../utils/controllerError');
 async function hospitals(_req, res) {
   try {
     const data = await medicalDirectoryService.getHospitals();
-    return ok(res, data, 'ok');
+    return ok(res, data, 'Hospital directory loaded.');
   } catch (err) {
     return sendControllerError(res, err, {
       action: 'hospitals_failed',
-      defaultMessage: 'Medical directory request failed.',
+      defaultMessage: 'Failed to load medical directory.',
       moduleName: 'medicalDirectoryController',
       preferErrorMessage: true,
     });
@@ -21,11 +21,11 @@ async function hospitals(_req, res) {
 async function departments(req, res) {
   try {
     const data = await medicalDirectoryService.getDepartments(req.query.hospitalId);
-    return ok(res, data, 'ok');
+    return ok(res, data, 'Department directory loaded.');
   } catch (err) {
     return sendControllerError(res, err, {
       action: 'departments_failed',
-      defaultMessage: 'Medical directory request failed.',
+      defaultMessage: 'Failed to load medical directory.',
       moduleName: 'medicalDirectoryController',
       preferErrorMessage: true,
     });
@@ -41,11 +41,11 @@ async function doctors(req, res) {
       page: req.query.page,
       pageSize: req.query.pageSize,
     });
-    return ok(res, data, 'ok');
+    return ok(res, data, 'Doctor directory loaded.');
   } catch (err) {
     return sendControllerError(res, err, {
       action: 'doctors_failed',
-      defaultMessage: 'Medical directory request failed.',
+      defaultMessage: 'Failed to load medical directory.',
       moduleName: 'medicalDirectoryController',
       preferErrorMessage: true,
     });
@@ -55,11 +55,11 @@ async function doctors(req, res) {
 async function doctorDetail(req, res) {
   try {
     const data = await medicalDirectoryService.getDoctorDetail(req.params.doctorId);
-    return ok(res, data, 'ok');
+    return ok(res, data, 'Doctor detail loaded.');
   } catch (err) {
     return sendControllerError(res, err, {
       action: 'doctor_detail_failed',
-      defaultMessage: 'Medical directory request failed.',
+      defaultMessage: 'Failed to load medical directory.',
       moduleName: 'medicalDirectoryController',
       preferErrorMessage: true,
     });

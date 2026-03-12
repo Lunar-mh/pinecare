@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const medicationPlanService = require('../services/medicationPlanService');
 const medicationPlanPresenter = require('../utils/medicationPlanPresenter');
@@ -7,7 +7,7 @@ const { ok, fail } = require('../utils/response');
 function handleError(res, err) {
   const code = typeof err.code === 'number' ? err.code : 500;
   const status = typeof err.statusCode === 'number' ? err.statusCode : 500;
-  return fail(res, code, err.message || 'Internal server error.', err.data || null, status);
+  return fail(res, code, err.message || 'Medication plan service is temporarily unavailable.', err.data || null, status);
 }
 
 const medicationPlanController = {

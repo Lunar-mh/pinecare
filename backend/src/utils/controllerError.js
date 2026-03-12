@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const logger = require('./logger');
 const { fail } = require('./response');
@@ -6,7 +6,7 @@ const { fail } = require('./response');
 function sendControllerError(res, err, options = {}) {
   const defaultCode = Number(options.defaultCode || 500);
   const defaultStatus = Number(options.defaultStatus || defaultCode || 500);
-  const defaultMessage = options.defaultMessage || 'Internal server error.';
+  const defaultMessage = options.defaultMessage || 'Service is temporarily unavailable.';
   const includeData = options.includeData !== false;
   const moduleName = options.moduleName || 'controller';
   const action = options.action || 'request_failed';

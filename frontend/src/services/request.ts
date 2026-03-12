@@ -28,6 +28,33 @@ interface ApiResponse<T = unknown> {
   data: T;
 }
 
+class ClientRequestError extends Error {
+  code?: number;
+  statusCode?: number;
+  debugMessage?: string;
+
+  constructor(message: string, options: { code?: number; statusCode?: number; debugMessage?: string } = {}) {
+    super(message);
+    this.name = 'ClientRequestError';
+    this.code = options.code;
+    this.statusCode = options.statusCode;
+    this.debugMessage = options.debugMessage;
+  }
+}
+
+function getUserFacingMessage(code?: number, statusCode?: number): string {
+  const mergedCode = Number(code || statusCode || 0);
+
+  if (mergedCode === 400 || mergedCode === 422) return '提交的信息有误，请检查后重试';
+  if (mergedCode === 401) return '登录状态已失效，请重新登录';
+  if (mergedCode === 403) return '当前操作暂无权限';
+  if (mergedCode === 404) return '请求的内容不存在';
+  if (mergedCode === 409) return '数据状态已变化，请刷新后重试';
+  if (mergedCode === 429) return '操作过于频繁，请稍后再试';
+  if (mergedCode === 503 || mergedCode === 504) return '服务暂时不可用，请稍后再试';
+  return '请求失败，请稍后重试';
+}
+
 const getToken = (): string => {
   try {
     return Taro.getStorageSync('token') || '';
@@ -44,7 +71,7 @@ const requestInterceptor = (options: RequestOptions): RequestOptions => {
     header: {
       'Content-Type': 'application/json',
       'X-App-Env': getEnvVersion(),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(token ? { Authorization: Bearer  } : {}),
       ...options.header,
     },
   };
@@ -54,7 +81,10 @@ const responseInterceptor = <T>(response: Taro.request.SuccessCallbackResult<Api
   const { data, statusCode } = response;
 
   if (statusCode < 200 || statusCode >= 300) {
-    throw new Error(`HTTP request failed: ${statusCode}`);
+    throw new ClientRequestError(getUserFacingMessage(statusCode, statusCode), {
+      statusCode,
+      debugMessage: HTTP request failed: ,
+    });
   }
 
   if (data.code !== 0 && data.code !== 200) {
@@ -66,7 +96,11 @@ const responseInterceptor = <T>(response: Taro.request.SuccessCallbackResult<Api
       }, 100);
     }
 
-    throw new Error(data.message || 'Request failed.');
+    throw new ClientRequestError(getUserFacingMessage(data.code, statusCode), {
+      code: data.code,
+      statusCode,
+      debugMessage: data.message || '',
+    });
   }
 
   return data.data;
@@ -77,7 +111,7 @@ export const request = async <T = unknown>(options: RequestOptions): Promise<T> 
 
   try {
     const response = await Taro.request<ApiResponse<T>>({
-      url: `${BASE_URL}${finalOptions.url}`,
+      url: ${BASE_URL},
       method: finalOptions.method || 'GET',
       data: finalOptions.data,
       header: finalOptions.header,
@@ -92,7 +126,7 @@ export const request = async <T = unknown>(options: RequestOptions): Promise<T> 
         icon: 'none',
         duration: 2000,
       });
-      throw new Error('请求超时');
+      throw new ClientRequestError('请求超时，请稍后再试', { debugMessage: error.message || error.errMsg });
     }
 
     if (error.errMsg?.includes('fail')) {
@@ -101,16 +135,22 @@ export const request = async <T = unknown>(options: RequestOptions): Promise<T> 
         icon: 'none',
         duration: 2000,
       });
-      throw new Error('网络异常');
+      throw new ClientRequestError('网络异常，请检查连接后重试', { debugMessage: error.message || error.errMsg });
     }
 
+    const normalized = error instanceof ClientRequestError
+      ? error
+      : new ClientRequestError('请求失败，请稍后重试', {
+          debugMessage: error?.message || String(error || ''),
+        });
+
     Taro.showToast({
-      title: error.message || '请求失败',
+      title: normalized.message,
       icon: 'none',
       duration: 2000,
     });
 
-    throw error;
+    throw normalized;
   }
 };
 

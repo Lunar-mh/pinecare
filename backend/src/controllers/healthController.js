@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const healthArchiveService = require('../services/healthArchiveService');
 const healthSyncService = require('../services/healthSyncService');
@@ -14,11 +14,11 @@ const healthController = {
       const targetUserId = req.targetUserId || familyAccessService.resolveTargetUserId(currentUserId, req.query.user_id);
 
       const data = await healthArchiveService.getToday(targetUserId);
-      return ok(res, data, 'ok');
+      return ok(res, data, 'Health overview loaded.');
     } catch (err) {
       return sendControllerError(res, err, {
         action: 'today_failed',
-        defaultMessage: 'Health today query failed.',
+        defaultMessage: 'Failed to load health overview.',
         moduleName: 'healthController',
         preferErrorMessage: true,
       });
@@ -41,11 +41,11 @@ const healthController = {
       const targetUserId = req.targetUserId || familyAccessService.resolveTargetUserId(currentUserId, req.query.user_id);
 
       const data = await healthArchiveService.getTrend(targetUserId, metricType, period);
-      return ok(res, data, 'ok');
+      return ok(res, data, 'Health trend loaded.');
     } catch (err) {
       return sendControllerError(res, err, {
         action: 'trend_failed',
-        defaultMessage: 'Health trend query failed.',
+        defaultMessage: 'Failed to load health trend.',
         moduleName: 'healthController',
         preferErrorMessage: true,
       });
@@ -55,11 +55,11 @@ const healthController = {
   async sync(req, res) {
     try {
       const data = await healthSyncService.sync(req.user.userId, req.body || {});
-      return ok(res, data, 'ok');
+      return ok(res, data, 'Health data synced.');
     } catch (err) {
       return sendControllerError(res, err, {
         action: 'sync_failed',
-        defaultMessage: 'Health sync failed.',
+        defaultMessage: 'Failed to sync health data.',
         moduleName: 'healthController',
         preferErrorMessage: true,
       });
@@ -69,11 +69,11 @@ const healthController = {
   async manual(req, res) {
     try {
       const data = await healthManualService.createManualRecord(req.user.userId, req.body || {});
-      return ok(res, data, 'ok');
+      return ok(res, data, 'Manual health record saved.');
     } catch (err) {
       return sendControllerError(res, err, {
         action: 'manual_failed',
-        defaultMessage: 'Manual health record failed.',
+        defaultMessage: 'Failed to save manual health record.',
         moduleName: 'healthController',
         preferErrorMessage: true,
       });
@@ -85,11 +85,11 @@ const healthController = {
       const currentUserId = req.user.userId;
       const targetUserId = req.targetUserId || familyAccessService.resolveTargetUserId(currentUserId, req.query.user_id);
       const data = await healthArchiveService.getLatestBloodPressure(targetUserId);
-      return ok(res, data, 'ok');
+      return ok(res, data, 'Latest blood pressure loaded.');
     } catch (err) {
       return sendControllerError(res, err, {
         action: 'latest_blood_pressure_failed',
-        defaultMessage: 'Latest blood pressure query failed.',
+        defaultMessage: 'Failed to load latest blood pressure.',
         moduleName: 'healthController',
         preferErrorMessage: true,
       });
@@ -101,11 +101,11 @@ const healthController = {
       const currentUserId = req.user.userId;
       const targetUserId = req.targetUserId || familyAccessService.resolveTargetUserId(currentUserId, req.query.user_id);
       const data = await healthArchiveService.getLatestHeartRate(targetUserId);
-      return ok(res, data, 'ok');
+      return ok(res, data, 'Latest heart rate loaded.');
     } catch (err) {
       return sendControllerError(res, err, {
         action: 'latest_heart_rate_failed',
-        defaultMessage: 'Latest heart rate query failed.',
+        defaultMessage: 'Failed to load latest heart rate.',
         moduleName: 'healthController',
         preferErrorMessage: true,
       });

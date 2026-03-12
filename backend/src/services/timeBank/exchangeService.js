@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const TimeBankModel = require('../../models/timeBank');
 const { LEADERBOARD_CACHE_TTL, createStatusError, delCache, getCacheJSON, setCacheJSON } = require('./shared');

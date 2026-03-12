@@ -52,7 +52,7 @@ function createRateLimiter({
           remaining: 0,
           windowSeconds,
         };
-        return fail(res, 429, `Too many requests, max ${max} per minute.`, null, 429);
+        return fail(res, 429, `Too many requests. Maximum ${max} per minute.`, null, 429);
       }
 
       await redis.zadd(key, now, buildWindowMember(req, now));
