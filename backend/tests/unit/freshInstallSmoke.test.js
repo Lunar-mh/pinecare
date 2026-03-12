@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { runFreshInstallSmoke } = require('../../scripts/freshInstallSmoke');
 
@@ -27,6 +27,7 @@ describe('fresh install smoke', () => {
         'docs/ai-usage-notice.md',
         'docs/third-party-services-and-authorizations.md',
         'docs/data-desensitization-note.md',
+        'docs/four-end-release-candidate.md',
       ])
     );
     expect(result.migrations.total).toBeGreaterThan(0);

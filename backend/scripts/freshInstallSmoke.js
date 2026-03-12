@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const fs = require('fs');
 const path = require('path');
@@ -28,6 +28,7 @@ async function runFreshInstallSmoke(options = {}) {
     '.env.production-live.example',
     'docs/deployment-playbook.md',
     'docs/compliance-and-contest-package.md',
+    'docs/four-end-release-candidate.md',
     'docs/real-data-evidence-pack.md',
     'docs/privacy-policy.md',
     'docs/user-agreement.md',

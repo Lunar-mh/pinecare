@@ -3,13 +3,13 @@
 ## Contest fit
 - Recommended category: software application and development.
 - AI is presented as an enabling capability, not the sole judging axis.
-- The backend defense focus is real-vs-stub transparency, operational traceability, and emergency-care evidence chains.
+- The defense focus is complete four-end delivery, real-vs-stub transparency, operational traceability, and emergency-care evidence chains.
 
 ## Submission checks
 - Verify the work is original and all third-party assets are authorized.
 - Confirm there are 2-5 authors from the same school.
 - Confirm at least 2 authors can attend the onsite national defense.
-- Prepare a stable web entry, demo account, or replay evidence package.
+- Prepare a stable web entry, demo account, mini-program QR code or replay evidence package.
 
 ## Sensitive-data controls
 - Phone numbers, ID cards, and access tokens must stay masked in logs and evidence.
@@ -23,6 +23,8 @@
 - AI usage notice: `backend/docs/ai-usage-notice.md`
 - Third-party services and authorization list: `backend/docs/third-party-services-and-authorizations.md`
 - Data desensitization note: `backend/docs/data-desensitization-note.md`
+- Four-end release candidate note: `backend/docs/four-end-release-candidate.md`
+- Deployment and defense playbook: `backend/docs/deployment-playbook.md`
 
 ## External services to document
 - DashScope
@@ -33,6 +35,7 @@
 - Map or location provider
 
 ## Defense checklist
-- Show `/admin/system/integrations` and `/admin/system/evidence` before the demo starts
-- Keep at least one medical live chain and three healthy live integrations ready when credentials are available
-- Preserve request IDs, task IDs, message IDs, and replay evidence in desensitized form
+- Show `/admin/system/integrations` and `/admin/system/evidence` before the demo starts.
+- Keep the three fixed stories ready: event loop, medical loop, volunteer loop.
+- Preserve request IDs, task IDs, message IDs, and replay evidence in desensitized form.
+- Explain clearly that the current release candidate is `stub-ready / live-ready`, and only real credentials plus upstream access remain for live rehearsal.
