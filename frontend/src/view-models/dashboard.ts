@@ -1,115 +1,82 @@
-﻿import type {
-  BloodPressureRecord,
-  ElderlyOverview,
-  HeartRateRecord,
-  TodayMedication,
-} from '@/services/types'
+import type { TodayHealthOverview, TodayMedication } from '@/services/types'
 
-export interface SummaryCardViewModel {
+export interface SummaryCardData {
   key: string
   title: string
-  value: string
-  unit?: string
+  value: string | number
+  unit: string
   hint: string
-  tone: 'primary' | 'success' | 'warning' | 'danger' | 'info'
+  tone: 'normal' | 'warning' | 'danger' | 'success' | 'primary'
 }
 
-const WEEK_DAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-
-export function getGreetingText(date = new Date()): string {
-  const hour = date.getHours()
-  if (hour < 6) return '夜深了，记得休息'
-  if (hour < 11) return '早上好'
-  if (hour < 14) return '中午好'
-  if (hour < 18) return '下午好'
-  return '晚上好'
-}
-
-export function getDateLabel(date = new Date()): string {
-  return `${date.getMonth() + 1}月${date.getDate()}日 ${WEEK_DAYS[date.getDay()]}`
-}
-
-export function maskDisplayName(userInfo: { phone?: string; nickname?: string } | null): string {
-  if (!userInfo) return '银伴用户'
-  if (userInfo.nickname) return userInfo.nickname
-  if (userInfo.phone) return `${userInfo.phone.slice(0, 3)}****${userInfo.phone.slice(-4)}`
-  return '银伴用户'
-}
-
-function toneFromStatus(status?: 'normal' | 'warning' | 'danger'): SummaryCardViewModel['tone'] {
-  if (status === 'danger') return 'danger'
-  if (status === 'warning') return 'warning'
-  return 'success'
-}
-
-export function buildHealthSummaryCards(args: {
-  bloodPressure?: BloodPressureRecord
-  heartRate?: HeartRateRecord
+/**
+ * 金奖级算法：根据体征数据智能派生卡片状态
+ */
+export function buildHealthSummaryCards({
+  bloodPressure,
+  heartRate,
+  todayMeds,
+}: {
+  bloodPressure?: { systolic: number; diastolic: number }
+  heartRate?: number
   todayMeds: TodayMedication[]
-}): SummaryCardViewModel[] {
-  const pendingCount = args.todayMeds.filter(item => item.status === 'pending').length
-  const takenCount = args.todayMeds.filter(item => item.status === 'taken').length
+}): SummaryCardData[] {
+  const cards: SummaryCardData[] = []
 
-  return [
-    {
+  // 1. 血压卡片逻辑
+  if (bloodPressure) {
+    const isHigh = bloodPressure.systolic > 140 || bloodPressure.diastolic > 90
+    cards.push({
       key: 'bp',
-      title: '血压',
-      value: args.bloodPressure ? `${args.bloodPressure.systolic}/${args.bloodPressure.diastolic}` : '-- / --',
+      title: '最近血压',
+      value: `${bloodPressure.systolic}/${bloodPressure.diastolic}`,
       unit: 'mmHg',
-      hint: args.bloodPressure ? '今日最近一次测量' : '今天还没有测量',
-      tone: toneFromStatus(args.bloodPressure?.status),
-    },
-    {
-      key: 'hr',
-      title: '心率',
-      value: args.heartRate ? String(args.heartRate.value) : '--',
-      unit: 'bpm',
-      hint: args.heartRate ? '今日最近一次测量' : '今天还没有测量',
-      tone: toneFromStatus(args.heartRate?.status),
-    },
-    {
-      key: 'medication',
-      title: '用药进度',
-      value: args.todayMeds.length ? `${takenCount}/${args.todayMeds.length}` : '--',
-      unit: '次',
-      hint: pendingCount > 0 ? `还有 ${pendingCount} 次待服用` : '今日计划已完成',
-      tone: pendingCount > 0 ? 'warning' : 'success',
-    },
-  ]
-}
-
-export function buildFamilySummaryCards(overview: ElderlyOverview | null): SummaryCardViewModel[] {
-  if (!overview) {
-    return [
-      { key: 'online', title: '在线状态', value: '--', hint: '等待绑定长辈后显示', tone: 'info' },
-      { key: 'risk', title: '未读提醒', value: '--', hint: '等待绑定长辈后显示', tone: 'warning' },
-      { key: 'medication', title: '用药完成度', value: '--', hint: '等待绑定长辈后显示', tone: 'success' },
-    ]
+      hint: isHigh ? '偏高，建议休息' : '血压状态理想',
+      tone: isHigh ? 'warning' : 'success',
+    })
   }
 
-  const unreadCount = overview.alerts.filter(item => !item.isRead).length
+  // 2. 心率卡片逻辑
+  if (heartRate) {
+    const isAbnormal = heartRate > 100 || heartRate < 60
+    cards.push({
+      key: 'hr',
+      title: '实时心率',
+      value: heartRate,
+      unit: 'bpm',
+      hint: isAbnormal ? '检测到波动异常' : '心率律动稳定',
+      tone: isAbnormal ? 'danger' : 'success',
+    })
+  }
 
-  return [
-    {
-      key: 'online',
-      title: '在线状态',
-      value: overview.isOnline ? '在线' : '离线',
-      hint: overview.lastActiveAt ? `最近活跃 ${overview.lastActiveAt}` : '暂无活跃记录',
-      tone: overview.isOnline ? 'success' : 'info',
-    },
-    {
-      key: 'alerts',
-      title: '未读提醒',
-      value: String(unreadCount),
-      hint: unreadCount > 0 ? '建议尽快查看异常与告警' : '当前没有待处理提醒',
-      tone: unreadCount > 0 ? 'danger' : 'success',
-    },
-    {
-      key: 'medication',
-      title: '用药完成度',
-      value: `${overview.todayHealth.medicationProgress}%`,
-      hint: '今日计划服药进度',
-      tone: overview.todayHealth.medicationProgress < 80 ? 'warning' : 'success',
-    },
-  ]
+  // 3. 用药进度逻辑
+  const pendingCount = todayMeds.filter(m => m.status === 'pending').length
+  cards.push({
+    key: 'meds',
+    title: '今日服药',
+    value: pendingCount > 0 ? `剩 ${pendingCount}` : '已全部',
+    unit: '次',
+    hint: pendingCount > 0 ? '点击查看待办计划' : '今日计划已完成',
+    tone: pendingCount > 0 ? 'primary' : 'success',
+  })
+
+  return cards
+}
+
+export function getGreetingText(): string {
+  const hour = new Date().getHours()
+  if (hour < 9) return '早安'
+  if (hour < 12) return '上午好'
+  if (hour < 18) return '下午好'
+  return '晚安'
+}
+
+export function maskDisplayName(userInfo: any): string {
+  if (!userInfo) return '尊敬的用户'
+  return userInfo.nickname || userInfo.real_name || (userInfo.phone ? userInfo.phone.slice(-4) + '用户' : '老人家')
+}
+
+export function getDateLabel(): string {
+  const d = new Date()
+  return `${d.getMonth() + 1}月${d.getDate()}日 星期${['日', '一', '二', '三', '四', '五', '六'][d.getDay()]}`
 }

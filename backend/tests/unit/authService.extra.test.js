@@ -18,6 +18,7 @@ describe('authService extra', () => {
     jest.doMock('../../src/config/redis', () => ({
       set: jest.fn().mockResolvedValue('OK'),
       get: jest.fn(),
+      del: jest.fn().mockResolvedValue(1),
     }));
     jest.doMock('../../src/models/user', () => ({
       findByPhone: jest.fn(),
@@ -117,11 +118,27 @@ describe('authService extra', () => {
     await expect(loaded.authService.refreshToken('bad')).rejects.toMatchObject({ code: 401 });
 
     loaded = loadService();
-    loaded.jwt.verify.mockReturnValueOnce({ userId: 7, token_type: 'refresh', role: 'admin', isAdmin: true });
+    loaded.jwt.verify.mockReturnValueOnce({ userId: 0, token_type: 'refresh', role: 'admin', isAdmin: true });
     loaded.redis.get.mockResolvedValueOnce('refresh');
     loaded.jwt.sign.mockReturnValueOnce('access2').mockReturnValueOnce('refresh2');
     loaded.AuditLogModel.create.mockResolvedValueOnce({ id: 1 });
     await expect(loaded.authService.refreshToken('refresh')).resolves.toEqual({ access_token: 'access2', refresh_token: 'refresh2', expires_in: 900 });
+  });
+
+  it('revokes refresh tokens for locked or deleted users', async () => {
+    let loaded = loadService();
+    loaded.jwt.verify.mockReturnValueOnce({ userId: 7, token_type: 'refresh' });
+    loaded.redis.get.mockResolvedValueOnce('refresh');
+    loaded.UserModel.findById.mockResolvedValueOnce({ id: 7, account_status: 'deleted' });
+    await expect(loaded.authService.refreshToken('refresh')).rejects.toMatchObject({ code: 403 });
+    expect(loaded.redis.del).toHaveBeenCalledWith('auth:refresh:7');
+
+    loaded = loadService();
+    loaded.jwt.verify.mockReturnValueOnce({ userId: 8, token_type: 'refresh' });
+    loaded.redis.get.mockResolvedValueOnce('refresh');
+    loaded.UserModel.findById.mockResolvedValueOnce({ id: 8, account_status: 'locked', locked_until: '2999-01-01T00:00:00.000Z' });
+    await expect(loaded.authService.refreshToken('refresh')).rejects.toMatchObject({ code: 423 });
+    expect(loaded.redis.del).toHaveBeenCalledWith('auth:refresh:8');
   });
 
   it('covers admin login, wechat update flow, and unlock account branches', async () => {
@@ -155,3 +172,4 @@ describe('authService extra', () => {
     await expect(loaded.authService.unlockAccountByCode('13812345678', '123456')).resolves.toEqual({ account_status: 'active', locked_until: null });
   });
 });
+

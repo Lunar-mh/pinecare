@@ -1,0 +1,32 @@
+:root {
+  /* 曜银 3.0 - 极致触感色阶 */
+  --yao-primary: #2D5AEE;
+  --yao-bg: #F0F4FF;
+  
+  /* 拟物化阴影 (Neumorphism) */
+  --yao-neo-shadow-out: 12px 12px 24px #D1D9E6, -12px -12px 24px #FFFFFF;
+  --yao-neo-shadow-in: inset 6px 6px 12px #D1D9E6, inset -6px -6px 12px #FFFFFF;
+  
+  /* 玻璃拟态 (Glassmorphism) */
+  --yao-glass-bg: rgba(255, 255, 255, 0.4);
+  --yao-glass-border: 1px solid rgba(255, 255, 255, 0.2);
+  
+  /* 呼吸感动效 */
+  --yao-bounce: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+}
+
+.neo-card {
+  background: var(--yao-bg);
+  box-shadow: var(--yao-neo-shadow-out);
+  border-radius: 40px;
+  transition: all 0.3s var(--yao-bounce);
+  &:active { box-shadow: var(--yao-neo-shadow-in); transform: scale(0.98); }
+}
+
+/* 全局基准排版 */
+.elder-text-huge { font-size: 40px; font-weight: 800; line-height: 1.2; letter-spacing: -0.5px; }
+.elder-text-title { font-size: 28px; font-weight: 700; line-height: 1.4; }
+.elder-text-body { font-size: 20px; font-weight: 500; line-height: 1.6; }
+
+.family-text-title { font-size: 20px; font-weight: 700; color: #1A1A1A; }
+.family-text-sub { font-size: 14px; color: #666666; }

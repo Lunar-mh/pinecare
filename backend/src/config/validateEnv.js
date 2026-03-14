@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const { getCorsAllowedOrigins, getServerRole } = require('./http');
 const { applyRuntimeModeEnv, isProductionLive } = require('./runtimeMode');
@@ -68,8 +68,13 @@ function validateJwtSecretStrength() {
     throw new Error('JWT_SECRET must be at least 16 characters in PRODUCTION_LIVE mode.');
   }
 
-  if (!process.env.JWT_REFRESH_SECRET) {
-    process.env.JWT_REFRESH_SECRET = secret;
+  const refreshSecret = String(process.env.JWT_REFRESH_SECRET || '').trim();
+  if (!refreshSecret) {
+    throw new Error('JWT_REFRESH_SECRET is required. It must differ from JWT_SECRET.');
+  }
+
+  if (refreshSecret === secret) {
+    throw new Error('JWT_REFRESH_SECRET must differ from JWT_SECRET.');
   }
 }
 

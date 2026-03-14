@@ -14,6 +14,10 @@ jest.mock('../../src/config/redis', () => ({
   on: jest.fn(),
 }));
 
+jest.mock('../../src/models/user', () => ({
+  findById: jest.fn(async (userId) => ({ id: userId, account_status: 'active' })),
+}));
+
 jest.mock('../../src/services/timeBankService', () => ({
   getAccount: jest.fn().mockResolvedValue({
     balance: 88,

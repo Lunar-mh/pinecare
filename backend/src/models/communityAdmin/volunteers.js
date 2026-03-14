@@ -1,6 +1,8 @@
-﻿'use strict';
+'use strict';
 
 const { query } = require('./shared');
+
+const USER_DISPLAY_NAME_SQL = "COALESCE(NULLIF(u.real_name, ''), NULLIF(u.nickname, ''), CONCAT('User', u.id))";
 
 module.exports = {
   async listVolunteers(communityId, filters = {}, pagination = {}) {
@@ -12,7 +14,7 @@ module.exports = {
     const params = [communityId];
 
     if (filters.keyword) {
-      where.push('(u.name LIKE ? OR u.phone LIKE ?)');
+      where.push(`(${USER_DISPLAY_NAME_SQL} LIKE ? OR u.phone LIKE ?)`);
       params.push(`%${filters.keyword}%`, `%${filters.keyword}%`);
     }
 
@@ -23,7 +25,7 @@ module.exports = {
          ca.community_id,
          ca.role,
          ca.created_at,
-         u.name,
+         ${USER_DISPLAY_NAME_SQL} AS name,
          u.phone
        FROM community_admins ca
        INNER JOIN users u ON u.id = ca.user_id
@@ -41,7 +43,7 @@ module.exports = {
     const params = [communityId];
 
     if (filters.keyword) {
-      where.push('(u.name LIKE ? OR u.phone LIKE ?)');
+      where.push(`(${USER_DISPLAY_NAME_SQL} LIKE ? OR u.phone LIKE ?)`);
       params.push(`%${filters.keyword}%`, `%${filters.keyword}%`);
     }
 
@@ -58,7 +60,7 @@ module.exports = {
 
   async findVolunteerInCommunity(communityId, volunteerUserId) {
     const [rows] = await query(
-      `SELECT ca.id, ca.user_id, ca.community_id, ca.role, u.name, u.phone
+      `SELECT ca.id, ca.user_id, ca.community_id, ca.role, ${USER_DISPLAY_NAME_SQL} AS name, u.phone
        FROM community_admins ca
        INNER JOIN users u ON u.id = ca.user_id
        WHERE ca.community_id = ?
@@ -70,7 +72,4 @@ module.exports = {
 
     return rows[0] || null;
   },
-
-
 };
-

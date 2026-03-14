@@ -1,4 +1,4 @@
-﻿﻿'use strict';
+﻿'use strict';
 
 const logger = require('../utils/logger');
 
@@ -16,7 +16,13 @@ function resolveStatusCode(err) {
     return 403;
   }
 
-  return err.statusCode || err.status || err.code || 500;
+  const rawCode = err.statusCode || err.status || err.code || 500;
+  const parsed = Number(rawCode);
+  // 确保返回有效的 HTTP 状态码数字
+  if (!Number.isInteger(parsed) || parsed < 100 || parsed > 599) {
+    return 500;
+  }
+  return parsed;
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -40,8 +46,12 @@ function errorHandler(err, req, res, next) {
   };
 
   if (process.env.NODE_ENV !== 'production') {
-    response.stack = err.stack;
+    // 仅在日志中记录 stack，不返回给前端
     response.requestId = requestId;
+    logger.error('http', 'global_error_stack', {
+      requestId,
+      stack: err.stack,
+    });
   }
 
   res.status(statusCode).json(response);

@@ -2,6 +2,12 @@
 
 const { query } = require('../config/database');
 
+const USER_DISPLAY_NAME_SQL = "COALESCE(NULLIF({alias}.real_name, ''), NULLIF({alias}.nickname, ''), CONCAT('User', {alias}.id))";
+
+function userDisplayName(alias) {
+  return USER_DISPLAY_NAME_SQL.replace(/\{alias\}/g, alias);
+}
+
 function buildTaskWhere(scope, filters = {}) {
   const where = [
     'so.community_id = ?',
@@ -15,7 +21,7 @@ function buildTaskWhere(scope, filters = {}) {
   }
 
   if (filters.keyword) {
-    where.push('(so.order_no LIKE ? OR so.service_type LIKE ? OR elder.name LIKE ?)');
+    where.push(`(so.order_no LIKE ? OR so.service_type LIKE ? OR ${userDisplayName('elder')} LIKE ?)`);
     params.push(`%${filters.keyword}%`, `%${filters.keyword}%`, `%${filters.keyword}%`);
   }
 
@@ -28,7 +34,7 @@ function buildTaskWhere(scope, filters = {}) {
 const volunteerModel = {
   async findVolunteerScopeByUserId(userId) {
     const [rows] = await query(
-      `SELECT ca.id, ca.user_id, ca.community_id, ca.role, u.name, u.phone
+      `SELECT ca.id, ca.user_id, ca.community_id, ca.role, ${userDisplayName('u')} AS name, u.phone
        FROM community_admins ca
        INNER JOIN users u ON u.id = ca.user_id
        WHERE ca.user_id = ?
@@ -59,7 +65,7 @@ const volunteerModel = {
          so.scheduled_at,
          so.completed_at,
          so.created_at,
-         elder.name AS elder_name,
+         ${userDisplayName('elder')} AS elder_name,
          elder.phone AS elder_phone
        FROM service_orders so
        LEFT JOIN users elder ON elder.id = so.elder_id
@@ -127,7 +133,7 @@ const volunteerModel = {
          so.scheduled_at,
          so.completed_at,
          so.created_at,
-         elder.name AS elder_name,
+         ${userDisplayName('elder')} AS elder_name,
          elder.phone AS elder_phone
        FROM service_orders so
        LEFT JOIN users elder ON elder.id = so.elder_id
@@ -213,7 +219,7 @@ const volunteerModel = {
     const [rows] = await query(
       `SELECT
          u.id,
-         u.name,
+         ${userDisplayName('u')} AS name,
          u.phone,
          ca.community_id,
          ca.role,

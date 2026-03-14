@@ -38,6 +38,10 @@ describe('userController extra', () => {
   });
 
   it('updates profile and lists contacts with request context', async () => {
+    let res = createRes();
+    await userController.updateProfile({ user: { userId: 1 }, body: null, headers: {}, ip: '127.0.0.1' }, res);
+    expect(res.statusCode).toBe(400);
+
     userService.updateProfile.mockResolvedValue({ id: 1, real_name: 'Alice' });
     userService.listEmergencyContacts.mockResolvedValue([{ id: 2 }]);
     const req = {
@@ -46,7 +50,7 @@ describe('userController extra', () => {
       headers: { 'x-forwarded-for': '1.1.1.1', 'user-agent': 'jest' },
       ip: '127.0.0.1',
     };
-    const res = createRes();
+    res = createRes();
 
     await userController.updateProfile(req, res);
     expect(userService.updateProfile).toHaveBeenCalledWith(1, req.body, {
@@ -65,6 +69,10 @@ describe('userController extra', () => {
     await userController.createEmergencyContact({ user: { userId: 1 }, body: { name: 'Mom' } }, res);
     expect(res.statusCode).toBe(400);
 
+    res = createRes();
+    await userController.createEmergencyContact({ user: { userId: 1 }, body: { name: 'Mom', phone: '13812345678', relationship: 'mother', is_primary: '1' } }, res);
+    expect(res.statusCode).toBe(400);
+
     userService.createEmergencyContact.mockResolvedValue({ id: 3 });
     res = createRes();
     await userController.createEmergencyContact({ user: { userId: 1 }, body: { name: 'Mom', phone: '13812345678', relationship: 'mother', is_primary: true }, headers: {}, ip: '127.0.0.1' }, res);
@@ -81,6 +89,10 @@ describe('userController extra', () => {
 
     res = createRes();
     await userController.updateEmergencyContact({ user: { userId: 1 }, params: { id: '2' }, body: { phone: '12' } }, res);
+    expect(res.statusCode).toBe(400);
+
+    res = createRes();
+    await userController.updateEmergencyContact({ user: { userId: 1 }, params: { id: '2' }, body: { is_primary: '1' } }, res);
     expect(res.statusCode).toBe(400);
 
     userService.updateEmergencyContact.mockResolvedValue({ id: 2, name: 'Dad' });

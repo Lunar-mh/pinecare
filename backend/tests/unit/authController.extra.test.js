@@ -44,8 +44,9 @@ describe('authController extra', () => {
 
     authService.sendSms.mockResolvedValueOnce({ sent: true });
     res = createRes();
-    await authController.sendSms({ body: { phone: '13812345678', purpose: 'login' }, headers: {}, ip: '127.0.0.1' }, res);
+    await authController.sendSms({ body: { phone: '13812345678', purpose: 'account_delete' }, headers: {}, ip: '127.0.0.1' }, res);
     expect(res.body.message).toBe('SMS sent.');
+    expect(authService.sendSms).toHaveBeenCalledWith('13812345678', 'account_delete', expect.any(Object));
 
     res = createRes();
     await authController.registerPhone({ body: { phone: '13812345678', code: '12', password: 'short' }, headers: {}, ip: '127.0.0.1' }, res);

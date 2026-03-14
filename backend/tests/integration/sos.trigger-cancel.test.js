@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const express = require('express');
 const jwt = require('jsonwebtoken');
@@ -13,6 +13,18 @@ jest.mock('../../src/services/sosService', () => ({
   autoResolveTimeoutEvents: jest.fn(),
 }));
 
+jest.mock('../../src/config/redis', () => ({
+  zremrangebyscore: jest.fn(async () => 0),
+  zcard: jest.fn(async () => 0),
+  zadd: jest.fn(async () => 1),
+  expire: jest.fn(async () => 1),
+  on: jest.fn(),
+}));
+
+jest.mock('../../src/models/user', () => ({
+  findById: jest.fn(async (userId) => ({ id: userId, account_status: 'active' })),
+}));
+
 const sosService = require('../../src/services/sosService');
 const sosRouter = require('../../src/routes/sos');
 
@@ -24,6 +36,10 @@ function createApp() {
 }
 
 describe('SOS trigger and cancel integration', () => {
+  beforeAll(() => {
+    process.env.JWT_SECRET = process.env.JWT_SECRET || 'sos-trigger-secret';
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });

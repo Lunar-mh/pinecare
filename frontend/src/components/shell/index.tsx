@@ -1,169 +1,150 @@
-﻿import type { PropsWithChildren, ReactNode } from 'react'
-import { View, Text } from '@tarojs/components'
+import { View, Text, ScrollView } from '@tarojs/components'
+import Taro from '@tarojs/taro'
+import { ReactNode, useState, useMemo } from 'react'
+import classNames from 'classnames'
 import './index.scss'
 
-type RoleTone = 'elder' | 'family'
-type StatusTone = 'primary' | 'success' | 'warning' | 'danger' | 'info'
-
-export interface PageShellProps extends PropsWithChildren {
-  roleTone?: RoleTone
+interface PageShellProps {
+  children: ReactNode
+  roleTone?: 'elder' | 'family' | 'volunteer' | 'admin'
   className?: string
+  loading?: boolean
 }
 
-export function PageShell({ roleTone = 'elder', className = '', children }: PageShellProps) {
-  return <View className={`page-shell page-shell--${roleTone}${className ? ` ${className}` : ''}`}>{children}</View>
+export function PageShell({ children, roleTone = 'elder', className, loading }: PageShellProps) {
+  return (
+    <View className={classNames('yao-page-shell', `yao-tone-${roleTone}`, className)}>
+      <View className="yao-bg-gradient" />
+      <ScrollView scrollY className="yao-scroll-view" enhanced showScrollbar={false}>
+        <View className="yao-content-inner">
+          {children}
+        </View>
+      </ScrollView>
+      {loading && (
+        <View className="yao-global-loader">
+          <View className="loader-orbit" />
+          <Text>同步健康数据中...</Text>
+        </View>
+      )}
+    </View>
+  )
 }
 
-export interface HeroHeaderProps {
-  eyebrow?: string
+interface HeroHeaderProps {
+  eyebrow: string
   title: string
-  subtitle?: string
+  subtitle: string
   aside?: ReactNode
-  roleTone?: RoleTone
+  roleTone?: 'elder' | 'family'
 }
 
 export function HeroHeader({ eyebrow, title, subtitle, aside, roleTone = 'elder' }: HeroHeaderProps) {
   return (
-    <View className={`hero-header hero-header--${roleTone}`}>
-      <View className="hero-header__body">
-        {eyebrow ? <Text className="hero-header__eyebrow">{eyebrow}</Text> : null}
-        <Text className="hero-header__title">{title}</Text>
-        {subtitle ? <Text className="hero-header__subtitle">{subtitle}</Text> : null}
+    <View className={classNames('yao-hero', `yao-hero-${roleTone}`)}>
+      <View className="hero-content">
+        <Text className="hero-eyebrow">{eyebrow}</Text>
+        <Text className="hero-title">{title}</Text>
+        <Text className="hero-subtitle">{subtitle}</Text>
       </View>
-      {aside ? <View className="hero-header__aside">{aside}</View> : null}
+      {aside && <View className="hero-aside">{aside}</View>}
     </View>
   )
 }
 
-export interface SectionBlockProps extends PropsWithChildren {
+interface StatusCardProps {
   title: string
-  description?: string
-  actionLabel?: string
-  onAction?: () => void
-}
-
-export function SectionBlock({ title, description, actionLabel, onAction, children }: SectionBlockProps) {
-  return (
-    <View className="section-block">
-      <View className="section-block__head">
-        <View>
-          <Text className="section-block__title">{title}</Text>
-          {description ? <Text className="section-block__description">{description}</Text> : null}
-        </View>
-        {actionLabel ? (
-          <View className="section-block__action" onClick={onAction}>
-            <Text>{actionLabel}</Text>
-          </View>
-        ) : null}
-      </View>
-      {children}
-    </View>
-  )
-}
-
-export interface StatusCardProps {
-  title: string
-  value: string
+  value: string | number
   unit?: string
   hint?: string
-  tone?: StatusTone
-  icon?: ReactNode
-  onClick?: () => void
+  tone?: 'normal' | 'warning' | 'danger' | 'success' | 'primary'
 }
 
-export function StatusCard({ title, value, unit, hint, tone = 'primary', icon, onClick }: StatusCardProps) {
+export function StatusCard({ title, value, unit, hint, tone = 'normal' }: StatusCardProps) {
   return (
-    <View className={`status-card status-card--${tone}${onClick ? ' status-card--clickable' : ''}`} onClick={onClick}>
-      <View className="status-card__top">
-        <Text className="status-card__title">{title}</Text>
-        {icon ? <View className="status-card__icon">{icon}</View> : null}
+    <View className={classNames('yao-status-card', `card-tone-${tone}`)}>
+      <Text className="card-title">{title}</Text>
+      <View className="card-main">
+        <Text className="card-value">{value}</Text>
+        {unit && <Text className="card-unit">{unit}</Text>}
       </View>
-      <View className="status-card__value-row">
-        <Text className="status-card__value">{value}</Text>
-        {unit ? <Text className="status-card__unit">{unit}</Text> : null}
-      </View>
-      {hint ? <Text className="status-card__hint">{hint}</Text> : null}
+      {hint && <Text className="card-hint">{hint}</Text>}
     </View>
   )
 }
 
-export interface DataPanelProps extends PropsWithChildren {
-  tone?: StatusTone
-}
-
-export function DataPanel({ tone = 'primary', children }: DataPanelProps) {
-  return <View className={`data-panel data-panel--${tone}`}>{children}</View>
-}
-
-export interface EmptyStateProps {
+interface SectionBlockProps {
   title: string
   description?: string
-  icon?: ReactNode
+  children: ReactNode
   actionLabel?: string
   onAction?: () => void
 }
 
-export function EmptyState({ title, description, icon, actionLabel, onAction }: EmptyStateProps) {
+export function SectionBlock({ title, description, children, actionLabel, onAction }: SectionBlockProps) {
   return (
-    <View className="empty-state">
-      {icon ? <View className="empty-state__icon">{icon}</View> : null}
-      <Text className="empty-state__title">{title}</Text>
-      {description ? <Text className="empty-state__description">{description}</Text> : null}
-      {actionLabel ? (
-        <View className="empty-state__action" onClick={onAction}>
-          <Text>{actionLabel}</Text>
+    <View className="yao-section">
+      <View className="section-header">
+        <View className="section-title-group">
+          <Text className="section-title">{title}</Text>
+          {description && <Text className="section-description">{description}</Text>}
         </View>
-      ) : null}
+        {actionLabel && (
+          <View className="section-action" onClick={onAction}>
+            <Text>{actionLabel}</Text>
+            <View className="action-arrow" />
+          </View>
+        )}
+      </View>
+      <View className="section-content">
+        {children}
+      </View>
     </View>
   )
 }
 
-export interface ActionGridItem {
-  key: string
-  label: string
-  description: string
-  icon: ReactNode
-  badge?: string
+interface ActionGridProps {
+  items: Array<{ key: string; label: string; icon: ReactNode; badge?: string; description?: string }>
+  onSelect: (key: string) => void
 }
 
-export interface ActionGridProps {
-  items: ActionGridItem[]
-  columns?: 2 | 3
-  onSelect?: (key: string) => void
-}
-
-export function ActionGrid({ items, columns = 2, onSelect }: ActionGridProps) {
+export function ActionGrid({ items, onSelect }: ActionGridProps) {
   return (
-    <View className={`action-grid action-grid--cols-${columns}`}>
+    <View className="yao-action-grid">
       {items.map(item => (
-        <View key={item.key} className="action-grid__item" onClick={() => onSelect?.(item.key)}>
-          {item.badge ? (
-            <View className="action-grid__badge">
-              <Text>{item.badge}</Text>
-            </View>
-          ) : null}
-          <View className="action-grid__icon">{item.icon}</View>
-          <Text className="action-grid__label">{item.label}</Text>
-          <Text className="action-grid__description">{item.description}</Text>
+        <View key={item.key} className="action-item" onClick={() => onSelect(item.key)}>
+          <View className="action-icon-wrapper">
+            {item.icon}
+            {item.badge && <View className="action-badge">{item.badge}</View>}
+          </View>
+          <Text className="action-label">{item.label}</Text>
+          {item.description && <Text className="action-desc">{item.description}</Text>}
         </View>
       ))}
     </View>
   )
 }
 
-export interface StickyPrimaryActionProps {
+export function DataPanel({ children, tone = 'normal' }: { children: ReactNode; tone?: string }) {
+  return (
+    <View className={classNames('yao-data-panel', `panel-tone-${tone}`)}>
+      {children}
+    </View>
+  )
+}
+
+interface StickyActionProps {
   label: string
   icon?: ReactNode
   onClick: () => void
-  tone?: RoleTone
+  tone?: 'elder' | 'family'
 }
 
-export function StickyPrimaryAction({ label, icon, onClick, tone = 'elder' }: StickyPrimaryActionProps) {
+export function StickyPrimaryAction({ label, icon, onClick, tone = 'elder' }: StickyActionProps) {
   return (
-    <View className="sticky-action">
-      <View className={`sticky-action__button sticky-action__button--${tone}`} onClick={onClick}>
-        {icon ? <View className="sticky-action__icon">{icon}</View> : null}
-        <Text className="sticky-action__label">{label}</Text>
+    <View className={classNames('yao-sticky-action', `sticky-tone-${tone}`)} onClick={onClick}>
+      <View className="sticky-inner">
+        {icon && <View className="sticky-icon">{icon}</View>}
+        <Text className="sticky-label">{label}</Text>
       </View>
     </View>
   )

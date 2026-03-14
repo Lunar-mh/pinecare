@@ -1,11 +1,22 @@
 'use strict';
 
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const auth = require('../middleware/auth');
 const userController = require('../controllers/userController');
 const { deprecatedRoute } = require('../utils/deprecation');
+const { fail } = require('../utils/response');
 
 const router = express.Router();
+
+const unlockLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `${req.ip}:unlock:${(req.body && req.body.phone) || 'unknown'}`,
+  handler: (_req, res) => fail(res, 429, 'Too many unlock requests.', null, 429),
+});
 
 router.get('/profile', auth, userController.getProfile);
 router.put('/profile', auth, userController.updateProfile);
@@ -32,6 +43,6 @@ router.post('/binding/qrcode', auth, userController.createBindingQrcode);
 router.post('/binding/approve', auth, userController.approveBinding);
 
 router.post('/account/delete', auth, userController.deleteAccount);
-router.post('/unlock', userController.unlockAccount);
+router.post('/unlock', unlockLimiter, userController.unlockAccount);
 
 module.exports = router;

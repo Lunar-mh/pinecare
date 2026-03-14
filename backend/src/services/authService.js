@@ -34,7 +34,14 @@ function getJwtSecret() {
 }
 
 function getRefreshSecret() {
-  return String(process.env.JWT_REFRESH_SECRET || '').trim() || getJwtSecret();
+  const refreshSecret = String(process.env.JWT_REFRESH_SECRET || '').trim();
+  if (!refreshSecret) {
+    throw createBusinessError(500, 'JWT_REFRESH_SECRET is not configured. It must differ from JWT_SECRET.', null, 500);
+  }
+  if (refreshSecret === getJwtSecret()) {
+    throw createBusinessError(500, 'JWT_REFRESH_SECRET must differ from JWT_SECRET.', null, 500);
+  }
+  return refreshSecret;
 }
 
 function getAdminCredentials() {
@@ -241,7 +248,28 @@ async function loginAdmin({ username, password, ipAddress, userAgent, requestId 
   const context = createContext(ipAddress, userAgent, requestId);
   const admin = getAdminCredentials();
 
-  if (username !== admin.username || password !== admin.password) {
+  if (username !== admin.username) {
+    await writeAuditLog(null, 'admin_login_fail', context, { username });
+    throw createBusinessError(401, 'Invalid admin username or password.', null, 401);
+  }
+
+  // 支持两种模式：如果密码以 $2a$ 或 $2b$ 开头则视为bcrypt哈希值，否则为明文（仅限dev）
+  const storedPassword = admin.password;
+  const isBcryptHash = /^\$2[aby]\$/.test(storedPassword);
+  let passwordMatch = false;
+
+  if (isBcryptHash) {
+    passwordMatch = await bcrypt.compare(password, storedPassword);
+  } else {
+    // 明文对比仅在非 PRODUCTION_LIVE 下允许
+    const { isProductionLive } = require('../config/runtimeMode');
+    if (isProductionLive()) {
+      throw createBusinessError(503, 'Admin password must be bcrypt-hashed in PRODUCTION_LIVE mode.', null, 503);
+    }
+    passwordMatch = (password === storedPassword);
+  }
+
+  if (!passwordMatch) {
     await writeAuditLog(null, 'admin_login_fail', context, { username });
     throw createBusinessError(401, 'Invalid admin username or password.', null, 401);
   }
@@ -273,6 +301,30 @@ function validateRefreshPayload(decoded) {
   }
 }
 
+async function assertRefreshableUser(userId) {
+  if (Number(userId) === 0) {
+    return null;
+  }
+
+  const user = await UserModel.findById(userId);
+  if (!user) {
+    await redis.del(refreshTokenKey(userId));
+    throw createBusinessError(401, 'refresh_token subject is invalid.', null, 401);
+  }
+
+  if (user.account_status === 'deleted') {
+    await redis.del(refreshTokenKey(userId));
+    throw createBusinessError(403, 'Account has been deleted.', null, 403);
+  }
+
+  if (isLocked(user)) {
+    await redis.del(refreshTokenKey(userId));
+    throw createBusinessError(423, 'Account is locked.', { locked_until: user.locked_until }, 423);
+  }
+
+  return user;
+}
+
 async function refreshToken(refreshTokenValue, context = {}) {
   const decoded = decodeRefreshToken(refreshTokenValue);
   validateRefreshPayload(decoded);
@@ -281,6 +333,8 @@ async function refreshToken(refreshTokenValue, context = {}) {
   if (!cachedToken || cachedToken !== refreshTokenValue) {
     throw createBusinessError(401, 'refresh_token mismatch.', null, 401);
   }
+
+  await assertRefreshableUser(decoded.userId);
 
   const nextTokens = await issueTokens(decoded.userId, {
     ...(decoded.role ? { role: decoded.role } : {}),
@@ -348,6 +402,4 @@ module.exports = {
   loginWithWechat,
   unlockAccountByCode,
 };
-
-
 

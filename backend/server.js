@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 require('dotenv').config();
 
@@ -58,4 +58,20 @@ process.on('SIGTERM', () => {
 });
 process.on('SIGINT', () => {
   gracefulShutdown('SIGINT');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('server', 'unhandled_rejection', {
+    message: reason instanceof Error ? reason.message : String(reason),
+    stack: reason instanceof Error ? reason.stack : undefined,
+  });
+});
+
+process.on('uncaughtException', (err) => {
+  logger.error('server', 'uncaught_exception', {
+    message: err.message,
+    stack: err.stack,
+  });
+  // 给日志一个写入的机会，然后退出
+  setTimeout(() => process.exit(1), 1000);
 });

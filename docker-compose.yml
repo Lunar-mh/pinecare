@@ -20,6 +20,7 @@ services:
       DB_NAME: ${DB_NAME:-yinban}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-yinban_redis_dev_password}
       RUNTIME_MODE: ${RUNTIME_MODE:-COMPETITION_SANDBOX}
       COMPETITION_SANDBOX: ${COMPETITION_SANDBOX:-1}
       PRODUCTION_LIVE: ${PRODUCTION_LIVE:-0}
@@ -57,10 +58,11 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-yinban_redis_dev_password}
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-yinban_redis_dev_password}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -76,7 +76,14 @@ describe('userService', () => {
 
     await expect(userService.updateProfile(1, { age: 200 }, context)).rejects.toMatchObject({
       code: 400,
-      message: 'age must be between 0 and 120.',
+      message: 'age must be between 0 and 125.',
+    });
+
+    await expect(
+      userService.updateProfile(1, { chronic_diseases: new Array(21).fill('htn') }, context)
+    ).rejects.toMatchObject({
+      code: 400,
+      message: 'chronic_diseases can include up to 20 items.',
     });
 
     expect(UserModel.updateProfile).not.toHaveBeenCalled();
@@ -111,6 +118,41 @@ describe('userService', () => {
       })
     );
     expect(result.id).toBe(99);
+  });
+
+  it('rejects non-boolean emergency contact primary flags', async () => {
+    UserModel.findById.mockResolvedValue({ id: 1, account_status: 'active' });
+
+    await expect(
+      userService.createEmergencyContact(
+        1,
+        {
+          name: 'Dad',
+          phone: '13812345678',
+          relationship: 'father',
+          is_primary: '1',
+        },
+        context
+      )
+    ).rejects.toMatchObject({
+      code: 400,
+      message: 'is_primary must be boolean.',
+    });
+
+    await expect(
+      userService.updateEmergencyContact(
+        1,
+        8,
+        {
+          name: 'Dad',
+          is_primary: '1',
+        },
+        context
+      )
+    ).rejects.toMatchObject({
+      code: 400,
+      message: 'is_primary must be boolean.',
+    });
   });
 
   it('blocks contact creation when max limit is reached', async () => {
@@ -208,7 +250,7 @@ describe('userService', () => {
     expect(smsService.verifyAndConsumeCode).toHaveBeenCalledWith(
       '13812345678',
       '123456',
-      'reset_password'
+      'account_delete'
     );
     expect(UserModel.softDelete).toHaveBeenCalledWith(1);
     expect(redis.del).toHaveBeenCalledWith('auth:refresh:1');

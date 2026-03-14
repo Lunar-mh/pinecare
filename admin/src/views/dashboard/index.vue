@@ -1,199 +1,265 @@
-﻿<script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
-import { bootstrapDemoScenario, getDashboardStats, getRecentActivities, getSystemEvidence } from '@/services'
-import type { DashboardStats, SystemEvidenceBundle } from '@/services'
-import { buildRiskItems, buildWorkbenchCards } from '@/view-models/workbench'
-
-const dashboard = ref<DashboardStats>({ stats: [], recentActivities: [] })
-const evidence = ref<SystemEvidenceBundle | null>(null)
-const loading = ref(true)
-const bootstrapLoading = ref(false)
-
-const cards = computed(() => buildWorkbenchCards(dashboard.value.stats || []))
-const risks = computed(() => buildRiskItems(dashboard.value.recentActivities || []))
-const recentActivities = computed(() => dashboard.value.recentActivities || [])
-const providerRows = computed(() => (evidence.value?.providerEvidence || []).slice(0, 6))
-const defenseScripts = computed(() => evidence.value?.defenseScripts || [])
-
-function statusTagType(status: string): string {
-  if (status.includes('正常') || status.includes('完成')) return 'success'
-  if (status.includes('待') || status.includes('审核')) return 'warning'
-  if (status.includes('SOS') || status.includes('异常')) return 'danger'
-  return 'info'
-}
-
-function providerTagType(mode?: string): 'success' | 'warning' | 'info' | 'danger' {
-  if (mode === 'live') return 'success'
-  if (mode === 'stub') return 'warning'
-  return 'info'
-}
-
-async function fetchDashboard() {
-  loading.value = true
-  try {
-    const [stats, activities, evidenceBundle] = await Promise.all([
-      getDashboardStats(),
-      getRecentActivities(8),
-      getSystemEvidence(),
-    ])
-    dashboard.value = {
-      stats: stats.stats || [],
-      recentActivities: activities || [],
-    }
-    evidence.value = evidenceBundle
-  } catch (error: unknown) {
-    ElMessage.error(error instanceof Error ? error.message : '工作台数据加载失败')
-  } finally {
-    loading.value = false
-  }
-}
-
-async function handleBootstrap() {
-  bootstrapLoading.value = true
-  try {
-    const result = await bootstrapDemoScenario('competition-full-loop')
-    ElMessage.success(`剧本已准备：${result.title}`)
-    await fetchDashboard()
-  } catch (error: unknown) {
-    ElMessage.error(error instanceof Error ? error.message : '准备答辩剧本失败')
-  } finally {
-    bootstrapLoading.value = false
-  }
-}
-
-onMounted(fetchDashboard)
-</script>
-
 <template>
-  <div>
-    <div class="wb-page-header">
-      <div>
-        <span class="wb-page-title">今日态势总览</span>
-        <span class="wb-page-subtitle">先看活跃、告警、待处理，再进入各业务页做细分操作。</span>
-      </div>
-      <div style="display:flex; gap:10px; align-items:center">
-        <div class="wb-chip">值班建议：先处理 SOS 与离线异常</div>
-        <el-button :icon="Refresh" @click="fetchDashboard">刷新</el-button>
-        <el-button type="primary" :loading="bootstrapLoading" @click="handleBootstrap">准备整项答辩剧本</el-button>
-      </div>
-    </div>
-
-    <div class="wb-metric-grid">
-      <div v-for="card in cards" :key="card.label" class="wb-metric-card">
-        <span class="wb-card-label">{{ card.label }}</span>
-        <div class="wb-card-value">{{ card.value }}<small>{{ card.unit }}</small></div>
-        <span class="wb-card-hint">{{ card.hint }}</span>
-      </div>
-    </div>
-
-    <div class="wb-grid-2">
-      <div class="wb-panel">
-        <div class="wb-page-header" style="margin-bottom: 14px">
-          <div>
-            <span class="wb-page-title" style="font-size: 22px">高风险事项</span>
-            <span class="wb-page-subtitle">把最需要先处理的事项放在最上方。</span>
-          </div>
+  <div class="yao-dashboard cyber-theme">
+    <!-- 顶部全景导航 -->
+    <nav class="cyber-nav">
+      <div class="brand">
+        <div class="logo-orb"></div>
+        <div class="brand-text">
+          <h1>曜银·全域智慧指挥系统</h1>
+          <p>LUSTROUS INTELLIGENT COMMAND SYSTEM v3.0</p>
         </div>
-        <div class="wb-list">
-          <div v-for="item in risks" :key="item.title + item.description" class="wb-list-item">
-            <div>
-              <span class="wb-list-title">{{ item.title }}</span>
-              <span class="wb-list-desc">{{ item.description }}</span>
+      </div>
+      <div class="global-stats">
+        <div class="stat-group">
+          <span class="label">社区覆盖率</span>
+          <div class="progress-bar"><div class="fill" style="width: 92%"></div></div>
+        </div>
+        <div class="stat-group">
+          <span class="label">系统负载</span>
+          <span class="value">12%</span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="cyber-layout">
+      <!-- 左侧：AI 预测与态势 -->
+      <aside class="side-panel left">
+        <div class="cyber-card glass-v2 radar-section">
+          <div class="card-tag">RISK RADAR</div>
+          <h3 class="card-title">全域健康风险雷达</h3>
+          <div class="radar-view">
+            <div class="radar-beam"></div>
+            <div class="radar-circles">
+              <span></span><span></span><span></span>
             </div>
-            <el-tag :type="item.level === '高优先' ? 'danger' : item.level === '跟进中' ? 'warning' : 'success'">{{ item.level }}</el-tag>
           </div>
         </div>
-      </div>
+        <div class="cyber-card glass-v2 trend-section">
+          <div class="card-tag">TREND ANALYSIS</div>
+          <h3 class="card-title">24h 告警趋势预测</h3>
+          <div class="trend-mock-chart">
+            <svg viewBox="0 0 400 150">
+              <path d="M0,100 Q50,80 100,120 T200,60 T300,90 T400,40" fill="none" stroke="var(--glow-blue)" stroke-width="3" />
+              <path d="M0,100 Q50,80 100,120 T200,60 T300,90 T400,40 V150 H0 Z" fill="url(#grad)" opacity="0.2" />
+              <defs>
+                <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--glow-blue)" />
+                  <stop offset="100%" stop-color="transparent" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+        </div>
+      </aside>
 
-      <div class="wb-panel">
-        <div class="wb-page-header" style="margin-bottom: 14px">
-          <div>
-            <span class="wb-page-title" style="font-size: 22px">证据与运行态</span>
-            <span class="wb-page-subtitle">直接展示第三方模式、准备度和答辩脚本状态。</span>
+      <!-- 中间：核心数字孪生 -->
+      <main class="main-map-center">
+        <div class="twin-base">
+          <div class="map-grid-layer"></div>
+          <div class="twin-map">
+            <!-- 模拟 3D 建筑与点位 -->
+            <div class="building b1"></div>
+            <div class="building b2"></div>
+            <div class="point-p1 active-pulse"></div>
+            <div class="point-p2 alert-pulse"></div>
           </div>
-        </div>
-        <div class="wb-list">
-          <div class="wb-list-item">
-            <div>
-              <span class="wb-list-title">运行模式</span>
-              <span class="wb-list-desc">{{ evidence?.runtimeMode || 'unknown' }}</span>
+          <div class="map-hud-overlay">
+            <div class="hud-top">坐标：116.397, 39.908 | 缩放：14.5x</div>
+            <div class="hud-bottom">
+              <div class="legend-item"><i class="dot blue"></i> 在线老人</div>
+              <div class="legend-item"><i class="dot red"></i> 紧急呼叫</div>
+              <div class="legend-item"><i class="dot gold"></i> 志愿者中转</div>
             </div>
-            <el-tag :type="evidence?.summary.liveHealthyCount ? 'success' : 'warning'">{{ evidence?.summary.liveHealthyCount || 0 }} live</el-tag>
           </div>
-          <div class="wb-list-item" v-for="item in defenseScripts" :key="item.id">
-            <div>
-              <span class="wb-list-title">{{ item.title }}</span>
-              <span class="wb-list-desc">{{ item.proof }}</span>
+        </div>
+      </main>
+
+      <!-- 右侧：指令中心与实时流 -->
+      <aside class="side-panel right">
+        <div class="cyber-card glass-v2 stream-section">
+          <div class="card-tag">REAL-TIME EVENTS</div>
+          <h3 class="card-title">实时全域事件流</h3>
+          <div class="event-stream">
+            <div v-for="i in 5" :key="i" class="event-item" :class="{ danger: i === 1 }">
+              <div class="event-time">14:42:0{{i}}</div>
+              <div class="event-body">
+                <span class="user">用户 #0{{i}}21</span>
+                <p>{{ i === 1 ? '触发 SOS 紧急求助' : '设备步数数据同步' }}</p>
+              </div>
             </div>
-            <el-tag :type="item.ready ? 'success' : 'warning'">{{ item.ready ? '已准备' : '待补证据' }}</el-tag>
           </div>
         </div>
-      </div>
-    </div>
-
-    <div class="wb-grid-2" style="margin-top: 20px">
-      <div class="wb-panel">
-        <div class="wb-page-header" style="margin-bottom: 14px">
-          <div>
-            <span class="wb-page-title" style="font-size: 22px">第三方能力总览</span>
-            <span class="wb-page-subtitle">优先看模式、最近成功和最近错误。</span>
-          </div>
-        </div>
-        <el-table :data="providerRows" stripe v-loading="loading">
-          <el-table-column prop="key" label="能力" min-width="150" />
-          <el-table-column label="模式" width="110">
-            <template #default="{ row }">
-              <el-tag :type="providerTagType(row.effectiveMode)">{{ row.effectiveMode || 'unknown' }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="lastSuccessAt" label="最近成功" min-width="180" />
-          <el-table-column prop="lastError" label="最近错误" min-width="220" show-overflow-tooltip />
-        </el-table>
-      </div>
-
-      <div class="wb-panel">
-        <div class="wb-page-header" style="margin-bottom: 14px">
-          <div>
-            <span class="wb-page-title" style="font-size: 22px">待处理提醒</span>
-            <span class="wb-page-subtitle">结合近期动态，快速判断下一步工作。</span>
-          </div>
-        </div>
-        <div class="wb-list">
-          <div class="wb-list-item" v-for="item in evidence?.checklist || []" :key="item.key">
-            <div>
-              <span class="wb-list-title">{{ item.key }}</span>
-              <span class="wb-list-desc">{{ item.detail }}</span>
+        <div class="cyber-card glass-v2 dispatch-section">
+          <div class="card-tag">DISPATCH OPS</div>
+          <h3 class="card-title">资源调度效率</h3>
+          <div class="circle-stats">
+            <div class="c-item">
+              <svg viewBox="0 0 36 36"><path class="bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" /><path class="val" stroke-dasharray="85, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" /></svg>
+              <span>响应率</span>
             </div>
-            <el-tag :type="item.status === 'ready' ? 'success' : item.status === 'pending' ? 'info' : 'warning'">{{ item.status }}</el-tag>
+            <div class="c-item">
+              <svg viewBox="0 0 36 36"><path class="bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" /><path class="val yellow" stroke-dasharray="62, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" /></svg>
+              <span>周转率</span>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <div class="wb-panel" style="margin-top: 20px">
-      <div class="wb-page-header" style="margin-bottom: 14px">
-        <div>
-          <span class="wb-page-title" style="font-size: 22px">近期动态</span>
-          <span class="wb-page-subtitle">保留表格视图，便于继续下钻处理。</span>
-        </div>
-      </div>
-      <el-table :data="recentActivities" stripe v-loading="loading">
-        <template #empty>
-          <div style="padding: 28px; text-align: center; color: var(--wb-text-soft)">
-            {{ loading ? '加载中...' : '暂无近期动态' }}
-          </div>
-        </template>
-        <el-table-column prop="type" label="事件类型" width="200" />
-        <el-table-column prop="user" label="相关用户" width="160" />
-        <el-table-column prop="time" label="时间" />
-        <el-table-column label="状态" width="140">
-          <template #default="{ row }">
-            <el-tag :type="statusTagType(row.status)">{{ row.status }}</el-tag>
-          </template>
-        </el-table-column>
-      </el-table>
+      </aside>
     </div>
   </div>
 </template>
+
+<style scoped>
+.cyber-theme {
+  --glow-blue: #00F3FF;
+  --glow-red: #FF4D4F;
+  --glow-gold: #F09236;
+  --bg-deep: #020617;
+  
+  background: var(--bg-deep);
+  min-height: 100vh;
+  color: #E2E8F0;
+  padding: 0 24px 24px;
+}
+
+/* 顶部导航升级 */
+.cyber-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32px 0;
+  
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    
+    .logo-orb {
+      width: 48px; height: 48px;
+      background: radial-gradient(circle, var(--glow-blue) 0%, transparent 70%);
+      box-shadow: 0 0 30px var(--glow-blue);
+      border-radius: 50%;
+      animation: orbitPulse 3s infinite;
+    }
+    
+    h1 { font-size: 28px; font-weight: 800; letter-spacing: 4px; margin: 0; }
+    p { font-size: 10px; color: #64748B; margin-top: 4px; }
+  }
+}
+
+.cyber-layout {
+  display: flex;
+  gap: 24px;
+  height: calc(100vh - 120px);
+}
+
+.side-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.main-map-center {
+  flex: 2.5;
+  position: relative;
+}
+
+/* 玻璃拟态 2.0 */
+.glass-v2 {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 32px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0, 243, 255, 0.3), transparent);
+  }
+}
+
+.card-tag {
+  font-size: 10px;
+  color: var(--glow-blue);
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+/* 数字孪生地图底座 */
+.twin-base {
+  width: 100%; height: 100%;
+  background: radial-gradient(circle at center, #0B1D3A 0%, var(--bg-deep) 100%);
+  border-radius: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+
+  .map-grid-layer {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(0, 243, 255, 0.1) 1px, transparent 1px);
+    background-size: 40px 40px;
+    transform: perspective(1000px) rotateX(60deg) translateY(-200px);
+    opacity: 0.3;
+  }
+}
+
+.active-pulse {
+  position: absolute;
+  top: 40%; left: 30%;
+  width: 12px; height: 12px;
+  background: var(--glow-blue);
+  border-radius: 50%;
+  box-shadow: 0 0 20px var(--glow-blue);
+}
+
+.alert-pulse {
+  position: absolute;
+  top: 60%; left: 70%;
+  width: 12px; height: 12px;
+  background: var(--glow-red);
+  border-radius: 50%;
+  animation: mapAlert 1s infinite;
+}
+
+@keyframes mapAlert {
+  0% { box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.7); }
+  100% { box-shadow: 0 0 0 30px rgba(255, 77, 79, 0); }
+}
+
+/* 实时事件流 */
+.event-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  
+  .event-item {
+    padding: 16px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.05);
+    
+    &.danger { border-left: 4px solid var(--glow-red); background: rgba(255, 77, 79, 0.05); }
+    
+    .event-time { font-size: 12px; color: #64748B; margin-bottom: 4px; }
+    .user { font-weight: 700; color: #CBD5E1; }
+    p { font-size: 13px; color: #94A3B8; margin-top: 4px; }
+  }
+}
+
+@keyframes orbitPulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+</style>

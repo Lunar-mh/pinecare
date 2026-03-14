@@ -23,6 +23,14 @@ const adminUsersRouter = require('../src/routes/adminUsers');
 const adminAuth = require('../src/middleware/adminAuth');
 const adminUserService = require('../src/services/adminUserService');
 
+const GLOBAL_SCOPE = {
+  adminId: 0,
+  userId: 0,
+  communityId: 1,
+  role: 'admin',
+  isGlobalAdmin: true,
+};
+
 function createApp() {
   const app = express();
   app.use(express.json());
@@ -33,7 +41,10 @@ function createApp() {
 describe('admin users routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    adminAuth.mockImplementation((_req, _res, next) => next());
+    adminAuth.mockImplementation((req, _res, next) => {
+      req.adminScope = { ...GLOBAL_SCOPE };
+      next();
+    });
   });
 
   it('GET /admin/users returns paged users', async () => {
@@ -51,7 +62,10 @@ describe('admin users routes', () => {
     expect(res.body.code).toBe(0);
     expect(res.body.data.total).toBe(1);
     expect(adminAuth).toHaveBeenCalled();
-    expect(adminUserService.listUsers).toHaveBeenCalledWith({ page: '1', pageSize: '10' });
+    expect(adminUserService.listUsers).toHaveBeenCalledWith(expect.objectContaining(GLOBAL_SCOPE), {
+      page: '1',
+      pageSize: '10',
+    });
   });
 
   it('GET /admin/users/:userId validates userId', async () => {
@@ -81,6 +95,10 @@ describe('admin users routes', () => {
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
     expect(res.body.data.id).toBe(99);
+    expect(adminUserService.createUser).toHaveBeenCalledWith(
+      expect.objectContaining(GLOBAL_SCOPE),
+      expect.objectContaining({ nickname: 'new-user', phone: '13900000000', role: 'elder' })
+    );
   });
 
   it('PUT /admin/users/:userId/status validates status', async () => {
@@ -103,7 +121,11 @@ describe('admin users routes', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(adminUserService.updateUserStatus).toHaveBeenCalledWith(1, 'disabled');
+    expect(adminUserService.updateUserStatus).toHaveBeenCalledWith(
+      expect.objectContaining(GLOBAL_SCOPE),
+      1,
+      'disabled'
+    );
   });
 
   it('blocks requests rejected by adminAuth', async () => {

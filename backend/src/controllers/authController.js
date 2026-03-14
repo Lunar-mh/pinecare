@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const { ok, fail } = require('../utils/response');
 const authService = require('../services/authService');
@@ -10,7 +10,7 @@ const {
   validateRequired,
 } = require('../utils/validators');
 
-const SMS_PURPOSES = new Set(['register', 'login', 'bind', 'reset_password']);
+const SMS_PURPOSES = new Set(['register', 'login', 'bind', 'reset_password', 'account_delete']);
 
 function handleError(res, err) {
   if (err && (err.code || err.statusCode)) {

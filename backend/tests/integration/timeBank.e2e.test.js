@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const jwt = require('jsonwebtoken');
 const request = require('supertest');
@@ -238,10 +238,18 @@ jest.mock('../../src/config/redis', () => ({
   del: jest.fn(async () => 1),
 }));
 
+jest.mock('../../src/models/user', () => ({
+  findById: jest.fn(async (userId) => ({ id: userId, account_status: 'active' })),
+}));
+
 process.env.HASH_SECRET = process.env.HASH_SECRET || 'integration-hash-secret';
 process.env.PLATFORM_PRIVATE_KEY = process.env.PLATFORM_PRIVATE_KEY || 'integration-platform-secret';
 
 const app = require('../../src/app');
+
+beforeAll(() => {
+  process.env.JWT_SECRET = process.env.JWT_SECRET || 'timebank-e2e-secret';
+});
 
 describe('timeBank integration flow', () => {
   const jwtSecret = process.env.JWT_SECRET || 'fallback_secret';

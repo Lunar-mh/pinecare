@@ -1,11 +1,14 @@
 'use strict';
 
+const crypto = require('crypto');
 const redis = require('../config/redis');
 const SmsCodeModel = require('../models/smsCode');
 
 const CODE_TTL_SECONDS = 300;
 const DAILY_LIMIT = 10;
-const PURPOSES = new Set(['register', 'login', 'bind', 'reset_password']);
+const VERIFY_FAIL_LIMIT = 5;
+const VERIFY_FAIL_WINDOW_SECONDS = 300;
+const PURPOSES = new Set(['register', 'login', 'bind', 'reset_password', 'account_delete']);
 
 function createBusinessError(code, message, data = null, httpStatus = null) {
   const err = new Error(message);
@@ -20,12 +23,12 @@ function getDateKey() {
 }
 
 function generateCode() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(crypto.randomInt(100000, 1000000));
 }
 
 async function sendSms(phone, purpose) {
   if (!PURPOSES.has(purpose)) {
-    throw createBusinessError(400, '验证码用途不支持', null, 400);
+    throw createBusinessError(400, 'Unsupported SMS purpose.', null, 400);
   }
 
   const dateKey = getDateKey();
@@ -36,7 +39,7 @@ async function sendSms(phone, purpose) {
   }
 
   if (count > DAILY_LIMIT) {
-    throw createBusinessError(429, '超过每日发送限制', { daily_limit: DAILY_LIMIT }, 429);
+    throw createBusinessError(429, 'SMS daily limit exceeded.', { daily_limit: DAILY_LIMIT }, 429);
   }
 
   const code = generateCode();
@@ -52,18 +55,19 @@ async function sendSms(phone, purpose) {
 
   return {
     sent: true,
-    code_ttl_seconds: CODE_TTL_SECONDS,
   };
 }
 
 async function verifyAndConsumeCode(phone, code, purpose) {
   if (!PURPOSES.has(purpose)) {
-    return { valid: false, message: '验证码用途不支持' };
+    return { valid: false, message: 'Unsupported SMS purpose.' };
   }
 
-  // 本地开发/联调兜底：允许使用固定验证码 000000（避免依赖真实短信通道）
-  if (process.env.NODE_ENV !== 'production' && code === '000000') {
-    return { valid: true };
+  // 验证失败次数限制，防止暴力枚举
+  const failKey = `sms:verify_fail:${phone}:${purpose}`;
+  const failCount = Number(await redis.get(failKey) || 0);
+  if (failCount >= VERIFY_FAIL_LIMIT) {
+    return { valid: false, message: 'Too many failed verification attempts. Please request a new code.' };
   }
 
   const redisKey = `sms:code:${phone}:${purpose}`;
@@ -71,10 +75,16 @@ async function verifyAndConsumeCode(phone, code, purpose) {
 
   if (cachedCode) {
     if (cachedCode !== code) {
-      return { valid: false, message: '验证码错误' };
+      // 记录失败次数
+      const newCount = await redis.incr(failKey);
+      if (newCount === 1) {
+        await redis.expire(failKey, VERIFY_FAIL_WINDOW_SECONDS);
+      }
+      return { valid: false, message: 'Invalid SMS code.' };
     }
 
     await redis.del(redisKey);
+    await redis.del(failKey);
 
     const latest = await SmsCodeModel.findLatestByPhoneAndPurpose(phone, purpose);
     if (latest && latest.code === code && !latest.used) {
@@ -84,7 +94,16 @@ async function verifyAndConsumeCode(phone, code, purpose) {
     return { valid: true };
   }
 
-  return SmsCodeModel.verifyAndConsume(phone, code, purpose);
+  const dbResult = await SmsCodeModel.verifyAndConsume(phone, code, purpose);
+  if (!dbResult.valid) {
+    const newCount = await redis.incr(failKey);
+    if (newCount === 1) {
+      await redis.expire(failKey, VERIFY_FAIL_WINDOW_SECONDS);
+    }
+  } else {
+    await redis.del(failKey);
+  }
+  return dbResult;
 }
 
 module.exports = {

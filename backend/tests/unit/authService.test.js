@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 jest.mock('bcryptjs', () => ({
   hash: jest.fn(),
@@ -17,6 +17,7 @@ jest.mock('uuid', () => ({
 jest.mock('../../src/config/redis', () => ({
   set: jest.fn(),
   get: jest.fn(),
+  del: jest.fn(),
   closeRedis: jest.fn(),
 }));
 
@@ -222,6 +223,25 @@ describe('authService', () => {
     });
   });
 
+  it('refreshToken rejects deleted users and revokes cached tokens', async () => {
+    jwt.verify.mockReturnValue({
+      userId: 1,
+      token_type: 'refresh',
+      jti: 'uuid-refresh-jti',
+    });
+    redis.get.mockResolvedValue('refresh-token');
+    UserModel.findById.mockResolvedValue({
+      id: 1,
+      account_status: 'deleted',
+    });
+
+    await expect(authService.refreshToken('refresh-token')).rejects.toMatchObject({
+      code: 403,
+      statusCode: 403,
+    });
+
+    expect(redis.del).toHaveBeenCalledWith('auth:refresh:1');
+  });
   it('loginAdmin rejects invalid credentials', async () => {
     AuditLogModel.create.mockResolvedValue({ id: 1 });
 
@@ -304,3 +324,4 @@ describe('authService', () => {
     });
   });
 });
+

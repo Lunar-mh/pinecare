@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const redis = require('../config/redis');
 const { fail } = require('../utils/response');
@@ -11,10 +11,11 @@ function resolveActorId(req) {
   const rawUserId = req.user && req.user.userId;
   const parsedUserId = Number(rawUserId);
   if (Number.isInteger(parsedUserId) && parsedUserId > 0) {
-    return parsedUserId;
+    return `user:${parsedUserId}`;
   }
 
-  return null;
+  // 未认证用户使用 IP 限速
+  return `ip:${req.ip || 'unknown'}`;
 }
 
 function buildWindowMember(req, timestamp) {
@@ -32,11 +33,7 @@ function createRateLimiter({
 } = {}) {
   return async function rateLimiter(req, res, next) {
     const actorId = resolveActorId(req);
-    if (!actorId) {
-      return next();
-    }
-
-    const key = `${keyPrefix}:user:${actorId}`;
+    const key = `${keyPrefix}:${actorId}`;
     const now = Date.now();
     const windowStart = now - windowSeconds * 1000;
 

@@ -1,15 +1,19 @@
-﻿'use strict';
+'use strict';
 
 const { query } = require('../config/database');
+
+const FAMILY_ROLE_PREDICATE =
+  "(u.user_role = 'family' OR EXISTS (SELECT 1 FROM family_bindings fb WHERE fb.family_user_id = u.id AND fb.binding_status IN ('pending', 'approved')))";
+const ROLE_SQL = `CASE WHEN ${FAMILY_ROLE_PREDICATE} THEN 'family' ELSE 'elder' END`;
 
 function buildWhere(filters = {}) {
   const where = [];
   const values = [];
 
   if (filters.search) {
-    where.push('(u.nickname LIKE ? OR u.phone LIKE ? OR CAST(u.id AS CHAR) LIKE ?)');
+    where.push('(u.nickname LIKE ? OR u.real_name LIKE ? OR u.phone LIKE ? OR CAST(u.id AS CHAR) LIKE ?)');
     const keyword = `%${filters.search}%`;
-    values.push(keyword, keyword, keyword);
+    values.push(keyword, keyword, keyword, keyword);
   }
 
   if (filters.accountStatus) {
@@ -18,13 +22,9 @@ function buildWhere(filters = {}) {
   }
 
   if (filters.role === 'family') {
-    where.push(
-      "EXISTS (SELECT 1 FROM family_bindings fb WHERE fb.family_user_id = u.id AND fb.binding_status IN ('pending', 'approved'))"
-    );
+    where.push(FAMILY_ROLE_PREDICATE);
   } else if (filters.role === 'elder') {
-    where.push(
-      "NOT EXISTS (SELECT 1 FROM family_bindings fb WHERE fb.family_user_id = u.id AND fb.binding_status IN ('pending', 'approved'))"
-    );
+    where.push(`NOT ${FAMILY_ROLE_PREDICATE}`);
   }
 
   if (where.length === 0) {
@@ -36,9 +36,6 @@ function buildWhere(filters = {}) {
     values,
   };
 }
-
-const ROLE_SQL =
-  "CASE WHEN EXISTS (SELECT 1 FROM family_bindings fb WHERE fb.family_user_id = u.id AND fb.binding_status IN ('pending', 'approved')) THEN 'family' ELSE 'elder' END";
 
 const adminUserModel = {
   async listUsers(filters = {}, pagination = {}) {
@@ -98,9 +95,9 @@ const adminUserModel = {
 
   async createUser(payload) {
     const [result] = await query(
-      `INSERT INTO users (nickname, phone, password_hash, account_status, failed_login_attempts)
-       VALUES (?, ?, NULL, 'active', 0)`,
-      [payload.nickname, payload.phone]
+      `INSERT INTO users (nickname, phone, user_role, password_hash, account_status, failed_login_attempts)
+       VALUES (?, ?, ?, NULL, 'active', 0)`,
+      [payload.nickname, payload.phone, payload.role]
     );
     return Number(result.insertId);
   },

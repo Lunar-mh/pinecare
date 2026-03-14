@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const { ok, fail } = require('../utils/response');
 const userService = require('../services/userService');
@@ -15,6 +15,22 @@ function parsePositiveInt(value) {
     return null;
   }
   return parsed;
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function parseOptionalBoolean(value) {
+  if (value === undefined) {
+    return { valid: true, value: undefined };
+  }
+
+  if (typeof value === 'boolean') {
+    return { valid: true, value };
+  }
+
+  return { valid: false, message: 'is_primary must be boolean.' };
 }
 
 function handleError(res, err) {
@@ -37,6 +53,10 @@ async function getProfile(req, res) {
 
 async function updateProfile(req, res) {
   try {
+    if (!isPlainObject(req.body)) {
+      return fail(res, 400, 'Request body is required.', null, 400);
+    }
+
     const payload = {
       real_name: req.body.real_name,
       age: req.body.age,
@@ -62,7 +82,11 @@ async function listEmergencyContacts(req, res) {
 
 async function createEmergencyContact(req, res) {
   try {
-    const required = validateRequired(req.body || {}, ['name', 'phone', 'relationship']);
+    if (!isPlainObject(req.body)) {
+      return fail(res, 400, 'Request body is required.', null, 400);
+    }
+
+    const required = validateRequired(req.body, ['name', 'phone', 'relationship']);
     if (!required.valid) {
       return fail(res, 400, required.message, null, 400);
     }
@@ -72,13 +96,18 @@ async function createEmergencyContact(req, res) {
       return fail(res, 400, phoneCheck.message, null, 400);
     }
 
+    const isPrimary = parseOptionalBoolean(req.body.is_primary);
+    if (!isPrimary.valid) {
+      return fail(res, 400, isPrimary.message, null, 400);
+    }
+
     const data = await userService.createEmergencyContact(
       req.user.userId,
       {
         name: req.body.name,
         phone: req.body.phone,
         relationship: req.body.relationship,
-        is_primary: req.body.is_primary,
+        is_primary: isPrimary.value,
       },
       getRequestContext(req)
     );
@@ -96,7 +125,7 @@ async function updateEmergencyContact(req, res) {
       return fail(res, 400, 'Invalid contact id.', null, 400);
     }
 
-    if (!req.body || typeof req.body !== 'object') {
+    if (!isPlainObject(req.body)) {
       return fail(res, 400, 'Request body is required.', null, 400);
     }
 
@@ -107,6 +136,11 @@ async function updateEmergencyContact(req, res) {
       }
     }
 
+    const isPrimary = parseOptionalBoolean(req.body.is_primary);
+    if (!isPrimary.valid) {
+      return fail(res, 400, isPrimary.message, null, 400);
+    }
+
     const data = await userService.updateEmergencyContact(
       req.user.userId,
       contactId,
@@ -114,7 +148,7 @@ async function updateEmergencyContact(req, res) {
         name: req.body.name,
         phone: req.body.phone,
         relationship: req.body.relationship,
-        is_primary: req.body.is_primary,
+        is_primary: isPrimary.value,
       },
       getRequestContext(req)
     );

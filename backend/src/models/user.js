@@ -2,6 +2,12 @@
 
 const { query } = require('../config/database');
 
+const USER_COLUMNS = [
+  'id', 'phone', 'openid', 'nickname', 'avatar_url', 'real_name',
+  'age', 'gender', 'chronic_diseases', 'account_status', 'password_hash',
+  'failed_login_attempts', 'locked_until', 'created_at', 'updated_at', 'last_login_at',
+].join(', ');
+
 function normalizeUserRow(row) {
   if (!row) return null;
   let diseases = row.chronic_diseases;
@@ -23,17 +29,17 @@ function normalizeUserRow(row) {
 
 class UserModel {
   static async findById(id) {
-    const [rows] = await query('SELECT * FROM users WHERE id = ? LIMIT 1', [id]);
+    const [rows] = await query(`SELECT ${USER_COLUMNS} FROM users WHERE id = ? LIMIT 1`, [id]);
     return normalizeUserRow(rows[0] || null);
   }
 
   static async findByPhone(phone) {
-    const [rows] = await query('SELECT * FROM users WHERE phone = ? LIMIT 1', [phone]);
+    const [rows] = await query(`SELECT ${USER_COLUMNS} FROM users WHERE phone = ? LIMIT 1`, [phone]);
     return normalizeUserRow(rows[0] || null);
   }
 
   static async findByOpenid(openid) {
-    const [rows] = await query('SELECT * FROM users WHERE openid = ? LIMIT 1', [openid]);
+    const [rows] = await query(`SELECT ${USER_COLUMNS} FROM users WHERE openid = ? LIMIT 1`, [openid]);
     return normalizeUserRow(rows[0] || null);
   }
 

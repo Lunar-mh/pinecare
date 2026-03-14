@@ -1,243 +1,243 @@
-﻿<script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { Search, Plus } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUsers, updateUserStatus, createUser, getUserDetail } from '@/services'
-import type { UserItem, UserStatus } from '@/services'
-
-const searchText = ref('')
-const filterRole = ref<'elder' | 'family' | ''>('')
-const filterStatus = ref<UserStatus | ''>('')
-const dialogVisible = ref(false)
-const detailVisible = ref(false)
-const selectedUser = ref<UserItem | null>(null)
-const tableLoading = ref(false)
-const submitLoading = ref(false)
-
-const form = reactive({
-  nickname: '',
-  phone: '',
-  role: 'elder' as 'elder' | 'family',
-})
-
-const users = ref<UserItem[]>([])
-const total = ref(0)
-const page = ref(1)
-const pageSize = ref(10)
-
-const elderCount = computed(() => users.value.filter((u) => u.role === 'elder').length)
-const familyCount = computed(() => users.value.filter((u) => u.role === 'family').length)
-const disabledCount = computed(() => users.value.filter((u) => u.status === '禁用').length)
-
-const roleLabel = (role: string) => (role === 'elder' ? '长辈' : '家属')
-const roleTagType = (role: string) => (role === 'elder' ? 'primary' : 'success')
-const statusTagType = (status: UserStatus) => (status === '正常' ? 'success' : 'danger')
-
-async function fetchUsers() {
-  tableLoading.value = true
-  try {
-    const res = await getUsers({
-      page: page.value,
-      pageSize: pageSize.value,
-      search: searchText.value || undefined,
-      role: filterRole.value || undefined,
-      status: filterStatus.value || undefined,
-    })
-    users.value = res.list
-    total.value = res.total
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : '加载用户失败'
-    ElMessage.error(message)
-    users.value = []
-    total.value = 0
-  } finally {
-    tableLoading.value = false
-  }
-}
-
-onMounted(fetchUsers)
-
-watch([searchText, filterRole, filterStatus], () => {
-  page.value = 1
-  fetchUsers()
-})
-
-async function handleViewDetail(row: UserItem) {
-  try {
-    selectedUser.value = await getUserDetail(row.id)
-  } catch {
-    selectedUser.value = row
-  }
-  detailVisible.value = true
-}
-
-async function handleToggleStatus(row: UserItem) {
-  const newStatus: UserStatus = row.status === '正常' ? '禁用' : '正常'
-  const action = newStatus === '禁用' ? '禁用' : '启用'
-
-  try {
-    await ElMessageBox.confirm(`确认${action}用户“${row.nickname}”吗？`, '确认操作', {
-      confirmButtonText: action,
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
-
-    await updateUserStatus(row.id, newStatus)
-    ElMessage.success(`已${action}`)
-    await fetchUsers()
-  } catch (err: unknown) {
-    if (err !== 'cancel') {
-      const message = err instanceof Error ? err.message : `${action}失败`
-      ElMessage.error(message)
-    }
-  }
-}
-
-function handleAdd() {
-  form.nickname = ''
-  form.phone = ''
-  form.role = 'elder'
-  dialogVisible.value = true
-}
-
-async function handleConfirmAdd() {
-  if (!form.nickname || !form.phone) {
-    ElMessage.warning('请填写昵称和手机号')
-    return
-  }
-
-  submitLoading.value = true
-  try {
-    await createUser({
-      nickname: form.nickname,
-      phone: form.phone,
-      role: form.role,
-    })
-    ElMessage.success('用户已创建')
-    dialogVisible.value = false
-    page.value = 1
-    await fetchUsers()
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : '创建用户失败'
-    ElMessage.error(message)
-  } finally {
-    submitLoading.value = false
-  }
-}
-</script>
-
 <template>
-  <div>
-    <div class="wb-page-header">
-      <div>
-        <span class="wb-page-title">用户管理</span>
-        <span class="wb-page-subtitle">统一查看长辈与家属账户，重点关注身份、活跃度和可用状态。</span>
+  <div class="user-management">
+    <header class="page-header">
+      <div class="title-section">
+        <h2>全域老人健康档案</h2>
+        <p>共管理 12,840 位社区长辈，当前 14 位处于告警状态。</p>
       </div>
-      <el-button type="primary" :icon="Plus" round @click="handleAdd">新增用户</el-button>
-    </div>
+      <div class="action-section">
+        <el-button type="primary" round icon="Plus">新增档案</el-button>
+        <el-button round icon="Download">导出报表</el-button>
+      </div>
+    </header>
 
-    <div class="wb-metric-grid">
-      <div class="wb-metric-card">
-        <span class="wb-card-label">总用户数</span>
-        <div class="wb-card-value">{{ total }}</div>
-        <span class="wb-card-hint">当前列表统计结果</span>
+    <!-- 顶部统计看板 -->
+    <section class="stats-overview">
+      <div class="stat-card glass-panel">
+        <span class="label">活跃用户</span>
+        <div class="value-row">
+          <span class="value">9,420</span>
+          <span class="trend up">+12%</span>
+        </div>
       </div>
-      <div class="wb-metric-card">
-        <span class="wb-card-label">长辈用户</span>
-        <div class="wb-card-value">{{ elderCount }}</div>
-        <span class="wb-card-hint">重点关注活跃和离线情况</span>
+      <div class="stat-card glass-panel">
+        <span class="label">健康合格率</span>
+        <div class="value-row">
+          <span class="value">88.5%</span>
+          <span class="trend down">-2.1%</span>
+        </div>
       </div>
-      <div class="wb-metric-card">
-        <span class="wb-card-label">家属用户</span>
-        <div class="wb-card-value">{{ familyCount }}</div>
-        <span class="wb-card-hint">关注绑定关系和协作动作</span>
+      <div class="stat-card glass-panel">
+        <span class="label">设备在线</span>
+        <div class="value-row">
+          <span class="value">12,105</span>
+          <span class="trend">稳定</span>
+        </div>
       </div>
-      <div class="wb-metric-card">
-        <span class="wb-card-label">禁用账户</span>
-        <div class="wb-card-value">{{ disabledCount }}</div>
-        <span class="wb-card-hint">异常账号建议优先核查</span>
-      </div>
-    </div>
+    </section>
 
-    <div class="wb-filter-card" style="margin-bottom: 20px">
-      <el-row :gutter="12" align="middle">
-        <el-col :span="8">
-          <el-input v-model="searchText" placeholder="搜索昵称、手机号或 ID" :prefix-icon="Search" clearable />
-        </el-col>
-        <el-col :span="5">
-          <el-select v-model="filterRole" placeholder="身份角色" clearable style="width: 100%">
-            <el-option label="长辈" value="elder" />
-            <el-option label="家属" value="family" />
-          </el-select>
-        </el-col>
-        <el-col :span="5">
-          <el-select v-model="filterStatus" placeholder="账户状态" clearable style="width: 100%">
-            <el-option label="正常" value="正常" />
-            <el-option label="禁用" value="禁用" />
-          </el-select>
-        </el-col>
-      </el-row>
-    </div>
-
-    <div class="wb-panel">
-      <el-table :data="users" stripe v-loading="tableLoading">
-        <el-table-column prop="nickname" label="昵称" width="150" />
-        <el-table-column prop="phone" label="手机号" width="160" />
-        <el-table-column label="身份" width="110">
-          <template #default="{ row }">
-            <el-tag :type="roleTagType(row.role)">{{ roleLabel(row.role) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="age" label="年龄" width="90" />
-        <el-table-column prop="registerDate" label="创建时间" width="140" />
-        <el-table-column prop="lastActive" label="最近活跃" width="160" />
-        <el-table-column label="状态" width="110">
-          <template #default="{ row }">
-            <el-tag :type="statusTagType(row.status)">{{ row.status }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
-          <template #default="{ row }">
-            <el-button type="primary" link @click="handleViewDetail(row)">详情</el-button>
-            <el-button :type="row.status === '正常' ? 'warning' : 'success'" link @click="handleToggleStatus(row)">
-              {{ row.status === '正常' ? '禁用' : '启用' }}
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div style="display: flex; justify-content: flex-end; margin-top: 18px">
-        <el-pagination v-model:current-page="page" layout="total, prev, pager, next" :total="total" :page-size="pageSize" @current-change="fetchUsers" />
+    <!-- 筛选器区域 -->
+    <nav class="filter-bar glass-panel">
+      <div class="filter-group">
+        <el-input v-model="search" placeholder="姓名、手机号、紧急联系人..." prefix-icon="Search" />
       </div>
-    </div>
+      <div class="filter-group">
+        <el-select v-model="riskLevel" placeholder="风险等级">
+          <el-option label="高风险 (红色)" value="high" />
+          <el-option label="中风险 (黄色)" value="medium" />
+          <el-option label="正常 (蓝色)" value="normal" />
+        </el-select>
+        <el-select v-model="community" placeholder="所属社区">
+          <el-option label="阳光花园" value="yg" />
+          <el-option label="长乐里" value="cl" />
+        </el-select>
+      </div>
+    </nav>
 
-    <el-dialog v-model="dialogVisible" title="新增用户" width="480px">
-      <el-form :model="form" label-width="90px">
-        <el-form-item label="昵称"><el-input v-model="form.nickname" placeholder="请输入昵称" /></el-form-item>
-        <el-form-item label="手机号"><el-input v-model="form.phone" placeholder="请输入手机号" /></el-form-item>
-        <el-form-item label="身份角色">
-          <el-radio-group v-model="form.role">
-            <el-radio value="elder">长辈</el-radio>
-            <el-radio value="family">家属</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleConfirmAdd">确认创建</el-button>
-      </template>
-    </el-dialog>
+    <!-- Bento 卡片列表 -->
+    <main class="user-grid">
+      <div v-for="user in mockUsers" :key="user.id" class="user-bento-card glass-panel" :class="user.risk">
+        <div class="card-header">
+          <div class="avatar-box">
+            <img :src="user.avatar" />
+            <span class="status-dot"></span>
+          </div>
+          <div class="basic-info">
+            <h3>{{ user.name }} <span class="age">{{ user.age }}岁</span></h3>
+            <span class="community-tag">{{ user.community }}</span>
+          </div>
+          <div class="risk-badge">{{ user.riskLabel }}</div>
+        </div>
 
-    <el-dialog v-model="detailVisible" title="用户详情" width="540px">
-      <el-descriptions v-if="selectedUser" :column="2" border>
-        <el-descriptions-item label="昵称">{{ selectedUser.nickname }}</el-descriptions-item>
-        <el-descriptions-item label="手机号">{{ selectedUser.phone }}</el-descriptions-item>
-        <el-descriptions-item label="身份">{{ roleLabel(selectedUser.role) }}</el-descriptions-item>
-        <el-descriptions-item label="状态">{{ selectedUser.status }}</el-descriptions-item>
-        <el-descriptions-item label="年龄">{{ selectedUser.age || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="地址">{{ selectedUser.address || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ selectedUser.registerDate }}</el-descriptions-item>
-        <el-descriptions-item label="最近活跃">{{ selectedUser.lastActive }}</el-descriptions-item>
-      </el-descriptions>
-    </el-dialog>
+        <div class="card-body">
+          <div class="health-metrics">
+            <div class="metric">
+              <span class="label">心率</span>
+              <span class="val">{{ user.hr }} <small>bpm</small></span>
+            </div>
+            <div class="metric">
+              <span class="label">血压</span>
+              <span class="val">{{ user.bp }} <small>mmHg</small></span>
+            </div>
+          </div>
+          <div class="recent-alert" v-if="user.lastAlert">
+            <el-icon><Warning /></el-icon>
+            <span>最近告警: {{ user.lastAlert }}</span>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <el-button link type="primary">详细档案</el-button>
+          <el-button link type="primary">健康趋势</el-button>
+          <el-divider direction="vertical" />
+          <el-button link icon="Phone">联系家属</el-button>
+        </div>
+      </div>
+    </main>
   </div>
 </template>
+
+<script setup>
+import { ref } from 'vue'
+import { Search, Warning, Phone, Plus, Download } from '@element-plus/icons-vue'
+
+const search = ref('')
+const riskLevel = ref('')
+const community = ref('')
+
+const mockUsers = [
+  { id: 1, name: '张大爷', age: 72, community: '阳光花园 3-102', risk: 'high', riskLabel: '高风险', hr: 98, bp: '155/95', lastAlert: '2小时前 血压异常', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=1' },
+  { id: 2, name: '李婆婆', age: 68, community: '阳光花园 5-201', risk: 'normal', riskLabel: '正常', hr: 72, bp: '120/80', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=2' },
+  { id: 3, name: '王叔叔', age: 75, community: '长乐里 A栋', risk: 'medium', riskLabel: '中风险', hr: 85, bp: '140/90', lastAlert: '昨日 跌倒预警', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=3' },
+  { id: 4, name: '赵奶奶', age: 81, community: '长乐里 C栋', risk: 'normal', riskLabel: '正常', hr: 68, bp: '115/75', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=4' }
+]
+</script>
+
+<style scoped>
+.user-management {
+  padding: 32px;
+  background: #F8FAFF;
+  min-height: 100vh;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  
+  h2 { font-size: 28px; font-weight: 700; color: #1E293B; margin-bottom: 4px; }
+  p { color: #64748B; font-size: 15px; }
+}
+
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  padding: 24px;
+  border-radius: 24px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+
+  .label { font-size: 14px; color: #64748B; }
+  .value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .value { font-size: 32px; font-weight: 800; color: #1E293B; }
+  .trend { font-size: 14px; font-weight: 600; &.up { color: #10B981; } &.down { color: #EF4444; } }
+}
+
+.filter-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: white;
+  border-radius: 20px;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+
+  .filter-group { display: flex; gap: 16px; }
+}
+
+.user-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 24px;
+}
+
+.user-bento-card {
+  background: white;
+  border-radius: 32px;
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+
+  &:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05); }
+
+  &.high { border-color: #FEE2E2; .risk-badge { background: #EF4444; color: white; } }
+  &.medium { border-color: #FEF3C7; .risk-badge { background: #F59E0B; color: white; } }
+  &.normal { border-color: #DBEAFE; .risk-badge { background: #3B82F6; color: white; } }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    position: relative;
+  }
+
+  .avatar-box {
+    position: relative;
+    img { width: 64px; height: 64px; border-radius: 20px; background: #F1F5F9; }
+    .status-dot { position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; background: #10B981; border: 3px solid white; border-radius: 50%; }
+  }
+
+  .basic-info {
+    h3 { font-size: 20px; font-weight: 700; .age { font-size: 14px; color: #64748B; font-weight: 400; } }
+    .community-tag { font-size: 13px; color: #94A3B8; margin-top: 4px; display: block; }
+  }
+
+  .risk-badge { position: absolute; top: 0; right: 0; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+
+  .health-metrics {
+    display: flex;
+    gap: 32px;
+    background: #F8FAFF;
+    padding: 16px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+
+    .metric {
+      display: flex;
+      flex-direction: column;
+      .label { font-size: 12px; color: #64748B; margin-bottom: 4px; }
+      .val { font-size: 18px; font-weight: 700; color: #1E293B; small { font-size: 12px; font-weight: 400; color: #94A3B8; } }
+    }
+  }
+
+  .recent-alert {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #EF4444;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 16px;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid #F1F5F9;
+  }
+}
+</style>

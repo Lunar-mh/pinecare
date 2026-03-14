@@ -6,25 +6,28 @@ const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 function validatePhone(phone) {
   if (typeof phone !== 'string') {
-    return { valid: false, message: '手机号格式不正确' };
+    return { valid: false, message: 'Invalid phone number.' };
   }
-  return { valid: PHONE_REGEX.test(phone.trim()), message: '手机号格式不正确' };
+  return { valid: PHONE_REGEX.test(phone.trim()), message: 'Invalid phone number.' };
 }
 
 function validateSmsCode(code) {
   if (typeof code !== 'string') {
-    return { valid: false, message: '验证码格式不正确' };
+    return { valid: false, message: 'Invalid SMS code.' };
   }
-  return { valid: CODE_REGEX.test(code.trim()), message: '验证码格式不正确' };
+  return { valid: CODE_REGEX.test(code.trim()), message: 'Invalid SMS code.' };
 }
 
 function validatePassword(password) {
   if (typeof password !== 'string') {
-    return { valid: false, message: '密码格式不正确' };
+    return {
+      valid: false,
+      message: 'Password must be at least 8 characters and include uppercase, lowercase, and number.',
+    };
   }
   return {
     valid: PASSWORD_REGEX.test(password),
-    message: '密码至少8位，且必须包含大小写字母和数字',
+    message: 'Password must be at least 8 characters and include uppercase, lowercase, and number.',
   };
 }
 
@@ -36,10 +39,10 @@ function validatePagination(page, pageSize) {
   const finalPageSize = Number.isNaN(parsedPageSize) ? 20 : parsedPageSize;
 
   if (finalPage < 1) {
-    return { valid: false, message: 'page 必须大于等于 1' };
+    return { valid: false, message: 'page must be greater than or equal to 1.' };
   }
   if (finalPageSize < 1 || finalPageSize > 100) {
-    return { valid: false, message: 'pageSize 必须在 1 到 100 之间' };
+    return { valid: false, message: 'pageSize must be between 1 and 100.' };
   }
 
   return {
@@ -62,7 +65,7 @@ function validateRequired(payload, fields) {
   }
 
   if (missing.length > 0) {
-    return { valid: false, message: `缺少必填参数: ${missing.join(', ')}` };
+    return { valid: false, message: `Missing required fields: ${missing.join(', ')}` };
   }
   return { valid: true };
 }

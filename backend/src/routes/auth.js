@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const express = require('express');
 const rateLimit = require('express-rate-limit');
@@ -21,7 +21,8 @@ const loginLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => `${req.ip}:${req.path}`,
+  // 使用 req.path（不含 /api/v1 前缀）防止双前缀绕过
+  keyGenerator: (req) => `${req.ip}:auth:${req.path}`,
   handler: (_req, res) => fail(res, 429, 'Too many authentication requests.', null, 429),
 });
 
@@ -29,10 +30,6 @@ router.post('/send-sms', smsLimiter, authController.sendSms);
 router.post('/admin/login', loginLimiter, authController.adminLogin);
 
 router.post('/sms-code', smsLimiter, (req, res) => {
-  req.body = req.body || {};
-  if (!req.body.purpose) {
-    req.body.purpose = 'login';
-  }
   return authController.sendSms(req, res);
 });
 

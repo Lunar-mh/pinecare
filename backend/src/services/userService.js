@@ -11,6 +11,9 @@ const { writeAuditLog: writeAuditEntry } = require('../utils/auditLogHelper');
 
 const MAX_EMERGENCY_CONTACTS = 5;
 const BINDING_QR_TTL_MS = 15 * 60 * 1000;
+const MAX_REAL_NAME_LENGTH = 20;
+const MAX_CHRONIC_DISEASES = 20;
+const MAX_CHRONIC_DISEASE_LENGTH = 30;
 
 const createBusinessError = (code, message, data = null, httpStatus = null) => (
   createBizError(code, message, httpStatus || code, data)
@@ -18,6 +21,92 @@ const createBusinessError = (code, message, data = null, httpStatus = null) => (
 
 async function writeAuditLog(userId, action, context = {}, details = null) {
   await writeAuditEntry({ userId, action, context, details });
+}
+
+function assertOptionalBoolean(value, fieldName = 'is_primary') {
+  if (value === undefined) {
+    return;
+  }
+
+  if (typeof value !== 'boolean') {
+    throw createBusinessError(400, `${fieldName} must be boolean.`, null, 400);
+  }
+}
+
+function normalizeProfilePayload(payload = {}) {
+  const normalized = {};
+
+  if (payload.real_name !== undefined) {
+    if (payload.real_name !== null && typeof payload.real_name !== 'string') {
+      throw createBusinessError(400, 'real_name must be a string.', null, 400);
+    }
+
+    const name = String(payload.real_name || '').trim();
+    if (name.length > MAX_REAL_NAME_LENGTH) {
+      throw createBusinessError(
+        400,
+        `real_name must be at most ${MAX_REAL_NAME_LENGTH} characters.`,
+        null,
+        400
+      );
+    }
+    normalized.real_name = name || null;
+  }
+
+  if (payload.age !== undefined) {
+    const age = Number(payload.age);
+    if (!Number.isInteger(age) || age < 0 || age > 125) {
+      throw createBusinessError(400, 'age must be between 0 and 125.', null, 400);
+    }
+    normalized.age = age;
+  }
+
+  if (payload.gender !== undefined) {
+    const gender = String(payload.gender || '').trim();
+    if (!['male', 'female', 'unknown'].includes(gender)) {
+      throw createBusinessError(400, 'gender must be one of male, female, or unknown.', null, 400);
+    }
+    normalized.gender = gender;
+  }
+
+  if (payload.chronic_diseases !== undefined) {
+    if (!Array.isArray(payload.chronic_diseases)) {
+      throw createBusinessError(400, 'chronic_diseases must be an array.', null, 400);
+    }
+    if (payload.chronic_diseases.length > MAX_CHRONIC_DISEASES) {
+      throw createBusinessError(
+        400,
+        `chronic_diseases can include up to ${MAX_CHRONIC_DISEASES} items.`,
+        null,
+        400
+      );
+    }
+
+    normalized.chronic_diseases = payload.chronic_diseases.map((item) => {
+      if (typeof item !== 'string') {
+        throw createBusinessError(
+          400,
+          'Each chronic_disease must be a non-empty string up to 30 characters.',
+          null,
+          400
+        );
+      }
+
+      const value = item.trim();
+      if (!value || value.length > MAX_CHRONIC_DISEASE_LENGTH) {
+        throw createBusinessError(
+          400,
+          'Each chronic_disease must be a non-empty string up to 30 characters.',
+          null,
+          400
+        );
+      }
+
+      return value;
+    });
+  }
+
+  return normalized;
 }
 
 async function assertUserAvailable(userId) {
@@ -45,21 +134,10 @@ async function getProfile(userId) {
 async function updateProfile(userId, payload, context = {}) {
   await assertUserAvailable(userId);
 
-  if (payload.age !== undefined && (!Number.isInteger(payload.age) || payload.age < 0 || payload.age > 120)) {
-    throw createBusinessError(400, 'age must be between 0 and 120.', null, 400);
-  }
-
-  if (payload.gender !== undefined && !['male', 'female', 'unknown'].includes(payload.gender)) {
-    throw createBusinessError(400, 'gender is invalid.', null, 400);
-  }
-
-  if (payload.chronic_diseases !== undefined && !Array.isArray(payload.chronic_diseases)) {
-    throw createBusinessError(400, 'chronic_diseases must be an array.', null, 400);
-  }
-
-  const profile = await UserModel.updateProfile(userId, payload);
+  const normalizedPayload = normalizeProfilePayload(payload);
+  const profile = await UserModel.updateProfile(userId, normalizedPayload);
   await writeAuditLog(userId, 'profile_update', context, {
-    fields: Object.keys(payload || {}),
+    fields: Object.keys(normalizedPayload),
   });
 
   return profile;
@@ -72,6 +150,7 @@ async function listEmergencyContacts(userId) {
 
 async function createEmergencyContact(userId, payload, context = {}) {
   await assertUserAvailable(userId);
+  assertOptionalBoolean(payload.is_primary);
 
   const total = await EmergencyContactModel.countByUserId(userId);
   if (total >= MAX_EMERGENCY_CONTACTS) {
@@ -87,7 +166,7 @@ async function createEmergencyContact(userId, payload, context = {}) {
     name: payload.name,
     phone: payload.phone,
     relationship: payload.relationship,
-    isPrimary: Boolean(payload.is_primary),
+    isPrimary: payload.is_primary === true,
   });
 
   await writeAuditLog(userId, 'contact_manage', context, {
@@ -100,6 +179,7 @@ async function createEmergencyContact(userId, payload, context = {}) {
 
 async function updateEmergencyContact(userId, contactId, payload, context = {}) {
   await assertUserAvailable(userId);
+  assertOptionalBoolean(payload.is_primary);
 
   const existing = await EmergencyContactModel.findByIdAndUserId(contactId, userId);
   if (!existing) {
@@ -116,7 +196,7 @@ async function updateEmergencyContact(userId, contactId, payload, context = {}) 
     throw createBusinessError(500, 'Failed to update emergency contact.', null, 500);
   }
 
-  if (payload.is_primary === true || payload.is_primary === 1 || payload.is_primary === '1') {
+  if (payload.is_primary === true) {
     const primary = await EmergencyContactModel.setPrimaryByIdAndUserId(contactId, userId);
     if (!primary) {
       throw createBusinessError(500, 'Failed to update primary contact.', null, 500);
@@ -224,7 +304,7 @@ async function deleteAccountByCode(userId, code, context = {}) {
     throw createBusinessError(400, 'User phone is required for account deletion.', null, 400);
   }
 
-  const verifyResult = await smsService.verifyAndConsumeCode(user.phone, code, 'reset_password');
+  const verifyResult = await smsService.verifyAndConsumeCode(user.phone, code, 'account_delete');
   if (!verifyResult.valid) {
     throw createBusinessError(400, verifyResult.message || 'SMS code verification failed.', null, 400);
   }
@@ -260,4 +340,3 @@ module.exports = {
   deleteAccountByCode,
   unlockAccount,
 };
-

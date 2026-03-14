@@ -14,6 +14,10 @@ jest.mock('../../src/services/communityAdminService', () => ({
   getStats: jest.fn(),
 }));
 
+jest.mock('../../src/models/user', () => ({
+  findById: jest.fn(async (userId) => ({ id: userId, account_status: 'active' })),
+}));
+
 const adminAuth = require('../../src/middleware/adminAuth');
 const communityAdminService = require('../../src/services/communityAdminService');
 const communityRouter = require('../../src/routes/community');
@@ -35,7 +39,10 @@ function percentile95(values) {
   return sorted[index] || 0;
 }
 
-describe('社区统计接口性能测试', () => {
+describe('绀惧尯缁熻鎺ュ彛鎬ц兘娴嬭瘯', () => {
+  beforeAll(() => {
+    process.env.JWT_SECRET = process.env.JWT_SECRET || 'community-admin-perf-secret';
+  });
   beforeEach(() => {
     jest.clearAllMocks();
     adminAuth.mockImplementation((req, res, next) => {
@@ -49,7 +56,7 @@ describe('社区统计接口性能测试', () => {
     });
   });
 
-  test('GET /community/stats 在 50 并发下 p95 < 500ms', async () => {
+  test('GET /community/stats 鍦?50 骞跺彂涓?p95 < 500ms', async () => {
     jest.setTimeout(20000);
 
     const app = buildApp();

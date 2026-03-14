@@ -47,13 +47,25 @@ function normalizeValue(value) {
 }
 
 /**
- * 生成 SHA256 哈希
+ * 获取 HMAC 密钥，优先使用 HASH_SECRET 环境变量
+ * @returns {string}
+ */
+function getHmacSecret() {
+  const secret = String(process.env.HASH_SECRET || '').trim();
+  if (!secret) {
+    throw new Error('HASH_SECRET environment variable is required for hash chain integrity.');
+  }
+  return secret;
+}
+
+/**
+ * 生成 HMAC-SHA256 哈希（使用 HASH_SECRET 作为密钥）
  * @param {any} data
  * @returns {string}
  */
 function generateHash(data) {
   const payload = typeof data === 'string' ? data : JSON.stringify(data);
-  return crypto.createHash('sha256').update(payload).digest('hex');
+  return crypto.createHmac('sha256', getHmacSecret()).update(payload).digest('hex');
 }
 
 /**

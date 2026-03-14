@@ -1,103 +1,100 @@
-﻿@use '../../styles/theme/variables.scss' as *;
-
 .family-dashboard {
-  &__avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.22);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  --yao-primary: #2F6C5B;
+  --yao-bg: #F0F4FF;
+
+  .hero-header {
+    background: linear-gradient(225deg, #2F6C5B, #4D8A79);
+    border-radius: 0 0 60px 60px;
+    padding: 80px 32px 100px;
+    position: relative;
+    box-shadow: 0 30px 60px rgba(47, 108, 91, 0.2);
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: -20px; right: -20px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      border-radius: 50%;
+    }
   }
 
-  &__summary-grid,
-  &__double-grid {
+  /* 守护圆环系统 - 借鉴 Apple Health */
+  .guardian-rings {
+    display: flex;
+    justify-content: space-around;
+    margin-top: -60px;
+    padding: 0 24px;
+    z-index: 10;
+    
+    .ring-item {
+      background: white;
+      padding: 24px;
+      border-radius: 40px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      width: 30%;
+      
+      .ring-svg {
+        width: 64px;
+        height: 64px;
+        transform: rotate(-90deg);
+        circle { fill: transparent; stroke-width: 8; stroke-linecap: round; }
+        .bg { stroke: #F1F5F9; }
+        .progress { stroke: var(--yao-primary); transition: stroke-dashoffset 1s ease-in-out; }
+      }
+      
+      .label { font-size: 14px; font-weight: 700; color: #1E293B; }
+    }
+  }
+
+  .summary-grid {
     display: grid;
-    gap: $space-md;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 32px 24px;
   }
 
-  &__summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .status-card {
+    background: #FFFFFF;
+    border-radius: 32px;
+    padding: 28px;
+    border: 1px solid rgba(0,0,0,0.02);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    
+    &:hover { transform: scale(1.03) translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
+    
+    .card-value { font-size: 40px; color: var(--yao-primary); letter-spacing: -1px; }
   }
 
-  &__summary-grid .status-card:last-child {
-    grid-column: span 2;
-  }
-
-  &__double-grid {
-    grid-template-columns: 1fr;
-  }
-
-  &__panel-title,
-  &__panel-main,
-  &__panel-sub,
-  &__alert-title,
-  &__alert-desc {
-    display: block;
-  }
-
-  &__panel-title {
-    font-size: 15px;
-    color: $text-secondary;
-  }
-
-  &__panel-main {
-    margin-top: 10px;
-    font-size: 22px;
-    color: $text-primary;
-    font-weight: $font-weight-bold;
-    line-height: 1.4;
-  }
-
-  &__panel-sub {
-    margin-top: 10px;
-    font-size: 15px;
-    color: $text-secondary;
-    line-height: 1.6;
-  }
-
-  &__alert-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  &__alert-item {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: $space-sm;
-    padding: 14px 0;
-    border-bottom: 1px solid rgba($border-light, 0.9);
-  }
-
-  &__alert-item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-
-  &__alert-title {
-    font-size: 18px;
-    color: $text-primary;
-    font-weight: $font-weight-bold;
-  }
-
-  &__alert-desc {
-    margin-top: 6px;
-    font-size: 15px;
-    color: $text-secondary;
-    line-height: 1.5;
-  }
-
-  &__alert-tag {
-    min-width: 70px;
-    text-align: center;
-    padding: 8px 12px;
-    border-radius: 999px;
-    background: rgba($color-danger, 0.1);
-    color: $color-danger;
-    font-size: 13px;
-    font-weight: $font-weight-bold;
+  .bento-layout {
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: 1.4fr 0.6fr;
+    gap: 20px;
+    
+    .location-panel {
+      background: #FFFFFF;
+      border-radius: 40px;
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+      
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        background: url('https://api.mapbox.com/styles/v1/mapbox/light-v10/static/116.397,39.908,12,0/400x400?access_token=mock') no-repeat center center;
+        opacity: 0.1;
+        z-index: 0;
+      }
+      
+      .location-address { font-size: 22px; position: relative; z-index: 1; }
+    }
   }
 }

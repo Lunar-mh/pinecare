@@ -33,6 +33,10 @@ jest.mock('../../src/services/communityAdminService', () => ({
   getTimeBankLeaderboard: jest.fn(),
 }));
 
+jest.mock('../../src/models/user', () => ({
+  findById: jest.fn(async (userId) => ({ id: userId, account_status: 'active' })),
+}));
+
 const adminAuth = require('../../src/middleware/adminAuth');
 const communityAdminService = require('../../src/services/communityAdminService');
 const communityRouter = require('../../src/routes/community');
@@ -49,6 +53,9 @@ function createToken(userId = 1005) {
 }
 
 describe('community admin api contract', () => {
+  beforeAll(() => {
+    process.env.JWT_SECRET = process.env.JWT_SECRET || 'community-admin-contract-secret';
+  });
   beforeEach(() => {
     jest.clearAllMocks();
     adminAuth.mockImplementation((req, _res, next) => {
@@ -87,7 +94,7 @@ describe('community admin api contract', () => {
       list: [],
       pagination: { page: 1, page_size: 10, total: 0 },
     });
-    communityAdminService.createActivity.mockResolvedValue({ id: 1, title: '活动A' });
+    communityAdminService.createActivity.mockResolvedValue({ id: 1, title: '娲诲姩A' });
     communityAdminService.getStats.mockResolvedValue({
       overview: { active_elders: 0, volunteers: 0, total_orders: 0, total_service_hours: 0 },
       order_distribution: {
@@ -173,8 +180,8 @@ describe('community admin api contract', () => {
         method: 'post',
         path: '/community/activities',
         body: {
-          title: '讲座',
-          content: '健康讲座',
+          title: '璁插骇',
+          content: '鍋ュ悍璁插骇',
           start_time: '2026-03-01 09:00:00',
           end_time: '2026-03-01 10:00:00',
         },
@@ -268,8 +275,8 @@ describe('community admin api contract', () => {
         .post('/community/activities')
         .set('Authorization', `Bearer ${token}`)
         .send({
-          title: '讲座',
-          content: '健康讲座',
+          title: '璁插骇',
+          content: '鍋ュ悍璁插骇',
           start_time: '2026-03-01 09:00:00',
           end_time: '2026-03-01 10:00:00',
         })

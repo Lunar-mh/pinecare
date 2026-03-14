@@ -1,5 +1,6 @@
-﻿'use strict';
+'use strict';
 
+const redis = require('../config/redis');
 const adminUserModel = require('../models/adminUserModel');
 
 function createBusinessError(code, message, statusCode = null, data = null) {
@@ -22,9 +23,9 @@ function toDateString(date) {
 }
 
 function toDateTimeString(date) {
-  if (!date) return '\u4ece\u672a\u767b\u5f55';
+  if (!date) return '从未登录';
   const value = new Date(date);
-  if (Number.isNaN(value.getTime())) return '\u4ece\u672a\u767b\u5f55';
+  if (Number.isNaN(value.getTime())) return '从未登录';
 
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, '0');
@@ -35,23 +36,24 @@ function toDateTimeString(date) {
 }
 
 function toDisplayStatus(accountStatus) {
-  if (accountStatus === 'active') return '\u6b63\u5e38';
-  return '\u7981\u7528';
+  if (accountStatus === 'active') return '正常';
+  if (accountStatus === 'deleted') return '已注销';
+  return '禁用';
 }
 
 function toAccountStatus(input) {
   if (!input) return null;
   const normalized = String(input).trim().toLowerCase();
 
-  if (['active', 'enabled', '\u6b63\u5e38', '\u542f\u7528'].includes(normalized)) {
+  if (['active', 'enabled', '正常'].includes(normalized)) {
     return 'active';
   }
 
-  if (['locked', 'disabled', '\u7981\u7528', '\u505c\u7528'].includes(normalized)) {
+  if (['locked', 'disabled', '禁用'].includes(normalized)) {
     return 'locked';
   }
 
-  if (['deleted', '\u6ce8\u9500'].includes(normalized)) {
+  if (['deleted', '已注销'].includes(normalized)) {
     return 'deleted';
   }
 
@@ -62,7 +64,7 @@ function toAdminUser(row, options = {}) {
   const role = options.roleOverride || row.user_role || 'elder';
   return {
     id: Number(row.id),
-    nickname: row.nickname || `\u7528\u6237${row.id}`,
+    nickname: row.nickname || `用户${row.id}`,
     phone: row.phone || '',
     role,
     status: toDisplayStatus(row.account_status),
@@ -99,8 +101,15 @@ function normalizeFilters(query = {}) {
   };
 }
 
+function assertGlobalAdminScope(scope) {
+  if (!scope || scope.isGlobalAdmin !== true) {
+    throw createBusinessError(403, 'Admin users endpoint requires global admin scope.', 403);
+  }
+}
+
 const adminUserService = {
-  async listUsers(query = {}) {
+  async listUsers(scope, query = {}) {
+    assertGlobalAdminScope(scope);
     const normalized = normalizeFilters(query);
     const [rows, total] = await Promise.all([
       adminUserModel.listUsers(normalized.filters, {
@@ -118,7 +127,8 @@ const adminUserService = {
     };
   },
 
-  async getUserDetail(userId) {
+  async getUserDetail(scope, userId) {
+    assertGlobalAdminScope(scope);
     const row = await adminUserModel.findById(userId);
     if (!row) {
       throw createBusinessError(404, 'User not found.', 404);
@@ -126,10 +136,11 @@ const adminUserService = {
     return toAdminUser(row);
   },
 
-  async createUser(payload = {}) {
+  async createUser(scope, payload = {}) {
+    assertGlobalAdminScope(scope);
     const nickname = String(payload.nickname || '').trim();
     const phone = String(payload.phone || '').trim();
-    const role = payload.role === 'family' ? 'family' : 'elder';
+    const role = String(payload.role || '').trim();
 
     if (!nickname) {
       throw createBusinessError(400, 'nickname is required.', 400);
@@ -139,13 +150,17 @@ const adminUserService = {
       throw createBusinessError(400, 'phone is required.', 400);
     }
 
+    if (!['elder', 'family'].includes(role)) {
+      throw createBusinessError(400, 'role must be elder or family.', 400);
+    }
+
     try {
-      const userId = await adminUserModel.createUser({ nickname, phone });
+      const userId = await adminUserModel.createUser({ nickname, phone, role });
       const row = await adminUserModel.findById(userId);
       if (!row) {
         throw createBusinessError(500, 'Create user failed.', 500);
       }
-      return toAdminUser(row, { roleOverride: role });
+      return toAdminUser(row);
     } catch (err) {
       if (err && err.code === 'ER_DUP_ENTRY') {
         throw createBusinessError(409, 'Phone already exists.', 409);
@@ -154,7 +169,8 @@ const adminUserService = {
     }
   },
 
-  async updateUserStatus(userId, status) {
+  async updateUserStatus(scope, userId, status) {
+    assertGlobalAdminScope(scope);
     const accountStatus = toAccountStatus(status);
     if (!accountStatus) {
       throw createBusinessError(400, 'Invalid status.', 400);
@@ -165,6 +181,7 @@ const adminUserService = {
       throw createBusinessError(404, 'User not found.', 404);
     }
 
+    await redis.del(`auth:refresh:${userId}`);
     return null;
   },
 };

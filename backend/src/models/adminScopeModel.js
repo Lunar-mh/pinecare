@@ -2,6 +2,8 @@
 
 const { query } = require('../config/database');
 
+const USER_DISPLAY_NAME_SQL = "COALESCE(NULLIF(u.real_name, ''), NULLIF(u.nickname, ''), CONCAT('User', u.id))";
+
 async function findCommunityAdminScopeByUserId(userId) {
   const [rows] = await query(
     `SELECT id, user_id, community_id, role
@@ -29,7 +31,7 @@ async function findCommunityAdminScopeByUserId(userId) {
 
 async function findVolunteerScopeByUserId(userId) {
   const [rows] = await query(
-    `SELECT ca.id, ca.user_id, ca.community_id, ca.role, u.name, u.phone
+    `SELECT ca.id, ca.user_id, ca.community_id, ca.role, ${USER_DISPLAY_NAME_SQL} AS name, u.phone
      FROM community_admins ca
      INNER JOIN users u ON u.id = ca.user_id
      WHERE ca.user_id = ?

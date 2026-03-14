@@ -41,24 +41,24 @@ class SmsCodeModel {
 
     const record = rows[0];
     if (!record) {
-      return { valid: false, message: '验证码不存在' };
+      return { valid: false, message: 'SMS code not found.' };
     }
 
     if (record.used) {
-      return { valid: false, message: '验证码已使用' };
+      return { valid: false, message: 'SMS code has already been used.' };
     }
 
     if (new Date(record.expires_at).getTime() <= Date.now()) {
-      return { valid: false, message: '验证码已过期' };
+      return { valid: false, message: 'SMS code has expired.' };
     }
 
     if (record.code !== code) {
-      return { valid: false, message: '验证码错误' };
+      return { valid: false, message: 'Invalid SMS code.' };
     }
 
     const ok = await this.markUsed(record.id);
     if (!ok) {
-      return { valid: false, message: '验证码已使用' };
+      return { valid: false, message: 'SMS code has already been used.' };
     }
 
     return { valid: true, record };

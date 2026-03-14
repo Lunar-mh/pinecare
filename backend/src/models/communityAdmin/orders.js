@@ -1,6 +1,12 @@
-﻿'use strict';
+'use strict';
 
 const { query, ORDER_STATUS_LIST, generateOrderNo, buildOrderWhere } = require('./shared');
+
+const USER_DISPLAY_NAME_SQL = "COALESCE(NULLIF({alias}.real_name, ''), NULLIF({alias}.nickname, ''), CONCAT('User', {alias}.id))";
+
+function userDisplayName(alias) {
+  return USER_DISPLAY_NAME_SQL.replace(/\{alias\}/g, alias);
+}
 
 module.exports = {
   ORDER_STATUS_LIST,
@@ -24,8 +30,8 @@ module.exports = {
          so.scheduled_at,
          so.completed_at,
          so.created_at,
-         elder.name AS elder_name,
-         volunteer.name AS volunteer_name
+         ${userDisplayName('elder')} AS elder_name,
+         ${userDisplayName('volunteer')} AS volunteer_name
        FROM service_orders so
        LEFT JOIN users elder ON elder.id = so.elder_id
        LEFT JOIN users volunteer ON volunteer.id = so.volunteer_id
@@ -62,8 +68,8 @@ module.exports = {
          so.scheduled_at,
          so.completed_at,
          so.created_at,
-         elder.name AS elder_name,
-         volunteer.name AS volunteer_name
+         ${userDisplayName('elder')} AS elder_name,
+         ${userDisplayName('volunteer')} AS volunteer_name
        FROM service_orders so
        LEFT JOIN users elder ON elder.id = so.elder_id
        LEFT JOIN users volunteer ON volunteer.id = so.volunteer_id

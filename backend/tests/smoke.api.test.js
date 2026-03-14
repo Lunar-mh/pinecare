@@ -8,6 +8,10 @@ jest.mock('../src/services/systemHealthService', () => ({
   getHealthStatus: jest.fn(),
 }));
 
+jest.mock('../src/models/user', () => ({
+  findById: jest.fn(async (userId) => ({ id: userId, account_status: 'active' })),
+}));
+
 const systemHealthService = require('../src/services/systemHealthService');
 const auth = require('../src/middleware/auth');
 const healthRoutes = require('../src/routes/healthRoutes');

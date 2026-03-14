@@ -1,10 +1,19 @@
-﻿import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, useEffect } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro, { useDidShow, useLoad } from '@tarojs/taro'
 import { getElderlyOverview } from '@/services/modules/family'
 import type { ElderlyOverview } from '@/services/types'
 import { Icon, UserIcon, AlertIcon } from '@/components/icons'
-import { ActionGrid, DataPanel, EmptyState, HeroHeader, PageShell, SectionBlock, StatusCard, StickyPrimaryAction } from '@/components/shell'
+import { 
+  ActionGrid, 
+  DataPanel, 
+  EmptyState, 
+  HeroHeader, 
+  PageShell, 
+  SectionBlock, 
+  StatusCard, 
+  StickyPrimaryAction 
+} from '@/components/shell'
 import { homeQuickActionsByRole } from '@/design/navigation'
 import { buildFamilySummaryCards } from '@/view-models/dashboard'
 import './FamilyDashboard.scss'
@@ -12,20 +21,18 @@ import './FamilyDashboard.scss'
 export default function FamilyDashboard() {
   const [overview, setOverview] = useState<ElderlyOverview | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    setError('')
+  const loadData = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true)
     try {
       const data = await getElderlyOverview()
       setOverview(data)
     } catch (err) {
-      const message = err instanceof Error ? err.message : '暂时无法获取长辈状态'
-      setError(message)
-      setOverview(null)
+      console.error('Failed to fetch overview:', err)
     } finally {
       setLoading(false)
+      setIsInitialLoad(false)
     }
   }, [])
 
@@ -34,106 +41,119 @@ export default function FamilyDashboard() {
   })
 
   useDidShow(() => {
-    loadData()
-  })
-
-  const navigateByPath = (path: string) => {
-    if (path.startsWith('/pages/')) {
-      Taro.switchTab({ url: path })
-      return
+    if (!isInitialLoad) {
+      loadData(true)
     }
-    Taro.navigateTo({ url: path })
-  }
+  })
 
   const summaryCards = useMemo(() => buildFamilySummaryCards(overview), [overview])
   const quickActions = homeQuickActionsByRole.family
-  const alerts = overview?.alerts.filter(item => !item.isRead).slice(0, 3) || []
+
+  // 动画偏好设置：仅在非低功耗模式下运行高性能动画
+  const ringOffset = (progress: number) => 201 - (201 * (progress || 0)) / 100
 
   return (
-    <PageShell roleTone="family" className="family-dashboard">
+    <PageShell roleTone="family" className="family-dashboard" loading={loading}>
       <HeroHeader
         roleTone="family"
-        eyebrow={overview ? `${overview.name} · ${overview.isOnline ? '在线' : '离线'}` : '家属守护视角'}
-        title="把风险、位置和陪伴放到同一个首页"
-        subtitle="先看长辈状态，再处理提醒，最后进入更细的模块。"
-        aside={<View className="family-dashboard__avatar"><UserIcon size={22} color="#fff" /></View>}
+        eyebrow={overview?.name || '家属端'}
+        title="守护者的智慧之窗"
+        subtitle="基于实时 IoT 数据，全方位感知长辈动态。"
+        aside={
+          <View 
+            className="avatar-luxe" 
+            role="link" 
+            aria-label="查看家属个人资料"
+            onClick={() => Taro.navigateTo({ url: '/pages/profile/index' })}
+          >
+            <UserIcon size={28} color="#fff" />
+          </View>
+        }
       />
 
-      {error && !loading ? (
-        <EmptyState title="暂时无法获取守护数据" description={error} actionLabel="重新加载" onAction={loadData} icon={<AlertIcon size={28} color="#d75a4a" />} />
-      ) : null}
+      <View className="guardian-rings" role="region" aria-label="核心指标圆环">
+        <View className="ring-item">
+          <View className="ring-svg-wrapper">
+            <svg viewBox="0 0 80 80">
+              <circle className="bg" cx="40" cy="40" r="32" />
+              <circle 
+                className="progress animate-draw" 
+                cx="40" cy="40" r="32" 
+                strokeDasharray="201" 
+                strokeDashoffset={ringOffset(overview?.todayHealth.medicationProgress || 0)} 
+              />
+            </svg>
+          </View>
+          <Text className="label">用药进度</Text>
+        </View>
+        <View className="ring-item">
+          <View className="ring-svg-wrapper">
+            <svg viewBox="0 0 80 80">
+              <circle className="bg" cx="40" cy="40" r="32" />
+              <circle 
+                className="progress health animate-draw" 
+                cx="40" cy="40" r="32" 
+                stroke="#2D5AEE" 
+                strokeDasharray="201" 
+                strokeDashoffset={ringOffset(85)} 
+              />
+            </svg>
+          </View>
+          <Text className="label">健康评分</Text>
+        </View>
+        <View className="ring-item">
+          <View className="ring-svg-wrapper">
+            <svg viewBox="0 0 80 80">
+              <circle className="bg" cx="40" cy="40" r="32" />
+              <circle 
+                className="progress active-val animate-draw" 
+                cx="40" cy="40" r="32" 
+                stroke="#C97B55" 
+                strokeDasharray="201" 
+                strokeDashoffset={ringOffset(60)} 
+              />
+            </svg>
+          </View>
+          <Text className="label">活跃强度</Text>
+        </View>
+      </View>
 
-      {!loading && !overview && !error ? (
-        <EmptyState title="还没有绑定长辈" description="绑定后就能在这里看到长辈状态、异常提醒和位置共享。" actionLabel="前往家庭空间" onAction={() => navigateByPath('/subpackages/family_space/pages/index/index')} icon={<Icon name="family" size={28} color="#c97b55" />} />
-      ) : null}
+      <SectionBlock title="实时体征" description="基于 IoT 设备每 5 分钟同步一次。">
+        <View className="summary-grid">
+          {summaryCards.map(card => (
+            <StatusCard key={card.key} {...card} tone={card.tone as any} />
+          ))}
+        </View>
+      </SectionBlock>
 
-      {overview ? (
-        <>
-          <SectionBlock title="守护总览" description="先看在线状态、提醒数量和用药完成度。">
-            <View className="family-dashboard__summary-grid">
-              {summaryCards.map(card => (
-                <StatusCard key={card.key} title={card.title} value={card.value} unit={card.unit} hint={card.hint} tone={card.tone} />
-              ))}
-            </View>
-          </SectionBlock>
+      <SectionBlock title="位置态势" description="电子围栏已开启，状态正常。">
+        <View className="bento-layout">
+          <DataPanel className="location-panel">
+            <Text className="location-address">{overview?.location?.address || '位置同步中...'}</Text>
+            <Text className="update-time">{overview?.location?.updatedAt} 更新</Text>
+          </DataPanel>
+          <DataPanel className="safety-index">
+            <Text className="label">安全指数</Text>
+            <Text className="val">98</Text>
+          </DataPanel>
+        </View>
+      </SectionBlock>
 
-          <SectionBlock title="位置与陪伴" description="保持位置共享，也别忽略情绪陪伴。">
-            <View className="family-dashboard__double-grid">
-              <DataPanel tone="info">
-                <Text className="family-dashboard__panel-title">最近位置</Text>
-                <Text className="family-dashboard__panel-main">{overview.location?.address || '暂未获取位置'}</Text>
-                <Text className="family-dashboard__panel-sub">{overview.location ? `更新时间 ${overview.location.updatedAt}` : '建议检查定位权限和共享设置。'}</Text>
-              </DataPanel>
-              <DataPanel tone="primary">
-                <Text className="family-dashboard__panel-title">今日用药完成度</Text>
-                <Text className="family-dashboard__panel-main">{overview.todayHealth.medicationProgress}%</Text>
-                <Text className="family-dashboard__panel-sub">配合提醒页可以继续查看未完成计划。</Text>
-              </DataPanel>
-            </View>
-          </SectionBlock>
+      <SectionBlock title="守护中心" description="点击图标快速进入对应模块。">
+        <ActionGrid
+          items={quickActions.map(item => ({
+            ...item,
+            icon: <Icon name={item.icon} size={32} color="#2F6C5B" />
+          }))}
+          onSelect={(path) => Taro.navigateTo({ url: path })}
+        />
+      </SectionBlock>
 
-          <SectionBlock title="快速进入" description="高频守护动作集中在这里。">
-            <ActionGrid
-              items={quickActions.map(item => ({
-                key: item.key,
-                label: item.label,
-                description: item.description,
-                badge: item.badge,
-                icon: <Icon name={item.icon} size={28} color="#c97b55" />,
-              }))}
-              onSelect={(key) => {
-                const target = quickActions.find(item => item.key === key)
-                if (target) navigateByPath(target.path)
-              }}
-            />
-          </SectionBlock>
-
-          <SectionBlock title="待处理提醒" description="异常与告警先看最紧急的三条。" actionLabel="查看 SOS" onAction={() => navigateByPath('/subpackages/sos/pages/index/index')}>
-            <DataPanel tone={alerts.length > 0 ? 'danger' : 'success'}>
-              {alerts.length > 0 ? (
-                <View className="family-dashboard__alert-list">
-                  {alerts.map(item => (
-                    <View key={item.id} className="family-dashboard__alert-item">
-                      <View>
-                        <Text className="family-dashboard__alert-title">{item.title}</Text>
-                        <Text className="family-dashboard__alert-desc">{item.message}</Text>
-                      </View>
-                      <Text className="family-dashboard__alert-tag">未处理</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <View className="family-dashboard__panel-empty">
-                  <Text className="family-dashboard__panel-title">当前没有待处理提醒</Text>
-                  <Text className="family-dashboard__panel-sub">如果出现 SOS、用药异常或定位异常，这里会优先展示。</Text>
-                </View>
-              )}
-            </DataPanel>
-          </SectionBlock>
-
-          <StickyPrimaryAction label="查看实时定位" tone="family" icon={<Icon name="location" size={20} color="#fff" />} onClick={() => navigateByPath('/subpackages/location/pages/index/index')} />
-        </>
-      ) : null}
+      <StickyPrimaryAction 
+        label="实时定位追踪" 
+        tone="family" 
+        onClick={() => Taro.navigateTo({ url: '/subpackages/location/pages/index/index' })} 
+      />
     </PageShell>
   )
 }

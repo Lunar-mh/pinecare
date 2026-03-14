@@ -12,7 +12,7 @@ function handleError(res, err) {
 const adminUserController = {
   async list(req, res) {
     try {
-      const data = await adminUserService.listUsers(req.query);
+      const data = await adminUserService.listUsers(req.adminScope, req.query);
       return ok(res, data, 'ok');
     } catch (err) {
       return handleError(res, err);
@@ -26,7 +26,7 @@ const adminUserController = {
     }
 
     try {
-      const data = await adminUserService.getUserDetail(userId);
+      const data = await adminUserService.getUserDetail(req.adminScope, userId);
       return ok(res, data, 'ok');
     } catch (err) {
       return handleError(res, err);
@@ -49,7 +49,7 @@ const adminUserController = {
     }
 
     try {
-      const data = await adminUserService.createUser(req.body);
+      const data = await adminUserService.createUser(req.adminScope, req.body);
       return ok(res, data, 'ok');
     } catch (err) {
       return handleError(res, err);
@@ -68,7 +68,7 @@ const adminUserController = {
     }
 
     try {
-      await adminUserService.updateUserStatus(userId, req.body.status);
+      await adminUserService.updateUserStatus(req.adminScope, userId, req.body.status);
       return ok(res, null, 'ok');
     } catch (err) {
       return handleError(res, err);

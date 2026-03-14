@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
@@ -10,6 +10,7 @@ jest.mock('../../src/config/database', () => ({
 jest.mock('../../src/config/redis', () => ({
   set: jest.fn().mockResolvedValue('OK'),
   get: jest.fn().mockResolvedValue(null),
+  del: jest.fn().mockResolvedValue(1),
   ping: jest.fn().mockResolvedValue('PONG'),
   on: jest.fn(),
 }));

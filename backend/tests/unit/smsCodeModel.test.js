@@ -65,7 +65,7 @@ describe('smsCodeModel', () => {
     loaded.query.mockResolvedValueOnce([[]]);
     await expect(loaded.model.verifyAndConsume('13800000000', '111111', 'login')).resolves.toEqual({
       valid: false,
-      message: '验证码不存在',
+      message: 'SMS code not found.',
     });
 
     loaded = loadModel();
@@ -82,7 +82,7 @@ describe('smsCodeModel', () => {
     ]);
     await expect(loaded.model.verifyAndConsume('13800000000', '111111', 'login')).resolves.toEqual({
       valid: false,
-      message: '验证码已使用',
+      message: 'SMS code has already been used.',
     });
 
     loaded = loadModel();
@@ -99,7 +99,7 @@ describe('smsCodeModel', () => {
     ]);
     await expect(loaded.model.verifyAndConsume('13800000000', '111111', 'login')).resolves.toEqual({
       valid: false,
-      message: '验证码已过期',
+      message: 'SMS code has expired.',
     });
 
     loaded = loadModel();
@@ -116,7 +116,7 @@ describe('smsCodeModel', () => {
     ]);
     await expect(loaded.model.verifyAndConsume('13800000000', '222222', 'login')).resolves.toEqual({
       valid: false,
-      message: '验证码错误',
+      message: 'Invalid SMS code.',
     });
 
     loaded = loadModel();
@@ -136,7 +136,7 @@ describe('smsCodeModel', () => {
       .mockResolvedValueOnce([{ affectedRows: 0 }]);
     await expect(loaded.model.verifyAndConsume('13800000000', '123456', 'login')).resolves.toEqual({
       valid: false,
-      message: '验证码已使用',
+      message: 'SMS code has already been used.',
     });
   });
 
