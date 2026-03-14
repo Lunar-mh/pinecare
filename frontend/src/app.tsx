@@ -1,4 +1,5 @@
-﻿import './app.scss'
+import '@nutui/icons-react-taro/dist/style_icon.css'
+import './app.scss'
 
 import type { PropsWithChildren } from 'react'
 import ErrorBoundary from './components/ErrorBoundary'

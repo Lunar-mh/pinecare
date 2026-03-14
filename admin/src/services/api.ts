@@ -8,14 +8,28 @@ import {
   setCsrfToken,
 } from './session'
 
-const DEV_BASE_URL = 'http://127.0.0.1:3001'
+const DEV_PRIMARY_BASE_URL = 'http://127.0.0.1:3001'
+const DEV_FALLBACK_BASE_URL = 'http://127.0.0.1:3000'
+const DEV_RESTRICTED_FALLBACK_BASE_URL = 'http://127.0.0.1:3999'
 const EXPLICIT_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '').trim()
 
 if (import.meta.env.PROD && !EXPLICIT_BASE_URL) {
   throw new Error('VITE_API_BASE_URL is required for production builds.')
 }
 
-const BASE_URL = EXPLICIT_BASE_URL || DEV_BASE_URL
+function resolveBaseUrls(): string[] {
+  if (EXPLICIT_BASE_URL) {
+    return [EXPLICIT_BASE_URL]
+  }
+
+  if (import.meta.env.DEV) {
+    return [DEV_PRIMARY_BASE_URL, DEV_FALLBACK_BASE_URL, DEV_RESTRICTED_FALLBACK_BASE_URL]
+  }
+
+  return [DEV_PRIMARY_BASE_URL]
+}
+
+const BASE_URLS = resolveBaseUrls()
 
 export interface ApiResponse<T = unknown> {
   code: number
@@ -33,6 +47,10 @@ function toUserFacingMessage(code?: number): string {
   if (mergedCode === 429) return 'Too many requests. Please try again later.'
   if (mergedCode === 503 || mergedCode === 504) return 'Service is temporarily unavailable. Please retry later.'
   return 'Request failed. Please try again later.'
+}
+
+function toNetworkFailureMessage(): string {
+  return 'Cannot reach API service. Please ensure backend is running and API base URL is configured.'
 }
 
 class ApiError extends Error {
@@ -99,14 +117,30 @@ async function sendRequest<T = unknown>(
     options.body = JSON.stringify(body)
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, options)
-  const refreshedCsrfToken = res.headers.get('x-csrf-token') || res.headers.get('X-CSRF-Token')
-  if (refreshedCsrfToken) {
-    setCsrfToken(refreshedCsrfToken)
+  let lastError: unknown = null
+
+  for (let index = 0; index < BASE_URLS.length; index += 1) {
+    const baseUrl = BASE_URLS[index]
+    const isLastCandidate = index === BASE_URLS.length - 1
+
+    try {
+      const res = await fetch(`${baseUrl}${path}`, options)
+      const refreshedCsrfToken = res.headers.get('x-csrf-token') || res.headers.get('X-CSRF-Token')
+      if (refreshedCsrfToken) {
+        setCsrfToken(refreshedCsrfToken)
+      }
+
+      const json = await parseJsonSafe<T>(res)
+      return { res, json }
+    } catch (err: unknown) {
+      lastError = err
+      if (!(err instanceof TypeError) || isLastCandidate) {
+        throw err
+      }
+    }
   }
 
-  const json = await parseJsonSafe<T>(res)
-  return { res, json }
+  throw (lastError instanceof Error ? lastError : new Error('Unknown network error'))
 }
 
 let refreshPromise: Promise<string> | null = null
@@ -150,7 +184,16 @@ function ensureRefresh(): Promise<string> {
 }
 
 async function request<T = unknown>(method: string, path: string, body?: unknown, hasRetried = false): Promise<T> {
-  const { res, json } = await sendRequest<T>(method, path, body)
+  let response: { res: Response; json: ApiResponse<T> | null }
+
+  try {
+    response = await sendRequest<T>(method, path, body)
+  } catch (err: unknown) {
+    const debugMessage = err instanceof Error ? err.message : String(err || '')
+    throw new ApiError(503, toNetworkFailureMessage(), debugMessage)
+  }
+
+  const { res, json } = response
 
   const isUnauthorized = res.status === 401 || Number(json?.code || 0) === 401
   const canRetryWithRefresh = !hasRetried && !isAuthPath(path) && isUnauthorized && Boolean(getAdminRefreshToken())

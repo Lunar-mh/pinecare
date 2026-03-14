@@ -38,7 +38,7 @@ if (typeof pool.on === 'function') {
 }
 
 async function query(sql, params = []) {
-  return pool.execute(sql, params);
+  return pool.query(sql, params);
 }
 
 async function closePool() {
@@ -46,3 +46,4 @@ async function closePool() {
 }
 
 module.exports = { closePool, pool, query };
+

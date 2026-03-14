@@ -1,5 +1,7 @@
 import Taro from '@tarojs/taro';
 
+declare const __TARO_APP_API_BASE_URL__: string | undefined;
+
 function getEnvVersion(): string {
   try {
     const info = Taro.getAccountInfoSync();
@@ -10,11 +12,12 @@ function getEnvVersion(): string {
 }
 
 const DEV_API_BASE = 'http://127.0.0.1:3001/api/v1';
-const EXPLICIT_API_BASE = String(process.env.TARO_APP_API_BASE_URL || '').trim();
+const safeProcessEnv = typeof process !== 'undefined' && process.env ? process.env : {};
+const EXPLICIT_API_BASE = String((typeof __TARO_APP_API_BASE_URL__ === 'string' && __TARO_APP_API_BASE_URL__) || safeProcessEnv.TARO_APP_API_BASE_URL || '').trim();
 const ACCESS_TOKEN_KEY = 'token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
 
-if (process.env.NODE_ENV === 'production' && !EXPLICIT_API_BASE) {
+if (safeProcessEnv.NODE_ENV === 'production' && !EXPLICIT_API_BASE) {
   throw new Error('TARO_APP_API_BASE_URL is required for production builds.');
 }
 

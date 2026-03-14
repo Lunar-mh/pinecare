@@ -1,5 +1,5 @@
 ALTER TABLE users
-  ADD COLUMN IF NOT EXISTS user_role ENUM('elder', 'family') NOT NULL DEFAULT 'elder' AFTER phone;
+  ADD COLUMN user_role ENUM('elder', 'family') NOT NULL DEFAULT 'elder' AFTER phone;
 
 UPDATE users u
 SET u.user_role = CASE

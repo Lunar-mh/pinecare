@@ -17,7 +17,9 @@ const config: UserConfigExport = {
     '@': path.resolve(__dirname, '..', 'src'),
   },
   plugins: ['@tarojs/plugin-platform-weapp', '@tarojs/plugin-framework-react'],
-  defineConstants: {},
+  defineConstants: {
+    '__TARO_APP_API_BASE_URL__': JSON.stringify(process.env.TARO_APP_API_BASE_URL || ''),
+  },
   copy: {
     patterns: [],
     options: {}
@@ -30,6 +32,9 @@ const config: UserConfigExport = {
     }
   },
   mini: {
+    miniCssExtractPluginOption: {
+      ignoreOrder: true,
+    },
     postcss: {
       pxtransform: {
         enable: true,
