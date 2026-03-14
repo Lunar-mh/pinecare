@@ -8,6 +8,11 @@ jest.mock('../../src/middleware/auth', () => (req, _res, next) => {
   next();
 });
 
+
+jest.mock('../../src/middleware/rateLimiter', () => ({
+  createRateLimiter: () => (_req, _res, next) => next(),
+}));
+
 jest.mock('../../src/services/medicalDirectoryService', () => ({
   getHospitals: jest.fn(),
   getDepartments: jest.fn(),
@@ -334,3 +339,4 @@ describe('medical integration API contract', () => {
     });
   });
 });
+
