@@ -1,0 +1,20 @@
+??: subpackages/health/pages/blood-pressure/index
+??: frontend/src/subpackages/health/pages/blood-pressure/index.tsx
+??: 2026-03-14T05:54:52.200Z
+??: GET /api/v1/health-archive/blood-pressure
+HTTP: 404
+
+Request Body:
+{}
+
+Response:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot GET /api/v1/health-archive/blood-pressure</pre>
+</body>
+</html>

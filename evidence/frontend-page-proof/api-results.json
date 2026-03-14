@@ -1,0 +1,1687 @@
+{
+  "generatedAt": "2026-03-14T05:54:52.306Z",
+  "apiBase": "http://127.0.0.1:3999/api/v1",
+  "authPhone": "15553609880",
+  "loginCodeFromDb": "000000",
+  "totalPages": 28,
+  "successCount": 16,
+  "failCount": 11,
+  "noApiCount": 1,
+  "pages": [
+    {
+      "page": "pages/login/index",
+      "source": "frontend/src/pages/login/index.tsx",
+      "method": "POST",
+      "endpoint": "/auth/sms-code",
+      "requestBody": {
+        "phone": "15553609880",
+        "purpose": "login"
+      },
+      "authRequired": false,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.136Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "SMS sent.",
+        "data": null
+      },
+      "screenshot": "shots/pages_login_index.png"
+    },
+    {
+      "page": "pages/index/index",
+      "source": "frontend/src/pages/index/index.tsx",
+      "method": "GET",
+      "endpoint": "/health-archive/today",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.148Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "Health overview loaded.",
+        "data": {
+          "userId": 8038,
+          "date": "2026-03-14",
+          "metrics": {},
+          "alerts": [],
+          "recordsCount": 0
+        }
+      },
+      "screenshot": "shots/pages_index_index.png"
+    },
+    {
+      "page": "pages/index/FamilyDashboard",
+      "source": "frontend/src/pages/index/FamilyDashboard.tsx",
+      "method": "GET",
+      "endpoint": "/family/elderly-overview",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.155Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "success",
+        "data": null
+      },
+      "screenshot": "shots/pages_index_FamilyDashboard.png"
+    },
+    {
+      "page": "pages/services/index",
+      "source": "frontend/src/pages/services/index.tsx",
+      "method": "GET",
+      "endpoint": "/user/page-config",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.164Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "ok",
+        "data": {
+          "servicesByRole": {
+            "elder": [
+              {
+                "key": "health",
+                "title": "健康管理",
+                "description": "核心数据、趋势与用药都在这里。",
+                "items": [
+                  {
+                    "key": "health",
+                    "label": "健康档案",
+                    "description": "血压、心率、趋势",
+                    "icon": "heart",
+                    "path": "/subpackages/health/pages/index/index"
+                  },
+                  {
+                    "key": "medication",
+                    "label": "用药提醒",
+                    "description": "计划、进度、补服",
+                    "icon": "pill",
+                    "path": "/subpackages/medication/pages/index/index"
+                  },
+                  {
+                    "key": "drug",
+                    "label": "相互作用",
+                    "description": "药物风险快速检查",
+                    "icon": "search",
+                    "path": "/subpackages/drug_check/pages/index/index"
+                  },
+                  {
+                    "key": "consult",
+                    "label": "AI 健康咨询",
+                    "description": "获得照护建议",
+                    "icon": "stethoscope",
+                    "path": "/subpackages/ai_consult/pages/index/index",
+                    "badge": "AI"
+                  }
+                ]
+              },
+              {
+                "key": "care",
+                "title": "安全守护",
+                "description": "风险先看见，紧急情况可立刻处理。",
+                "items": [
+                  {
+                    "key": "sos",
+                    "label": "紧急 SOS",
+                    "description": "长按求助并共享位置",
+                    "icon": "sos",
+                    "path": "/subpackages/sos/pages/index/index",
+                    "badge": "高优先"
+                  },
+                  {
+                    "key": "location",
+                    "label": "位置共享",
+                    "description": "同步给家人更安心",
+                    "icon": "location",
+                    "path": "/subpackages/location/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "companion",
+                "title": "陪伴服务",
+                "description": "减少操作负担，强化陪伴感。",
+                "items": [
+                  {
+                    "key": "voice",
+                    "label": "语音助手",
+                    "description": "说一句就能操作",
+                    "icon": "mic",
+                    "path": "/subpackages/voice_ai/pages/index/index"
+                  },
+                  {
+                    "key": "companion",
+                    "label": "AI 伴聊",
+                    "description": "随时陪您聊聊天",
+                    "icon": "robot",
+                    "path": "/subpackages/ai_companion/pages/index/index"
+                  },
+                  {
+                    "key": "family-space",
+                    "label": "家庭空间",
+                    "description": "看看照片和留言",
+                    "icon": "family",
+                    "path": "/subpackages/family_space/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "medical",
+                "title": "医疗连接",
+                "description": "让社区与医疗资源更容易找到。",
+                "items": [
+                  {
+                    "key": "medical",
+                    "label": "医疗资源",
+                    "description": "附近服务一站查看",
+                    "icon": "stethoscope",
+                    "path": "/subpackages/medical/pages/index/index"
+                  },
+                  {
+                    "key": "timebank",
+                    "label": "时间银行",
+                    "description": "社区互助服务",
+                    "icon": "clock",
+                    "path": "/subpackages/timebank/pages/index/index"
+                  }
+                ]
+              }
+            ],
+            "family": [
+              {
+                "key": "watch",
+                "title": "监护中心",
+                "description": "关注长辈状态、告警和位置。",
+                "items": [
+                  {
+                    "key": "health",
+                    "label": "健康总览",
+                    "description": "查看血压、心率和提醒",
+                    "icon": "heart",
+                    "path": "/pages/index/index"
+                  },
+                  {
+                    "key": "location",
+                    "label": "定位追踪",
+                    "description": "实时位置与地图查看",
+                    "icon": "location",
+                    "path": "/subpackages/location/pages/index/index"
+                  },
+                  {
+                    "key": "sos",
+                    "label": "SOS 事件",
+                    "description": "快速处理紧急求助",
+                    "icon": "sos",
+                    "path": "/subpackages/sos/pages/index/index",
+                    "badge": "告警"
+                  }
+                ]
+              },
+              {
+                "key": "family",
+                "title": "家庭互动",
+                "description": "维持陪伴感，而不是只看数据。",
+                "items": [
+                  {
+                    "key": "family-space",
+                    "label": "家庭空间",
+                    "description": "相册、留言、互动",
+                    "icon": "family",
+                    "path": "/subpackages/family_space/pages/index/index"
+                  },
+                  {
+                    "key": "companion",
+                    "label": "AI 伴聊",
+                    "description": "了解陪伴状态",
+                    "icon": "robot",
+                    "path": "/subpackages/ai_companion/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "coordination",
+                "title": "服务协调",
+                "description": "联动社区、医疗和用药安排。",
+                "items": [
+                  {
+                    "key": "medication",
+                    "label": "用药进度",
+                    "description": "查看今日计划与完成度",
+                    "icon": "pill",
+                    "path": "/subpackages/medication/pages/index/index"
+                  },
+                  {
+                    "key": "medical",
+                    "label": "医疗资源",
+                    "description": "问诊与资源协调",
+                    "icon": "stethoscope",
+                    "path": "/subpackages/medical/pages/index/index"
+                  },
+                  {
+                    "key": "timebank",
+                    "label": "时间银行",
+                    "description": "社区服务协作",
+                    "icon": "clock",
+                    "path": "/subpackages/timebank/pages/index/index"
+                  }
+                ]
+              }
+            ]
+          },
+          "profileSectionsByRole": {
+            "elder": [
+              {
+                "key": "family",
+                "title": "家庭关系",
+                "items": [
+                  {
+                    "key": "family-space",
+                    "label": "家庭空间",
+                    "description": "查看留言、照片与互动",
+                    "icon": "family",
+                    "path": "/subpackages/family_space/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "device",
+                "title": "设备与紧急设置",
+                "items": [
+                  {
+                    "key": "device",
+                    "label": "设备连接",
+                    "description": "管理手环和设备状态",
+                    "icon": "phone",
+                    "path": "/subpackages/settings/pages/device/index"
+                  },
+                  {
+                    "key": "emergency",
+                    "label": "紧急联系人",
+                    "description": "维护求助联系人",
+                    "icon": "alert",
+                    "path": "/subpackages/settings/pages/emergency/index"
+                  }
+                ]
+              },
+              {
+                "key": "service",
+                "title": "服务设置",
+                "items": [
+                  {
+                    "key": "settings",
+                    "label": "通用设置",
+                    "description": "声音、通知与偏好",
+                    "icon": "settings",
+                    "path": "/subpackages/settings/pages/index/index"
+                  },
+                  {
+                    "key": "feedback",
+                    "label": "意见反馈",
+                    "description": "告诉我们哪里还不顺手",
+                    "icon": "info",
+                    "path": "/subpackages/settings/pages/feedback/index"
+                  },
+                  {
+                    "key": "about",
+                    "label": "关于银伴",
+                    "description": "版本与产品说明",
+                    "icon": "info",
+                    "path": "/subpackages/settings/pages/about/index"
+                  }
+                ]
+              }
+            ],
+            "family": [
+              {
+                "key": "family",
+                "title": "家庭关系",
+                "items": [
+                  {
+                    "key": "family-space",
+                    "label": "家庭空间",
+                    "description": "管理相册、语音留言与家庭互动",
+                    "icon": "family",
+                    "path": "/subpackages/family_space/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "service",
+                "title": "守护设置",
+                "items": [
+                  {
+                    "key": "location",
+                    "label": "位置共享",
+                    "description": "查看与管理安全区域",
+                    "icon": "location",
+                    "path": "/subpackages/location/pages/index/index"
+                  },
+                  {
+                    "key": "emergency",
+                    "label": "紧急设置",
+                    "description": "管理告警和联系人",
+                    "icon": "alert",
+                    "path": "/subpackages/settings/pages/emergency/index"
+                  },
+                  {
+                    "key": "settings",
+                    "label": "通用设置",
+                    "description": "通知、声音与偏好",
+                    "icon": "settings",
+                    "path": "/subpackages/settings/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "about",
+                "title": "支持与关于",
+                "items": [
+                  {
+                    "key": "feedback",
+                    "label": "意见反馈",
+                    "description": "反馈问题与建议",
+                    "icon": "info",
+                    "path": "/subpackages/settings/pages/feedback/index"
+                  },
+                  {
+                    "key": "about",
+                    "label": "关于银伴",
+                    "description": "版本、协议与产品介绍",
+                    "icon": "info",
+                    "path": "/subpackages/settings/pages/about/index"
+                  }
+                ]
+              }
+            ]
+          },
+          "settingsItems": [
+            {
+              "key": "device",
+              "label": "设备与定位",
+              "description": "绑定设备、检查在线状态",
+              "icon": "settings",
+              "path": "/subpackages/settings/pages/device/index"
+            },
+            {
+              "key": "emergency",
+              "label": "紧急联系人",
+              "description": "维护 SOS 联系方式",
+              "icon": "alert",
+              "path": "/subpackages/settings/pages/emergency/index",
+              "badge": "0 人"
+            },
+            {
+              "key": "feedback",
+              "label": "帮助反馈",
+              "description": "问题反馈与常见帮助",
+              "icon": "info",
+              "path": "/subpackages/settings/pages/feedback/index"
+            },
+            {
+              "key": "about",
+              "label": "关于应用",
+              "description": "版本、协议与更新说明",
+              "icon": "heart",
+              "path": "/subpackages/settings/pages/about/index"
+            }
+          ],
+          "about": {
+            "appName": "银伴全域智慧照护平台",
+            "appVersion": "1.0.0",
+            "effectiveDate": "2026-03-12",
+            "summary": "本页面内容来自后端文档与版本清单，前端仅做渲染展示。",
+            "documents": [
+              {
+                "key": "privacy",
+                "title": "隐私政策",
+                "version": "2026.03-live-defense",
+                "effectiveDate": "2026-03-12",
+                "summary": "说明账号、健康、位置、语音与家庭数据的收集目的、留存周期和删除路径。"
+              },
+              {
+                "key": "agreement",
+                "title": "用户协议",
+                "version": "2026.03-live-defense",
+                "effectiveDate": "2026-03-12",
+                "summary": "明确长辈、家属、社区与志愿者在平台中的使用责任、边界和申诉路径。"
+              },
+              {
+                "key": "medical",
+                "title": "医疗免责声明",
+                "version": "2026.03-live-defense",
+                "effectiveDate": "2026-03-12",
+                "summary": "医疗目录、预约、问诊和报告能力用于协同与信息获取，不替代临床诊断。"
+              },
+              {
+                "key": "ai",
+                "title": "AI 使用说明",
+                "version": "2026.03-live-defense",
+                "effectiveDate": "2026-03-12",
+                "summary": "AI 咨询、语音与伴聊能力需明确 live/stub 模式并提供人工兜底。"
+              }
+            ],
+            "changelog": [
+              "四端已完成 non-live release candidate 收口，联调基线统一。",
+              "后端能力统一了证据链、诊断视图与事件复盘口径。",
+              "医疗、定位、SOS、志愿者等关键流程已进入可联调状态。"
+            ]
+          },
+          "profileMeta": {
+            "completion": 40,
+            "appVersion": "1.0.0"
+          }
+        }
+      },
+      "screenshot": "shots/pages_services_index.png"
+    },
+    {
+      "page": "pages/profile/index",
+      "source": "frontend/src/pages/profile/index.tsx",
+      "method": "GET",
+      "endpoint": "/user/info",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.192Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "ok",
+        "data": {
+          "id": 8038,
+          "phone": "15553609880",
+          "openid": null,
+          "nickname": null,
+          "avatar_url": null,
+          "real_name": null,
+          "age": null,
+          "gender": "unknown",
+          "chronic_diseases": [],
+          "account_status": "active",
+          "created_at": "2026-03-14T05:47:06.000Z",
+          "updated_at": "2026-03-14T05:54:52.000Z",
+          "last_login_at": "2026-03-14T05:54:52.000Z"
+        }
+      },
+      "screenshot": "shots/pages_profile_index.png"
+    },
+    {
+      "page": "subpackages/health/pages/index/index",
+      "source": "frontend/src/subpackages/health/pages/index/index.tsx",
+      "method": "GET",
+      "endpoint": "/health-archive/alerts",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.197Z",
+      "status": 404,
+      "response": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /api/v1/health-archive/alerts</pre>\n</body>\n</html>\n",
+      "screenshot": "shots/subpackages_health_pages_index_index.png"
+    },
+    {
+      "page": "subpackages/health/pages/blood-pressure/index",
+      "source": "frontend/src/subpackages/health/pages/blood-pressure/index.tsx",
+      "method": "GET",
+      "endpoint": "/health-archive/blood-pressure",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.200Z",
+      "status": 404,
+      "response": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /api/v1/health-archive/blood-pressure</pre>\n</body>\n</html>\n",
+      "screenshot": "shots/subpackages_health_pages_blood-pressure_index.png"
+    },
+    {
+      "page": "subpackages/health/pages/heart-rate/index",
+      "source": "frontend/src/subpackages/health/pages/heart-rate/index.tsx",
+      "method": "GET",
+      "endpoint": "/health-archive/heart-rate",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.203Z",
+      "status": 404,
+      "response": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /api/v1/health-archive/heart-rate</pre>\n</body>\n</html>\n",
+      "screenshot": "shots/subpackages_health_pages_heart-rate_index.png"
+    },
+    {
+      "page": "subpackages/health/pages/trend/index",
+      "source": "frontend/src/subpackages/health/pages/trend/index.tsx",
+      "method": "GET",
+      "endpoint": "/health-archive/blood-pressure/trend?days=7",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.205Z",
+      "status": 404,
+      "response": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /api/v1/health-archive/blood-pressure/trend</pre>\n</body>\n</html>\n",
+      "screenshot": "shots/subpackages_health_pages_trend_index.png"
+    },
+    {
+      "page": "subpackages/health/pages/records/index",
+      "source": "frontend/src/subpackages/health/pages/records/index.tsx",
+      "method": "GET",
+      "endpoint": "/health-archive/heart-rate",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.207Z",
+      "status": 404,
+      "response": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /api/v1/health-archive/heart-rate</pre>\n</body>\n</html>\n",
+      "screenshot": "shots/subpackages_health_pages_records_index.png"
+    },
+    {
+      "page": "subpackages/family_health/pages/blood-pressure/index",
+      "source": "frontend/src/subpackages/family_health/pages/blood-pressure/index.tsx",
+      "method": "GET",
+      "endpoint": "/health-archive/blood-pressure/latest",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.209Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "Latest blood pressure loaded.",
+        "data": null
+      },
+      "screenshot": "shots/subpackages_family_health_pages_blood-pressure_index.png"
+    },
+    {
+      "page": "subpackages/family_health/pages/heart-rate/index",
+      "source": "frontend/src/subpackages/family_health/pages/heart-rate/index.tsx",
+      "method": "GET",
+      "endpoint": "/health-archive/heart-rate/latest",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.213Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "Latest heart rate loaded.",
+        "data": null
+      },
+      "screenshot": "shots/subpackages_family_health_pages_heart-rate_index.png"
+    },
+    {
+      "page": "subpackages/medication/pages/index/index",
+      "source": "frontend/src/subpackages/medication/pages/index/index.tsx",
+      "method": "GET",
+      "endpoint": "/medication/plans",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.218Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "Medication plans loaded.",
+        "data": []
+      },
+      "screenshot": "shots/subpackages_medication_pages_index_index.png"
+    },
+    {
+      "page": "subpackages/medication/pages/add/index",
+      "source": "frontend/src/subpackages/medication/pages/add/index.tsx",
+      "method": "POST",
+      "endpoint": "/medication/plans",
+      "requestBody": {
+        "medication_name": "联调测试药物",
+        "dosage": "1片",
+        "frequency": "once_daily",
+        "remind_times": [
+          "08:00"
+        ],
+        "start_date": "2026-03-14"
+      },
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.225Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "Medication plan created.",
+        "data": {
+          "id": 10059,
+          "user_id": 8038,
+          "medication_name": "联调测试药物",
+          "dosage": "1片",
+          "frequency": "once_daily",
+          "remind_times": [
+            "08:00"
+          ],
+          "start_date": "2026-03-14",
+          "end_date": null,
+          "remaining_quantity": null,
+          "reminder_threshold": 3,
+          "is_active": true,
+          "created_at": "2026-03-14T05:54:52.000Z",
+          "updated_at": "2026-03-14T05:54:52.000Z"
+        }
+      },
+      "screenshot": "shots/subpackages_medication_pages_add_index.png"
+    },
+    {
+      "page": "subpackages/sos/pages/index/index",
+      "source": "frontend/src/subpackages/sos/pages/index/index.tsx",
+      "method": "GET",
+      "endpoint": "/family/elderly-overview",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.237Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "success",
+        "data": null
+      },
+      "screenshot": "shots/subpackages_sos_pages_index_index.png"
+    },
+    {
+      "page": "subpackages/voice_ai/pages/index/index",
+      "source": "frontend/src/subpackages/voice_ai/pages/index/index.tsx",
+      "method": "GET",
+      "endpoint": "/voice/history?page=1&pageSize=10",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.243Z",
+      "status": 404,
+      "response": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /api/v1/voice/history</pre>\n</body>\n</html>\n",
+      "screenshot": "shots/subpackages_voice_ai_pages_index_index.png"
+    },
+    {
+      "page": "subpackages/timebank/pages/index/index",
+      "source": "frontend/src/subpackages/timebank/pages/index/index.tsx",
+      "method": null,
+      "endpoint": null,
+      "requestBody": null,
+      "authRequired": false,
+      "note": "该页为迁移说明页，当前无后端数据接口",
+      "timestamp": "2026-03-14T05:54:52.247Z",
+      "status": null,
+      "response": {
+        "message": "该页为迁移说明页，当前无后端数据接口"
+      },
+      "screenshot": ""
+    },
+    {
+      "page": "subpackages/family_space/pages/index/index",
+      "source": "frontend/src/subpackages/family_space/pages/index/index.tsx",
+      "method": "GET",
+      "endpoint": "/family-space/message/list?page=1&pageSize=5",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.247Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "语音留言列表获取成功",
+        "data": {
+          "list": [],
+          "pagination": {
+            "page": 1,
+            "pageSize": 5,
+            "total": 0,
+            "totalPages": 0
+          }
+        }
+      },
+      "screenshot": "shots/subpackages_family_space_pages_index_index.png"
+    },
+    {
+      "page": "subpackages/location/pages/index/index",
+      "source": "frontend/src/subpackages/location/pages/index/index.tsx",
+      "method": "GET",
+      "endpoint": "/location/current",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.260Z",
+      "status": 404,
+      "response": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /api/v1/location/current</pre>\n</body>\n</html>\n",
+      "screenshot": "shots/subpackages_location_pages_index_index.png"
+    },
+    {
+      "page": "subpackages/medical/pages/index/index",
+      "source": "frontend/src/subpackages/medical/pages/index/index.tsx",
+      "method": "GET",
+      "endpoint": "/medical/doctors?page=1&pageSize=5",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.263Z",
+      "status": 400,
+      "response": {
+        "code": 400,
+        "message": "departmentId is required.",
+        "data": null
+      },
+      "screenshot": "shots/subpackages_medical_pages_index_index.png"
+    },
+    {
+      "page": "subpackages/ai_consult/pages/index/index",
+      "source": "frontend/src/subpackages/ai_consult/pages/index/index.tsx",
+      "method": "GET",
+      "endpoint": "/ai-consult/profile",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.265Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "success",
+        "data": {
+          "profile": null
+        }
+      },
+      "screenshot": "shots/subpackages_ai_consult_pages_index_index.png"
+    },
+    {
+      "page": "subpackages/drug_check/pages/index/index",
+      "source": "frontend/src/subpackages/drug_check/pages/index/index.tsx",
+      "method": "GET",
+      "endpoint": "/drug-interaction/history",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.277Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "历史记录查询成功",
+        "data": []
+      },
+      "screenshot": "shots/subpackages_drug_check_pages_index_index.png"
+    },
+    {
+      "page": "subpackages/ai_companion/pages/index/index",
+      "source": "frontend/src/subpackages/ai_companion/pages/index/index.tsx",
+      "method": "GET",
+      "endpoint": "/companion/games",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.286Z",
+      "status": 404,
+      "response": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /api/v1/companion/games</pre>\n</body>\n</html>\n",
+      "screenshot": "shots/subpackages_ai_companion_pages_index_index.png"
+    },
+    {
+      "page": "subpackages/settings/pages/index/index",
+      "source": "frontend/src/subpackages/settings/pages/index/index.tsx",
+      "method": "GET",
+      "endpoint": "/user/page-config",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.288Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "ok",
+        "data": {
+          "servicesByRole": {
+            "elder": [
+              {
+                "key": "health",
+                "title": "健康管理",
+                "description": "核心数据、趋势与用药都在这里。",
+                "items": [
+                  {
+                    "key": "health",
+                    "label": "健康档案",
+                    "description": "血压、心率、趋势",
+                    "icon": "heart",
+                    "path": "/subpackages/health/pages/index/index"
+                  },
+                  {
+                    "key": "medication",
+                    "label": "用药提醒",
+                    "description": "计划、进度、补服",
+                    "icon": "pill",
+                    "path": "/subpackages/medication/pages/index/index"
+                  },
+                  {
+                    "key": "drug",
+                    "label": "相互作用",
+                    "description": "药物风险快速检查",
+                    "icon": "search",
+                    "path": "/subpackages/drug_check/pages/index/index"
+                  },
+                  {
+                    "key": "consult",
+                    "label": "AI 健康咨询",
+                    "description": "获得照护建议",
+                    "icon": "stethoscope",
+                    "path": "/subpackages/ai_consult/pages/index/index",
+                    "badge": "AI"
+                  }
+                ]
+              },
+              {
+                "key": "care",
+                "title": "安全守护",
+                "description": "风险先看见，紧急情况可立刻处理。",
+                "items": [
+                  {
+                    "key": "sos",
+                    "label": "紧急 SOS",
+                    "description": "长按求助并共享位置",
+                    "icon": "sos",
+                    "path": "/subpackages/sos/pages/index/index",
+                    "badge": "高优先"
+                  },
+                  {
+                    "key": "location",
+                    "label": "位置共享",
+                    "description": "同步给家人更安心",
+                    "icon": "location",
+                    "path": "/subpackages/location/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "companion",
+                "title": "陪伴服务",
+                "description": "减少操作负担，强化陪伴感。",
+                "items": [
+                  {
+                    "key": "voice",
+                    "label": "语音助手",
+                    "description": "说一句就能操作",
+                    "icon": "mic",
+                    "path": "/subpackages/voice_ai/pages/index/index"
+                  },
+                  {
+                    "key": "companion",
+                    "label": "AI 伴聊",
+                    "description": "随时陪您聊聊天",
+                    "icon": "robot",
+                    "path": "/subpackages/ai_companion/pages/index/index"
+                  },
+                  {
+                    "key": "family-space",
+                    "label": "家庭空间",
+                    "description": "看看照片和留言",
+                    "icon": "family",
+                    "path": "/subpackages/family_space/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "medical",
+                "title": "医疗连接",
+                "description": "让社区与医疗资源更容易找到。",
+                "items": [
+                  {
+                    "key": "medical",
+                    "label": "医疗资源",
+                    "description": "附近服务一站查看",
+                    "icon": "stethoscope",
+                    "path": "/subpackages/medical/pages/index/index"
+                  },
+                  {
+                    "key": "timebank",
+                    "label": "时间银行",
+                    "description": "社区互助服务",
+                    "icon": "clock",
+                    "path": "/subpackages/timebank/pages/index/index"
+                  }
+                ]
+              }
+            ],
+            "family": [
+              {
+                "key": "watch",
+                "title": "监护中心",
+                "description": "关注长辈状态、告警和位置。",
+                "items": [
+                  {
+                    "key": "health",
+                    "label": "健康总览",
+                    "description": "查看血压、心率和提醒",
+                    "icon": "heart",
+                    "path": "/pages/index/index"
+                  },
+                  {
+                    "key": "location",
+                    "label": "定位追踪",
+                    "description": "实时位置与地图查看",
+                    "icon": "location",
+                    "path": "/subpackages/location/pages/index/index"
+                  },
+                  {
+                    "key": "sos",
+                    "label": "SOS 事件",
+                    "description": "快速处理紧急求助",
+                    "icon": "sos",
+                    "path": "/subpackages/sos/pages/index/index",
+                    "badge": "告警"
+                  }
+                ]
+              },
+              {
+                "key": "family",
+                "title": "家庭互动",
+                "description": "维持陪伴感，而不是只看数据。",
+                "items": [
+                  {
+                    "key": "family-space",
+                    "label": "家庭空间",
+                    "description": "相册、留言、互动",
+                    "icon": "family",
+                    "path": "/subpackages/family_space/pages/index/index"
+                  },
+                  {
+                    "key": "companion",
+                    "label": "AI 伴聊",
+                    "description": "了解陪伴状态",
+                    "icon": "robot",
+                    "path": "/subpackages/ai_companion/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "coordination",
+                "title": "服务协调",
+                "description": "联动社区、医疗和用药安排。",
+                "items": [
+                  {
+                    "key": "medication",
+                    "label": "用药进度",
+                    "description": "查看今日计划与完成度",
+                    "icon": "pill",
+                    "path": "/subpackages/medication/pages/index/index"
+                  },
+                  {
+                    "key": "medical",
+                    "label": "医疗资源",
+                    "description": "问诊与资源协调",
+                    "icon": "stethoscope",
+                    "path": "/subpackages/medical/pages/index/index"
+                  },
+                  {
+                    "key": "timebank",
+                    "label": "时间银行",
+                    "description": "社区服务协作",
+                    "icon": "clock",
+                    "path": "/subpackages/timebank/pages/index/index"
+                  }
+                ]
+              }
+            ]
+          },
+          "profileSectionsByRole": {
+            "elder": [
+              {
+                "key": "family",
+                "title": "家庭关系",
+                "items": [
+                  {
+                    "key": "family-space",
+                    "label": "家庭空间",
+                    "description": "查看留言、照片与互动",
+                    "icon": "family",
+                    "path": "/subpackages/family_space/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "device",
+                "title": "设备与紧急设置",
+                "items": [
+                  {
+                    "key": "device",
+                    "label": "设备连接",
+                    "description": "管理手环和设备状态",
+                    "icon": "phone",
+                    "path": "/subpackages/settings/pages/device/index"
+                  },
+                  {
+                    "key": "emergency",
+                    "label": "紧急联系人",
+                    "description": "维护求助联系人",
+                    "icon": "alert",
+                    "path": "/subpackages/settings/pages/emergency/index"
+                  }
+                ]
+              },
+              {
+                "key": "service",
+                "title": "服务设置",
+                "items": [
+                  {
+                    "key": "settings",
+                    "label": "通用设置",
+                    "description": "声音、通知与偏好",
+                    "icon": "settings",
+                    "path": "/subpackages/settings/pages/index/index"
+                  },
+                  {
+                    "key": "feedback",
+                    "label": "意见反馈",
+                    "description": "告诉我们哪里还不顺手",
+                    "icon": "info",
+                    "path": "/subpackages/settings/pages/feedback/index"
+                  },
+                  {
+                    "key": "about",
+                    "label": "关于银伴",
+                    "description": "版本与产品说明",
+                    "icon": "info",
+                    "path": "/subpackages/settings/pages/about/index"
+                  }
+                ]
+              }
+            ],
+            "family": [
+              {
+                "key": "family",
+                "title": "家庭关系",
+                "items": [
+                  {
+                    "key": "family-space",
+                    "label": "家庭空间",
+                    "description": "管理相册、语音留言与家庭互动",
+                    "icon": "family",
+                    "path": "/subpackages/family_space/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "service",
+                "title": "守护设置",
+                "items": [
+                  {
+                    "key": "location",
+                    "label": "位置共享",
+                    "description": "查看与管理安全区域",
+                    "icon": "location",
+                    "path": "/subpackages/location/pages/index/index"
+                  },
+                  {
+                    "key": "emergency",
+                    "label": "紧急设置",
+                    "description": "管理告警和联系人",
+                    "icon": "alert",
+                    "path": "/subpackages/settings/pages/emergency/index"
+                  },
+                  {
+                    "key": "settings",
+                    "label": "通用设置",
+                    "description": "通知、声音与偏好",
+                    "icon": "settings",
+                    "path": "/subpackages/settings/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "about",
+                "title": "支持与关于",
+                "items": [
+                  {
+                    "key": "feedback",
+                    "label": "意见反馈",
+                    "description": "反馈问题与建议",
+                    "icon": "info",
+                    "path": "/subpackages/settings/pages/feedback/index"
+                  },
+                  {
+                    "key": "about",
+                    "label": "关于银伴",
+                    "description": "版本、协议与产品介绍",
+                    "icon": "info",
+                    "path": "/subpackages/settings/pages/about/index"
+                  }
+                ]
+              }
+            ]
+          },
+          "settingsItems": [
+            {
+              "key": "device",
+              "label": "设备与定位",
+              "description": "绑定设备、检查在线状态",
+              "icon": "settings",
+              "path": "/subpackages/settings/pages/device/index"
+            },
+            {
+              "key": "emergency",
+              "label": "紧急联系人",
+              "description": "维护 SOS 联系方式",
+              "icon": "alert",
+              "path": "/subpackages/settings/pages/emergency/index",
+              "badge": "0 人"
+            },
+            {
+              "key": "feedback",
+              "label": "帮助反馈",
+              "description": "问题反馈与常见帮助",
+              "icon": "info",
+              "path": "/subpackages/settings/pages/feedback/index"
+            },
+            {
+              "key": "about",
+              "label": "关于应用",
+              "description": "版本、协议与更新说明",
+              "icon": "heart",
+              "path": "/subpackages/settings/pages/about/index"
+            }
+          ],
+          "about": {
+            "appName": "银伴全域智慧照护平台",
+            "appVersion": "1.0.0",
+            "effectiveDate": "2026-03-12",
+            "summary": "本页面内容来自后端文档与版本清单，前端仅做渲染展示。",
+            "documents": [
+              {
+                "key": "privacy",
+                "title": "隐私政策",
+                "version": "2026.03-live-defense",
+                "effectiveDate": "2026-03-12",
+                "summary": "说明账号、健康、位置、语音与家庭数据的收集目的、留存周期和删除路径。"
+              },
+              {
+                "key": "agreement",
+                "title": "用户协议",
+                "version": "2026.03-live-defense",
+                "effectiveDate": "2026-03-12",
+                "summary": "明确长辈、家属、社区与志愿者在平台中的使用责任、边界和申诉路径。"
+              },
+              {
+                "key": "medical",
+                "title": "医疗免责声明",
+                "version": "2026.03-live-defense",
+                "effectiveDate": "2026-03-12",
+                "summary": "医疗目录、预约、问诊和报告能力用于协同与信息获取，不替代临床诊断。"
+              },
+              {
+                "key": "ai",
+                "title": "AI 使用说明",
+                "version": "2026.03-live-defense",
+                "effectiveDate": "2026-03-12",
+                "summary": "AI 咨询、语音与伴聊能力需明确 live/stub 模式并提供人工兜底。"
+              }
+            ],
+            "changelog": [
+              "四端已完成 non-live release candidate 收口，联调基线统一。",
+              "后端能力统一了证据链、诊断视图与事件复盘口径。",
+              "医疗、定位、SOS、志愿者等关键流程已进入可联调状态。"
+            ]
+          },
+          "profileMeta": {
+            "completion": 40,
+            "appVersion": "1.0.0"
+          }
+        }
+      },
+      "screenshot": "shots/subpackages_settings_pages_index_index.png"
+    },
+    {
+      "page": "subpackages/settings/pages/about/index",
+      "source": "frontend/src/subpackages/settings/pages/about/index.tsx",
+      "method": "GET",
+      "endpoint": "/user/page-config",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.293Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "ok",
+        "data": {
+          "servicesByRole": {
+            "elder": [
+              {
+                "key": "health",
+                "title": "健康管理",
+                "description": "核心数据、趋势与用药都在这里。",
+                "items": [
+                  {
+                    "key": "health",
+                    "label": "健康档案",
+                    "description": "血压、心率、趋势",
+                    "icon": "heart",
+                    "path": "/subpackages/health/pages/index/index"
+                  },
+                  {
+                    "key": "medication",
+                    "label": "用药提醒",
+                    "description": "计划、进度、补服",
+                    "icon": "pill",
+                    "path": "/subpackages/medication/pages/index/index"
+                  },
+                  {
+                    "key": "drug",
+                    "label": "相互作用",
+                    "description": "药物风险快速检查",
+                    "icon": "search",
+                    "path": "/subpackages/drug_check/pages/index/index"
+                  },
+                  {
+                    "key": "consult",
+                    "label": "AI 健康咨询",
+                    "description": "获得照护建议",
+                    "icon": "stethoscope",
+                    "path": "/subpackages/ai_consult/pages/index/index",
+                    "badge": "AI"
+                  }
+                ]
+              },
+              {
+                "key": "care",
+                "title": "安全守护",
+                "description": "风险先看见，紧急情况可立刻处理。",
+                "items": [
+                  {
+                    "key": "sos",
+                    "label": "紧急 SOS",
+                    "description": "长按求助并共享位置",
+                    "icon": "sos",
+                    "path": "/subpackages/sos/pages/index/index",
+                    "badge": "高优先"
+                  },
+                  {
+                    "key": "location",
+                    "label": "位置共享",
+                    "description": "同步给家人更安心",
+                    "icon": "location",
+                    "path": "/subpackages/location/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "companion",
+                "title": "陪伴服务",
+                "description": "减少操作负担，强化陪伴感。",
+                "items": [
+                  {
+                    "key": "voice",
+                    "label": "语音助手",
+                    "description": "说一句就能操作",
+                    "icon": "mic",
+                    "path": "/subpackages/voice_ai/pages/index/index"
+                  },
+                  {
+                    "key": "companion",
+                    "label": "AI 伴聊",
+                    "description": "随时陪您聊聊天",
+                    "icon": "robot",
+                    "path": "/subpackages/ai_companion/pages/index/index"
+                  },
+                  {
+                    "key": "family-space",
+                    "label": "家庭空间",
+                    "description": "看看照片和留言",
+                    "icon": "family",
+                    "path": "/subpackages/family_space/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "medical",
+                "title": "医疗连接",
+                "description": "让社区与医疗资源更容易找到。",
+                "items": [
+                  {
+                    "key": "medical",
+                    "label": "医疗资源",
+                    "description": "附近服务一站查看",
+                    "icon": "stethoscope",
+                    "path": "/subpackages/medical/pages/index/index"
+                  },
+                  {
+                    "key": "timebank",
+                    "label": "时间银行",
+                    "description": "社区互助服务",
+                    "icon": "clock",
+                    "path": "/subpackages/timebank/pages/index/index"
+                  }
+                ]
+              }
+            ],
+            "family": [
+              {
+                "key": "watch",
+                "title": "监护中心",
+                "description": "关注长辈状态、告警和位置。",
+                "items": [
+                  {
+                    "key": "health",
+                    "label": "健康总览",
+                    "description": "查看血压、心率和提醒",
+                    "icon": "heart",
+                    "path": "/pages/index/index"
+                  },
+                  {
+                    "key": "location",
+                    "label": "定位追踪",
+                    "description": "实时位置与地图查看",
+                    "icon": "location",
+                    "path": "/subpackages/location/pages/index/index"
+                  },
+                  {
+                    "key": "sos",
+                    "label": "SOS 事件",
+                    "description": "快速处理紧急求助",
+                    "icon": "sos",
+                    "path": "/subpackages/sos/pages/index/index",
+                    "badge": "告警"
+                  }
+                ]
+              },
+              {
+                "key": "family",
+                "title": "家庭互动",
+                "description": "维持陪伴感，而不是只看数据。",
+                "items": [
+                  {
+                    "key": "family-space",
+                    "label": "家庭空间",
+                    "description": "相册、留言、互动",
+                    "icon": "family",
+                    "path": "/subpackages/family_space/pages/index/index"
+                  },
+                  {
+                    "key": "companion",
+                    "label": "AI 伴聊",
+                    "description": "了解陪伴状态",
+                    "icon": "robot",
+                    "path": "/subpackages/ai_companion/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "coordination",
+                "title": "服务协调",
+                "description": "联动社区、医疗和用药安排。",
+                "items": [
+                  {
+                    "key": "medication",
+                    "label": "用药进度",
+                    "description": "查看今日计划与完成度",
+                    "icon": "pill",
+                    "path": "/subpackages/medication/pages/index/index"
+                  },
+                  {
+                    "key": "medical",
+                    "label": "医疗资源",
+                    "description": "问诊与资源协调",
+                    "icon": "stethoscope",
+                    "path": "/subpackages/medical/pages/index/index"
+                  },
+                  {
+                    "key": "timebank",
+                    "label": "时间银行",
+                    "description": "社区服务协作",
+                    "icon": "clock",
+                    "path": "/subpackages/timebank/pages/index/index"
+                  }
+                ]
+              }
+            ]
+          },
+          "profileSectionsByRole": {
+            "elder": [
+              {
+                "key": "family",
+                "title": "家庭关系",
+                "items": [
+                  {
+                    "key": "family-space",
+                    "label": "家庭空间",
+                    "description": "查看留言、照片与互动",
+                    "icon": "family",
+                    "path": "/subpackages/family_space/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "device",
+                "title": "设备与紧急设置",
+                "items": [
+                  {
+                    "key": "device",
+                    "label": "设备连接",
+                    "description": "管理手环和设备状态",
+                    "icon": "phone",
+                    "path": "/subpackages/settings/pages/device/index"
+                  },
+                  {
+                    "key": "emergency",
+                    "label": "紧急联系人",
+                    "description": "维护求助联系人",
+                    "icon": "alert",
+                    "path": "/subpackages/settings/pages/emergency/index"
+                  }
+                ]
+              },
+              {
+                "key": "service",
+                "title": "服务设置",
+                "items": [
+                  {
+                    "key": "settings",
+                    "label": "通用设置",
+                    "description": "声音、通知与偏好",
+                    "icon": "settings",
+                    "path": "/subpackages/settings/pages/index/index"
+                  },
+                  {
+                    "key": "feedback",
+                    "label": "意见反馈",
+                    "description": "告诉我们哪里还不顺手",
+                    "icon": "info",
+                    "path": "/subpackages/settings/pages/feedback/index"
+                  },
+                  {
+                    "key": "about",
+                    "label": "关于银伴",
+                    "description": "版本与产品说明",
+                    "icon": "info",
+                    "path": "/subpackages/settings/pages/about/index"
+                  }
+                ]
+              }
+            ],
+            "family": [
+              {
+                "key": "family",
+                "title": "家庭关系",
+                "items": [
+                  {
+                    "key": "family-space",
+                    "label": "家庭空间",
+                    "description": "管理相册、语音留言与家庭互动",
+                    "icon": "family",
+                    "path": "/subpackages/family_space/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "service",
+                "title": "守护设置",
+                "items": [
+                  {
+                    "key": "location",
+                    "label": "位置共享",
+                    "description": "查看与管理安全区域",
+                    "icon": "location",
+                    "path": "/subpackages/location/pages/index/index"
+                  },
+                  {
+                    "key": "emergency",
+                    "label": "紧急设置",
+                    "description": "管理告警和联系人",
+                    "icon": "alert",
+                    "path": "/subpackages/settings/pages/emergency/index"
+                  },
+                  {
+                    "key": "settings",
+                    "label": "通用设置",
+                    "description": "通知、声音与偏好",
+                    "icon": "settings",
+                    "path": "/subpackages/settings/pages/index/index"
+                  }
+                ]
+              },
+              {
+                "key": "about",
+                "title": "支持与关于",
+                "items": [
+                  {
+                    "key": "feedback",
+                    "label": "意见反馈",
+                    "description": "反馈问题与建议",
+                    "icon": "info",
+                    "path": "/subpackages/settings/pages/feedback/index"
+                  },
+                  {
+                    "key": "about",
+                    "label": "关于银伴",
+                    "description": "版本、协议与产品介绍",
+                    "icon": "info",
+                    "path": "/subpackages/settings/pages/about/index"
+                  }
+                ]
+              }
+            ]
+          },
+          "settingsItems": [
+            {
+              "key": "device",
+              "label": "设备与定位",
+              "description": "绑定设备、检查在线状态",
+              "icon": "settings",
+              "path": "/subpackages/settings/pages/device/index"
+            },
+            {
+              "key": "emergency",
+              "label": "紧急联系人",
+              "description": "维护 SOS 联系方式",
+              "icon": "alert",
+              "path": "/subpackages/settings/pages/emergency/index",
+              "badge": "0 人"
+            },
+            {
+              "key": "feedback",
+              "label": "帮助反馈",
+              "description": "问题反馈与常见帮助",
+              "icon": "info",
+              "path": "/subpackages/settings/pages/feedback/index"
+            },
+            {
+              "key": "about",
+              "label": "关于应用",
+              "description": "版本、协议与更新说明",
+              "icon": "heart",
+              "path": "/subpackages/settings/pages/about/index"
+            }
+          ],
+          "about": {
+            "appName": "银伴全域智慧照护平台",
+            "appVersion": "1.0.0",
+            "effectiveDate": "2026-03-12",
+            "summary": "本页面内容来自后端文档与版本清单，前端仅做渲染展示。",
+            "documents": [
+              {
+                "key": "privacy",
+                "title": "隐私政策",
+                "version": "2026.03-live-defense",
+                "effectiveDate": "2026-03-12",
+                "summary": "说明账号、健康、位置、语音与家庭数据的收集目的、留存周期和删除路径。"
+              },
+              {
+                "key": "agreement",
+                "title": "用户协议",
+                "version": "2026.03-live-defense",
+                "effectiveDate": "2026-03-12",
+                "summary": "明确长辈、家属、社区与志愿者在平台中的使用责任、边界和申诉路径。"
+              },
+              {
+                "key": "medical",
+                "title": "医疗免责声明",
+                "version": "2026.03-live-defense",
+                "effectiveDate": "2026-03-12",
+                "summary": "医疗目录、预约、问诊和报告能力用于协同与信息获取，不替代临床诊断。"
+              },
+              {
+                "key": "ai",
+                "title": "AI 使用说明",
+                "version": "2026.03-live-defense",
+                "effectiveDate": "2026-03-12",
+                "summary": "AI 咨询、语音与伴聊能力需明确 live/stub 模式并提供人工兜底。"
+              }
+            ],
+            "changelog": [
+              "四端已完成 non-live release candidate 收口，联调基线统一。",
+              "后端能力统一了证据链、诊断视图与事件复盘口径。",
+              "医疗、定位、SOS、志愿者等关键流程已进入可联调状态。"
+            ]
+          },
+          "profileMeta": {
+            "completion": 40,
+            "appVersion": "1.0.0"
+          }
+        }
+      },
+      "screenshot": "shots/subpackages_settings_pages_about_index.png"
+    },
+    {
+      "page": "subpackages/settings/pages/device/index",
+      "source": "frontend/src/subpackages/settings/pages/device/index.tsx",
+      "method": "GET",
+      "endpoint": "/user/devices",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.298Z",
+      "status": 404,
+      "response": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /api/v1/user/devices</pre>\n</body>\n</html>\n",
+      "screenshot": "shots/subpackages_settings_pages_device_index.png"
+    },
+    {
+      "page": "subpackages/settings/pages/emergency/index",
+      "source": "frontend/src/subpackages/settings/pages/emergency/index.tsx",
+      "method": "GET",
+      "endpoint": "/user/emergency-contacts",
+      "requestBody": null,
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.300Z",
+      "status": 200,
+      "response": {
+        "code": 0,
+        "message": "ok",
+        "data": []
+      },
+      "screenshot": "shots/subpackages_settings_pages_emergency_index.png"
+    },
+    {
+      "page": "subpackages/settings/pages/feedback/index",
+      "source": "frontend/src/subpackages/settings/pages/feedback/index.tsx",
+      "method": "POST",
+      "endpoint": "/user/feedback",
+      "requestBody": {
+        "content": "联调核验：此条为自动化验收提交。"
+      },
+      "authRequired": true,
+      "note": "",
+      "timestamp": "2026-03-14T05:54:52.304Z",
+      "status": 404,
+      "response": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot POST /api/v1/user/feedback</pre>\n</body>\n</html>\n",
+      "screenshot": "shots/subpackages_settings_pages_feedback_index.png"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+??: subpackages/medical/pages/index/index
+??: frontend/src/subpackages/medical/pages/index/index.tsx
+??: 2026-03-14T05:54:52.263Z
+??: GET /api/v1/medical/doctors?page=1&pageSize=5
+HTTP: 400
+
+Request Body:
+{}
+
+Response:
+{
+  "code": 400,
+  "message": "departmentId is required.",
+  "data": null
+}
