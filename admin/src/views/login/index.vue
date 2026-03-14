@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Lock, User } from '@element-plus/icons-vue'
@@ -8,7 +8,6 @@ import { setAdminRefreshToken, setAdminToken, setCsrfToken } from '@/services/se
 const router = useRouter()
 const loading = ref(false)
 const error = ref('')
-const isDev = import.meta.env.DEV
 const form = reactive({
   username: '',
   password: '',
@@ -101,7 +100,6 @@ async function handleLogin() {
         </el-form>
 
         <div class="login-card__footer">
-          <span v-if="isDev" class="login-card__hint">演示账号：admin / admin123</span>
           <div class="login-card__tags">
             <span>工作台</span>
             <span>社区运营</span>
@@ -295,3 +293,4 @@ async function handleLogin() {
   font-weight: 600;
 }
 </style>
+

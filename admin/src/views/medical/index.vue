@@ -2,12 +2,11 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
-import { bootstrapDemoScenario, getAdminMedicalReports, getMedicalDepartments, getMedicalDoctors, getMedicalHospitals, getSystemEvidence } from '@/services'
+import { getAdminMedicalReports, getMedicalDepartments, getMedicalDoctors, getMedicalHospitals, getSystemEvidence } from '@/services'
 import { usePagination } from '@/composables/usePagination'
 import type { MedicalDepartmentItem, MedicalDoctorItem, MedicalHospitalItem, MedicalReportItem, SystemEvidenceBundle } from '@/services'
 
 const loading = ref(false)
-const bootstrapLoading = ref(false)
 const activeTab = ref<'directory' | 'reports'>('directory')
 const hospitals = ref<MedicalHospitalItem[]>([])
 const departments = ref<MedicalDepartmentItem[]>([])
@@ -117,19 +116,6 @@ async function fetchAll() {
   }
 }
 
-async function handleBootstrap() {
-  bootstrapLoading.value = true
-  try {
-    const result = await bootstrapDemoScenario('medical-consultation')
-    ElMessage.success(`医疗剧本已准备：${result.title}`)
-    await fetchEvidence()
-  } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : '医疗剧本准备失败')
-  } finally {
-    bootstrapLoading.value = false
-  }
-}
-
 watch(hospitalId, async () => {
   await fetchDepartments()
   await fetchDoctors()
@@ -149,11 +135,10 @@ onMounted(fetchAll)
     <div class="wb-page-header">
       <div>
         <span class="wb-page-title">医疗资源整合</span>
-        <span class="wb-page-subtitle">目录、报告和运行模式放在一处查看，答辩时也能直接说明当前是 live-ready 还是 stub-ready。</span>
+        <span class="wb-page-subtitle">目录、报告和运行模式放在一处查看，答辩时可直接说明当前是实网就绪还是桩服务就绪。</span>
       </div>
       <div style="display:flex; gap:10px">
         <el-button :icon="Refresh" @click="fetchAll">刷新</el-button>
-        <el-button type="primary" :loading="bootstrapLoading" @click="handleBootstrap">准备医疗剧本</el-button>
       </div>
     </div>
 
@@ -161,7 +146,7 @@ onMounted(fetchAll)
       <div class="wb-metric-card">
         <span class="wb-card-label">医院</span>
         <div class="wb-card-value">{{ hospitals.length }}</div>
-        <span class="wb-card-hint">当前可用于演示的医院目录</span>
+        <span class="wb-card-hint">当前可用医院目录</span>
       </div>
       <div class="wb-metric-card">
         <span class="wb-card-label">科室</span>
@@ -215,7 +200,7 @@ onMounted(fetchAll)
         <div class="wb-page-header" style="margin-bottom: 14px">
           <div>
             <span class="wb-page-title" style="font-size: 22px">答辩提醒</span>
-            <span class="wb-page-subtitle">说明 live-ready / stub-ready 状态时可直接引用。</span>
+            <span class="wb-page-subtitle">说明“实网就绪 / 桩服务就绪”状态时可直接引用。</span>
           </div>
         </div>
         <div class="wb-list">
@@ -353,3 +338,7 @@ onMounted(fetchAll)
     </div>
   </div>
 </template>
+
+
+
+

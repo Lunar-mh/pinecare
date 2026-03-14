@@ -43,6 +43,10 @@ jest.mock('../../src/services/authService', () => ({
   unlockAccountByCode: jest.fn(),
 }));
 
+jest.mock('../../src/services/userPageConfigService', () => ({
+  buildUserPageConfig: jest.fn(),
+}));
+
 const redis = require('../../src/config/redis');
 const UserModel = require('../../src/models/user');
 const EmergencyContactModel = require('../../src/models/emergencyContact');
@@ -50,6 +54,7 @@ const FamilyBindingModel = require('../../src/models/familyBinding');
 const AuditLogModel = require('../../src/models/auditLog');
 const smsService = require('../../src/services/smsService');
 const authService = require('../../src/services/authService');
+const { buildUserPageConfig } = require('../../src/services/userPageConfigService');
 const userService = require('../../src/services/userService');
 
 describe('userService', () => {
@@ -69,6 +74,24 @@ describe('userService', () => {
       code: 404,
       message: 'User not found.',
     });
+  });
+
+  it('returns page config assembled by page-config service', async () => {
+    const profile = { id: 1, phone: '13812345678', account_status: 'active' };
+    const contacts = [{ id: 1 }, { id: 2 }];
+
+    UserModel.getProfileById.mockResolvedValue(profile);
+    EmergencyContactModel.listByUserId.mockResolvedValue(contacts);
+    buildUserPageConfig.mockReturnValue({ settingsItems: [], profileMeta: { completion: 80, appVersion: '1.0.0' } });
+
+    const result = await userService.getPageConfig(1);
+
+    expect(EmergencyContactModel.listByUserId).toHaveBeenCalledWith(1);
+    expect(buildUserPageConfig).toHaveBeenCalledWith({
+      profile,
+      emergencyContactCount: 2,
+    });
+    expect(result.profileMeta.completion).toBe(80);
   });
 
   it('validates profile payload before update', async () => {

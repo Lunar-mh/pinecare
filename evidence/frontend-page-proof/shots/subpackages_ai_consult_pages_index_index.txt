@@ -1,0 +1,17 @@
+??: subpackages/ai_consult/pages/index/index
+??: frontend/src/subpackages/ai_consult/pages/index/index.tsx
+??: 2026-03-14T05:54:52.265Z
+??: GET /api/v1/ai-consult/profile
+HTTP: 200
+
+Request Body:
+{}
+
+Response:
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "profile": null
+  }
+}

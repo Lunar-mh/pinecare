@@ -1,0 +1,22 @@
+??: subpackages/settings/pages/feedback/index
+??: frontend/src/subpackages/settings/pages/feedback/index.tsx
+??: 2026-03-14T05:54:52.304Z
+??: POST /api/v1/user/feedback
+HTTP: 404
+
+Request Body:
+{
+  "content": "联调核验：此条为自动化验收提交。"
+}
+
+Response:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot POST /api/v1/user/feedback</pre>
+</body>
+</html>

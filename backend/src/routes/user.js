@@ -19,6 +19,7 @@ const unlockLimiter = rateLimit({
 });
 
 router.get('/profile', auth, userController.getProfile);
+router.get('/page-config', auth, userController.getPageConfig);
 router.put('/profile', auth, userController.updateProfile);
 
 // 兼容旧版小程序客户端的别名路由

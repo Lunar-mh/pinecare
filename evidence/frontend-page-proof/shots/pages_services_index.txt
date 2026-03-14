@@ -1,0 +1,134 @@
+??: pages/services/index
+??: frontend/src/pages/services/index.tsx
+??: 2026-03-14T05:54:52.164Z
+??: GET /api/v1/user/page-config
+HTTP: 200
+
+Request Body:
+{}
+
+Response:
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "servicesByRole": {
+      "elder": [
+        {
+          "key": "health",
+          "title": "健康管理",
+          "description": "核心数据、趋势与用药都在这里。",
+          "items": [
+            {
+              "key": "health",
+              "label": "健康档案",
+              "description": "血压、心率、趋势",
+              "icon": "heart",
+              "path": "/subpackages/health/pages/index/index"
+            },
+            {
+              "key": "medication",
+              "label": "用药提醒",
+              "description": "计划、进度、补服",
+              "icon": "pill",
+              "path": "/subpackages/medication/pages/index/index"
+            },
+            {
+              "key": "drug",
+              "label": "相互作用",
+              "description": "药物风险快速检查",
+              "icon": "search",
+              "path": "/subpackages/drug_check/pages/index/index"
+            },
+            {
+              "key": "consult",
+              "label": "AI 健康咨询",
+              "description": "获得照护建议",
+              "icon": "stethoscope",
+              "path": "/subpackages/ai_consult/pages/index/index",
+              "badge": "AI"
+            }
+          ]
+        },
+        {
+          "key": "care",
+          "title": "安全守护",
+          "description": "风险先看见，紧急情况可立刻处理。",
+          "items": [
+            {
+              "key": "sos",
+              "label": "紧急 SOS",
+              "description": "长按求助并共享位置",
+              "icon": "sos",
+              "path": "/subpackages/sos/pages/index/index",
+              "badge": "高优先"
+            },
+            {
+              "key": "location",
+              "label": "位置共享",
+              "description": "同步给家人更安心",
+              "icon": "location",
+              "path": "/subpackages/location/pages/index/index"
+            }
+          ]
+        },
+        {
+          "key": "companion",
+          "title": "陪伴服务",
+          "description": "减少操作负担，强化陪伴感。",
+          "items": [
+            {
+              "key": "voice",
+              "label": "语音助手",
+              "description": "说一句就能操作",
+              "icon": "mic",
+              "path": "/subpackages/voice_ai/pages/index/index"
+            },
+            {
+              "key": "companion",
+              "label": "AI 伴聊",
+              "description": "随时陪您聊聊天",
+              "icon": "robot",
+              "path": "/subpackages/ai_companion/pages/index/index"
+            },
+            {
+              "key": "family-space",
+              "label": "家庭空间",
+              "description": "看看照片和留言",
+              "icon": "family",
+              "path": "/subpackages/family_space/pages/index/index"
+            }
+          ]
+        },
+        {
+          "key": "medical",
+          "title": "医疗连接",
+          "description": "让社区与医疗资源更容易找到。",
+          "items": [
+            {
+              "key": "medical",
+              "label": "医疗资源",
+              "description": "附近服务一站查看",
+              "icon": "stethoscope",
+              "path": "/subpackages/medical/pages/index/index"
+            },
+            {
+              "key": "timebank",
+              "label": "时间银行",
+              "description": "社区互助服务",
+              "icon": "clock",
+              "path": "/subpackages/timebank/pages/index/index"
+            }
+          ]
+        }
+      ],
+      "family": [
+        {
+          "key": "watch",
+          "title": "监护中心",
+          "description": "关注长辈状态、告警和位置。",
+          "items": [
+            {
+              "key": "health",
+              "label": "健
+...?????

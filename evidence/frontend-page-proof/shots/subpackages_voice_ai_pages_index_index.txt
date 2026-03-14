@@ -1,0 +1,20 @@
+??: subpackages/voice_ai/pages/index/index
+??: frontend/src/subpackages/voice_ai/pages/index/index.tsx
+??: 2026-03-14T05:54:52.243Z
+??: GET /api/v1/voice/history?page=1&pageSize=10
+HTTP: 404
+
+Request Body:
+{}
+
+Response:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Cannot GET /api/v1/voice/history</pre>
+</body>
+</html>

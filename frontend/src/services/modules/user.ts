@@ -12,8 +12,48 @@ import {
 } from '../request';
 import type { UserInfo, EmergencyContact } from '../types';
 
+export interface PageConfigNavAction {
+  key: string;
+  label: string;
+  description: string;
+  icon: string;
+  path: string;
+  badge?: string;
+}
+
+export interface PageConfigCluster {
+  key: string;
+  title: string;
+  description: string;
+  items: PageConfigNavAction[];
+}
+
+export interface UserPageConfig {
+  servicesByRole: Record<'elder' | 'family', PageConfigCluster[]>;
+  profileSectionsByRole: Record<'elder' | 'family', Array<{ key: string; title: string; items: PageConfigNavAction[] }>>;
+  settingsItems: PageConfigNavAction[];
+  about: {
+    appName: string;
+    appVersion: string;
+    effectiveDate: string;
+    summary: string;
+    documents: Array<{
+      key: string;
+      title: string;
+      version: string;
+      effectiveDate: string;
+      summary: string;
+    }>;
+    changelog: string[];
+  };
+  profileMeta: {
+    completion: number;
+    appVersion: string;
+  };
+}
+
 // Auth
-export const sendSmsCode = (phone: string) => post<void>('/auth/sms-code', { phone });
+export const sendSmsCode = (phone: string) => post<void>('/auth/sms-code', { phone, purpose: 'login' });
 
 export const loginByWechat = (code: string) =>
   post<{ token: string; refresh_token?: string; expires_in?: number; userInfo: UserInfo }>('/auth/wechat', { code });
@@ -25,6 +65,8 @@ export const loginByPhone = (phone: string, code: string) =>
 export const getUserInfo = () => get<UserInfo>('/user/info');
 
 export const updateUserInfo = (data: Partial<UserInfo>) => put<UserInfo>('/user/info', data);
+
+export const getUserPageConfig = () => get<UserPageConfig>('/user/page-config');
 
 type UploadEnvelope = {
   code?: number;

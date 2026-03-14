@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
@@ -25,13 +25,13 @@ const withArchive = computed(() => list.value.filter(item => item.healthArchive.
 const namedElders = computed(() => list.value.filter(item => item.elderProfile.realName || item.elderProfile.nickname).length)
 
 function elderName(item: FamilyBindingItem): string {
-  return item.elderProfile.realName || item.elderProfile.nickname || ('Elder #' + item.elderId)
+  return item.elderProfile.realName || item.elderProfile.nickname || ('长辈#' + item.elderId)
 }
 
 function statusLabel(value: string): string {
-  if (value === 'active') return 'Active'
-  if (value === 'disabled') return 'Disabled'
-  return 'Inactive'
+  if (value === 'active') return '已绑定'
+  if (value === 'disabled') return '已停用'
+  return '未激活'
 }
 
 function statusTagType(value: string): 'success' | 'warning' | 'info' {
@@ -47,7 +47,7 @@ async function fetchBindings() {
       status: status.value || undefined,
     })
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : 'Failed to load family bindings')
+    ElMessage.error(err instanceof Error ? err.message : '家庭绑定数据加载失败')
   }
 }
 
@@ -191,3 +191,4 @@ onMounted(fetchBindings)
     </el-drawer>
   </div>
 </template>
+

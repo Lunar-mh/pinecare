@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus, Refresh, Search } from '@element-plus/icons-vue'
@@ -29,7 +29,7 @@ async function fetchData() {
     ])
     stats.value = statsData
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : 'Failed to load community operations data')
+    ElMessage.error(err instanceof Error ? err.message : '社区运营数据加载失败')
   }
 }
 
@@ -114,3 +114,4 @@ onMounted(fetchData)
     </el-dialog>
   </div>
 </template>
+

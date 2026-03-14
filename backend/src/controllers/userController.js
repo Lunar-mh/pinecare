@@ -51,6 +51,15 @@ async function getProfile(req, res) {
   }
 }
 
+async function getPageConfig(req, res) {
+  try {
+    const data = await userService.getPageConfig(req.user.userId);
+    return ok(res, data);
+  } catch (err) {
+    return handleError(res, err);
+  }
+}
+
 async function updateProfile(req, res) {
   try {
     if (!isPlainObject(req.body)) {
@@ -269,6 +278,7 @@ async function unlockAccount(req, res) {
 
 module.exports = {
   getProfile,
+  getPageConfig,
   updateProfile,
   listEmergencyContacts,
   createEmergencyContact,

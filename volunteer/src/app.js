@@ -1,143 +1,665 @@
-const flowEndpointChecklist = [
-  '/auth/sms-code',
-  '/auth/phone',
-  '/volunteer/profile',
-  '/volunteer/tasks',
-  '/volunteer/training',
-  '/accept',
-  '/check-in',
-  '/check-out',
-  '/complete',
+﻿const API_BASE_CANDIDATES = [
+  'http://127.0.0.1:3001/api/v1',
+  'http://127.0.0.1:3999/api/v1',
 ];
-void flowEndpointChecklist;
 
-const state = {
-  user: {
-    name: '李志愿者',
-    points: 1250,
-    completedTasks: 48,
-    level: '金牌志愿者'
-  },
-  tasks: [
-    { id: 101, type: '紧急求助', title: '张大爷家中跌倒', desc: '阳光花园3栋102室，需要立刻前往查看并联系家属。', urgent: true, dist: '0.8km' },
-    { id: 102, type: '生活代办', title: '李婆婆代购药品', desc: '需要去社区卫生院代开高血压药物并送达。', urgent: false, dist: '1.2km' },
-    { id: 103, type: '健康陪护', title: '王叔叔下午散步陪护', desc: '陪同老人在社区公园散步1小时，监测心率。', urgent: false, dist: '2.5km' }
-  ]
+const ENDPOINTS = {
+  sendSms: '/auth/sms-code',
+  login: '/auth/phone',
+  profile: '/volunteer/profile',
+  tasks: '/volunteer/tasks',
+  training: '/volunteer/training',
+  accept: '/accept',
+  checkIn: '/check-in',
+  checkOut: '/check-out',
+  complete: '/complete',
 };
 
-// XSS 防护：转义所有动态插入 DOM 的文本
-function escapeHtml(str) {
+const STORAGE_KEYS = {
+  apiBase: 'volunteer_api_base',
+  token: 'volunteer_token',
+  refreshToken: 'volunteer_refresh_token',
+  phone: 'volunteer_phone',
+};
+
+const state = {
+  apiBase: readStorage(STORAGE_KEYS.apiBase) || '',
+  token: readStorage(STORAGE_KEYS.token) || '',
+  refreshToken: readStorage(STORAGE_KEYS.refreshToken) || '',
+  phone: readStorage(STORAGE_KEYS.phone) || '13710000051',
+  code: '000000',
+  loginLoading: false,
+  smsLoading: false,
+  loading: false,
+  currentTab: 'tasks',
+  taskFilter: '',
+  profile: null,
+  taskSummary: {
+    available_count: 0,
+    assigned_count: 0,
+    processing_count: 0,
+    completed_count: 0,
+  },
+  tasks: [],
+  training: [],
+  error: '',
+  actionEndpoint: '',
+  info: '当前默认验证码支持 000000（非 live 模式）。',
+};
+
+function readStorage(key) {
+  try {
+    return String(localStorage.getItem(key) || '').trim();
+  } catch (_error) {
+    return '';
+  }
+}
+
+function writeStorage(key, value) {
+  try {
+    if (value) {
+      localStorage.setItem(key, value);
+    } else {
+      localStorage.removeItem(key);
+    }
+  } catch (_error) {
+    // ignore local storage failures
+  }
+}
+
+function escapeHtml(input) {
   const div = document.createElement('div');
-  div.appendChild(document.createTextNode(String(str)));
+  div.textContent = String(input || '');
   return div.innerHTML;
 }
 
-function renderApp() {
-  const container = document.querySelector('.vol-container');
-  container.innerHTML = `
-    <header class="vol-header">
-      <div class="vol-profile">
-        <div class="vol-avatar">😊</div>
-        <div class="vol-info">
-          <h2>${escapeHtml(state.user.name)}</h2>
-          <span>${escapeHtml(state.user.level)} · 随时准备守护</span>
-        </div>
-      </div>
-      <div class="vol-badge-shelf">
-        <div class="badge-item">
-          <b>${state.user.points}</b>
-          <span>时间币</span>
-        </div>
-        <div class="badge-item">
-          <b>${state.user.completedTasks}</b>
-          <span>已完成</span>
-        </div>
-        <div class="badge-item">
-          <b>TOP 5</b>
-          <span>社区排行</span>
-        </div>
-      </div>
-    </header>
+function distinct(values) {
+  return Array.from(new Set(values.filter(Boolean)));
+}
 
-    <section class="radar-section">
-      <div class="section-title">任务雷达</div>
-      <div class="radar-card">
-        <div class="radar-map-mock">
-          <div class="radar-point" style="top: 20%; left: 30%"></div>
-          <div class="radar-point danger pulse" style="top: 50%; left: 60%"></div>
-          <div class="radar-point" style="top: 70%; left: 40%"></div>
+function normalizeApiBase(url) {
+  const raw = String(url || '').trim().replace(/\/$/, '');
+  if (!raw) return '';
+  if (raw.endsWith('/api/v1')) return raw;
+  return `${raw}/api/v1`;
+}
+
+function toast(message) {
+  state.info = String(message || '');
+  render();
+}
+
+function clearSession() {
+  state.token = '';
+  state.refreshToken = '';
+  state.profile = null;
+  state.tasks = [];
+  state.training = [];
+  state.taskSummary = {
+    available_count: 0,
+    assigned_count: 0,
+    processing_count: 0,
+    completed_count: 0,
+  };
+  writeStorage(STORAGE_KEYS.token, '');
+  writeStorage(STORAGE_KEYS.refreshToken, '');
+}
+
+async function detectApiBase() {
+  const fromInput = normalizeApiBase(state.apiBase);
+  const candidates = distinct([
+    fromInput,
+    normalizeApiBase(readStorage(STORAGE_KEYS.apiBase)),
+    ...API_BASE_CANDIDATES,
+  ]);
+
+  for (const candidate of candidates) {
+    const healthUrl = `${candidate.replace(/\/api\/v1$/, '')}/health`;
+    try {
+      const res = await fetch(healthUrl, { method: 'GET' });
+      if (res.ok) {
+        state.apiBase = candidate;
+        writeStorage(STORAGE_KEYS.apiBase, candidate);
+        return candidate;
+      }
+    } catch (_error) {
+      // try next candidate
+    }
+  }
+
+  const fallback = fromInput || API_BASE_CANDIDATES[0];
+  state.apiBase = fallback;
+  writeStorage(STORAGE_KEYS.apiBase, fallback);
+  return fallback;
+}
+
+function extractMessage(payload, fallback) {
+  const message = payload && typeof payload.message === 'string' ? payload.message.trim() : '';
+  return message || fallback;
+}
+
+async function request(path, options = {}) {
+  const method = options.method || 'GET';
+  const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+  const apiBase = normalizeApiBase(state.apiBase) || (await detectApiBase());
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  if (options.auth !== false && state.token) {
+    headers.Authorization = `Bearer ${state.token}`;
+  }
+
+  const response = await fetch(`${apiBase}${path}`, {
+    method,
+    headers,
+    body,
+  });
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (_error) {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    const err = new Error(extractMessage(payload, `HTTP ${response.status}`));
+    err.statusCode = response.status;
+    err.payload = payload;
+    throw err;
+  }
+
+  const code = Number(payload && payload.code);
+  if (code !== 0) {
+    const err = new Error(extractMessage(payload, '请求失败'));
+    err.statusCode = Number(payload && payload.code) || 500;
+    err.payload = payload;
+    throw err;
+  }
+
+  return payload.data;
+}
+
+function mapServiceTypeLabel(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return '-';
+  if (normalized === 'escort') return '\u966a\u8bca\u670d\u52a1';
+  if (normalized === 'visit') return '\u4e0a\u95e8\u63a2\u8bbf';
+  if (normalized === 'meal') return '\u52a9\u9910\u670d\u52a1';
+  if (normalized === 'cleaning') return '\u5c45\u5bb6\u6e05\u6d01';
+  if (normalized === 'shopping') return '\u4ee3\u8d2d\u670d\u52a1';
+  if (normalized === 'medical') return '\u5c31\u533b\u534f\u52a9';
+  return String(value || '-');
+}
+
+function mapRoleLabel(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return '-';
+  if (normalized === 'volunteer') return '\u5fd7\u613f\u8005';
+  if (normalized === 'admin') return '\u7ba1\u7406\u5458';
+  if (normalized === 'family') return '\u5bb6\u5c5e';
+  if (normalized === 'elder') return '\u957f\u8f88';
+  return String(value || '-');
+}
+
+function mapTrainingStatusLabel(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return '-';
+  if (normalized === 'completed') return '\u5df2\u5b8c\u6210';
+  if (normalized === 'in_progress' || normalized === 'processing') return '\u8fdb\u884c\u4e2d';
+  if (normalized === 'expired') return '\u5df2\u8fc7\u671f';
+  if (normalized === 'pending') return '\u5f85\u53c2\u52a0';
+  return String(value || '-');
+}
+
+function normalizeDisplayName(value, fallbackPrefix) {
+  const raw = String(value || '').trim();
+  const fallback = String(fallbackPrefix || '\u7528\u6237').trim();
+  if (!raw) return fallback;
+
+  // ???????????????????????
+  if (/^[A-Za-z0-9\s._-]+$/.test(raw)) {
+    return fallback;
+  }
+
+  return raw;
+}
+
+function getStatusLabel(status) {
+  if (status === 'pending') return '待接单';
+  if (status === 'assigned') return '已接单';
+  if (status === 'processing') return '服务中';
+  if (status === 'completed') return '已完成';
+  if (status === 'cancelled') return '已取消';
+  return status || '未知';
+}
+
+function taskActions(task) {
+  const taskId = Number(task.id);
+  if (!Number.isFinite(taskId) || taskId <= 0) return [];
+
+  if (task.status === 'pending' && !task.volunteer_id) {
+    return [{ label: '接单', endpoint: `${ENDPOINTS.tasks}/${taskId}${ENDPOINTS.accept}` }];
+  }
+
+  if (task.status === 'assigned') {
+    return [
+      { label: '签到', endpoint: `${ENDPOINTS.tasks}/${taskId}${ENDPOINTS.checkIn}` },
+      { label: '完成', endpoint: `${ENDPOINTS.tasks}/${taskId}${ENDPOINTS.complete}` },
+    ];
+  }
+
+  if (task.status === 'processing') {
+    return [
+      { label: '签退', endpoint: `${ENDPOINTS.tasks}/${taskId}${ENDPOINTS.checkOut}` },
+      { label: '完成', endpoint: `${ENDPOINTS.tasks}/${taskId}${ENDPOINTS.complete}` },
+    ];
+  }
+
+  return [];
+}
+
+async function loadDashboard() {
+  state.loading = true;
+  state.error = '';
+  render();
+
+  try {
+    const query = state.taskFilter ? `?status=${encodeURIComponent(state.taskFilter)}&page=1&pageSize=20` : '?page=1&pageSize=20';
+    const [profileData, taskData, trainingData] = await Promise.all([
+      request(ENDPOINTS.profile),
+      request(`${ENDPOINTS.tasks}${query}`),
+      request(`${ENDPOINTS.training}?page=1&pageSize=10`),
+    ]);
+
+    state.profile = profileData || null;
+    state.taskSummary = (taskData && taskData.summary) || state.taskSummary;
+    state.tasks = (taskData && taskData.list) || [];
+    state.training = (trainingData && trainingData.list) || [];
+    state.info = `已连接 ${state.apiBase}`;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '加载失败';
+    const statusCode = Number(error && error.statusCode) || 0;
+
+    if (statusCode === 401) {
+      clearSession();
+      state.error = '会话已失效，请重新登录。';
+    } else if (statusCode === 403) {
+      clearSession();
+      state.error = '当前账号不是志愿者身份，无法进入志愿者执行端。';
+    } else {
+      state.error = message;
+    }
+  } finally {
+    state.loading = false;
+    render();
+  }
+}
+
+async function handleSendSms() {
+  if (!state.phone) {
+    state.error = '请输入手机号';
+    render();
+    return;
+  }
+
+  state.smsLoading = true;
+  state.error = '';
+  render();
+
+  try {
+    await detectApiBase();
+    await request(ENDPOINTS.sendSms, {
+      method: 'POST',
+      auth: false,
+      body: { phone: state.phone, purpose: 'login' },
+    });
+    toast('验证码已发送（非 live 模式可直接使用 000000）');
+  } catch (error) {
+    state.error = error instanceof Error ? error.message : '发送验证码失败';
+  } finally {
+    state.smsLoading = false;
+    render();
+  }
+}
+
+async function handleLogin() {
+  if (!state.phone || !state.code) {
+    state.error = '请输入手机号和验证码';
+    render();
+    return;
+  }
+
+  state.loginLoading = true;
+  state.error = '';
+  render();
+
+  try {
+    await detectApiBase();
+    const data = await request(ENDPOINTS.login, {
+      method: 'POST',
+      auth: false,
+      body: {
+        phone: state.phone,
+        code: state.code,
+      },
+    });
+
+    state.token = String(data && data.token || '').trim();
+    state.refreshToken = String(data && data.refresh_token || '').trim();
+
+    if (!state.token) {
+      throw new Error('登录成功但未返回访问令牌。');
+    }
+
+    writeStorage(STORAGE_KEYS.apiBase, state.apiBase);
+    writeStorage(STORAGE_KEYS.token, state.token);
+    writeStorage(STORAGE_KEYS.refreshToken, state.refreshToken);
+    writeStorage(STORAGE_KEYS.phone, state.phone);
+
+    state.currentTab = 'tasks';
+    await loadDashboard();
+  } catch (error) {
+    state.error = error instanceof Error ? error.message : '登录失败';
+  } finally {
+    state.loginLoading = false;
+    render();
+  }
+}
+
+async function handleTaskAction(endpoint) {
+  const normalizedEndpoint = String(endpoint || '').trim();
+  if (!normalizedEndpoint || state.actionEndpoint) {
+    return;
+  }
+
+  state.actionEndpoint = normalizedEndpoint;
+  state.error = '';
+  render();
+
+  try {
+    await request(normalizedEndpoint, {
+      method: 'POST',
+      body: {},
+    });
+    toast('\u64cd\u4f5c\u6210\u529f\uff0c\u6b63\u5728\u5237\u65b0\u4efb\u52a1\u72b6\u6001\u3002');
+    await loadDashboard();
+  } catch (error) {
+    state.error = error instanceof Error ? error.message : '\u4efb\u52a1\u64cd\u4f5c\u5931\u8d25';
+    render();
+  } finally {
+    state.actionEndpoint = '';
+    render();
+  }
+}
+
+function handleLogout() {
+  clearSession();
+  state.currentTab = 'tasks';
+  state.info = '你已退出登录。';
+  state.error = '';
+  render();
+}
+
+function renderLogin() {
+  return `
+    <main class="vol-shell">
+      <section class="vol-card">
+        <h1>志愿者执行端</h1>
+        <p class="muted">真实接口联调模式，不再使用静态演示数据。</p>
+
+        <label class="field-label">API 基线</label>
+        <input id="api-base" class="field" value="${escapeHtml(state.apiBase || API_BASE_CANDIDATES[0])}" placeholder="http://127.0.0.1:3999/api/v1" />
+
+        <label class="field-label">手机号</label>
+        <input id="phone" class="field" value="${escapeHtml(state.phone)}" placeholder="例如 13710000051" />
+
+        <label class="field-label">验证码</label>
+        <div class="field-row">
+          <input id="code" class="field" value="${escapeHtml(state.code)}" placeholder="输入验证码" />
+          <button id="send-sms" class="btn btn-light" ${state.smsLoading ? 'disabled' : ''}>${state.smsLoading ? '发送中...' : '获取验证码'}</button>
         </div>
-      </div>
-    </section>
 
-    <section class="task-section">
-      <div class="section-title">待处理任务 (${state.tasks.length})</div>
-      <div id="task-list">
-        ${state.tasks.map(task => `
-          <div class="task-card ${task.urgent ? 'urgent' : ''}" id="task-${task.id}">
-            <div class="task-header">
-              <span class="task-type">${escapeHtml(task.type)}</span>
-              <span class="task-dist">${escapeHtml(task.dist)}</span>
-            </div>
-            <div class="task-body">
-              <h3>${escapeHtml(task.title)}</h3>
-              <p>${escapeHtml(task.desc)}</p>
-            </div>
-            <div class="task-footer">
-              <button class="btn-reject" data-action="reject" data-id="${task.id}">忽略</button>
-              <button class="btn-accept" data-action="accept" data-id="${task.id}">立即前往</button>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    </section>
+        ${state.error ? `<p class="error">${escapeHtml(state.error)}</p>` : ''}
+        <p class="hint">${escapeHtml(state.info)}</p>
 
-    <nav class="vol-nav">
-      <div class="nav-item active">🏠 首页</div>
-      <div class="nav-item">📋 任务</div>
-      <div class="nav-item">🏆 排名</div>
-      <div class="nav-item">👤 我的</div>
-    </nav>
+        <button id="login" class="btn btn-primary" ${state.loginLoading ? 'disabled' : ''}>${state.loginLoading ? '登录中...' : '登录并进入任务台'}</button>
+      </section>
+    </main>
   `;
 }
 
-window.acceptTask = function(id) {
-  const task = state.tasks.find(t => t.id === id);
-  const card = document.getElementById(`task-${id}`);
-  card.innerHTML = `
-    <div style="text-align: center; padding: 20px;">
-      <div style="font-size: 40px; margin-bottom: 10px;">🏃</div>
-      <h3 style="margin-bottom: 8px;">已接单，请尽快前往</h3>
-      <p style="color: #666; margin-bottom: 16px;">正在导航至：${escapeHtml(task.title.split(' ')[0])}</p>
-      <button class="btn-accept" data-action="complete" data-id="${id}">到达地点并开始服务</button>
+function renderSummary() {
+  const summary = state.taskSummary || {};
+  return `
+    <div class="summary-grid">
+      <div class="summary-item"><span>${Number(summary.available_count || 0)}</span><small>可接任务</small></div>
+      <div class="summary-item"><span>${Number(summary.assigned_count || 0)}</span><small>已接单</small></div>
+      <div class="summary-item"><span>${Number(summary.processing_count || 0)}</span><small>服务中</small></div>
+      <div class="summary-item"><span>${Number(summary.completed_count || 0)}</span><small>已完成</small></div>
     </div>
   `;
-};
+}
 
-window.completeTask = function(id) {
-  state.user.points += 50;
-  state.user.completedTasks += 1;
-  state.tasks = state.tasks.filter(t => t.id !== id);
-  
-  alert('恭喜完成服务！获得 50 时间币奖励。');
-  renderApp();
-};
+function renderTaskFilter() {
+  const filters = [
+    { key: '', label: '全部' },
+    { key: 'pending', label: '待接单' },
+    { key: 'assigned', label: '已接单' },
+    { key: 'processing', label: '服务中' },
+    { key: 'completed', label: '已完成' },
+  ];
 
-window.rejectTask = function(id) {
-  state.tasks = state.tasks.filter(t => t.id !== id);
-  renderApp();
-};
+  return `
+    <div class="filter-row">
+      ${filters
+        .map((item) => {
+          const cls = state.taskFilter === item.key ? 'chip active' : 'chip';
+          return `<button class="${cls}" data-filter="${item.key}">${item.label}</button>`;
+        })
+        .join('')}
+    </div>
+  `;
+}
 
-// 事件委托：统一处理任务按钮点击
-document.addEventListener('click', function(e) {
-  const btn = e.target.closest('[data-action]');
-  if (!btn) return;
-  const action = btn.getAttribute('data-action');
-  const id = Number(btn.getAttribute('data-id'));
-  if (!id) return;
-  if (action === 'accept') window.acceptTask(id);
-  else if (action === 'reject') window.rejectTask(id);
-  else if (action === 'complete') window.completeTask(id);
+function renderTasks() {
+  if (state.loading) {
+    return '<p class="muted">任务加载中...</p>';
+  }
+
+  if (!state.tasks.length) {
+    return '<p class="muted">当前没有可处理任务。</p>';
+  }
+
+  return state.tasks
+    .map((task) => {
+      const actions = taskActions(task);
+      return `
+        <article class="task-card ${task.status === 'pending' ? 'pending' : ''}">
+          <div class="task-head">
+            <strong>${escapeHtml(task.order_no || `任务 #${task.id}`)}</strong>
+            <span class="task-status">${escapeHtml(getStatusLabel(task.status))}</span>
+          </div>
+          <p class="task-line">服务类型：${escapeHtml(mapServiceTypeLabel(task.service_type))}</p>
+          <p class="task-line">服务对象：${escapeHtml(normalizeDisplayName(task.elder_name, '\u957f\u8f88\u7528\u6237'))} (${escapeHtml(task.elder_phone || '-')})</p>
+          <p class="task-line">预约时间：${escapeHtml(task.scheduled_at || '-')}</p>
+          <p class="task-line">完成时间：${escapeHtml(task.completed_at || '-')}</p>
+          ${
+            actions.length
+              ? `<div class="task-actions">${actions
+                  .map((item) => { const pending = state.actionEndpoint === item.endpoint; return `<button class=\"btn btn-primary\" data-endpoint=\"${item.endpoint}\" ${pending ? 'disabled' : ''}>${pending ? '\\u5904\\u7406\\u4e2d...' : escapeHtml(item.label)}</button>`; })
+                  .join('')}</div>`
+              : '<p class="hint">该任务当前无需操作。</p>'
+          }
+        </article>
+      `;
+    })
+    .join('');
+}
+
+function renderTraining() {
+  if (state.loading) {
+    return '<p class="muted">培训记录加载中...</p>';
+  }
+
+  if (!state.training.length) {
+    return '<p class="muted">暂无培训记录。</p>';
+  }
+
+  return state.training
+    .map(
+      (item) => `
+      <article class="training-card">
+        <div class="task-head">
+          <strong>${escapeHtml(item.training_title || '培训课程')}</strong>
+          <span class="task-status">${escapeHtml(mapTrainingStatusLabel(item.training_status))}</span>
+        </div>
+        <p class="task-line">培训时间：${escapeHtml(item.training_at || '-')}</p>
+        <p class="task-line">有效期至：${escapeHtml(item.expires_at || '-')}</p>
+        ${item.certificate_url ? `<a class="link" href="${escapeHtml(item.certificate_url)}" target="_blank" rel="noreferrer">查看证书</a>` : ''}
+      </article>
+    `
+    )
+    .join('');
+}
+
+function renderProfile() {
+  const profile = state.profile || {};
+  return `
+    <article class="profile-card">
+      <p class="task-line">姓名：${escapeHtml(normalizeDisplayName(profile.name, '\u5fd7\u613f\u8005'))}</p>
+      <p class="task-line">手机号：${escapeHtml(profile.phone || '-')}</p>
+      <p class="task-line">角色：${escapeHtml(mapRoleLabel(profile.role))}</p>
+      <p class="task-line">社区 ID：${escapeHtml(profile.community_id || '-')}</p>
+      <p class="task-line">加入时间：${escapeHtml(profile.joined_at || '-')}</p>
+      <p class="task-line">当前 API：${escapeHtml(state.apiBase || '-')}</p>
+    </article>
+  `;
+}
+
+function renderDashboard() {
+  const profileName = normalizeDisplayName(state.profile && state.profile.name, '\u5fd7\u613f\u8005');
+
+  return `
+    <main class="vol-shell">
+      <header class="topbar">
+        <div>
+          <h1>${escapeHtml(profileName)}，辛苦了</h1>
+          <p class="muted">任务执行链路：接单 -> 签到 -> 签退 -> 完成</p>
+        </div>
+        <button id="logout" class="btn btn-light">退出</button>
+      </header>
+
+      ${renderSummary()}
+
+      <nav class="tabs">
+        <button class="tab ${state.currentTab === 'tasks' ? 'active' : ''}" data-tab="tasks">任务</button>
+        <button class="tab ${state.currentTab === 'training' ? 'active' : ''}" data-tab="training">培训</button>
+        <button class="tab ${state.currentTab === 'profile' ? 'active' : ''}" data-tab="profile">我的</button>
+      </nav>
+
+      ${state.currentTab === 'tasks' ? renderTaskFilter() : ''}
+      ${state.error ? `<p class="error">${escapeHtml(state.error)}</p>` : ''}
+      <p class="hint">${escapeHtml(state.info)}</p>
+
+      <section class="panel">
+        ${state.currentTab === 'tasks' ? renderTasks() : ''}
+        ${state.currentTab === 'training' ? renderTraining() : ''}
+        ${state.currentTab === 'profile' ? renderProfile() : ''}
+      </section>
+    </main>
+  `;
+}
+
+function render() {
+  const root = document.getElementById('app');
+  if (!root) return;
+
+  root.innerHTML = `<div class="vol-container">${state.token ? renderDashboard() : renderLogin()}</div>`;
+
+  const apiInput = document.getElementById('api-base');
+  if (apiInput) {
+    apiInput.addEventListener('input', (event) => {
+      const target = event.target;
+      state.apiBase = normalizeApiBase(target && target.value);
+    });
+  }
+
+  const phoneInput = document.getElementById('phone');
+  if (phoneInput) {
+    phoneInput.addEventListener('input', (event) => {
+      const target = event.target;
+      state.phone = String(target && target.value || '').trim();
+    });
+  }
+
+  const codeInput = document.getElementById('code');
+  if (codeInput) {
+    codeInput.addEventListener('input', (event) => {
+      const target = event.target;
+      state.code = String(target && target.value || '').trim();
+    });
+  }
+
+  const sendSmsBtn = document.getElementById('send-sms');
+  if (sendSmsBtn) {
+    sendSmsBtn.addEventListener('click', handleSendSms);
+  }
+
+  const loginBtn = document.getElementById('login');
+  if (loginBtn) {
+    loginBtn.addEventListener('click', handleLogin);
+  }
+
+  const logoutBtn = document.getElementById('logout');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', handleLogout);
+  }
+
+  const tabButtons = root.querySelectorAll('[data-tab]');
+  tabButtons.forEach((button) => {
+    button.addEventListener('click', async () => {
+      const tab = button.getAttribute('data-tab') || 'tasks';
+      state.currentTab = tab;
+      render();
+      if (tab !== 'tasks' && tab !== 'training') return;
+      await loadDashboard();
+    });
+  });
+
+  const filterButtons = root.querySelectorAll('[data-filter]');
+  filterButtons.forEach((button) => {
+    button.addEventListener('click', async () => {
+      const nextFilter = button.getAttribute('data-filter') || '';
+      state.taskFilter = nextFilter;
+      await loadDashboard();
+    });
+  });
+
+  const actionButtons = root.querySelectorAll('[data-endpoint]');
+  actionButtons.forEach((button) => {
+    button.addEventListener('click', async () => {
+      const endpoint = button.getAttribute('data-endpoint') || '';
+      if (!endpoint) return;
+      await handleTaskAction(endpoint);
+    });
+  });
+}
+
+async function bootstrap() {
+  await detectApiBase();
+  render();
+
+  if (state.token) {
+    await loadDashboard();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  bootstrap().catch((error) => {
+    state.error = error instanceof Error ? error.message : '初始化失败';
+    render();
+  });
 });
-
-document.addEventListener('DOMContentLoaded', renderApp);

@@ -2,6 +2,7 @@
 
 jest.mock('../../src/services/userService', () => ({
   getProfile: jest.fn(),
+  getPageConfig: jest.fn(),
   updateProfile: jest.fn(),
   listEmergencyContacts: jest.fn(),
   createEmergencyContact: jest.fn(),
@@ -48,6 +49,19 @@ describe('userController', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.code).toBe(0);
     expect(res.body.data.nickname).toBe('Elder');
+  });
+
+  it('returns page config in unified envelope', async () => {
+    userService.getPageConfig.mockResolvedValue({ settingsItems: [{ key: 'about' }] });
+    const req = { user: { userId: 1 } };
+    const res = createRes();
+
+    await userController.getPageConfig(req, res);
+
+    expect(userService.getPageConfig).toHaveBeenCalledWith(1);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.code).toBe(0);
+    expect(res.body.data.settingsItems).toHaveLength(1);
   });
 
   it('blocks emergency contact creation when phone is invalid', async () => {

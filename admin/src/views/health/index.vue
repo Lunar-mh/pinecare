@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
@@ -24,7 +24,7 @@ async function fetchHealthOverview() {
   try {
     await loadData({ search: search.value || undefined })
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : 'Failed to load health overview')
+    ElMessage.error(err instanceof Error ? err.message : '健康总览加载失败')
   }
 }
 
@@ -47,3 +47,4 @@ onMounted(fetchHealthOverview)
     <div class="wb-panel"><el-table :data="list" stripe v-loading="loading"><el-table-column prop="userId" label="用户ID" width="100" /><el-table-column prop="nickname" label="昵称" width="130" /><el-table-column prop="phone" label="手机号" width="150" /><el-table-column prop="age" label="年龄" width="90" /><el-table-column prop="bloodPressure" label="血压" width="130" /><el-table-column prop="heartRate" label="心率" width="120" /><el-table-column prop="bloodSugar" label="血糖" width="120" /><el-table-column label="风险" width="100"><template #default="{ row }"><el-tag :type="row.riskLevel === 'danger' ? 'danger' : row.riskLevel === 'warning' ? 'warning' : 'success'">{{ row.riskLevel }}</el-tag></template></el-table-column><el-table-column prop="lastUpdate" label="最近更新" min-width="170" /></el-table><div style="display:flex; justify-content:flex-end; margin-top:16px"><el-pagination v-model:current-page="page" layout="total, prev, pager, next" :total="total" :page-size="pageSize" @current-change="fetchHealthOverview" /></div></div>
   </div>
 </template>
+

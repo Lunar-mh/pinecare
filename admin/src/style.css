@@ -31,7 +31,8 @@ html, body, #app {
 }
 
 body {
-  min-width: 1200px;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .wb-page-header {

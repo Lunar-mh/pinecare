@@ -6,6 +6,7 @@ const UserModel = require('../models/user');
 const EmergencyContactModel = require('../models/emergencyContact');
 const FamilyBindingModel = require('../models/familyBinding');
 const smsService = require('./smsService');
+const { buildUserPageConfig } = require('./userPageConfigService');
 const { createBusinessError } = require('../utils/serviceError');
 const { writeAuditLog: writeAuditEntry } = require('../utils/auditLogHelper');
 
@@ -125,6 +126,15 @@ async function getProfile(userId) {
     throw createBusinessError(403, 'Account has been deleted.', null, 403);
   }
   return profile;
+}
+
+async function getPageConfig(userId) {
+  const profile = await getProfile(userId);
+  const emergencyContacts = await EmergencyContactModel.listByUserId(userId);
+  return buildUserPageConfig({
+    profile,
+    emergencyContactCount: emergencyContacts.length,
+  });
 }
 
 async function updateProfile(userId, payload, context = {}) {
@@ -324,6 +334,7 @@ async function deleteAccount(userId, code, context = {}) {
 
 module.exports = {
   getProfile,
+  getPageConfig,
   updateProfile,
   listEmergencyContacts,
   createEmergencyContact,

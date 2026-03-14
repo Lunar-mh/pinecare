@@ -1,508 +1,324 @@
 ﻿<script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { Search, Warning, Phone, Plus, Download } from '@element-plus/icons-vue'
-
-interface UserCard {
-  id: number
-  name: string
-  age: number
-  community: string
-  communityCode: 'yg' | 'cl'
-  risk: 'high' | 'medium' | 'normal'
-  riskLabel: string
-  hr: number
-  bp: string
-  lastAlert?: string
-  avatar: string
-  familyPhone: string
-}
+import { Download, Plus, Refresh, Search } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { createUser, getUserDetail, getUsers, updateUserStatus } from '@/services'
+import type { UserItem, UserRole, UserStatus } from '@/services'
 
 const router = useRouter()
+const loading = ref(false)
+const creating = ref(false)
+const togglingId = ref<number | null>(null)
+
+const page = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+const users = ref<UserItem[]>([])
+
 const search = ref('')
-const riskLevel = ref<UserCard['risk'] | ''>('')
-const community = ref<UserCard['communityCode'] | ''>('')
-const selectedUser = ref<UserCard | null>(null)
-const profileDrawerVisible = ref(false)
+const roleFilter = ref<UserRole | ''>('')
+const statusFilter = ref<UserStatus | ''>('')
 
-const mockUsers = ref<UserCard[]>([
-  {
-    id: 1,
-    name: '张大爷',
-    age: 72,
-    community: '阳光花园 3-102',
-    communityCode: 'yg',
-    risk: 'high',
-    riskLabel: '高风险',
-    hr: 98,
-    bp: '155/95',
-    lastAlert: '2 小时前 血压异常',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=1',
-    familyPhone: '13800000001',
-  },
-  {
-    id: 2,
-    name: '李婆婆',
-    age: 68,
-    community: '阳光花园 5-201',
-    communityCode: 'yg',
-    risk: 'normal',
-    riskLabel: '正常',
-    hr: 72,
-    bp: '120/80',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=2',
-    familyPhone: '13800000002',
-  },
-  {
-    id: 3,
-    name: '王叔叔',
-    age: 75,
-    community: '长乐里 A 栋',
-    communityCode: 'cl',
-    risk: 'medium',
-    riskLabel: '中风险',
-    hr: 85,
-    bp: '140/90',
-    lastAlert: '昨日 跌倒预警',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=3',
-    familyPhone: '13800000003',
-  },
-  {
-    id: 4,
-    name: '赵奶奶',
-    age: 81,
-    community: '长乐里 C 栋',
-    communityCode: 'cl',
-    risk: 'normal',
-    riskLabel: '正常',
-    hr: 68,
-    bp: '115/75',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=4',
-    familyPhone: '13800000004',
-  },
-])
+const detailVisible = ref(false)
+const detailLoading = ref(false)
+const detail = ref<UserItem | null>(null)
 
-const filteredUsers = computed(() => {
-  const keyword = search.value.trim().toLowerCase()
-
-  return mockUsers.value.filter((user) => {
-    const matchText = !keyword
-      || [user.name, user.community, user.bp, user.familyPhone].join(' ').toLowerCase().includes(keyword)
-    const matchRisk = !riskLevel.value || user.risk === riskLevel.value
-    const matchCommunity = !community.value || user.communityCode === community.value
-
-    return matchText && matchRisk && matchCommunity
-  })
+const createVisible = ref(false)
+const createForm = reactive<{ nickname: string; phone: string; role: UserRole }>({
+  nickname: '',
+  phone: '',
+  role: 'elder',
 })
 
-const totalUsers = computed(() => filteredUsers.value.length)
-const highRiskUsers = computed(() => filteredUsers.value.filter((u) => u.risk === 'high').length)
-const normalUsers = computed(() => filteredUsers.value.filter((u) => u.risk === 'normal').length)
+const pageStats = computed(() => {
+  const active = users.value.filter((item) => item.status === '正常').length
+  const disabled = users.value.filter((item) => item.status === '禁用').length
+  const family = users.value.filter((item) => item.role === 'family').length
+  const elder = users.value.filter((item) => item.role === 'elder').length
+  return { active, disabled, family, elder }
+})
 
-function openProfile(user: UserCard): void {
-  selectedUser.value = user
-  profileDrawerVisible.value = true
+function roleLabel(role: UserRole): string {
+  return role === 'family' ? '家属' : '长辈'
 }
 
-function handleAddProfile(): void {
-  ElMessage.info('演示环境：已打开“新增档案”流程入口（可按需接入真实表单）')
+function statusTagType(status: string): 'success' | 'warning' | 'info' {
+  if (status === '正常') return 'success'
+  if (status === '禁用') return 'warning'
+  return 'info'
 }
 
-function handleExport(): void {
-  const rows = filteredUsers.value
-  const header = 'ID,姓名,年龄,社区,风险级别,心率,血压,家属电话'
-  const body = rows
-    .map((u) => [u.id, u.name, u.age, u.community, u.riskLabel, u.hr, u.bp, u.familyPhone].join(','))
+async function fetchUsers(): Promise<void> {
+  loading.value = true
+  try {
+    const data = await getUsers({
+      page: page.value,
+      pageSize: pageSize.value,
+      search: search.value || undefined,
+      role: roleFilter.value || undefined,
+      status: statusFilter.value || undefined,
+    })
+    users.value = data.list || []
+    total.value = Number(data.total || 0)
+    page.value = Number(data.page || page.value)
+    pageSize.value = Number(data.pageSize || pageSize.value)
+  } catch (err: unknown) {
+    ElMessage.error(err instanceof Error ? err.message : '用户列表加载失败')
+    users.value = []
+    total.value = 0
+  } finally {
+    loading.value = false
+  }
+}
+
+async function openDetail(userId: number): Promise<void> {
+  detailVisible.value = true
+  detailLoading.value = true
+  detail.value = null
+  try {
+    detail.value = await getUserDetail(userId)
+  } catch (err: unknown) {
+    ElMessage.error(err instanceof Error ? err.message : '用户详情加载失败')
+    detailVisible.value = false
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+function resetCreateForm(): void {
+  createForm.nickname = ''
+  createForm.phone = ''
+  createForm.role = 'elder'
+}
+
+async function submitCreate(): Promise<void> {
+  if (!createForm.nickname.trim() || !createForm.phone.trim()) {
+    ElMessage.warning('请填写昵称和手机号')
+    return
+  }
+
+  creating.value = true
+  try {
+    await createUser({
+      nickname: createForm.nickname.trim(),
+      phone: createForm.phone.trim(),
+      role: createForm.role,
+    })
+    ElMessage.success('用户创建成功')
+    createVisible.value = false
+    resetCreateForm()
+    page.value = 1
+    await fetchUsers()
+  } catch (err: unknown) {
+    ElMessage.error(err instanceof Error ? err.message : '创建用户失败')
+  } finally {
+    creating.value = false
+  }
+}
+
+async function toggleStatus(row: UserItem): Promise<void> {
+  const nextStatus: UserStatus = row.status === '正常' ? '禁用' : '正常'
+  const actionText = nextStatus === '禁用' ? '禁用' : '启用'
+
+  try {
+    await ElMessageBox.confirm(`确定要${actionText}用户「${row.nickname}」吗？`, '确认操作', {
+      type: 'warning',
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+    })
+  } catch {
+    return
+  }
+
+  togglingId.value = row.id
+  try {
+    await updateUserStatus(row.id, nextStatus)
+    ElMessage.success(`用户已${actionText}`)
+    await fetchUsers()
+  } catch (err: unknown) {
+    ElMessage.error(err instanceof Error ? err.message : '状态更新失败')
+  } finally {
+    togglingId.value = null
+  }
+}
+
+function exportCurrentPage(): void {
+  const header = 'ID,昵称,手机号,角色,状态,注册日期,最近活跃'
+  const body = users.value
+    .map((item) => [item.id, item.nickname, item.phone, roleLabel(item.role), item.status, item.registerDate, item.lastActive].join(','))
     .join('\n')
-  const content = `${header}\n${body}`
-  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+  const csv = `${header}\n${body}`
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `users-${Date.now()}.csv`
+  a.download = `admin-users-page-${page.value}.csv`
   a.click()
   URL.revokeObjectURL(url)
-  ElMessage.success('已导出当前筛选结果')
+  ElMessage.success('已导出当前页用户数据')
 }
 
-function handleTrend(user: UserCard): void {
-  void router.push({ path: '/health', query: { userId: String(user.id) } })
+function gotoHealth(userId: number): void {
+  void router.push({ path: '/health', query: { userId: String(userId) } })
 }
 
-function handleContact(user: UserCard): void {
-  void navigator.clipboard?.writeText(user.familyPhone)
-  ElMessage.success(`已复制家属电话：${user.familyPhone}`)
-}
+watch([search, roleFilter, statusFilter], () => {
+  page.value = 1
+  void fetchUsers()
+})
+
+onMounted(() => {
+  void fetchUsers()
+})
 </script>
 
 <template>
-  <div class="user-management">
-    <header class="page-header">
-      <div class="title-section">
-        <h2>全域老人健康档案</h2>
-        <p>当前筛选共 {{ totalUsers }} 位，含高风险 {{ highRiskUsers }} 位，正常 {{ normalUsers }} 位。</p>
+  <div>
+    <div class="wb-page-header">
+      <div>
+        <span class="wb-page-title">用户管理</span>
+        <span class="wb-page-subtitle">用户列表、新增、启停与详情统一在一页完成，所有动作直接写入后端。</span>
       </div>
-      <div class="action-section">
-        <el-button type="primary" round :icon="Plus" @click="handleAddProfile">新增档案</el-button>
-        <el-button round :icon="Download" @click="handleExport">导出报表</el-button>
+      <div style="display:flex; gap: 10px;">
+        <el-button :icon="Refresh" @click="fetchUsers">刷新</el-button>
+        <el-button :icon="Download" @click="exportCurrentPage">导出当前页</el-button>
+        <el-button type="primary" :icon="Plus" @click="createVisible = true">新增用户</el-button>
       </div>
-    </header>
+    </div>
 
-    <section class="stats-overview">
-      <div class="stat-card glass-panel">
-        <span class="label">当前筛选人数</span>
-        <div class="value-row">
-          <span class="value">{{ totalUsers }}</span>
-          <span class="trend up">实时</span>
-        </div>
+    <div class="wb-metric-grid">
+      <div class="wb-metric-card">
+        <span class="wb-card-label">当前查询总数</span>
+        <div class="wb-card-value">{{ total }}</div>
+        <span class="wb-card-hint">匹配筛选条件的用户总量</span>
       </div>
-      <div class="stat-card glass-panel">
-        <span class="label">高风险人数</span>
-        <div class="value-row">
-          <span class="value">{{ highRiskUsers }}</span>
-          <span class="trend down">优先跟进</span>
-        </div>
+      <div class="wb-metric-card">
+        <span class="wb-card-label">当前页正常</span>
+        <div class="wb-card-value">{{ pageStats.active }}</div>
+        <span class="wb-card-hint">可正常登录和使用</span>
       </div>
-      <div class="stat-card glass-panel">
-        <span class="label">正常人数</span>
-        <div class="value-row">
-          <span class="value">{{ normalUsers }}</span>
-          <span class="trend">稳定</span>
-        </div>
+      <div class="wb-metric-card">
+        <span class="wb-card-label">当前页禁用</span>
+        <div class="wb-card-value">{{ pageStats.disabled }}</div>
+        <span class="wb-card-hint">已被运营侧禁用</span>
       </div>
-    </section>
+      <div class="wb-metric-card">
+        <span class="wb-card-label">当前页角色</span>
+        <div class="wb-card-value">{{ pageStats.elder }}/{{ pageStats.family }}</div>
+        <span class="wb-card-hint">长辈/家属分布</span>
+      </div>
+    </div>
 
-    <nav class="filter-bar glass-panel">
-      <div class="filter-group" style="flex:1; min-width: 260px;">
-        <el-input v-model="search" placeholder="姓名、社区、血压、家属电话" :prefix-icon="Search" clearable />
-      </div>
-      <div class="filter-group">
-        <el-select v-model="riskLevel" placeholder="风险等级" clearable>
-          <el-option label="高风险(红色)" value="high" />
-          <el-option label="中风险(黄色)" value="medium" />
-          <el-option label="正常(蓝色)" value="normal" />
-        </el-select>
-        <el-select v-model="community" placeholder="所属社区" clearable>
-          <el-option label="阳光花园" value="yg" />
-          <el-option label="长乐里" value="cl" />
-        </el-select>
-      </div>
-    </nav>
+    <div class="wb-filter-card" style="margin-bottom: 20px;">
+      <el-row :gutter="12" align="middle">
+        <el-col :span="8">
+          <el-input v-model="search" :prefix-icon="Search" placeholder="搜索昵称、手机号或用户ID" clearable />
+        </el-col>
+        <el-col :span="4">
+          <el-select v-model="roleFilter" placeholder="角色" clearable style="width: 100%">
+            <el-option label="长辈" value="elder" />
+            <el-option label="家属" value="family" />
+          </el-select>
+        </el-col>
+        <el-col :span="4">
+          <el-select v-model="statusFilter" placeholder="状态" clearable style="width: 100%">
+            <el-option label="正常" value="正常" />
+            <el-option label="禁用" value="禁用" />
+          </el-select>
+        </el-col>
+      </el-row>
+    </div>
 
-    <main class="user-grid">
-      <div v-for="user in filteredUsers" :key="user.id" class="user-bento-card glass-panel" :class="user.risk">
-        <div class="card-header">
-          <div class="avatar-box">
-            <img :src="user.avatar" alt="avatar" />
-            <span class="status-dot"></span>
+    <div class="wb-panel">
+      <el-table :data="users" stripe v-loading="loading">
+        <template #empty>
+          <div style="padding: 28px; text-align: center; color: var(--wb-text-soft)">
+            {{ loading ? '加载中...' : '暂无用户数据' }}
           </div>
-          <div class="basic-info">
-            <h3>{{ user.name }} <span class="age">{{ user.age }}岁</span></h3>
-            <span class="community-tag">{{ user.community }}</span>
-          </div>
-          <div class="risk-badge">{{ user.riskLabel }}</div>
-        </div>
+        </template>
+        <el-table-column prop="id" label="用户ID" width="90" />
+        <el-table-column prop="nickname" label="昵称" min-width="140" />
+        <el-table-column prop="phone" label="手机号" width="150" />
+        <el-table-column label="角色" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.role === 'family' ? 'warning' : 'success'">{{ roleLabel(row.role) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="statusTagType(row.status)">{{ row.status }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="age" label="年龄" width="80" />
+        <el-table-column prop="registerDate" label="注册日期" width="120" />
+        <el-table-column prop="lastActive" label="最近活跃" min-width="150" />
+        <el-table-column label="操作" width="250" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" link @click="openDetail(row.id)">详情</el-button>
+            <el-button type="success" link @click="gotoHealth(row.id)">健康趋势</el-button>
+            <el-button type="warning" link :loading="togglingId === row.id" @click="toggleStatus(row)">
+              {{ row.status === '正常' ? '禁用' : '启用' }}
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
 
-        <div class="card-body">
-          <div class="health-metrics">
-            <div class="metric">
-              <span class="label">心率</span>
-              <span class="val">{{ user.hr }} <small>bpm</small></span>
-            </div>
-            <div class="metric">
-              <span class="label">血压</span>
-              <span class="val">{{ user.bp }} <small>mmHg</small></span>
-            </div>
-          </div>
-          <div class="recent-alert" v-if="user.lastAlert">
-            <el-icon><Warning /></el-icon>
-            <span>最近告警：{{ user.lastAlert }}</span>
-          </div>
-        </div>
-
-        <div class="card-footer">
-          <el-button link type="primary" @click="openProfile(user)">详细档案</el-button>
-          <el-button link type="primary" @click="handleTrend(user)">健康趋势</el-button>
-          <el-divider direction="vertical" />
-          <el-button link :icon="Phone" @click="handleContact(user)">联系家属</el-button>
-        </div>
+      <div style="display: flex; justify-content: flex-end; margin-top: 16px">
+        <el-pagination
+          v-model:current-page="page"
+          layout="total, prev, pager, next"
+          :total="total"
+          :page-size="pageSize"
+          @current-change="fetchUsers"
+        />
       </div>
-    </main>
+    </div>
 
-    <el-drawer v-model="profileDrawerVisible" :title="selectedUser ? `${selectedUser.name} · 档案详情` : '档案详情'" size="420px">
-      <template v-if="selectedUser">
-        <div class="wb-list">
+    <el-dialog v-model="createVisible" title="新增用户" width="520px" @closed="resetCreateForm">
+      <el-form label-width="100px">
+        <el-form-item label="昵称">
+          <el-input v-model="createForm.nickname" maxlength="32" show-word-limit />
+        </el-form-item>
+        <el-form-item label="手机号">
+          <el-input v-model="createForm.phone" maxlength="11" />
+        </el-form-item>
+        <el-form-item label="角色">
+          <el-select v-model="createForm.role" style="width: 100%">
+            <el-option label="长辈" value="elder" />
+            <el-option label="家属" value="family" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="createVisible = false">取消</el-button>
+        <el-button type="primary" :loading="creating" @click="submitCreate">创建</el-button>
+      </template>
+    </el-dialog>
+
+    <el-drawer v-model="detailVisible" title="用户详情" size="420px">
+      <template v-if="detail">
+        <div class="wb-list" v-loading="detailLoading">
           <div class="wb-list-item">
             <div>
               <span class="wb-list-title">基础信息</span>
-              <span class="wb-list-desc">{{ selectedUser.age }} 岁，{{ selectedUser.community }}</span>
+              <span class="wb-list-desc">{{ detail.nickname }} / {{ detail.phone }}</span>
             </div>
           </div>
           <div class="wb-list-item">
             <div>
-              <span class="wb-list-title">健康指标</span>
-              <span class="wb-list-desc">心率 {{ selectedUser.hr }} bpm，血压 {{ selectedUser.bp }}</span>
+              <span class="wb-list-title">角色与状态</span>
+              <span class="wb-list-desc">{{ roleLabel(detail.role) }} / {{ detail.status }}</span>
             </div>
           </div>
           <div class="wb-list-item">
             <div>
-              <span class="wb-list-title">风险级别</span>
-              <span class="wb-list-desc">{{ selectedUser.riskLabel }}</span>
+              <span class="wb-list-title">注册与活跃</span>
+              <span class="wb-list-desc">{{ detail.registerDate }} / {{ detail.lastActive }}</span>
             </div>
           </div>
-          <div class="wb-list-item">
-            <div>
-              <span class="wb-list-title">家属联系</span>
-              <span class="wb-list-desc">{{ selectedUser.familyPhone }}</span>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex; justify-content:flex-end; margin-top: 16px; gap: 8px;">
-          <el-button @click="handleTrend(selectedUser)">查看健康趋势</el-button>
-          <el-button type="primary" @click="handleContact(selectedUser)">复制家属电话</el-button>
         </div>
       </template>
     </el-drawer>
   </div>
 </template>
-
-<style scoped>
-.user-management {
-  padding: 32px;
-  background: #f8faff;
-  min-height: 100vh;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 32px;
-}
-
-.page-header h2 {
-  font-size: 28px;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 4px;
-}
-
-.page-header p {
-  color: #64748b;
-  font-size: 15px;
-}
-
-.stats-overview {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-bottom: 32px;
-}
-
-.stat-card {
-  padding: 24px;
-  border-radius: 24px;
-  background: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-}
-
-.stat-card .label {
-  font-size: 14px;
-  color: #64748b;
-}
-
-.value-row {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.value {
-  font-size: 32px;
-  font-weight: 800;
-  color: #1e293b;
-}
-
-.trend {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.trend.up {
-  color: #10b981;
-}
-
-.trend.down {
-  color: #ef4444;
-}
-
-.filter-bar {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px 24px;
-  background: white;
-  border-radius: 20px;
-  margin-bottom: 32px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
-}
-
-.filter-group {
-  display: flex;
-  gap: 16px;
-}
-
-.user-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 24px;
-}
-
-.user-bento-card {
-  background: white;
-  border-radius: 32px;
-  padding: 24px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid transparent;
-}
-
-.user-bento-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
-}
-
-.user-bento-card.high {
-  border-color: #fee2e2;
-}
-
-.user-bento-card.medium {
-  border-color: #fef3c7;
-}
-
-.user-bento-card.normal {
-  border-color: #dbeafe;
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-  position: relative;
-}
-
-.avatar-box {
-  position: relative;
-}
-
-.avatar-box img {
-  width: 64px;
-  height: 64px;
-  border-radius: 20px;
-  background: #f1f5f9;
-}
-
-.status-dot {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 14px;
-  height: 14px;
-  background: #10b981;
-  border: 3px solid white;
-  border-radius: 50%;
-}
-
-.basic-info h3 {
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.basic-info .age {
-  font-size: 14px;
-  color: #64748b;
-  font-weight: 400;
-}
-
-.community-tag {
-  font-size: 13px;
-  color: #94a3b8;
-  margin-top: 4px;
-  display: block;
-}
-
-.risk-badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.user-bento-card.high .risk-badge {
-  background: #ef4444;
-}
-
-.user-bento-card.medium .risk-badge {
-  background: #f59e0b;
-}
-
-.user-bento-card.normal .risk-badge {
-  background: #3b82f6;
-}
-
-.health-metrics {
-  display: flex;
-  gap: 32px;
-  background: #f8faff;
-  padding: 16px;
-  border-radius: 20px;
-  margin-bottom: 16px;
-}
-
-.metric {
-  display: flex;
-  flex-direction: column;
-}
-
-.metric .label {
-  font-size: 12px;
-  color: #64748b;
-  margin-bottom: 4px;
-}
-
-.metric .val {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1e293b;
-}
-
-.metric .val small {
-  font-size: 12px;
-  font-weight: 400;
-  color: #94a3b8;
-}
-
-.recent-alert {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #ef4444;
-  font-size: 13px;
-  font-weight: 500;
-  margin-bottom: 16px;
-}
-
-.card-footer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-top: 16px;
-  border-top: 1px solid #f1f5f9;
-}
-</style>
