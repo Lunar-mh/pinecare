@@ -1,4 +1,4 @@
-﻿import Taro from '@tarojs/taro';
+import Taro from '@tarojs/taro';
 
 function getEnvVersion(): string {
   try {
@@ -119,31 +119,34 @@ export const request = async <T = unknown>(options: RequestOptions): Promise<T> 
     });
 
     return responseInterceptor<T>(response);
-  } catch (error: any) {
-    if (error.errMsg?.includes('timeout') || error.message?.includes('timeout')) {
+  } catch (error: unknown) {
+    const errMsg = (error as { errMsg?: string })?.errMsg || '';
+    const errMessage = error instanceof Error ? error.message : '';
+
+    if (errMsg.includes('timeout') || errMessage.includes('timeout')) {
       Taro.showToast({
         title: '请求超时，请稍后再试',
         icon: 'none',
         duration: 2000,
       });
-      throw new ClientRequestError('请求超时，请稍后再试', { debugMessage: error.message || error.errMsg });
+      throw new ClientRequestError('请求超时，请稍后再试', { debugMessage: errMessage || errMsg });
     }
 
-    if (error.errMsg?.includes('fail')) {
+    if (errMsg.includes('fail')) {
       Taro.showToast({
         title: '网络异常，请检查连接后重试',
         icon: 'none',
         duration: 2000,
       });
       throw new ClientRequestError('网络异常，请检查连接后重试', {
-        debugMessage: error.message || error.errMsg,
+        debugMessage: errMessage || errMsg,
       });
     }
 
     const normalized = error instanceof ClientRequestError
       ? error
       : new ClientRequestError('请求失败，请稍后重试', {
-          debugMessage: error?.message || String(error || ''),
+          debugMessage: errMessage || String(error || ''),
         });
 
     Taro.showToast({

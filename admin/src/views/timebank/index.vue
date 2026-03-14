@@ -4,18 +4,23 @@ import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
 import { confirmTimeBankService, getTimeBankExchangeHistory, getTimeBankLeaderboard, getTimeBankServiceHistory } from '@/services'
 import type { TimeBankExchangeRecord, TimeBankLeaderboardItem, TimeBankServiceRecord } from '@/services'
+import { usePagination } from '@/composables/usePagination'
 
-const loading = ref(false)
 const activeTab = ref<'services' | 'exchange' | 'leaderboard'>('services')
-const serviceRecords = ref<TimeBankServiceRecord[]>([])
-const serviceTotal = ref(0)
-const servicePage = ref(1)
-const servicePageSize = ref(10)
 const serviceStatus = ref<'pending' | 'confirmed' | 'cancelled' | ''>('')
 const serviceSearch = ref('')
 const exchanges = ref<TimeBankExchangeRecord[]>([])
 const leaderboard = ref<TimeBankLeaderboardItem[]>([])
 const actionLoadingId = ref<number | null>(null)
+
+const {
+  page: servicePage,
+  pageSize: servicePageSize,
+  total: serviceTotal,
+  list: serviceRecords,
+  loading: serviceLoading,
+  loadData: loadServiceData
+} = usePagination<TimeBankServiceRecord>(getTimeBankServiceHistory)
 
 const pendingServiceCount = computed(() => serviceRecords.value.filter(item => item.status === 'pending').length)
 const confirmedServiceCoins = computed(() => serviceRecords.value.filter(item => item.status === 'confirmed').reduce((sum, item) => sum + Number(item.timeCoins || 0), 0))
@@ -35,23 +40,14 @@ function statusTagType(value: string): 'success' | 'warning' | 'info' {
 }
 
 async function fetchServiceHistory() {
-  loading.value = true
   try {
-    const data = await getTimeBankServiceHistory({
-      page: servicePage.value,
-      pageSize: servicePageSize.value,
+    await loadServiceData({
       type: 'provided',
       status: serviceStatus.value || undefined,
       search: serviceSearch.value || undefined,
     })
-    serviceRecords.value = data.list || []
-    serviceTotal.value = data.pagination?.total || 0
   } catch (err: unknown) {
     ElMessage.error(err instanceof Error ? err.message : '服务记录加载失败')
-    serviceRecords.value = []
-    serviceTotal.value = 0
-  } finally {
-    loading.value = false
   }
 }
 
@@ -158,10 +154,10 @@ onMounted(fetchAll)
             </el-row>
           </div>
 
-          <el-table :data="serviceRecords" stripe v-loading="loading">
+          <el-table :data="serviceRecords" stripe v-loading="serviceLoading">
             <template #empty>
               <div style="padding: 28px; text-align: center; color: var(--wb-text-soft)">
-                {{ loading ? '加载中...' : '暂无服务履约记录' }}
+                {{ serviceLoading ? '加载中...' : '暂无服务履约记录' }}
               </div>
             </template>
             <el-table-column prop="id" label="记录 ID" width="100" />

@@ -8,7 +8,7 @@ export default function VoiceAssistant({ active = false, text = '我在听，请
   useEffect(() => {
     if (active) {
       const interval = setInterval(() => {
-        setBars(bars.map(() => Math.floor(Math.random() * 25) + 5))
+        setBars(prevBars => prevBars.map(() => Math.floor(Math.random() * 25) + 5))
       }, 100)
       return () => clearInterval(interval)
     }

@@ -56,13 +56,18 @@ interface StatusCardProps {
   value: string | number
   unit?: string
   hint?: string
-  tone?: 'normal' | 'warning' | 'danger' | 'success' | 'primary'
+  tone?: 'normal' | 'warning' | 'danger' | 'success' | 'primary' | 'info'
+  icon?: ReactNode
+  onClick?: () => void
 }
 
-export function StatusCard({ title, value, unit, hint, tone = 'normal' }: StatusCardProps) {
+export function StatusCard({ title, value, unit, hint, tone = 'normal', icon, onClick }: StatusCardProps) {
   return (
-    <View className={classNames('yao-status-card', `card-tone-${tone}`)}>
-      <Text className="card-title">{title}</Text>
+    <View className={classNames('yao-status-card', `card-tone-${tone}`)} onClick={onClick}>
+      <View className="card-header">
+        {icon && <View className="card-icon">{icon}</View>}
+        <Text className="card-title">{title}</Text>
+      </View>
       <View className="card-main">
         <Text className="card-value">{value}</Text>
         {unit && <Text className="card-unit">{unit}</Text>}
@@ -105,11 +110,13 @@ export function SectionBlock({ title, description, children, actionLabel, onActi
 interface ActionGridProps {
   items: Array<{ key: string; label: string; icon: ReactNode; badge?: string; description?: string }>
   onSelect: (key: string) => void
+  columns?: number
 }
 
-export function ActionGrid({ items, onSelect }: ActionGridProps) {
+export function ActionGrid({ items, onSelect, columns }: ActionGridProps) {
+  const style = columns ? { gridTemplateColumns: `repeat(${columns}, 1fr)` } : {}
   return (
-    <View className="yao-action-grid">
+    <View className="yao-action-grid" style={style}>
       {items.map(item => (
         <View key={item.key} className="action-item" onClick={() => onSelect(item.key)}>
           <View className="action-icon-wrapper">
@@ -124,9 +131,9 @@ export function ActionGrid({ items, onSelect }: ActionGridProps) {
   )
 }
 
-export function DataPanel({ children, tone = 'normal' }: { children: ReactNode; tone?: string }) {
+export function DataPanel({ children, tone = 'normal', className }: { children: ReactNode; tone?: string; className?: string }) {
   return (
-    <View className={classNames('yao-data-panel', `panel-tone-${tone}`)}>
+    <View className={classNames('yao-data-panel', `panel-tone-${tone}`, className)}>
       {children}
     </View>
   )
@@ -146,6 +153,32 @@ export function StickyPrimaryAction({ label, icon, onClick, tone = 'elder' }: St
         {icon && <View className="sticky-icon">{icon}</View>}
         <Text className="sticky-label">{label}</Text>
       </View>
+    </View>
+  )
+}
+
+interface EmptyStateProps {
+  icon?: ReactNode
+  title: string
+  description?: string
+  action?: ReactNode
+  actionLabel?: string
+  onAction?: () => void
+  className?: string
+}
+
+export function EmptyState({ icon, title, description, action, actionLabel, onAction, className }: EmptyStateProps) {
+  return (
+    <View className={classNames('yao-empty-state', className)}>
+      {icon && <View className="empty-icon">{icon}</View>}
+      <Text className="empty-title">{title}</Text>
+      {description && <Text className="empty-desc">{description}</Text>}
+      {action && <View className="empty-action">{action}</View>}
+      {actionLabel && (
+        <View className="empty-action-btn" onClick={onAction}>
+          <Text>{actionLabel}</Text>
+        </View>
+      )}
     </View>
   )
 }

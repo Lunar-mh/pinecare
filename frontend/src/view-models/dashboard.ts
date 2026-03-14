@@ -80,3 +80,44 @@ export function getDateLabel(): string {
   const d = new Date()
   return `${d.getMonth() + 1}月${d.getDate()}日 星期${['日', '一', '二', '三', '四', '五', '六'][d.getDay()]}`
 }
+
+export function buildFamilySummaryCards(overview: any): SummaryCardData[] {
+  const cards: SummaryCardData[] = []
+
+  if (overview?.todayHealth?.bloodPressure) {
+    const bp = overview.todayHealth.bloodPressure
+    const isHigh = bp.systolic > 140 || bp.diastolic > 90
+    cards.push({
+      key: 'bp',
+      title: '长辈血压',
+      value: `${bp.systolic}/${bp.diastolic}`,
+      unit: 'mmHg',
+      hint: isHigh ? '偏高，建议关注' : '状态正常',
+      tone: isHigh ? 'warning' : 'success',
+    })
+  }
+
+  if (overview?.todayHealth?.heartRate != null) {
+    const hr = Number(overview.todayHealth.heartRate)
+    const isAbnormal = hr > 100 || hr < 60
+    cards.push({
+      key: 'hr',
+      title: '长辈心率',
+      value: hr,
+      unit: 'bpm',
+      hint: isAbnormal ? '波动异常，请留意' : '律动正常',
+      tone: isAbnormal ? 'danger' : 'success',
+    })
+  }
+
+  cards.push({
+    key: 'activity',
+    title: '今日活跃',
+    value: overview?.todayHealth?.steps ?? '--',
+    unit: '步',
+    hint: '基于设备步数同步',
+    tone: 'primary',
+  })
+
+  return cards
+}

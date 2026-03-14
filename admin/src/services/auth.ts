@@ -1,4 +1,4 @@
-﻿import http from './api'
+﻿﻿import http from './api'
 
 export interface LoginPayload {
   username: string
@@ -18,5 +18,5 @@ export async function adminLogin(payload: LoginPayload): Promise<LoginResult> {
 }
 
 export function adminLogout(): void {
-  localStorage.removeItem('admin_token')
+  sessionStorage.removeItem('admin_token')
 }

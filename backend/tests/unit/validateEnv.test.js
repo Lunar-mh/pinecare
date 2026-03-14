@@ -26,6 +26,7 @@ function applyBaseEnv() {
   delete process.env.CORS_ALLOWED_ORIGINS;
   delete process.env.ADMIN_USERNAME;
   delete process.env.ADMIN_PASSWORD;
+  delete process.env.ADMIN_PASSWORD_HASH;
 }
 
 describe('validateEnv', () => {
@@ -39,13 +40,14 @@ describe('validateEnv', () => {
     process.env = ORIGINAL_ENV;
   });
 
-  it('fills JWT refresh secret from JWT secret', () => {
+  it('derives JWT refresh secret outside production live mode', () => {
     const { validateEnv } = require('../../src/config/validateEnv');
 
     const normalized = validateEnv();
 
     expect(normalized.JWT_SECRET).toBe('super-secret-token-123');
-    expect(process.env.JWT_REFRESH_SECRET).toBe('super-secret-token-123');
+    expect(process.env.JWT_REFRESH_SECRET).toBeTruthy();
+    expect(process.env.JWT_REFRESH_SECRET).not.toBe('super-secret-token-123');
     expect(process.env.RUNTIME_MODE).toBe('COMPETITION_SANDBOX');
     expect(process.env.SERVER_ROLE).toBe('api');
   });
@@ -58,7 +60,7 @@ describe('validateEnv', () => {
     process.env.JWT_REFRESH_SECRET = 'replace_with_32_char_refresh_secret';
     process.env.CORS_ALLOWED_ORIGINS = 'https://admin.example.com';
     process.env.ADMIN_USERNAME = 'admin-root';
-    process.env.ADMIN_PASSWORD = 'super-admin-1234';
+    process.env.ADMIN_PASSWORD_HASH = '$2b$10$abcdefghijklmnopqrstuvabcdefghijklmnopqrstuvabcd';
 
     const { validateEnv } = require('../../src/config/validateEnv');
 
@@ -73,7 +75,7 @@ describe('validateEnv', () => {
     process.env.WECHAT_NOTIFY_MOCK = '1';
     process.env.CORS_ALLOWED_ORIGINS = 'https://admin.example.com';
     process.env.ADMIN_USERNAME = 'admin-root';
-    process.env.ADMIN_PASSWORD = 'super-admin-1234';
+    process.env.ADMIN_PASSWORD_HASH = '$2b$10$abcdefghijklmnopqrstuvabcdefghijklmnopqrstuvabcd';
 
     const { validateEnv } = require('../../src/config/validateEnv');
 
@@ -124,7 +126,7 @@ describe('validateEnv', () => {
     expect(() => validateEnv()).toThrow(/WeChat notify live mode/i);
   });
 
-  it('requires cors and admin credentials in production live mode', () => {
+  it('requires cors and bcrypt admin credentials in production live mode', () => {
     process.env.RUNTIME_MODE = 'PRODUCTION_LIVE';
     process.env.COMPETITION_SANDBOX = '0';
     process.env.PRODUCTION_LIVE = '1';
@@ -136,10 +138,10 @@ describe('validateEnv', () => {
     expect(() => validateEnv()).toThrow(/CORS_ALLOWED_ORIGINS/i);
 
     process.env.CORS_ALLOWED_ORIGINS = 'https://admin.example.com';
-    expect(() => validateEnv()).toThrow(/ADMIN_USERNAME and ADMIN_PASSWORD/i);
+    expect(() => validateEnv()).toThrow(/ADMIN_USERNAME and ADMIN_PASSWORD_HASH/i);
 
     process.env.ADMIN_USERNAME = 'admin';
-    process.env.ADMIN_PASSWORD = 'admin123';
-    expect(() => validateEnv()).toThrow(/too weak/i);
+    process.env.ADMIN_PASSWORD_HASH = 'not-a-hash';
+    expect(() => validateEnv()).toThrow(/valid bcrypt hash/i);
   });
 });

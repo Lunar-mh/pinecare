@@ -1,14 +1,7 @@
-'use strict';
+﻿'use strict';
 
 const axios = require('axios');
-
-function createBusinessError(code, message, data = null, httpStatus = null) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = httpStatus || code;
-  err.data = data;
-  return err;
-}
+const { createBusinessError } = require('../utils/serviceError');
 
 async function code2Session(code) {
   try {
@@ -24,13 +17,13 @@ async function code2Session(code) {
 
     const data = response.data || {};
     if (data.errcode) {
-      throw createBusinessError(400, data.errmsg || '微信登录失败', {
+      throw createBusinessError(400, data.errmsg || 'WeChat login failed.', {
         wechat_errcode: data.errcode,
       }, 400);
     }
 
     if (!data.openid) {
-      throw createBusinessError(400, '微信返回缺少 openid', null, 400);
+      throw createBusinessError(400, 'WeChat response missing openid.', null, 400);
     }
 
     return {
@@ -43,7 +36,7 @@ async function code2Session(code) {
       throw err;
     }
 
-    throw createBusinessError(502, '微信服务调用失败，请稍后重试', {
+    throw createBusinessError(502, 'WeChat service request failed, please retry later.', {
       detail: err.message,
     }, 502);
   }

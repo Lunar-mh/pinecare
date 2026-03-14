@@ -1,23 +1,28 @@
-﻿<script setup lang="ts">
+﻿﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
 import { bootstrapDemoScenario, getAdminGpsCurrent, getAdminGpsTrail, getSystemEventReplay } from '@/services'
+import { usePagination } from '@/composables/usePagination'
 import type { AdminGpsCurrentItem, GpsTrailItem, SystemEventReplay } from '@/services'
 
-const loading = ref(false)
 const trailLoading = ref(false)
 const bootstrapLoading = ref(false)
 const replayLoading = ref(false)
 const search = ref('')
-const page = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
-const currentList = ref<AdminGpsCurrentItem[]>([])
 const selectedUserId = ref<number | null>(null)
 const trail = ref<GpsTrailItem[]>([])
 const replay = ref<SystemEventReplay | null>(null)
 const range = ref<[string, string]>(['', ''])
+
+const {
+  page,
+  pageSize,
+  total,
+  list: currentList,
+  loading,
+  loadData
+} = usePagination<AdminGpsCurrentItem>(getAdminGpsCurrent)
 
 const selectedUser = computed(() => currentList.value.find(item => item.userId === selectedUserId.value) || null)
 const preciseCount = computed(() => currentList.value.filter(item => (item.accuracy || 9999) <= 50).length)
@@ -40,24 +45,13 @@ function initRange() {
 }
 
 async function fetchCurrentList() {
-  loading.value = true
   try {
-    const data = await getAdminGpsCurrent({
-      page: page.value,
-      pageSize: pageSize.value,
-      search: search.value || undefined,
-    })
-    currentList.value = data.list || []
-    total.value = data.pagination?.total || 0
+    await loadData({ search: search.value || undefined })
     if (!selectedUserId.value && currentList.value.length > 0) {
       selectedUserId.value = currentList.value[0]?.userId ?? null
     }
   } catch (err: unknown) {
     ElMessage.error(err instanceof Error ? err.message : 'GPS 数据加载失败')
-    currentList.value = []
-    total.value = 0
-  } finally {
-    loading.value = false
   }
 }
 

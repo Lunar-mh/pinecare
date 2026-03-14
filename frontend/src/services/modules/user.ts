@@ -2,8 +2,11 @@
  * user.ts - 用户相关API
  */
 
+import Taro from '@tarojs/taro';
 import { get, post, put } from '../request';
 import type { UserInfo, EmergencyContact, PaginatedResult } from '../types';
+
+const UPLOAD_BASE_URL = String(process.env.TARO_APP_API_BASE_URL || '').trim() || 'http://127.0.0.1:3001/api/v1';
 
 // 发送短信验证码
 export const sendSmsCode = (phone: string) =>
@@ -27,12 +30,14 @@ export const updateUserInfo = (data: Partial<UserInfo>) =>
 
 // 上传头像
 export const uploadAvatar = (filePath: string) => {
-  // 使用Taro.uploadFile
-  const { default: Taro } = require('@tarojs/taro');
+  const token = Taro.getStorageSync('token') || '';
   return Taro.uploadFile({
-    url: '待核验', // 需要后端提供上传接口
+    url: `${UPLOAD_BASE_URL}/user/avatar`,
     filePath,
-    name: 'file'
+    name: 'file',
+    header: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
   });
 };
 

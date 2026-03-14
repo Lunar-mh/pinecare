@@ -1,5 +1,6 @@
-'use strict';
+﻿'use strict';
 
+const { createHmac } = require('crypto');
 const { getCorsAllowedOrigins, getServerRole } = require('./http');
 const { applyRuntimeModeEnv, isProductionLive } = require('./runtimeMode');
 
@@ -18,6 +19,8 @@ const BASE_SCHEMA = [
   { key: 'PRODUCTION_LIVE', defaultValue: '0', type: 'string', required: false },
   { key: 'COMPETITION_SANDBOX', defaultValue: '1', type: 'string', required: false },
 ];
+
+const REFRESH_SECRET_DERIVATION_SALT = 'yinban.jwt.refresh.v1';
 
 function castValue(raw, type, key) {
   if (type === 'number') {
@@ -58,6 +61,10 @@ function validateRequiredVars(schema) {
   return normalized;
 }
 
+function deriveRefreshSecret(secret) {
+  return createHmac('sha256', secret).update(REFRESH_SECRET_DERIVATION_SALT).digest('hex');
+}
+
 function validateJwtSecretStrength() {
   const secret = String(process.env.JWT_SECRET || '').trim();
   if (!secret) {
@@ -69,15 +76,30 @@ function validateJwtSecretStrength() {
   }
 
   const refreshSecret = String(process.env.JWT_REFRESH_SECRET || '').trim();
-  if (!refreshSecret) {
-    throw new Error('JWT_REFRESH_SECRET is required. It must differ from JWT_SECRET.');
+
+  if (isProductionLive()) {
+    if (!refreshSecret) {
+      throw new Error('JWT_REFRESH_SECRET is required in PRODUCTION_LIVE mode. It must differ from JWT_SECRET.');
+    }
+    if (refreshSecret === secret) {
+      throw new Error('JWT_REFRESH_SECRET must differ from JWT_SECRET in PRODUCTION_LIVE mode.');
+    }
+    return;
   }
 
-  if (refreshSecret === secret) {
-    throw new Error('JWT_REFRESH_SECRET must differ from JWT_SECRET.');
+  if (!refreshSecret || refreshSecret === secret) {
+    process.env.JWT_REFRESH_SECRET = deriveRefreshSecret(secret);
+    console.warn('[validateEnv] JWT_REFRESH_SECRET is missing or duplicated. A derived refresh secret has been applied.');
   }
 }
 
+function isBcryptHash(value) {
+  return /^\$2[aby]\$/.test(String(value || '').trim());
+}
+
+function resolveAdminPasswordHash() {
+  return String(process.env.ADMIN_PASSWORD_HASH || process.env.ADMIN_PASSWORD || '').trim();
+}
 function isPlaceholderValue(value) {
   const normalized = String(value || '')
     .trim()
@@ -129,20 +151,13 @@ function validateProductionSecrets() {
   }
 
   const adminUsername = String(process.env.ADMIN_USERNAME || '').trim();
-  const adminPassword = String(process.env.ADMIN_PASSWORD || '').trim();
-  if (!adminUsername || !adminPassword) {
-    throw new Error('ADMIN_USERNAME and ADMIN_PASSWORD are required in PRODUCTION_LIVE mode.');
+  const adminPasswordHash = resolveAdminPasswordHash();
+  if (!adminUsername || !adminPasswordHash) {
+    throw new Error('ADMIN_USERNAME and ADMIN_PASSWORD_HASH are required in PRODUCTION_LIVE mode.');
   }
 
-  const weakPairs = [
-    ['admin', 'admin123'],
-    ['admin', 'password'],
-  ];
-  if (
-    adminPassword.length < 12 ||
-    weakPairs.some(([username, password]) => adminUsername === username && adminPassword === password)
-  ) {
-    throw new Error('Admin credentials are too weak for PRODUCTION_LIVE mode.');
+  if (!isBcryptHash(adminPasswordHash)) {
+    throw new Error('ADMIN_PASSWORD_HASH must be a valid bcrypt hash in PRODUCTION_LIVE mode.');
   }
 }
 
@@ -224,6 +239,7 @@ function validateEnv() {
   normalized.RUNTIME_MODE = mode;
   normalized.PRODUCTION_LIVE = process.env.PRODUCTION_LIVE;
   normalized.COMPETITION_SANDBOX = process.env.COMPETITION_SANDBOX;
+  normalized.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
   validateJwtSecretStrength();
   validateProductionSecrets();
@@ -242,3 +258,7 @@ function validateEnv() {
 module.exports = {
   validateEnv,
 };
+
+
+
+

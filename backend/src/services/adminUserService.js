@@ -2,14 +2,7 @@
 
 const redis = require('../config/redis');
 const adminUserModel = require('../models/adminUserModel');
-
-function createBusinessError(code, message, statusCode = null, data = null) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  err.data = data;
-  return err;
-}
+const { createBusinessError } = require('../utils/serviceError');
 
 function toDateString(date) {
   if (!date) return '';

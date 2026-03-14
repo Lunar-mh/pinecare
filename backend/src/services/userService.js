@@ -6,7 +6,7 @@ const UserModel = require('../models/user');
 const EmergencyContactModel = require('../models/emergencyContact');
 const FamilyBindingModel = require('../models/familyBinding');
 const smsService = require('./smsService');
-const { createBizError } = require('../utils/serviceError');
+const { createBusinessError } = require('../utils/serviceError');
 const { writeAuditLog: writeAuditEntry } = require('../utils/auditLogHelper');
 
 const MAX_EMERGENCY_CONTACTS = 5;
@@ -14,10 +14,6 @@ const BINDING_QR_TTL_MS = 15 * 60 * 1000;
 const MAX_REAL_NAME_LENGTH = 20;
 const MAX_CHRONIC_DISEASES = 20;
 const MAX_CHRONIC_DISEASE_LENGTH = 30;
-
-const createBusinessError = (code, message, data = null, httpStatus = null) => (
-  createBizError(code, message, httpStatus || code, data)
-);
 
 async function writeAuditLog(userId, action, context = {}, details = null) {
   await writeAuditEntry({ userId, action, context, details });

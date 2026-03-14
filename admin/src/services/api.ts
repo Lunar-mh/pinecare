@@ -1,4 +1,4 @@
-﻿const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:3001'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:3001'
 
 export interface ApiResponse<T = unknown> {
   code: number
@@ -39,7 +39,7 @@ async function parseJsonSafe<T>(res: Response): Promise<ApiResponse<T> | null> {
 }
 
 async function request<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
-  const token = localStorage.getItem('admin_token')
+  const token = sessionStorage.getItem('admin_token')
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -62,7 +62,7 @@ async function request<T = unknown>(method: string, path: string, body?: unknown
   const json = await parseJsonSafe<T>(res)
 
   if (res.status === 401) {
-    localStorage.removeItem('admin_token')
+    sessionStorage.removeItem('admin_token')
     window.location.href = '/#/login'
     throw new ApiError(401, toUserFacingMessage(401), json?.message)
   }

@@ -1,5 +1,6 @@
-'use strict';
+﻿'use strict';
 
+const { randomUUID } = require('crypto');
 const redis = require('../config/redis');
 const { fail } = require('../utils/response');
 const logger = require('../utils/logger');
@@ -14,8 +15,7 @@ function resolveActorId(req) {
     return `user:${parsedUserId}`;
   }
 
-  // 未认证用户使用 IP 限速
-  return `ip:${req.ip || 'unknown'}`;
+  return null;
 }
 
 function buildWindowMember(req, timestamp) {
@@ -23,7 +23,7 @@ function buildWindowMember(req, timestamp) {
     return `${timestamp}-${req.requestId}`;
   }
 
-  return `${timestamp}-${Math.random()}`;
+  return `${timestamp}-${randomUUID()}`;
 }
 
 function createRateLimiter({
@@ -33,6 +33,10 @@ function createRateLimiter({
 } = {}) {
   return async function rateLimiter(req, res, next) {
     const actorId = resolveActorId(req);
+    if (!actorId) {
+      return next();
+    }
+
     const key = `${keyPrefix}:${actorId}`;
     const now = Date.now();
     const windowStart = now - windowSeconds * 1000;

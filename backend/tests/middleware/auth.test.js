@@ -1,7 +1,11 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('jsonwebtoken', () => ({
   verify: jest.fn(),
+}));
+
+jest.mock('../../src/config/redis', () => ({
+  get: jest.fn(),
 }));
 
 jest.mock('../../src/models/user', () => ({
@@ -9,6 +13,7 @@ jest.mock('../../src/models/user', () => ({
 }));
 
 const jwt = require('jsonwebtoken');
+const redis = require('../../src/config/redis');
 const UserModel = require('../../src/models/user');
 const auth = require('../../src/middleware/auth');
 
@@ -33,6 +38,7 @@ describe('auth middleware', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.JWT_SECRET = 'unit-test-secret';
+    redis.get.mockResolvedValue('1');
   });
 
   afterAll(() => {
@@ -124,8 +130,8 @@ describe('auth middleware', () => {
     expect(res.body.message).toBe('Account is locked.');
   });
 
-  it('skips database lookups for global admin tokens', async () => {
-    jwt.verify.mockReturnValue({ userId: 0, role: 'admin', isAdmin: true });
+  it('checks redis session for admin tokens', async () => {
+    jwt.verify.mockReturnValue({ userId: 0, role: 'admin', isAdmin: true, sid: 'sid-1' });
     const req = { headers: { authorization: 'Bearer token' } };
     const res = createRes();
     const next = jest.fn();
@@ -133,6 +139,35 @@ describe('auth middleware', () => {
     await auth(req, res, next);
 
     expect(next).toHaveBeenCalledTimes(1);
+    expect(redis.get).toHaveBeenCalledWith('auth:admin:session:sid-1');
     expect(UserModel.findById).not.toHaveBeenCalled();
+    expect(req.user).toEqual({ userId: 0, role: 'admin', isAdmin: true });
+  });
+
+  it('rejects admin tokens without sid session id', async () => {
+    jwt.verify.mockReturnValue({ userId: 0, role: 'admin', isAdmin: true });
+    const req = { headers: { authorization: 'Bearer token' } };
+    const res = createRes();
+    const next = jest.fn();
+
+    await auth(req, res, next);
+
+    expect(next).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('fails closed when admin session is missing or redis is down', async () => {
+    jwt.verify.mockReturnValue({ userId: 0, role: 'admin', isAdmin: true, sid: 'sid-1' });
+    const req = { headers: { authorization: 'Bearer token' } };
+    const res = createRes();
+    const next = jest.fn();
+
+    redis.get.mockResolvedValueOnce(null);
+    await auth(req, res, next);
+    expect(res.statusCode).toBe(401);
+
+    redis.get.mockRejectedValueOnce(new Error('redis down'));
+    await auth(req, res, next);
+    expect(res.statusCode).toBe(503);
   });
 });

@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 require('dotenv').config();
 
@@ -13,6 +13,7 @@ const app = require('./src/app');
 validateEnv();
 
 const port = process.env.PORT || 3000;
+let isShuttingDown = false;
 
 const server = app.listen(port, () => {
   logger.info('server', 'started', { port, mode: resolveMode() });
@@ -32,6 +33,11 @@ function closeHttpServer() {
 }
 
 async function gracefulShutdown(signal) {
+  if (isShuttingDown) {
+    return;
+  }
+  isShuttingDown = true;
+
   logger.info('server', 'shutdown_started', { signal });
 
   const timeout = setTimeout(() => {
@@ -60,11 +66,12 @@ process.on('SIGINT', () => {
   gracefulShutdown('SIGINT');
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
   logger.error('server', 'unhandled_rejection', {
     message: reason instanceof Error ? reason.message : String(reason),
     stack: reason instanceof Error ? reason.stack : undefined,
   });
+  gracefulShutdown('UNHANDLED_REJECTION');
 });
 
 process.on('uncaughtException', (err) => {
@@ -72,6 +79,5 @@ process.on('uncaughtException', (err) => {
     message: err.message,
     stack: err.stack,
   });
-  // 给日志一个写入的机会，然后退出
-  setTimeout(() => process.exit(1), 1000);
+  gracefulShutdown('UNCAUGHT_EXCEPTION');
 });

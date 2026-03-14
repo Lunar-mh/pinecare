@@ -36,9 +36,27 @@ const router = createRouter({
 })
 
 router.beforeEach((to, _from, next) => {
-  const token = localStorage.getItem('admin_token')
-  if (to.name !== 'Login' && !token) {
-    next({ name: 'Login' })
+  const token = sessionStorage.getItem('admin_token')
+  if (to.name !== 'Login') {
+    if (!token) {
+      return next({ name: 'Login' })
+    }
+    try {
+      const parts = token.split('.')
+      if (parts.length < 2 || !parts[1]) {
+        sessionStorage.removeItem('admin_token')
+        return next({ name: 'Login' })
+      }
+      const payload = JSON.parse(atob(parts[1])) as { exp?: number }
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        sessionStorage.removeItem('admin_token')
+        return next({ name: 'Login' })
+      }
+    } catch (e) {
+      sessionStorage.removeItem('admin_token')
+      return next({ name: 'Login' })
+    }
+    next()
   } else {
     next()
   }

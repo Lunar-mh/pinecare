@@ -3,20 +3,13 @@
 const crypto = require('crypto');
 const redis = require('../config/redis');
 const SmsCodeModel = require('../models/smsCode');
+const { createBusinessError } = require('../utils/serviceError');
 
 const CODE_TTL_SECONDS = 300;
 const DAILY_LIMIT = 10;
 const VERIFY_FAIL_LIMIT = 5;
 const VERIFY_FAIL_WINDOW_SECONDS = 300;
 const PURPOSES = new Set(['register', 'login', 'bind', 'reset_password', 'account_delete']);
-
-function createBusinessError(code, message, data = null, httpStatus = null) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = httpStatus || code;
-  err.data = data;
-  return err;
-}
 
 function getDateKey() {
   return new Date().toISOString().slice(0, 10);

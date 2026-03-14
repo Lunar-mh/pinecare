@@ -15,9 +15,27 @@ const pool = mysql.createPool({
   charset: 'utf8mb4',
 });
 
-pool.on('error', (err) => {
-  logger.error('database', 'pool_error', { message: err.message });
-});
+if (typeof pool.on === 'function') {
+  pool.on('error', (err) => {
+    logger.error('database', 'pool_error', { message: err.message });
+  });
+
+  pool.on('connection', (connection) => {
+    logger.info('database', 'pool_connection', { threadId: connection.threadId || null });
+  });
+
+  pool.on('acquire', (connection) => {
+    logger.info('database', 'pool_acquire', { threadId: connection.threadId || null });
+  });
+
+  pool.on('release', (connection) => {
+    logger.info('database', 'pool_release', { threadId: connection.threadId || null });
+  });
+
+  pool.on('enqueue', () => {
+    logger.warn('database', 'pool_enqueue', { detail: 'Waiting for available database connection.' });
+  });
+}
 
 async function query(sql, params = []) {
   return pool.execute(sql, params);

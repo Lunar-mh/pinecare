@@ -71,8 +71,8 @@ function renderApp() {
               <p>${escapeHtml(task.desc)}</p>
             </div>
             <div class="task-footer">
-              <button class="btn-reject" onclick="rejectTask(${task.id})">忽略</button>
-              <button class="btn-accept" onclick="acceptTask(${task.id})">立即前往</button>
+              <button class="btn-reject" data-action="reject" data-id="${task.id}">忽略</button>
+              <button class="btn-accept" data-action="accept" data-id="${task.id}">立即前往</button>
             </div>
           </div>
         `).join('')}
@@ -96,7 +96,7 @@ window.acceptTask = function(id) {
       <div style="font-size: 40px; margin-bottom: 10px;">🏃</div>
       <h3 style="margin-bottom: 8px;">已接单，请尽快前往</h3>
       <p style="color: #666; margin-bottom: 16px;">正在导航至：${escapeHtml(task.title.split(' ')[0])}</p>
-      <button class="btn-accept" onclick="completeTask(${id})">到达地点并开始服务</button>
+      <button class="btn-accept" data-action="complete" data-id="${id}">到达地点并开始服务</button>
     </div>
   `;
 };
@@ -106,7 +106,6 @@ window.completeTask = function(id) {
   state.user.completedTasks += 1;
   state.tasks = state.tasks.filter(t => t.id !== id);
   
-  // 简单提示
   alert('恭喜完成服务！获得 50 时间币奖励。');
   renderApp();
 };
@@ -115,5 +114,17 @@ window.rejectTask = function(id) {
   state.tasks = state.tasks.filter(t => t.id !== id);
   renderApp();
 };
+
+// 事件委托：统一处理任务按钮点击
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.getAttribute('data-action');
+  const id = Number(btn.getAttribute('data-id'));
+  if (!id) return;
+  if (action === 'accept') window.acceptTask(id);
+  else if (action === 'reject') window.rejectTask(id);
+  else if (action === 'complete') window.completeTask(id);
+});
 
 document.addEventListener('DOMContentLoaded', renderApp);

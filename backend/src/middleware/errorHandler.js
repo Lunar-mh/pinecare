@@ -18,17 +18,32 @@ function resolveStatusCode(err) {
 
   const rawCode = err.statusCode || err.status || err.code || 500;
   const parsed = Number(rawCode);
-  // 确保返回有效的 HTTP 状态码数字
   if (!Number.isInteger(parsed) || parsed < 100 || parsed > 599) {
     return 500;
   }
   return parsed;
 }
 
+function shouldExposeMessage(err, statusCode) {
+  if (String((err && err.message) || '') === 'CORS origin not allowed.') {
+    return true;
+  }
+
+  const hasBusinessCode = Boolean(err && (err.code !== undefined || err.statusCode !== undefined || err.status !== undefined));
+  if (!hasBusinessCode) {
+    return false;
+  }
+
+  return statusCode < 500;
+}
+
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
   const statusCode = resolveStatusCode(err);
-  const message = sanitizeMessage(err.message || 'Internal server error.');
+  const rawMessage = String((err && err.message) || 'Internal server error.');
+  const message = shouldExposeMessage(err, statusCode)
+    ? sanitizeMessage(rawMessage)
+    : 'Internal server error.';
   const requestId = req.requestId || null;
 
   logger.error('http', 'global_error', {
@@ -46,11 +61,10 @@ function errorHandler(err, req, res, next) {
   };
 
   if (process.env.NODE_ENV !== 'production') {
-    // 仅在日志中记录 stack，不返回给前端
     response.requestId = requestId;
     logger.error('http', 'global_error_stack', {
       requestId,
-      stack: err.stack,
+      stack: err && err.stack ? err.stack : null,
     });
   }
 

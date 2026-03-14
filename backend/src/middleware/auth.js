@@ -1,8 +1,11 @@
-'use strict';
+﻿'use strict';
 
 const jwt = require('jsonwebtoken');
+const redis = require('../config/redis');
 const UserModel = require('../models/user');
 const { fail } = require('../utils/response');
+
+const ADMIN_SESSION_PREFIX = 'auth:admin:session:';
 
 function getJwtSecret() {
   const secret = String(process.env.JWT_SECRET || '').trim();
@@ -19,6 +22,14 @@ function isCurrentlyLocked(user) {
     user.locked_until &&
     new Date(user.locked_until).getTime() > Date.now()
   );
+}
+
+function isAdminIdentity(userId, decoded) {
+  return Number(userId) === 0 && (decoded.isAdmin === true || decoded.role === 'admin');
+}
+
+function adminSessionKey(sessionId) {
+  return `${ADMIN_SESSION_PREFIX}${sessionId}`;
 }
 
 async function authMiddleware(req, res, next) {
@@ -38,19 +49,28 @@ async function authMiddleware(req, res, next) {
   try {
     const decoded = jwt.verify(token, secret);
     const userId = Number(decoded.userId);
-    const isAdmin = Boolean(decoded.isAdmin);
-    const role = decoded.role;
 
-    // 基本 payload 完整性校验（管理员和普通用户都需要）
     if (!Number.isInteger(userId) || userId < 0) {
       return fail(res, 401, 'Authentication token is invalid or expired.', null, 401);
     }
 
-    // 管理员 token (userId === 0) 不查库，但要验证 role 声明
-    const isAdminToken = (isAdmin === true || role === 'admin') && userId === 0;
+    const isAdminToken = isAdminIdentity(userId, decoded);
 
-    if (!isAdminToken) {
-      // 普通用户：必须 userId > 0 且查库验证
+    if (isAdminToken) {
+      const sid = String(decoded.sid || '').trim();
+      if (!sid) {
+        return fail(res, 401, 'Authentication token is invalid or expired.', null, 401);
+      }
+
+      try {
+        const sessionFlag = await redis.get(adminSessionKey(sid));
+        if (!sessionFlag) {
+          return fail(res, 401, 'Authentication token is invalid or expired.', null, 401);
+        }
+      } catch (_err) {
+        return fail(res, 503, 'Authentication service is temporarily unavailable.', null, 503);
+      }
+    } else {
       if (userId <= 0) {
         return fail(res, 401, 'Authentication token is invalid or expired.', null, 401);
       }
@@ -71,7 +91,7 @@ async function authMiddleware(req, res, next) {
 
     req.user = {
       userId,
-      role: role || null,
+      role: decoded.role || null,
       isAdmin: isAdminToken,
     };
     return next();

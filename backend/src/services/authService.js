@@ -1,13 +1,15 @@
-'use strict';
+﻿'use strict';
 
+const { createHmac } = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const redis = require('../config/redis');
 const UserModel = require('../models/user');
 const smsService = require('./smsService');
-const { createBizError } = require('../utils/serviceError');
+const { createBusinessError } = require('../utils/serviceError');
 const { writeAuditLog: writeAuditEntry } = require('../utils/auditLogHelper');
+const { isProductionLive } = require('../config/runtimeMode');
 const wechatService = require('./wechatService');
 
 const ACCESS_EXPIRES_IN = '15m';
@@ -16,11 +18,8 @@ const REFRESH_EXPIRES_IN = '7d';
 const REFRESH_EXPIRES_SECONDS = 7 * 24 * 60 * 60;
 const LOCK_THRESHOLD = 5;
 const LOCK_MINUTES = 30;
-
-const createBusinessError = (code, message, data = null, httpStatus = null) => (
-  createBizError(code, message, httpStatus || code, data)
-);
-
+const ADMIN_SESSION_PREFIX = 'auth:admin:session:';
+const REFRESH_SECRET_DERIVATION_SALT = 'yinban.jwt.refresh.v1';
 function requiredEnv(name, message) {
   const value = String(process.env[name] || '').trim();
   if (!value) {
@@ -33,30 +32,55 @@ function getJwtSecret() {
   return requiredEnv('JWT_SECRET', 'JWT_SECRET is not configured.');
 }
 
+function deriveRefreshSecret(secret) {
+  return createHmac('sha256', secret).update(REFRESH_SECRET_DERIVATION_SALT).digest('hex');
+}
+
 function getRefreshSecret() {
+  const secret = getJwtSecret();
   const refreshSecret = String(process.env.JWT_REFRESH_SECRET || '').trim();
-  if (!refreshSecret) {
-    throw createBusinessError(500, 'JWT_REFRESH_SECRET is not configured. It must differ from JWT_SECRET.', null, 500);
+
+  if (refreshSecret && refreshSecret !== secret) {
+    return refreshSecret;
   }
-  if (refreshSecret === getJwtSecret()) {
+
+  if (isProductionLive()) {
+    if (!refreshSecret) {
+      throw createBusinessError(500, 'JWT_REFRESH_SECRET is not configured. It must differ from JWT_SECRET.', null, 500);
+    }
     throw createBusinessError(500, 'JWT_REFRESH_SECRET must differ from JWT_SECRET.', null, 500);
   }
-  return refreshSecret;
+
+  const derived = deriveRefreshSecret(secret);
+  process.env.JWT_REFRESH_SECRET = derived;
+  return derived;
+}
+
+function isBcryptHash(value) {
+  return /^\$2[aby]\$/.test(String(value || '').trim());
 }
 
 function getAdminCredentials() {
   const username = String(process.env.ADMIN_USERNAME || '').trim();
-  const password = String(process.env.ADMIN_PASSWORD || '').trim();
+  const passwordHash = String(process.env.ADMIN_PASSWORD_HASH || process.env.ADMIN_PASSWORD || '').trim();
 
-  if (!username || !password) {
+  if (!username || !passwordHash) {
     throw createBusinessError(503, 'Admin credentials are not configured.', null, 503);
   }
 
-  return { username, password };
+  if (!isBcryptHash(passwordHash)) {
+    throw createBusinessError(503, 'Admin password must be a bcrypt hash.', null, 503);
+  }
+
+  return { username, passwordHash };
 }
 
 function refreshTokenKey(userId) {
   return `auth:refresh:${userId}`;
+}
+
+function adminSessionKey(sessionId) {
+  return `${ADMIN_SESSION_PREFIX}${sessionId}`;
 }
 
 function createContext(ipAddress, userAgent, requestId) {
@@ -86,16 +110,31 @@ async function writeAuditLog(userId, action, context = {}, details = null) {
 }
 
 async function issueTokens(userId, extraClaims = {}) {
-  const accessToken = jwt.sign({ userId, ...extraClaims }, getJwtSecret(), {
+  const isAdminIdentity = Number(userId) === 0 && (extraClaims.isAdmin === true || extraClaims.role === 'admin');
+  const sessionId = isAdminIdentity ? uuidv4() : null;
+
+  const accessPayload = { userId, ...extraClaims };
+  if (sessionId) {
+    accessPayload.sid = sessionId;
+  }
+
+  const refreshPayload = { userId, token_type: 'refresh', ...extraClaims, jti: uuidv4() };
+  if (sessionId) {
+    refreshPayload.sid = sessionId;
+  }
+
+  const accessToken = jwt.sign(accessPayload, getJwtSecret(), {
     expiresIn: ACCESS_EXPIRES_IN,
   });
-  const refreshToken = jwt.sign(
-    { userId, token_type: 'refresh', ...extraClaims, jti: uuidv4() },
-    getRefreshSecret(),
-    { expiresIn: REFRESH_EXPIRES_IN }
-  );
+  const refreshToken = jwt.sign(refreshPayload, getRefreshSecret(), {
+    expiresIn: REFRESH_EXPIRES_IN,
+  });
 
   await redis.set(refreshTokenKey(userId), refreshToken, 'EX', REFRESH_EXPIRES_SECONDS);
+
+  if (sessionId) {
+    await redis.set(adminSessionKey(sessionId), '1', 'EX', REFRESH_EXPIRES_SECONDS);
+  }
 
   return {
     access_token: accessToken,
@@ -103,7 +142,6 @@ async function issueTokens(userId, extraClaims = {}) {
     expires_in: ACCESS_EXPIRES_SECONDS,
   };
 }
-
 function getLockUntilDate() {
   return new Date(Date.now() + LOCK_MINUTES * 60 * 1000);
 }
@@ -253,22 +291,7 @@ async function loginAdmin({ username, password, ipAddress, userAgent, requestId 
     throw createBusinessError(401, 'Invalid admin username or password.', null, 401);
   }
 
-  // 支持两种模式：如果密码以 $2a$ 或 $2b$ 开头则视为bcrypt哈希值，否则为明文（仅限dev）
-  const storedPassword = admin.password;
-  const isBcryptHash = /^\$2[aby]\$/.test(storedPassword);
-  let passwordMatch = false;
-
-  if (isBcryptHash) {
-    passwordMatch = await bcrypt.compare(password, storedPassword);
-  } else {
-    // 明文对比仅在非 PRODUCTION_LIVE 下允许
-    const { isProductionLive } = require('../config/runtimeMode');
-    if (isProductionLive()) {
-      throw createBusinessError(503, 'Admin password must be bcrypt-hashed in PRODUCTION_LIVE mode.', null, 503);
-    }
-    passwordMatch = (password === storedPassword);
-  }
-
+  const passwordMatch = await bcrypt.compare(password, admin.passwordHash);
   if (!passwordMatch) {
     await writeAuditLog(null, 'admin_login_fail', context, { username });
     throw createBusinessError(401, 'Invalid admin username or password.', null, 401);
@@ -278,7 +301,6 @@ async function loginAdmin({ username, password, ipAddress, userAgent, requestId 
   await writeAuditLog(null, 'admin_login_success', context, { username });
   return { ...tokens, username: admin.username, role: 'admin' };
 }
-
 function decodeRefreshToken(refreshTokenValue) {
   if (!refreshTokenValue) {
     throw createBusinessError(400, 'refresh_token is required.', null, 400);
@@ -336,6 +358,25 @@ async function refreshToken(refreshTokenValue, context = {}) {
 
   await assertRefreshableUser(decoded.userId);
 
+  const isAdminRefresh = Number(decoded.userId) === 0 && (decoded.isAdmin === true || decoded.role === 'admin');
+  if (Number(decoded.userId) === 0 && !isAdminRefresh) {
+    throw createBusinessError(401, 'Invalid refresh_token.', null, 401);
+  }
+
+  if (isAdminRefresh) {
+    const sid = String(decoded.sid || '').trim();
+    if (!sid) {
+      throw createBusinessError(401, 'Invalid refresh_token.', null, 401);
+    }
+
+    const adminSession = await redis.get(adminSessionKey(sid));
+    if (!adminSession) {
+      throw createBusinessError(401, 'Invalid refresh_token.', null, 401);
+    }
+
+    await redis.del(adminSessionKey(sid));
+  }
+
   const nextTokens = await issueTokens(decoded.userId, {
     ...(decoded.role ? { role: decoded.role } : {}),
     ...(decoded.isAdmin !== undefined ? { isAdmin: decoded.isAdmin } : {}),
@@ -348,7 +389,6 @@ async function refreshToken(refreshTokenValue, context = {}) {
     expires_in: nextTokens.expires_in,
   };
 }
-
 async function loginWithWechat({ code, userInfo = {}, ipAddress, userAgent, requestId }) {
   const context = createContext(ipAddress, userAgent, requestId);
   const session = await wechatService.code2Session(code);
@@ -402,4 +442,10 @@ module.exports = {
   loginWithWechat,
   unlockAccountByCode,
 };
+
+
+
+
+
+
 

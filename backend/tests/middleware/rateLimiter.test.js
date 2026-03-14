@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('../../src/config/redis', () => ({
   zremrangebyscore: jest.fn(),
@@ -94,7 +94,7 @@ describe('rateLimiter middleware', () => {
     expect(logger.error).toHaveBeenCalledWith(
       'rateLimiter',
       'redis_error',
-      expect.objectContaining({ actorId: 18, key: 'ratelimit:user:18', message: 'redis down' })
+      expect.objectContaining({ actorId: 'user:18', key: 'ratelimit:user:18', message: 'redis down' })
     );
   });
 });

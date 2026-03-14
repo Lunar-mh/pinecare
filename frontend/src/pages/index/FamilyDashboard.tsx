@@ -120,8 +120,8 @@ export default function FamilyDashboard() {
 
       <SectionBlock title="实时体征" description="基于 IoT 设备每 5 分钟同步一次。">
         <View className="summary-grid">
-          {summaryCards.map(card => (
-            <StatusCard key={card.key} {...card} tone={card.tone as any} />
+          {summaryCards.map(({ key, ...rest }) => (
+            <StatusCard key={key} {...rest} />
           ))}
         </View>
       </SectionBlock>

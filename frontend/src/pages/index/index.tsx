@@ -1,6 +1,7 @@
-﻿import { View, Text } from '@tarojs/components'
+import { View, Text } from '@tarojs/components'
 import Taro, { useLoad } from '@tarojs/taro'
-import { useCallback, useMemo, useState, useEffect } from 'react'
+import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react'
+import classNames from 'classnames'
 import { getTodayHealthOverview, getTodayMedications } from '@/services'
 import type { TodayHealthOverview, TodayMedication } from '@/services/types'
 import { Icon, UserIcon, SosIcon } from '@/components/icons'
@@ -50,12 +51,18 @@ export default function IndexPage() {
     }
   }, [])
 
+  const sosTriggeredRef = useRef(false)
+
   useEffect(() => {
     if (sosCountdown > 0) {
-      const timer = setTimeout(() => setSosCountdown(sosCountdown - 1), 1000)
+      sosTriggeredRef.current = true
+      const timer = setTimeout(() => setSosCountdown(prev => prev - 1), 1000)
       return () => clearTimeout(timer)
-    } else if (sosCountdown === 0 && sosCountdown !== null) {
-      // 倒计时结束，真正触发
+    }
+    if (sosCountdown === 0 && sosTriggeredRef.current) {
+      sosTriggeredRef.current = false
+      // 倒计时自然归零，真实触发 SOS
+      Taro.navigateTo({ url: '/subpackages/sos/pages/index/index?trigger=auto' })
     }
   }, [sosCountdown])
 
@@ -67,6 +74,19 @@ export default function IndexPage() {
     return <FamilyDashboard />
   }
 
+  const summaryCards = useMemo(
+    () => buildHealthSummaryCards({
+      bloodPressure: health.bloodPressure,
+      heartRate: health.heartRate?.value,
+      todayMeds,
+    }),
+    [health, todayMeds]
+  )
+  const quickActions = useMemo(
+    () => homeQuickActionsByRole['elder'],
+    []
+  )
+
   const handleSos = () => {
     Taro.vibrateLong()
     setSosCountdown(5)
@@ -74,20 +94,14 @@ export default function IndexPage() {
   }
 
   const cancelSos = () => {
+    sosTriggeredRef.current = false
     setSosCountdown(0)
     Taro.showToast({ title: '已取消求助', icon: 'none' })
   }
 
-  useEffect(() => {
-    if (sosCountdown === 1) {
-      const finalTimer = setTimeout(() => {
-        setSosCountdown(0)
-        // 真实触发 SOS 接口
-        Taro.navigateTo({ url: '/subpackages/sos/pages/index/index?trigger=auto' })
-      }, 1000)
-      return () => clearTimeout(finalTimer)
-    }
-  }, [sosCountdown])
+  const navigateByPath = (path: string) => {
+    if (path) Taro.navigateTo({ url: path })
+  }
 
   const toggleVoice = () => {
     setVoiceActive(!voiceActive)
@@ -96,8 +110,6 @@ export default function IndexPage() {
       Taro.showToast({ title: '语音助手已启动', icon: 'none' })
     }
   }
-
-  // ... (rest of navigateByPath)
 
   return (
     <PageShell roleTone="elder" className="home-dashboard-luxe" loading={loading}>
@@ -124,11 +136,9 @@ export default function IndexPage() {
       <SectionBlock title="实时态势感知" description="通过 IoT 设备同步的核心健康闭环。">
         <View className="bento-grid-neo">
           {summaryCards.map((card, idx) => (
-            <StatusCard 
-              key={card.key} 
-              {...card} 
-              className={`animate-pop-in delay-${idx}`} 
-            />
+            <View key={card.key} className={`animate-pop-in delay-${idx}`}>
+              <StatusCard {...card} />
+            </View>
           ))}
         </View>
       </SectionBlock>

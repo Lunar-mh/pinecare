@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 describe('authService extra', () => {
   function loadService() {
@@ -56,7 +56,8 @@ describe('authService extra', () => {
     process.env.JWT_SECRET = 'super-secret-token-123';
     process.env.JWT_REFRESH_SECRET = 'super-refresh-token-456';
     process.env.ADMIN_USERNAME = 'admin';
-    process.env.ADMIN_PASSWORD = 'admin123';
+    process.env.ADMIN_PASSWORD_HASH = '$2b$10$abcdefghijklmnopqrstuvabcdefghijklmnopqrstuvabcd';
+    delete process.env.ADMIN_PASSWORD;
 
     return { bcrypt, jwt, redis, UserModel, AuditLogModel, smsService, wechatService, authService };
   }
@@ -101,6 +102,7 @@ describe('authService extra', () => {
     loaded.UserModel.createWithPhone.mockResolvedValueOnce({ id: 9, phone: '13812345678', chronic_diseases: [], account_status: 'active' });
     loaded.UserModel.markLoginSuccess.mockResolvedValueOnce(true);
     loaded.UserModel.findById.mockResolvedValueOnce({ id: 9, phone: '13812345678', chronic_diseases: [], account_status: 'active' });
+    loaded.bcrypt.compare.mockResolvedValueOnce(true);
     loaded.jwt.sign.mockReturnValueOnce('access').mockReturnValueOnce('refresh');
     loaded.AuditLogModel.create.mockResolvedValue({ id: 1 });
     await expect(loaded.authService.loginPhoneByCode({ phone: '13812345678', code: '123456' })).resolves.toMatchObject({ access_token: 'access' });
@@ -118,8 +120,8 @@ describe('authService extra', () => {
     await expect(loaded.authService.refreshToken('bad')).rejects.toMatchObject({ code: 401 });
 
     loaded = loadService();
-    loaded.jwt.verify.mockReturnValueOnce({ userId: 0, token_type: 'refresh', role: 'admin', isAdmin: true });
-    loaded.redis.get.mockResolvedValueOnce('refresh');
+    loaded.jwt.verify.mockReturnValueOnce({ userId: 0, token_type: 'refresh', role: 'admin', isAdmin: true, sid: 'sid-1' });
+    loaded.redis.get.mockResolvedValueOnce('refresh').mockResolvedValueOnce('1');
     loaded.jwt.sign.mockReturnValueOnce('access2').mockReturnValueOnce('refresh2');
     loaded.AuditLogModel.create.mockResolvedValueOnce({ id: 1 });
     await expect(loaded.authService.refreshToken('refresh')).resolves.toEqual({ access_token: 'access2', refresh_token: 'refresh2', expires_in: 900 });
@@ -144,6 +146,7 @@ describe('authService extra', () => {
   it('covers admin login, wechat update flow, and unlock account branches', async () => {
     let loaded = loadService();
     loaded.jwt.sign.mockReturnValueOnce('access').mockReturnValueOnce('refresh');
+    loaded.bcrypt.compare.mockResolvedValueOnce(true);
     loaded.AuditLogModel.create.mockResolvedValueOnce({ id: 1 });
     await expect(loaded.authService.loginAdmin({ username: 'admin', password: 'admin123' })).resolves.toMatchObject({ access_token: 'access', role: 'admin' });
 

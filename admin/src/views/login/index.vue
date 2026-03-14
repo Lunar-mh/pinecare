@@ -7,6 +7,7 @@ import { adminLogin } from '@/services'
 const router = useRouter()
 const loading = ref(false)
 const error = ref('')
+const isDev = import.meta.env.DEV
 const form = reactive({
   username: '',
   password: '',
@@ -22,7 +23,7 @@ async function handleLogin() {
   error.value = ''
   try {
     const result = await adminLogin({ username: form.username, password: form.password })
-    localStorage.setItem('admin_token', result.token)
+    sessionStorage.setItem('admin_token', result.token)
     router.push('/dashboard')
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : '登录失败，请检查账号密码'
@@ -93,7 +94,7 @@ async function handleLogin() {
         </el-form>
 
         <div class="login-card__footer">
-          <span class="login-card__hint">演示账号：admin / admin123</span>
+          <span v-if="isDev" class="login-card__hint">演示账号：admin / admin123</span>
           <div class="login-card__tags">
             <span>工作台</span>
             <span>社区运营</span>

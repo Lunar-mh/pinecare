@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 jest.mock('bcryptjs', () => ({
   hash: jest.fn(),
@@ -63,7 +63,8 @@ describe('authService', () => {
     process.env.JWT_SECRET = 'super-secret-token-123';
     process.env.JWT_REFRESH_SECRET = 'super-refresh-token-456';
     process.env.ADMIN_USERNAME = 'admin-root';
-    process.env.ADMIN_PASSWORD = 'super-admin-1234';
+    process.env.ADMIN_PASSWORD_HASH = '$2b$10$abcdefghijklmnopqrstuvabcdefghijklmnopqrstuvabcd';
+    delete process.env.ADMIN_PASSWORD;
 
     jwt.sign.mockReset();
     jwt.verify.mockReset();
@@ -260,6 +261,7 @@ describe('authService', () => {
 
   it('loginAdmin rejects when admin credentials are missing', async () => {
     delete process.env.ADMIN_USERNAME;
+    delete process.env.ADMIN_PASSWORD_HASH;
     delete process.env.ADMIN_PASSWORD;
 
     await expect(

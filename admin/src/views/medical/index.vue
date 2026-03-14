@@ -1,28 +1,33 @@
-﻿<script setup lang="ts">
+﻿﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
 import { bootstrapDemoScenario, getAdminMedicalReports, getMedicalDepartments, getMedicalDoctors, getMedicalHospitals, getSystemEvidence } from '@/services'
+import { usePagination } from '@/composables/usePagination'
 import type { MedicalDepartmentItem, MedicalDoctorItem, MedicalHospitalItem, MedicalReportItem, SystemEvidenceBundle } from '@/services'
 
 const loading = ref(false)
-const reportsLoading = ref(false)
 const bootstrapLoading = ref(false)
 const activeTab = ref<'directory' | 'reports'>('directory')
 const hospitals = ref<MedicalHospitalItem[]>([])
 const departments = ref<MedicalDepartmentItem[]>([])
 const doctors = ref<MedicalDoctorItem[]>([])
-const reports = ref<MedicalReportItem[]>([])
 const evidence = ref<SystemEvidenceBundle | null>(null)
 const reportSearch = ref('')
 const reportType = ref('')
 const reportStartDate = ref('')
 const reportEndDate = ref('')
-const reportPage = ref(1)
-const reportPageSize = ref(10)
-const reportTotal = ref(0)
 const hospitalId = ref<number | null>(null)
 const departmentId = ref<number | null>(null)
+
+const {
+  page: reportPage,
+  pageSize: reportPageSize,
+  total: reportTotal,
+  list: reports,
+  loading: reportsLoading,
+  loadData: loadReports
+} = usePagination<MedicalReportItem>(getAdminMedicalReports)
 
 const directoryTotal = computed(() => hospitals.value.length + departments.value.length + doctors.value.length)
 const reportLinkedCount = computed(() => reports.value.filter(item => item.reportUrl).length)
@@ -79,24 +84,15 @@ async function fetchDoctors() {
 }
 
 async function fetchReports() {
-  reportsLoading.value = true
   try {
-    const data = await getAdminMedicalReports({
-      page: reportPage.value,
-      pageSize: reportPageSize.value,
+    await loadReports({
       search: reportSearch.value || undefined,
       reportType: reportType.value || undefined,
       startDate: reportStartDate.value || undefined,
       endDate: reportEndDate.value || undefined,
     })
-    reports.value = data.list || []
-    reportTotal.value = data.pagination?.total || 0
   } catch (err: unknown) {
     ElMessage.error(err instanceof Error ? err.message : '医疗报告加载失败')
-    reports.value = []
-    reportTotal.value = 0
-  } finally {
-    reportsLoading.value = false
   }
 }
 

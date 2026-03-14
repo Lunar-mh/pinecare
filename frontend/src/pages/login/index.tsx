@@ -1,4 +1,4 @@
-﻿import { useState, useCallback, useEffect } from 'react'
+﻿﻿import { useState, useCallback, useEffect } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, Input } from '@tarojs/components'
 import { loginByPhone, loginByWechat, sendSmsCode } from '@/services/modules/user'
@@ -191,10 +191,12 @@ export default function LoginPage() {
               </View>
             ) : null}
 
-            <View className="login-tip">
-              <InfoIcon size={16} color="#3d7ca6" />
-              <Text className="login-tip__text">开发环境可使用固定验证码 000000。</Text>
-            </View>
+        {process.env.NODE_ENV === 'development' && (
+          <View className="login-tip">
+            <InfoIcon size={16} color="#3d7ca6" />
+            <Text className="login-tip__text">开发环境可使用固定验证码 000000。</Text>
+          </View>
+        )}
 
             <View className={`login-submit ${loading ? 'login-submit--loading' : ''}`} onClick={loading ? undefined : handlePhoneLogin}>
               <Text className="login-submit__text">{loading ? '登录中...' : '进入银伴'}</Text>
