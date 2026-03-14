@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import { getFallHistory, getFallSettings, updateFallSettings } from '@/services'
 import { usePagination } from '@/composables/usePagination'
+import { formatTime, formatUser } from '@/utils/format'
 import type { FallEventItem, FallEventStatus } from '@/services'
 
 const settingsSaving = ref(false)
@@ -186,7 +187,7 @@ onMounted(async () => {
         <el-table-column prop="id" label="事件 ID" width="100" />
         <el-table-column label="关注对象" min-width="150">
           <template #default="{ row }">
-            <div>{{ row.nickname || `用户 #${row.userId}` }}</div>
+            <div>{{ formatUser(row.nickname) || `用户 #${row.userId}` }}</div>
             <div style="font-size: 12px; color: var(--wb-text-soft); margin-top: 4px">{{ row.phone || '未留手机号' }}</div>
           </template>
         </el-table-column>
@@ -204,8 +205,8 @@ onMounted(async () => {
         <el-table-column label="水平变化率" width="130">
           <template #default="{ row }">{{ readMetric(row.sensorData, 'horizontalChangeRate') }}</template>
         </el-table-column>
-        <el-table-column prop="detectedAt" label="触发时间" width="180" />
-        <el-table-column prop="confirmedAt" label="确认时间" width="180" />
+        <el-table-column label="触发时间" width="180"><template #default="{ row }">{{ formatTime(row.detectedAt) }}</template></el-table-column>
+        <el-table-column label="确认时间" width="180"><template #default="{ row }">{{ formatTime(row.confirmedAt) }}</template></el-table-column>
       </el-table>
       <div style="display: flex; justify-content: flex-end; margin-top: 16px">
         <el-pagination

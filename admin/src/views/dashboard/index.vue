@@ -9,37 +9,10 @@ const router = useRouter()
 const recentEvents = ref<ActivityItem[]>([])
 const eventsLoading = ref(false)
 
-const EVENT_TYPE_MAP: Record<string, string> = {
-  sos: 'SOS 事件',
-  fall: '跌倒告警',
-  medication: '用药告警',
-  gps: '定位告警',
-  location: '定位告警',
-}
-
-const EVENT_STATUS_MAP: Record<string, string> = {
-  trigger: '触发中',
-  confirm: '已确认',
-  resolve: '已解决',
-  complete: '已解决',
-  cancel: '已取消',
-  pending: '待处理',
-  processing: '处理中',
-}
-
 function formatTime(value: string): string {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '--:--:--'
   return date.toLocaleTimeString('zh-CN', { hour12: false })
-}
-
-function findInMap(normalized: string, map: Record<string, string>): string | undefined {
-  for (const key in map) {
-    if (normalized.includes(key)) {
-      return map[key]
-    }
-  }
-  return undefined
 }
 
 function eventDesc(item: ActivityItem): string {
@@ -60,7 +33,6 @@ function formatEventType(value: string): string {
   if (normalized.includes('medication')) return '用药告警'
   if (normalized.includes('gps') || normalized.includes('location')) return '定位告警'
   return String(value || '')
-  return findInMap(normalized, EVENT_TYPE_MAP) || String(value || '')
 }
 
 function formatEventStatus(value: string): string {
@@ -73,19 +45,17 @@ function formatEventStatus(value: string): string {
   if (normalized.includes('pending')) return '待处理'
   if (normalized.includes('processing')) return '处理中'
   return String(value || '')
-  return findInMap(normalized, EVENT_STATUS_MAP) || String(value || '')
 }
 
 function formatEventUser(value: string): string {
   const raw = String(value || '').trim()
-  if (!raw) return '匿名用户'
   const elderMatch = /^elder[_-]?(\d+)$/i.exec(raw)
   if (elderMatch) return `长辈${elderMatch[1]}`
   const familyMatch = /^family[_-]?(\d+)$/i.exec(raw)
   if (familyMatch) return `家属${familyMatch[1]}`
   const volunteerMatch = /^volunteer[_-]?(\d+)$/i.exec(raw)
   if (volunteerMatch) return `志愿者${volunteerMatch[1]}`
-  return raw
+  return raw || '匿名用户'
 }
 
 async function fetchRecentEvents() {
@@ -101,8 +71,7 @@ async function fetchRecentEvents() {
 }
 
 function handleEventClick(item: ActivityItem) {
-  // Simplified logic: isDanger already covers the 'sos' case.
-  if (isDanger(item)) {
+  if (isDanger(item) || formatEventType(item.type).includes('SOS')) {
     router.push('/sos')
   } else {
     router.push('/users')
@@ -110,15 +79,9 @@ function handleEventClick(item: ActivityItem) {
 }
 
 function quickAction(type: string) {
-
-  const routes: Record<string, string> = {
-    sos: '/sos',
-    users: '/users',
-    analytics: '/analytics',
-  }
-  if (routes[type]) {
-    router.push(routes[type])
-  }
+  if (type === 'sos') router.push('/sos')
+  if (type === 'users') router.push('/users')
+  if (type === 'analytics') router.push('/analytics')
 }
 
 onMounted(fetchRecentEvents)

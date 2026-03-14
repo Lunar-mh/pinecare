@@ -36,7 +36,7 @@ export default function LoginPage() {
     }
     Taro.setStorageSync('userInfo', JSON.stringify(payload.userInfo))
     Taro.setStorageSync('userRole', activeRole)
-    Taro.reLaunch({ url: '/pages/index/index' })
+    Taro.reLaunch({ url: '/pages/role-select/index' })
   }, [activeRole])
 
   const handleSendCode = useCallback(async () => {

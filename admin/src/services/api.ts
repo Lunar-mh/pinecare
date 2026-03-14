@@ -8,8 +8,8 @@
   setCsrfToken,
 } from './session'
 
-const DEV_PRIMARY_BASE_URL = 'http://127.0.0.1:3001'
-const DEV_RESTRICTED_FALLBACK_BASE_URL = 'http://127.0.0.1:3999'
+const DEV_PRIMARY_BASE_URL = 'http://127.0.0.1:3999'
+const DEV_RESTRICTED_FALLBACK_BASE_URL = 'http://127.0.0.1:3001'
 const EXPLICIT_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '').trim()
 
 if (import.meta.env.PROD && !EXPLICIT_BASE_URL) {
@@ -37,16 +37,28 @@ export interface ApiResponse<T = unknown> {
 }
 
 function toUserFacingMessage(code?: number, originalMsg?: string): string {
-  if (originalMsg && /^[\u4e00-\u9fa5]/.test(originalMsg)) return originalMsg;
+  if (originalMsg) {
+    const map: Record<string, string> = {
+      'Phone already exists.': '该手机号已被注册',
+      'User not found.': '未找到对应用户',
+      'Invalid credentials.': '账号或密码错误',
+      'Invalid payload.': '提交的数据格式不正确',
+      'Service not available.': '服务暂不可用',
+      'Network error.': '网络请求错误'
+    }
+    const cleanMsg = String(originalMsg).trim()
+    if (map[cleanMsg]) return map[cleanMsg]
+    if (/^[\u4e00-\u9fa5]/.test(cleanMsg)) return cleanMsg
+  }
   const mergedCode = Number(code || 0)
-  if (mergedCode === 400 || mergedCode === 422) return originalMsg || '参数错误或请求无效'
+  if (mergedCode === 400 || mergedCode === 422) return '参数错误或请求无效'
   if (mergedCode === 401) return '登录已过期或未授权'
   if (mergedCode === 403) return '没有操作权限'
   if (mergedCode === 404) return '请求的资源不存在'
-  if (mergedCode === 409) return originalMsg || '数据冲突，例如已存在重复项'
+  if (mergedCode === 409) return '请求发生冲突 (如数据已存在等)'
   if (mergedCode === 429) return '请求过于频繁，请稍后再试'
   if (mergedCode === 503 || mergedCode === 504) return '服务暂时不可用或超时'
-  return originalMsg || '发生未知错误'
+  return originalMsg || '操作未能完成，请稍后重试'
 }
 
 function toNetworkFailureMessage(): string {
@@ -240,4 +252,5 @@ export const http = {
 
 export { ApiError }
 export default http
+
 

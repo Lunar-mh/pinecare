@@ -5,6 +5,7 @@ import { Download, Plus, Refresh, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { createUser, getUserDetail, getUsers, updateUserStatus } from '@/services'
 import type { UserItem, UserRole, UserStatus } from '@/services'
+import { formatTime, formatUser } from '@/utils/format'
 
 const router = useRouter()
 const loading = ref(false)
@@ -242,7 +243,9 @@ onMounted(() => {
           </div>
         </template>
         <el-table-column prop="id" label="用户ID" width="90" />
-        <el-table-column prop="nickname" label="昵称" min-width="140" />
+        <el-table-column label="昵称" min-width="140">
+          <template #default="{ row }">{{ formatUser(row.nickname) }}</template>
+        </el-table-column>
         <el-table-column prop="phone" label="手机号" width="150" />
         <el-table-column label="角色" width="100">
           <template #default="{ row }">
@@ -255,8 +258,12 @@ onMounted(() => {
           </template>
         </el-table-column>
         <el-table-column prop="age" label="年龄" width="80" />
-        <el-table-column prop="registerDate" label="注册日期" width="120" />
-        <el-table-column prop="lastActive" label="最近活跃" min-width="150" />
+        <el-table-column prop="registerDate" label="注册日期" width="160">
+          <template #default="{ row }">{{ formatTime(row.registerDate).replace('暂无数据', '-') }}</template>
+        </el-table-column>
+        <el-table-column label="最近活跃" min-width="170">
+          <template #default="{ row }">{{ !row.lastActive || row.lastActive === '从未登录' ? '从未登录' : formatTime(row.lastActive) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="openDetail(row.id)">详情</el-button>

@@ -4,6 +4,7 @@ import { Search, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getCommunityVolunteers } from '@/services'
 import { usePagination } from '@/composables/usePagination'
+import { formatTime, formatUser } from '@/utils/format'
 import type { CommunityVolunteerItem } from '@/services'
 
 const keyword = ref('')
@@ -129,7 +130,9 @@ onMounted(() => {
           </div>
         </template>
         <el-table-column prop="id" label="记录ID" width="100" />
-        <el-table-column prop="name" label="姓名" width="150" />
+        <el-table-column label="姓名" width="150">
+          <template #default="{ row }">{{ formatUser(row.name) }}</template>
+        </el-table-column>
         <el-table-column prop="phone" label="手机号" width="160" />
         <el-table-column label="角色" width="110">
           <template #default="{ row }">
@@ -137,7 +140,9 @@ onMounted(() => {
           </template>
         </el-table-column>
         <el-table-column prop="community_id" label="社区ID" width="110" />
-        <el-table-column prop="created_at" label="加入时间" min-width="180" />
+        <el-table-column label="加入时间" min-width="180">
+          <template #default="{ row }">{{ formatTime(row.created_at) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="openDetail(row)">详情</el-button>
@@ -163,7 +168,7 @@ onMounted(() => {
           <div class="wb-list-item">
             <div>
               <span class="wb-list-title">基础信息</span>
-              <span class="wb-list-desc">{{ selected.name }} / {{ selected.phone }}</span>
+              <span class="wb-list-desc">{{ formatUser(selected.name) }} / {{ selected.phone }}</span>
             </div>
           </div>
           <div class="wb-list-item">
@@ -175,7 +180,7 @@ onMounted(() => {
           <div class="wb-list-item">
             <div>
               <span class="wb-list-title">社区与加入时间</span>
-              <span class="wb-list-desc">社区 {{ selected.community_id }} / {{ selected.created_at }}</span>
+              <span class="wb-list-desc">社区 {{ selected.community_id }} / {{ formatTime(selected.created_at) }}</span>
             </div>
           </div>
         </div>

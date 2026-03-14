@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
 import { getAdminHealthOverview } from '@/services'
 import { usePagination } from '@/composables/usePagination'
+import { formatTime, formatUser, formatRisk } from '@/utils/format'
 import type { AdminHealthOverviewItem } from '@/services'
 
 const search = ref('')
@@ -44,7 +45,7 @@ onMounted(fetchHealthOverview)
       <div class="wb-metric-card"><span class="wb-card-label">高风险</span><div class="wb-card-value">{{ dangerCount }}</div><span class="wb-card-hint">优先处理</span></div>
     </div>
     <div class="wb-filter-card"><el-input v-model="search" :prefix-icon="Search" placeholder="搜索用户昵称或手机号" clearable style="max-width:320px" /></div>
-    <div class="wb-panel"><el-table :data="list" stripe v-loading="loading"><el-table-column prop="userId" label="用户ID" width="100" /><el-table-column prop="nickname" label="昵称" width="130" /><el-table-column prop="phone" label="手机号" width="150" /><el-table-column prop="age" label="年龄" width="90" /><el-table-column prop="bloodPressure" label="血压" width="130" /><el-table-column prop="heartRate" label="心率" width="120" /><el-table-column prop="bloodSugar" label="血糖" width="120" /><el-table-column label="风险" width="100"><template #default="{ row }"><el-tag :type="row.riskLevel === 'danger' ? 'danger' : row.riskLevel === 'warning' ? 'warning' : 'success'">{{ row.riskLevel }}</el-tag></template></el-table-column><el-table-column prop="lastUpdate" label="最近更新" min-width="170" /></el-table><div style="display:flex; justify-content:flex-end; margin-top:16px"><el-pagination v-model:current-page="page" layout="total, prev, pager, next" :total="total" :page-size="pageSize" @current-change="fetchHealthOverview" /></div></div>
+    <div class="wb-panel"><el-table :data="list" stripe v-loading="loading"><el-table-column prop="userId" label="用户ID" width="100" /><el-table-column label="昵称" width="130"><template #default="{ row }">{{ formatUser(row.nickname) }}</template></el-table-column><el-table-column prop="phone" label="手机号" width="150" /><el-table-column prop="age" label="年龄" width="90" /><el-table-column prop="bloodPressure" label="血压" width="130" /><el-table-column prop="heartRate" label="心率" width="120" /><el-table-column prop="bloodSugar" label="血糖" width="120" /><el-table-column label="风险" width="100"><template #default="{ row }"><el-tag :type="row.riskLevel === 'danger' ? 'danger' : row.riskLevel === 'warning' ? 'warning' : 'success'">{{ formatRisk(row.riskLevel) }}</el-tag></template></el-table-column><el-table-column label="最近更新" min-width="170"><template #default="{ row }">{{ formatTime(row.lastUpdate) }}</template></el-table-column></el-table><div style="display:flex; justify-content:flex-end; margin-top:16px"><el-pagination v-model:current-page="page" layout="total, prev, pager, next" :total="total" :page-size="pageSize" @current-change="fetchHealthOverview" /></div></div>
   </div>
 </template>
 

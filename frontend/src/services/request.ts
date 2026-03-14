@@ -11,7 +11,7 @@ function getEnvVersion(): string {
   }
 }
 
-const DEV_API_BASE = 'http://127.0.0.1:3001/api/v1';
+const DEV_API_BASE = 'http://127.0.0.1:3999/api/v1';
 const safeProcessEnv = typeof process !== 'undefined' && process.env ? process.env : {};
 const EXPLICIT_API_BASE = String((typeof __TARO_APP_API_BASE_URL__ === 'string' && __TARO_APP_API_BASE_URL__) || safeProcessEnv.TARO_APP_API_BASE_URL || '').trim();
 const ACCESS_TOKEN_KEY = 'token';

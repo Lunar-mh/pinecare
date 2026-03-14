@@ -94,3 +94,7 @@
   }
 }
 
+
+.voice-chat-container { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+.voice-content { flex: 1; overflow-y: auto; }
+.voice-chat-input-row { padding: 12px; background: #fff; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }

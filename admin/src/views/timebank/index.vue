@@ -5,6 +5,7 @@ import { Refresh, Search } from '@element-plus/icons-vue'
 import { confirmTimeBankService, getTimeBankExchangeHistory, getTimeBankLeaderboard, getTimeBankServiceHistory } from '@/services'
 import type { TimeBankExchangeRecord, TimeBankLeaderboardItem, TimeBankServiceRecord } from '@/services'
 import { usePagination } from '@/composables/usePagination'
+import { formatTime, formatUser } from '@/utils/format'
 
 const activeTab = ref<'services' | 'exchange' | 'leaderboard'>('services')
 const serviceStatus = ref<'pending' | 'confirmed' | 'cancelled' | ''>('')
@@ -197,20 +198,20 @@ onMounted(fetchAll)
             <el-table-column prop="id" label="记录 ID" width="100" />
             <el-table-column label="服务提供者" min-width="150">
               <template #default="{ row }">
-                <div>{{ row.providerName || `用户 #${row.providerId}` }}</div>
+                <div>{{ formatUser(row.providerName) || `用户 #${row.providerId}` }}</div>
                 <div style="font-size: 12px; color: var(--wb-text-soft); margin-top: 4px">提供者 ID {{ row.providerId }}</div>
               </template>
             </el-table-column>
             <el-table-column label="服务对象" min-width="150">
               <template #default="{ row }">
-                <div>{{ row.recipientName || `用户 #${row.recipientId}` }}</div>
+                <div>{{ formatUser(row.recipientName) || `用户 #${row.recipientId}` }}</div>
                 <div style="font-size: 12px; color: var(--wb-text-soft); margin-top: 4px">对象 ID {{ row.recipientId }}</div>
               </template>
             </el-table-column>
             <el-table-column label="服务类型" width="140"><template #default="{ row }">{{ serviceTypeLabel(row.serviceType) }}</template></el-table-column>
             <el-table-column prop="durationHours" label="时长" width="90" />
             <el-table-column prop="timeCoins" label="时长币" width="90" />
-            <el-table-column prop="startTime" label="开始时间" width="180" />
+            <el-table-column label="开始时间" width="180"><template #default="{ row }">{{ formatTime(row.startTime) }}</template></el-table-column>
             <el-table-column label="状态" width="110">
               <template #default="{ row }">
                 <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
@@ -248,8 +249,8 @@ onMounted(fetchAll)
             <el-table-column prop="itemName" label="兑换项" min-width="180" />
             <el-table-column prop="coinsRequired" label="所需时长币" width="110" />
             <el-table-column label="状态" width="120"><template #default="{ row }">{{ statusLabel(row.status) }}</template></el-table-column>
-            <el-table-column prop="createdAt" label="申请时间" width="180" />
-            <el-table-column prop="completedAt" label="完成时间" width="180" />
+            <el-table-column label="申请时间" width="180"><template #default="{ row }">{{ formatTime(row.createdAt) }}</template></el-table-column>
+            <el-table-column label="完成时间" width="180"><template #default="{ row }">{{ formatTime(row.completedAt) }}</template></el-table-column>
           </el-table>
         </el-tab-pane>
 

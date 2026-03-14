@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
 import { getAdminGpsCurrent, getAdminGpsTrail, getSystemEventReplay } from '@/services'
 import { usePagination } from '@/composables/usePagination'
+import { formatTime, formatUser } from '@/utils/format'
 import type { AdminGpsCurrentItem, GpsTrailItem, SystemEventReplay } from '@/services'
 
 const trailLoading = ref(false)
@@ -158,7 +159,7 @@ onMounted(async () => {
       </div>
       <div class="wb-metric-card">
         <span class="wb-card-label">当前选中</span>
-        <div class="wb-card-value">{{ selectedUser ? selectedUser.nickname : '-' }}</div>
+        <div class="wb-card-value">{{ selectedUser ? formatUser(selectedUser.nickname) : '-' }}</div>
         <span class="wb-card-hint">切换用户自动更新轨迹和复盘</span>
       </div>
       <div class="wb-metric-card">
@@ -207,16 +208,23 @@ onMounted(async () => {
           <el-table-column prop="userId" label="用户 ID" width="100" />
           <el-table-column label="用户" min-width="160">
             <template #default="{ row }">
-              <div>{{ row.nickname }}</div>
+              <div>{{ formatUser(row.nickname) }}</div>
               <div style="font-size: 12px; color: var(--wb-text-soft); margin-top: 4px">{{ row.phone }}</div>
             </template>
           </el-table-column>
-          <el-table-column prop="latitude" label="纬度" width="120" />
-          <el-table-column prop="longitude" label="经度" width="120" />
+          <el-table-column prop="latitude" label="纬度" width="100" />
+          <el-table-column prop="longitude" label="经度" width="100" />
+          <el-table-column label="位置" width="100">
+            <template #default="{ row }">
+              <a :href="`https://uri.amap.com/marker?position=${row.longitude},${row.latitude}&name=${formatUser(row.nickname)}`" target="_blank" @click.stop style="color: var(--el-color-primary); text-decoration: none;">地图查看</a>
+            </template>
+          </el-table-column>
           <el-table-column label="精度" width="100">
             <template #default="{ row }">{{ row.accuracy ?? '-' }}</template>
           </el-table-column>
-          <el-table-column prop="updatedAt" label="更新时间" width="180" />
+          <el-table-column label="更新时间" width="180">
+            <template #default="{ row }">{{ formatTime(row.updatedAt) }}</template>
+          </el-table-column>
         </el-table>
         <div style="display: flex; justify-content: flex-end; margin-top: 16px">
           <el-pagination
@@ -240,7 +248,7 @@ onMounted(async () => {
           <div class="wb-list-item">
             <div>
               <span class="wb-list-title">当前用户</span>
-              <span class="wb-list-desc">{{ selectedUser ? `${selectedUser.nickname} / ${selectedUser.phone}` : '请先选择一位用户' }}</span>
+              <span class="wb-list-desc">{{ selectedUser ? `${formatUser(selectedUser.nickname)} / ${selectedUser.phone}` : '请先选择一位用户' }}</span>
             </div>
             <el-tag v-if="selectedUser" type="success">{{ locationTypeLabel(selectedUser.locationType) }}</el-tag>
           </div>
@@ -271,7 +279,9 @@ onMounted(async () => {
               {{ trailLoading ? '加载中...' : '当前时间范围没有轨迹数据' }}
             </div>
           </template>
-          <el-table-column prop="createdAt" label="时间" width="180" />
+          <el-table-column label="时间" width="180">
+            <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
+          </el-table-column>
           <el-table-column prop="latitude" label="纬度" width="120" />
           <el-table-column prop="longitude" label="经度" width="120" />
           <el-table-column label="精度" width="100">

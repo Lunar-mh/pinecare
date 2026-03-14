@@ -48,7 +48,7 @@ function requireDashScopeKey() {
   return key;
 }
 
-const buildStubText = () => 'sandbox speech-to-text transcript';
+const buildStubText = () => '测试系统自动生成的语音转写文本';
 const buildStubAudio = (text) => Buffer.from(`stub-audio:${String(text || '').trim() || 'voice'}`, 'utf8').toString('base64');
 
 class VoiceService {

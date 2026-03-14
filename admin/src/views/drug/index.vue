@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
+import { formatTime } from '@/utils/format'
 import { acknowledgeDrugInteraction, getDrugInteractionHistory } from '@/services'
 import type { DrugInteractionRecord, DrugRecordStatus, DrugRiskLevel } from '@/services'
 
@@ -163,7 +164,7 @@ onMounted(fetchRecords)
         </el-table-column>
         <el-table-column prop="mechanism" label="作用机制" min-width="180" show-overflow-tooltip />
         <el-table-column prop="riskDescription" label="风险说明" min-width="220" show-overflow-tooltip />
-        <el-table-column prop="createdAt" label="发现时间" width="180" />
+        <el-table-column label="发现时间" width="180"><template #default="{ row }">{{ formatTime(row.createdAt) }}</template></el-table-column>
         <el-table-column label="处理状态" width="110">
           <template #default="{ row }">
             <el-tag :type="row.status === 'acknowledged' ? 'success' : 'warning'">{{ statusLabel(row.status) }}</el-tag>

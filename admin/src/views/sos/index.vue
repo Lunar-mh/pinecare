@@ -5,6 +5,7 @@ import { Refresh } from '@element-plus/icons-vue'
 import { confirmSosEvent, getSosHistory, resolveSosEvent } from '@/services'
 import { usePagination } from '@/composables/usePagination'
 import type { SosEventItem, SosEventStatus } from '@/services'
+import { formatTime } from '@/utils/format'
 
 const statusFilter = ref<SosEventStatus | ''>('')
 
@@ -122,14 +123,23 @@ onMounted(fetchHistory)
         <el-table-column label="触发方式" width="120">
           <template #default="{ row }">{{ triggerTypeLabel(row.trigger_type) }}</template>
         </el-table-column>
-        <el-table-column prop="address" label="位置" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="created_at" label="触发时间" min-width="170" />
-        <el-table-column prop="confirmed_at" label="确认时间" min-width="170" />
-        <el-table-column prop="resolved_at" label="解决时间" min-width="170" />
+        <el-table-column label="位置" min-width="200" show-overflow-tooltip>
+          <template #default="{ row }">{{ String(row.address || '').replace('Community Building', '社区') }}</template>
+        </el-table-column>
+        <el-table-column label="触发时间" min-width="170">
+          <template #default="{ row }">{{ formatTime(row.created_at) }}</template>
+        </el-table-column>
+        <el-table-column label="确认时间" min-width="170">
+          <template #default="{ row }">{{ row.confirmed_at ? formatTime(row.confirmed_at) : '-' }}</template>
+        </el-table-column>
+        <el-table-column label="解决时间" min-width="170">
+          <template #default="{ row }">{{ row.resolved_at ? formatTime(row.resolved_at) : '-' }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="170" fixed="right">
           <template #default="{ row }">
             <el-button v-if="row.event_status === 'triggered'" type="warning" link size="small" @click="handleConfirm(row)">确认</el-button>
             <el-button v-if="row.event_status === 'triggered' || row.event_status === 'confirmed'" type="success" link size="small" @click="handleResolve(row)">解决</el-button>
+            <span v-if="row.event_status === 'resolved' || row.event_status === 'cancelled'" style="color: #999; font-size: 13px;">已归档</span>
           </template>
         </el-table-column>
       </el-table>

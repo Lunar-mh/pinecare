@@ -1,0 +1,94 @@
+.role-select-page {
+  min-height: 100vh;
+  background: #fdfaf5;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.role-select-header {
+  margin-bottom: 40px;
+  .title {
+    display: block;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+  }
+  .subtitle {
+    display: block;
+    font-size: 15px;
+    color: #666;
+    line-height: 1.6;
+  }
+}
+
+.role-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+.role-card {
+  background: #fff;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+  transition: all 0.3s ease;
+
+  &.active {
+    border-color: #2f6c5b;
+    background: #f2f7f5;
+  }
+
+  .icon-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+
+    &.elder-icon {
+      background: rgba(47, 108, 91, 0.1);
+    }
+    &.family-icon {
+      background: rgba(201, 123, 85, 0.1);
+    }
+  }
+
+  .role-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+  }
+  .role-desc {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.5;
+  }
+}
+
+.role-action {
+  padding-top: 30px;
+  margin-bottom: constant(safe-area-inset-bottom);
+  margin-bottom: env(safe-area-inset-bottom);
+
+  .btn-confirm {
+    background: #2f6c5b;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 16px;
+    border-radius: 100px;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(47, 108, 91, 0.25);
+  }
+}
+

@@ -69,3 +69,6 @@
   }
 }
 
+
+.sos-progress-ring { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.1); transition: height 0.1s linear; }
+.sos-big-btn { position: relative; overflow: hidden; }

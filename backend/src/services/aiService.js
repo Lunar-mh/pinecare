@@ -28,8 +28,8 @@ function buildStubReply(message, profile, options = {}) {
   const nickname = profile && profile.real_name ? String(profile.real_name) : 'user';
   const chronic = Array.isArray(profile && profile.chronicDiseases) ? profile.chronicDiseases.filter(Boolean) : [];
   const chronicText = chronic.length ? ` Known history: ${chronic.join(', ')}.` : '';
-  const prefix = options.fallbackUsed ? 'This is a controlled fallback reply.' : 'This is a sandbox AI consult reply.';
-  return `${nickname}, ${prefix}${chronicText} Regarding "${prompt}", please keep observing your symptoms, rest well, and seek medical care if the discomfort continues.`;
+    const prefix = options.fallbackUsed ? '【备用系统回复】' : '【系统测试回复】';
+    return `您好 ${nickname}，${prefix} ${chronicText} 关于您提到的“${prompt}”，请注意休息并观察身体状况。如感持续不适，建议您及时就医。`;
 }
 
 const toConsultError = (err) =>
