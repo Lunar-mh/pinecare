@@ -13,10 +13,11 @@ const app = require('./src/app');
 validateEnv();
 
 const port = process.env.PORT || 3000;
+const host = process.env.HOST || '127.0.0.1';
 let isShuttingDown = false;
 
-const server = app.listen(port, () => {
-  logger.info('server', 'started', { port, mode: resolveMode() });
+const server = app.listen(port, host, () => {
+  logger.info('server', 'started', { port, host, mode: resolveMode() });
 });
 
 function closeHttpServer() {

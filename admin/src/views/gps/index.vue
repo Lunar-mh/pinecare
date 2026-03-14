@@ -1,13 +1,12 @@
-﻿﻿<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
-import { bootstrapDemoScenario, getAdminGpsCurrent, getAdminGpsTrail, getSystemEventReplay } from '@/services'
+import { getAdminGpsCurrent, getAdminGpsTrail, getSystemEventReplay } from '@/services'
 import { usePagination } from '@/composables/usePagination'
 import type { AdminGpsCurrentItem, GpsTrailItem, SystemEventReplay } from '@/services'
 
 const trailLoading = ref(false)
-const bootstrapLoading = ref(false)
 const replayLoading = ref(false)
 const search = ref('')
 const selectedUserId = ref<number | null>(null)
@@ -21,12 +20,21 @@ const {
   total,
   list: currentList,
   loading,
-  loadData
+  loadData,
 } = usePagination<AdminGpsCurrentItem>(getAdminGpsCurrent)
 
-const selectedUser = computed(() => currentList.value.find(item => item.userId === selectedUserId.value) || null)
-const preciseCount = computed(() => currentList.value.filter(item => (item.accuracy || 9999) <= 50).length)
+const selectedUser = computed(() => currentList.value.find((item) => item.userId === selectedUserId.value) || null)
+const preciseCount = computed(() => currentList.value.filter((item) => (item.accuracy || 9999) <= 50).length)
 const trailPoints = computed(() => trail.value.length)
+function locationTypeLabel(value: string): string {
+  const normalized = String(value || '').trim().toLowerCase()
+  if (!normalized) return '-'
+  if (normalized === 'gps') return 'GPS'
+  if (normalized === 'wifi') return 'Wi-Fi'
+  if (normalized === 'cell') return '基站'
+  if (normalized === 'manual') return '手动上报'
+  return value
+}
 
 function formatDateTime(date: Date): string {
   const y = date.getFullYear()
@@ -38,13 +46,13 @@ function formatDateTime(date: Date): string {
   return `${y}-${m}-${d} ${h}:${min}:${s}`
 }
 
-function initRange() {
+function initRange(): void {
   const end = new Date()
   const start = new Date(end.getTime() - 24 * 60 * 60 * 1000)
   range.value = [formatDateTime(start), formatDateTime(end)]
 }
 
-async function fetchCurrentList() {
+async function fetchCurrentList(): Promise<void> {
   try {
     await loadData({ search: search.value || undefined })
     if (!selectedUserId.value && currentList.value.length > 0) {
@@ -55,7 +63,7 @@ async function fetchCurrentList() {
   }
 }
 
-async function fetchTrail() {
+async function fetchTrail(): Promise<void> {
   if (!selectedUserId.value || !range.value[0] || !range.value[1]) {
     trail.value = []
     replay.value = null
@@ -79,7 +87,7 @@ async function fetchTrail() {
   }
 }
 
-async function fetchReplay() {
+async function fetchReplay(): Promise<void> {
   if (!selectedUserId.value || !range.value[0] || !range.value[1]) {
     replay.value = null
     return
@@ -100,29 +108,21 @@ async function fetchReplay() {
   }
 }
 
-function handleSelectUser(row: AdminGpsCurrentItem) {
+function handleSelectUser(row: AdminGpsCurrentItem): void {
   selectedUserId.value = row.userId
-}
-
-async function handleBootstrap() {
-  bootstrapLoading.value = true
-  try {
-    const result = await bootstrapDemoScenario('gps-fence-fall')
-    ElMessage.success(`GPS/Fall 剧本已准备：${result.title}`)
-    await fetchReplay()
-  } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : 'GPS 剧本准备失败')
-  } finally {
-    bootstrapLoading.value = false
-  }
 }
 
 watch(search, () => {
   page.value = 1
-  fetchCurrentList()
+  void fetchCurrentList()
 })
 
 watch(selectedUserId, async () => {
+  await fetchTrail()
+  await fetchReplay()
+})
+
+watch(range, async () => {
   await fetchTrail()
   await fetchReplay()
 })
@@ -140,12 +140,9 @@ onMounted(async () => {
     <div class="wb-page-header">
       <div>
         <span class="wb-page-title">GPS 追踪</span>
-        <span class="wb-page-subtitle">当前位置、轨迹和事件复盘放在同一页，答辩时可以直接按用户回放。</span>
+        <span class="wb-page-subtitle">当前位置、轨迹和事件复盘放在同一页，直接按用户回放与追踪。</span>
       </div>
-      <div style="display:flex; gap:10px">
-        <el-button type="primary" :loading="bootstrapLoading" @click="handleBootstrap">准备 GPS 剧本</el-button>
-        <el-button :icon="Refresh" @click="fetchCurrentList">刷新位置</el-button>
-      </div>
+      <el-button :icon="Refresh" @click="fetchCurrentList">刷新位置</el-button>
     </div>
 
     <div class="wb-metric-grid">
@@ -157,17 +154,17 @@ onMounted(async () => {
       <div class="wb-metric-card">
         <span class="wb-card-label">高精度定位</span>
         <div class="wb-card-value">{{ preciseCount }}</div>
-        <span class="wb-card-hint">精度 50 米以内的定位数</span>
+        <span class="wb-card-hint">精度 50 米以内</span>
       </div>
       <div class="wb-metric-card">
         <span class="wb-card-label">当前选中</span>
         <div class="wb-card-value">{{ selectedUser ? selectedUser.nickname : '-' }}</div>
-        <span class="wb-card-hint">切换用户后会自动刷新轨迹和复盘</span>
+        <span class="wb-card-hint">切换用户自动更新轨迹和复盘</span>
       </div>
       <div class="wb-metric-card">
         <span class="wb-card-label">轨迹点数</span>
         <div class="wb-card-value">{{ trailPoints }}</div>
-        <span class="wb-card-hint">当前时间窗口内的轨迹条目</span>
+        <span class="wb-card-hint">当前窗口内轨迹条目</span>
       </div>
     </div>
 
@@ -188,7 +185,7 @@ onMounted(async () => {
         </el-col>
         <el-col :span="6" style="display: flex; justify-content: flex-end; gap: 10px">
           <el-button @click="fetchTrail">刷新轨迹</el-button>
-          <el-button @click="fetchReplay">生成复盘</el-button>
+          <el-button @click="fetchReplay">刷新复盘</el-button>
         </el-col>
       </el-row>
     </div>
@@ -198,7 +195,7 @@ onMounted(async () => {
         <div class="wb-page-header" style="margin-bottom: 14px">
           <div>
             <span class="wb-page-title" style="font-size: 22px">当前位置列表</span>
-            <span class="wb-page-subtitle">点击任一用户即可切换右侧轨迹和事件复盘。</span>
+            <span class="wb-page-subtitle">点击任一用户切换右侧轨迹和事件复盘。</span>
           </div>
         </div>
         <el-table :data="currentList" stripe v-loading="loading" @row-click="handleSelectUser">
@@ -245,7 +242,7 @@ onMounted(async () => {
               <span class="wb-list-title">当前用户</span>
               <span class="wb-list-desc">{{ selectedUser ? `${selectedUser.nickname} / ${selectedUser.phone}` : '请先选择一位用户' }}</span>
             </div>
-            <el-tag v-if="selectedUser" type="success">{{ selectedUser.locationType }}</el-tag>
+            <el-tag v-if="selectedUser" type="success">{{ locationTypeLabel(selectedUser.locationType) }}</el-tag>
           </div>
           <div class="wb-list-item">
             <div>
@@ -280,9 +277,10 @@ onMounted(async () => {
           <el-table-column label="精度" width="100">
             <template #default="{ row }">{{ row.accuracy ?? '-' }}</template>
           </el-table-column>
-          <el-table-column prop="locationType" label="类型" width="120" />
+          <el-table-column label="类型" width="120"><template #default="{ row }">{{ locationTypeLabel(row.locationType) }}</template></el-table-column>
         </el-table>
       </div>
     </div>
   </div>
 </template>
+

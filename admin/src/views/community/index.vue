@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus, Refresh, Search } from '@element-plus/icons-vue'
@@ -29,7 +29,7 @@ async function fetchData() {
     ])
     stats.value = statsData
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : 'Failed to load community operations data')
+    ElMessage.error(err instanceof Error ? err.message : '社区运营数据加载失败')
   }
 }
 
@@ -49,6 +49,13 @@ async function submitCreateActivity() {
   } finally {
     submitLoading.value = false
   }
+}
+
+const formatTime = (_row: any, _col: any, val: string) => {
+  if (!val) return ''
+  const d = new Date(val)
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 watch(keyword, () => {
@@ -92,8 +99,8 @@ onMounted(fetchData)
       <el-table :data="activities" stripe v-loading="loading">
         <el-table-column prop="title" label="活动名称" min-width="180" />
         <el-table-column prop="content" label="活动内容" min-width="220" show-overflow-tooltip />
-        <el-table-column prop="start_time" label="开始时间" width="180" />
-        <el-table-column prop="end_time" label="结束时间" width="180" />
+        <el-table-column prop="start_time" label="开始时间" width="180" :formatter="formatTime" />
+        <el-table-column prop="end_time" label="结束时间" width="180" :formatter="formatTime" />
         <el-table-column prop="registered_count" label="报名人数" width="110" />
       </el-table>
       <div style="display:flex; justify-content:flex-end; margin-top:16px"><el-pagination v-model:current-page="page" layout="total, prev, pager, next" :total="total" :page-size="pageSize" @current-change="fetchData" /></div>
@@ -114,3 +121,4 @@ onMounted(fetchData)
     </el-dialog>
   </div>
 </template>
+

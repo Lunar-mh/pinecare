@@ -56,6 +56,35 @@ class ConsultRecord {
     );
     return rows;
   }
+
+  /**
+   * 清空指定会话记录
+   * @param {number} userId
+   * @param {string} sessionId
+   * @returns {Promise<number>}
+   */
+  static async deleteBySession(userId, sessionId) {
+    const [result] = await query(
+      `DELETE FROM consult_records
+       WHERE user_id = ? AND session_id = ?`,
+      [userId, sessionId]
+    );
+    return Number(result && result.affectedRows ? result.affectedRows : 0);
+  }
+
+  /**
+   * 清空用户全部咨询记录
+   * @param {number} userId
+   * @returns {Promise<number>}
+   */
+  static async deleteByUser(userId) {
+    const [result] = await query(
+      `DELETE FROM consult_records
+       WHERE user_id = ?`,
+      [userId]
+    );
+    return Number(result && result.affectedRows ? result.affectedRows : 0);
+  }
 }
 
 module.exports = ConsultRecord;

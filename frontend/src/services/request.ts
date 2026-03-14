@@ -1,4 +1,4 @@
-import Taro from '@tarojs/taro';
+﻿import Taro from '@tarojs/taro';
 
 declare const __TARO_APP_API_BASE_URL__: string | undefined;
 
@@ -55,14 +55,14 @@ class ClientRequestError extends Error {
 function getUserFacingMessage(code?: number, statusCode?: number): string {
   const mergedCode = Number(code || statusCode || 0);
 
-  if (mergedCode === 400 || mergedCode === 422) return 'Invalid request data. Please verify and retry.';
-  if (mergedCode === 401) return 'Session expired. Please login again.';
-  if (mergedCode === 403) return 'You do not have access to this operation.';
-  if (mergedCode === 404) return 'Requested content was not found.';
-  if (mergedCode === 409) return 'Data changed. Please refresh and retry.';
-  if (mergedCode === 429) return 'Too many requests. Please retry later.';
-  if (mergedCode === 503 || mergedCode === 504) return 'Service unavailable. Please retry later.';
-  return 'Request failed. Please retry later.';
+  if (mergedCode === 400 || mergedCode === 422) return '请求参数有误，请检查后重试。';
+  if (mergedCode === 401) return '登录状态已过期，请重新登录。';
+  if (mergedCode === 403) return '当前账号无权执行该操作。';
+  if (mergedCode === 404) return '请求的内容不存在。';
+  if (mergedCode === 409) return '数据已变更，请刷新后重试。';
+  if (mergedCode === 429) return '请求过于频繁，请稍后再试。';
+  if (mergedCode === 503 || mergedCode === 504) return '服务暂不可用，请稍后再试。';
+  return '请求失败，请稍后重试。';
 }
 
 function readStorage(key: string): string {
@@ -177,12 +177,12 @@ function toUnknownError(error: unknown): ClientRequestError {
   }
 
   if (error instanceof Error) {
-    return new ClientRequestError(error.message || 'Request failed. Please retry later.', {
+    return new ClientRequestError(error.message || '请求失败，请稍后重试。', {
       debugMessage: error.stack || error.message,
     });
   }
 
-  return new ClientRequestError('Request failed. Please retry later.', {
+  return new ClientRequestError('请求失败，请稍后重试。', {
     debugMessage: String(error || ''),
   });
 }
@@ -192,11 +192,11 @@ function handleTransportError(error: unknown): ClientRequestError {
   const errMessage = error instanceof Error ? error.message : '';
 
   if (errMsg.includes('timeout') || errMessage.includes('timeout')) {
-    return new ClientRequestError('Request timeout. Please try again.', { debugMessage: errMessage || errMsg });
+    return new ClientRequestError('请求超时，请稍后重试。', { debugMessage: errMessage || errMsg });
   }
 
   if (errMsg.includes('fail')) {
-    return new ClientRequestError('Network error. Please check connection and retry.', {
+    return new ClientRequestError('网络异常，请检查网络后重试。', {
       debugMessage: errMessage || errMsg,
     });
   }
@@ -334,3 +334,4 @@ export const put = <T>(url: string, data?: unknown) => request<T>({ url, method:
 export const del = <T>(url: string, params?: unknown) => request<T>({ url, method: 'DELETE', data: params });
 
 export default request;
+

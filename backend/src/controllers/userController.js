@@ -51,6 +51,15 @@ async function getProfile(req, res) {
   }
 }
 
+async function getPageConfig(req, res) {
+  try {
+    const data = await userService.getPageConfig(req.user.userId);
+    return ok(res, data);
+  } catch (err) {
+    return handleError(res, err);
+  }
+}
+
 async function updateProfile(req, res) {
   try {
     if (!isPlainObject(req.body)) {
@@ -267,8 +276,45 @@ async function unlockAccount(req, res) {
   }
 }
 
+async function listDevices(req, res) {
+  try {
+    const data = await userService.listDevices(req.user.userId);
+    return ok(res, data);
+  } catch (err) {
+    return handleError(res, err);
+  }
+}
+
+async function bindDevice(req, res) {
+  try {
+    const data = await userService.bindDevice(req.user.userId, req.body || {}, getRequestContext(req));
+    return ok(res, data);
+  } catch (err) {
+    return handleError(res, err);
+  }
+}
+
+async function unbindDevice(req, res) {
+  try {
+    const data = await userService.unbindDevice(req.user.userId, req.params.id, getRequestContext(req));
+    return ok(res, data);
+  } catch (err) {
+    return handleError(res, err);
+  }
+}
+
+async function submitFeedback(req, res) {
+  try {
+    const data = await userService.submitFeedback(req.user.userId, req.body || {}, getRequestContext(req));
+    return ok(res, data);
+  } catch (err) {
+    return handleError(res, err);
+  }
+}
+
 module.exports = {
   getProfile,
+  getPageConfig,
   updateProfile,
   listEmergencyContacts,
   createEmergencyContact,
@@ -279,4 +325,8 @@ module.exports = {
   approveBinding,
   deleteAccount,
   unlockAccount,
+  listDevices,
+  bindDevice,
+  unbindDevice,
+  submitFeedback,
 };

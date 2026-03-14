@@ -1,0 +1,18 @@
+??: subpackages/settings/pages/feedback/index
+??: frontend/src/subpackages/settings/pages/feedback/index.tsx
+??: 2026-03-14T06:16:36.549Z
+??: POST /user/feedback
+HTTP: 200
+???:
+{
+  "content": "联调核验：此条为自动化验收提交。"
+}
+???:
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "accepted": true,
+    "submittedAt": "2026-03-14T06:16:36.125Z"
+  }
+}

@@ -1,0 +1,13 @@
+??: subpackages/drug_check/pages/index/index
+??: frontend/src/subpackages/drug_check/pages/index/index.tsx
+??: 2026-03-14T06:16:36.487Z
+??: GET /drug-interaction/history
+HTTP: 200
+???:
+null
+???:
+{
+  "code": 0,
+  "message": "历史记录查询成功",
+  "data": []
+}

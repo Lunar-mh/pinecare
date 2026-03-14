@@ -1,0 +1,13 @@
+??: subpackages/family_health/pages/heart-rate/index
+??: frontend/src/subpackages/family_health/pages/heart-rate/index.tsx
+??: 2026-03-14T06:16:36.369Z
+??: GET /health-archive/heart-rate/latest
+HTTP: 200
+???:
+null
+???:
+{
+  "code": 0,
+  "message": "Latest heart rate loaded.",
+  "data": null
+}

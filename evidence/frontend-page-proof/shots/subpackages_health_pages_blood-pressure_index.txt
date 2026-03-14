@@ -1,0 +1,19 @@
+??: subpackages/health/pages/blood-pressure/index
+??: frontend/src/subpackages/health/pages/blood-pressure/index.tsx
+??: 2026-03-14T06:16:36.324Z
+??: GET /health-archive/trend?metric_type=blood_pressure&period=30d
+HTTP: 200
+???:
+null
+???:
+{
+  "code": 0,
+  "message": "Health trend loaded.",
+  "data": {
+    "userId": 8038,
+    "metricType": "blood_pressure",
+    "period": "30d",
+    "list": [],
+    "alerts": []
+  }
+}

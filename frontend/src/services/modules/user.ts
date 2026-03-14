@@ -1,4 +1,4 @@
-import Taro from '@tarojs/taro';
+﻿import Taro from '@tarojs/taro';
 import {
   API_BASE_URL,
   clearAuthSession,
@@ -12,8 +12,48 @@ import {
 } from '../request';
 import type { UserInfo, EmergencyContact } from '../types';
 
+export interface PageConfigNavAction {
+  key: string;
+  label: string;
+  description: string;
+  icon: string;
+  path: string;
+  badge?: string;
+}
+
+export interface PageConfigCluster {
+  key: string;
+  title: string;
+  description: string;
+  items: PageConfigNavAction[];
+}
+
+export interface UserPageConfig {
+  servicesByRole: Record<'elder' | 'family', PageConfigCluster[]>;
+  profileSectionsByRole: Record<'elder' | 'family', Array<{ key: string; title: string; items: PageConfigNavAction[] }>>;
+  settingsItems: PageConfigNavAction[];
+  about: {
+    appName: string;
+    appVersion: string;
+    effectiveDate: string;
+    summary: string;
+    documents: Array<{
+      key: string;
+      title: string;
+      version: string;
+      effectiveDate: string;
+      summary: string;
+    }>;
+    changelog: string[];
+  };
+  profileMeta: {
+    completion: number;
+    appVersion: string;
+  };
+}
+
 // Auth
-export const sendSmsCode = (phone: string) => post<void>('/auth/sms-code', { phone });
+export const sendSmsCode = (phone: string) => post<void>('/auth/sms-code', { phone, purpose: 'login' });
 
 export const loginByWechat = (code: string) =>
   post<{ token: string; refresh_token?: string; expires_in?: number; userInfo: UserInfo }>('/auth/wechat', { code });
@@ -25,6 +65,8 @@ export const loginByPhone = (phone: string, code: string) =>
 export const getUserInfo = () => get<UserInfo>('/user/info');
 
 export const updateUserInfo = (data: Partial<UserInfo>) => put<UserInfo>('/user/info', data);
+
+export const getUserPageConfig = () => get<UserPageConfig>('/user/page-config');
 
 type UploadEnvelope = {
   code?: number;
@@ -70,22 +112,22 @@ export async function uploadAvatar(filePath: string) {
     } catch (_error) {
       clearAuthSession();
       redirectToLogin();
-      throw new Error('Session expired. Please login again.');
+      throw new Error('登录状态已过期，请重新登录。');
     }
   }
 
   if (isUnauthorizedUpload(result.statusCode, envelope)) {
     clearAuthSession();
     redirectToLogin();
-    throw new Error('Session expired. Please login again.');
+    throw new Error('登录状态已过期，请重新登录。');
   }
 
   if (result.statusCode < 200 || result.statusCode >= 300) {
-    throw new Error(envelope?.message || 'Avatar upload failed. Please retry later.');
+    throw new Error(envelope?.message || '头像上传失败，请稍后重试。');
   }
 
   if (envelope && envelope.code !== undefined && envelope.code !== 0 && envelope.code !== 200) {
-    throw new Error(envelope.message || 'Avatar upload failed. Please retry later.');
+    throw new Error(envelope.message || '头像上传失败，请稍后重试。');
   }
 
   return result;
@@ -103,3 +145,4 @@ export const updateEmergencyContact = (id: string, data: Partial<EmergencyContac
 export const deleteEmergencyContact = (id: string) => post<void>(`/user/emergency-contacts/${id}/delete`);
 
 export const setPrimaryContact = (id: string) => put<void>(`/user/emergency-contacts/${id}/primary`);
+

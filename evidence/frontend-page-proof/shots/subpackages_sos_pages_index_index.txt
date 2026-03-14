@@ -1,0 +1,13 @@
+??: subpackages/sos/pages/index/index
+??: frontend/src/subpackages/sos/pages/index/index.tsx
+??: 2026-03-14T06:16:36.411Z
+??: GET /family/elderly-overview
+HTTP: 200
+???:
+null
+???:
+{
+  "code": 0,
+  "message": "success",
+  "data": null
+}

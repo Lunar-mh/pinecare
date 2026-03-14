@@ -1,4 +1,4 @@
-import {
+﻿import {
   clearAdminSession,
   getAdminRefreshToken,
   getAdminToken,
@@ -9,7 +9,6 @@ import {
 } from './session'
 
 const DEV_PRIMARY_BASE_URL = 'http://127.0.0.1:3001'
-const DEV_FALLBACK_BASE_URL = 'http://127.0.0.1:3000'
 const DEV_RESTRICTED_FALLBACK_BASE_URL = 'http://127.0.0.1:3999'
 const EXPLICIT_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '').trim()
 
@@ -23,7 +22,7 @@ function resolveBaseUrls(): string[] {
   }
 
   if (import.meta.env.DEV) {
-    return [DEV_PRIMARY_BASE_URL, DEV_FALLBACK_BASE_URL, DEV_RESTRICTED_FALLBACK_BASE_URL]
+    return [DEV_PRIMARY_BASE_URL, DEV_RESTRICTED_FALLBACK_BASE_URL]
   }
 
   return [DEV_PRIMARY_BASE_URL]
@@ -37,20 +36,21 @@ export interface ApiResponse<T = unknown> {
   data: T
 }
 
-function toUserFacingMessage(code?: number): string {
+function toUserFacingMessage(code?: number, originalMsg?: string): string {
+  if (originalMsg && /^[\u4e00-\u9fa5]/.test(originalMsg)) return originalMsg;
   const mergedCode = Number(code || 0)
-  if (mergedCode === 400 || mergedCode === 422) return 'Invalid request payload. Please verify and retry.'
-  if (mergedCode === 401) return 'Session expired. Please login again.'
-  if (mergedCode === 403) return 'You do not have access to this operation.'
-  if (mergedCode === 404) return 'Requested resource was not found.'
-  if (mergedCode === 409) return 'Data has changed. Please refresh and retry.'
-  if (mergedCode === 429) return 'Too many requests. Please try again later.'
-  if (mergedCode === 503 || mergedCode === 504) return 'Service is temporarily unavailable. Please retry later.'
-  return 'Request failed. Please try again later.'
+  if (mergedCode === 400 || mergedCode === 422) return originalMsg || '参数错误或请求无效'
+  if (mergedCode === 401) return '登录已过期或未授权'
+  if (mergedCode === 403) return '没有操作权限'
+  if (mergedCode === 404) return '请求的资源不存在'
+  if (mergedCode === 409) return originalMsg || '数据冲突，例如已存在重复项'
+  if (mergedCode === 429) return '请求过于频繁，请稍后再试'
+  if (mergedCode === 503 || mergedCode === 504) return '服务暂时不可用或超时'
+  return originalMsg || '发生未知错误'
 }
 
 function toNetworkFailureMessage(): string {
-  return 'Cannot reach API service. Please ensure backend is running and API base URL is configured.'
+  return '网络连接失败，请检查网络或 API 服务是否运行'
 }
 
 class ApiError extends Error {
@@ -140,7 +140,7 @@ async function sendRequest<T = unknown>(
     }
   }
 
-  throw (lastError instanceof Error ? lastError : new Error('Unknown network error'))
+  throw (lastError instanceof Error ? lastError : new Error('??????'))
 }
 
 let refreshPromise: Promise<string> | null = null
@@ -148,7 +148,7 @@ let refreshPromise: Promise<string> | null = null
 async function refreshAdminAccessToken(): Promise<string> {
   const refreshToken = getAdminRefreshToken()
   if (!refreshToken) {
-    throw new ApiError(401, toUserFacingMessage(401), 'Admin refresh token is missing.')
+    throw new ApiError(401, toUserFacingMessage(401), '??????????')
   }
 
   const { res, json } = await sendRequest<{ access_token?: string; refresh_token?: string }>(
@@ -166,7 +166,7 @@ async function refreshAdminAccessToken(): Promise<string> {
   const nextRefreshToken = String(json.data?.refresh_token || refreshToken).trim()
 
   if (!accessToken || !nextRefreshToken) {
-    throw new ApiError(401, toUserFacingMessage(401), 'Refresh payload is missing token fields.')
+    throw new ApiError(401, toUserFacingMessage(401), '???????????')
   }
 
   setAdminToken(accessToken)
@@ -213,19 +213,19 @@ async function request<T = unknown>(method: string, path: string, body?: unknown
     if (!isAuthPath(path)) {
       redirectToLogin()
     }
-    throw new ApiError(401, toUserFacingMessage(401), json?.message || `HTTP ${res.status}`)
+    throw new ApiError(401, toUserFacingMessage(401, json?.message), json?.message || `HTTP ${res.status}`)
   }
 
   if (!res.ok) {
-    throw new ApiError(res.status, toUserFacingMessage(res.status), json?.message || `HTTP ${res.status}`)
+    throw new ApiError(res.status, toUserFacingMessage(res.status, json?.message), json?.message || `HTTP ${res.status}`)
   }
 
   if (!json) {
-    throw new ApiError(500, 'Invalid response payload from server.', 'Invalid response payload')
+    throw new ApiError(500, '响应数据解析失败', 'Invalid response payload')
   }
 
   if (json.code !== 0) {
-    throw new ApiError(json.code, toUserFacingMessage(json.code), json.message || 'Request failed')
+    throw new ApiError(json.code, toUserFacingMessage(json.code, json.message), json.message || 'Error')
   }
 
   return json.data
@@ -240,3 +240,4 @@ export const http = {
 
 export { ApiError }
 export default http
+

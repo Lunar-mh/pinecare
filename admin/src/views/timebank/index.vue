@@ -1,6 +1,6 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
 import { confirmTimeBankService, getTimeBankExchangeHistory, getTimeBankLeaderboard, getTimeBankServiceHistory } from '@/services'
 import type { TimeBankExchangeRecord, TimeBankLeaderboardItem, TimeBankServiceRecord } from '@/services'
@@ -26,6 +26,29 @@ const pendingServiceCount = computed(() => serviceRecords.value.filter(item => i
 const confirmedServiceCoins = computed(() => serviceRecords.value.filter(item => item.status === 'confirmed').reduce((sum, item) => sum + Number(item.timeCoins || 0), 0))
 const exchangeCount = computed(() => exchanges.value.length)
 const topBalance = computed(() => leaderboard.value[0]?.balance || 0)
+function serviceTypeLabel(value: string): string {
+  if (value === 'escort') return '陪诊陪护'
+  if (value === 'visit') return '探访关怀'
+  if (value === 'rehabilitation') return '康复协助'
+  if (value === 'shopping') return '代购代办'
+  if (value === 'medication-support') return '用药协助'
+  return value || '-'
+}
+
+function exchangeTypeLabel(value: string): string {
+  if (value === 'redeem') return '权益兑换'
+  if (value === 'transfer') return '转赠'
+  if (value === 'consume') return '消费'
+  return value || '-'
+}
+
+function creditLevelLabel(value: string): string {
+  if (value === 'angel') return '天使'
+  if (value === 'gold') return '金牌'
+  if (value === 'silver') return '银牌'
+  if (value === 'new') return '新星'
+  return value || '-'
+}
 
 function statusLabel(value: string): string {
   if (value === 'confirmed') return '已确认'
@@ -62,7 +85,8 @@ async function fetchExchangeHistory() {
 
 async function fetchLeaderboard() {
   try {
-    leaderboard.value = await getTimeBankLeaderboard()
+    const res = await getTimeBankLeaderboard()
+    leaderboard.value = res.sort((a, b) => Number(b.creditScore || 0) - Number(a.creditScore || 0))
   } catch (err: unknown) {
     ElMessage.error(err instanceof Error ? err.message : '排行榜加载失败')
     leaderboard.value = []
@@ -74,11 +98,21 @@ async function fetchAll() {
 }
 
 async function handleAction(record: TimeBankServiceRecord, action: 'confirm' | 'cancel') {
+  try {
+    await ElMessageBox.confirm(
+      `确定要${action === 'confirm' ? '审核通过' : '驳回'}该服务履约记录吗？时长: ${record.durationHours}小时`,
+      '确认操作',
+      { type: 'warning', confirmButtonText: '确认', cancelButtonText: '取消' }
+    )
+  } catch {
+    return
+  }
+
   actionLoadingId.value = record.id
   try {
     await confirmTimeBankService(record.id, action)
-    ElMessage.success(action === 'confirm' ? '服务记录已确认' : '服务记录已取消')
-    await fetchServiceHistory()
+    ElMessage.success(action === 'confirm' ? '审核通过' : '已驳回')
+    await fetchAll()
   } catch (err: unknown) {
     ElMessage.error(err instanceof Error ? err.message : '时间银行操作失败')
   } finally {
@@ -173,7 +207,7 @@ onMounted(fetchAll)
                 <div style="font-size: 12px; color: var(--wb-text-soft); margin-top: 4px">对象 ID {{ row.recipientId }}</div>
               </template>
             </el-table-column>
-            <el-table-column prop="serviceType" label="服务类型" width="140" />
+            <el-table-column label="服务类型" width="140"><template #default="{ row }">{{ serviceTypeLabel(row.serviceType) }}</template></el-table-column>
             <el-table-column prop="durationHours" label="时长" width="90" />
             <el-table-column prop="timeCoins" label="时长币" width="90" />
             <el-table-column prop="startTime" label="开始时间" width="180" />
@@ -185,8 +219,8 @@ onMounted(fetchAll)
             <el-table-column label="操作" width="170" fixed="right">
               <template #default="{ row }">
                 <template v-if="row.status === 'pending'">
-                  <el-button type="success" link :loading="actionLoadingId === row.id" @click="handleAction(row, 'confirm')">确认</el-button>
-                  <el-button type="danger" link :loading="actionLoadingId === row.id" @click="handleAction(row, 'cancel')">取消</el-button>
+                  <el-button type="success" link :loading="actionLoadingId === row.id" @click="handleAction(row, 'confirm')">审核通过</el-button>
+                  <el-button type="danger" link :loading="actionLoadingId === row.id" @click="handleAction(row, 'cancel')">驳回</el-button>
                 </template>
                 <span v-else style="color: var(--wb-text-soft)">已处理</span>
               </template>
@@ -210,26 +244,28 @@ onMounted(fetchAll)
             </template>
             <el-table-column prop="id" label="兑换 ID" width="100" />
             <el-table-column prop="userId" label="用户 ID" width="100" />
-            <el-table-column prop="exchangeType" label="兑换类型" width="140" />
+            <el-table-column label="兑换类型" width="140"><template #default="{ row }">{{ exchangeTypeLabel(row.exchangeType) }}</template></el-table-column>
             <el-table-column prop="itemName" label="兑换项" min-width="180" />
             <el-table-column prop="coinsRequired" label="所需时长币" width="110" />
-            <el-table-column prop="status" label="状态" width="120" />
+            <el-table-column label="状态" width="120"><template #default="{ row }">{{ statusLabel(row.status) }}</template></el-table-column>
             <el-table-column prop="createdAt" label="申请时间" width="180" />
             <el-table-column prop="completedAt" label="完成时间" width="180" />
           </el-table>
         </el-tab-pane>
 
         <el-tab-pane label="贡献榜单" name="leaderboard">
-          <el-table :data="leaderboard" stripe>
+          <el-table :data="leaderboard" stripe :default-sort="{ prop: 'creditScore', order: 'descending' }">
             <template #empty>
               <div style="padding: 28px; text-align: center; color: var(--wb-text-soft)">暂无榜单数据</div>
             </template>
-            <el-table-column prop="rank" label="名次" width="80" />
+            <el-table-column label="名次" width="80">
+              <template #default="{ $index }">{{ $index + 1 }}</template>
+            </el-table-column>
             <el-table-column prop="userId" label="用户 ID" width="100" />
-            <el-table-column prop="balance" label="余额" width="110" />
-            <el-table-column prop="totalEarned" label="累计获得" width="130" />
-            <el-table-column prop="creditScore" label="信用分" width="110" />
-            <el-table-column prop="creditLevel" label="信用等级" width="120" />
+            <el-table-column prop="balance" label="余额" width="110" sortable />
+            <el-table-column prop="totalEarned" label="累计获得" width="130" sortable />
+            <el-table-column prop="creditScore" label="信用分" width="110" sortable />
+            <el-table-column label="信用等级" width="120"><template #default="{ row }">{{ creditLevelLabel(row.creditLevel) }}</template></el-table-column>
           </el-table>
         </el-tab-pane>
       </el-tabs>

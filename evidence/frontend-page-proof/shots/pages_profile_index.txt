@@ -1,0 +1,27 @@
+??: pages/profile/index
+??: frontend/src/pages/profile/index.tsx
+??: 2026-03-14T06:16:36.308Z
+??: GET /user/info
+HTTP: 200
+???:
+null
+???:
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "id": 8038,
+    "phone": "15553609880",
+    "openid": null,
+    "nickname": null,
+    "avatar_url": null,
+    "real_name": null,
+    "age": null,
+    "gender": "unknown",
+    "chronic_diseases": [],
+    "account_status": "active",
+    "created_at": "2026-03-14T05:47:06.000Z",
+    "updated_at": "2026-03-14T06:16:35.000Z",
+    "last_login_at": "2026-03-14T06:16:35.000Z"
+  }
+}

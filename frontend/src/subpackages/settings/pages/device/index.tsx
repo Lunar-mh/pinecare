@@ -3,7 +3,7 @@ import Taro from '@tarojs/taro'
 import { View, Text, ScrollView } from '@tarojs/components'
 import { Link, Service } from '@nutui/icons-react-taro'
 import { DataPanel, EmptyState, HeroHeader, PageShell, SectionBlock, StickyPrimaryAction } from '@/components/shell'
-import { del, get, post } from '@/services/request'
+import { get, post } from '@/services/request'
 import './index.scss'
 
 type DeviceItem = { id: string; name: string; type: string; status: string; bindTime: string }
@@ -15,8 +15,15 @@ export default function DeviceBinding() {
   const loadDevices = async () => {
     setLoading(true)
     try {
-      const response = (await get('/user/devices')) as { data?: DeviceItem[] }
-      setDevices(response?.data || [])
+      const response = (await get('/device/list')) as { list?: Array<any> }
+      const list = (response?.list || []).map((item) => ({
+        id: String(item.id || ''),
+        name: String(item.deviceName || item.device_name || '未命名设备'),
+        type: String(item.deviceType || item.device_type || '智能设备'),
+        status: String(item.bindStatus || item.bind_status || '').toLowerCase() === 'bound' ? '在线' : '离线',
+        bindTime: String(item.createdAt || item.created_at || new Date().toISOString()),
+      }))
+      setDevices(list)
     } catch (error) {
       console.error('load devices failed', error)
       setDevices([])
@@ -31,7 +38,13 @@ export default function DeviceBinding() {
     try {
       const result = await Taro.scanCode({ onlyFromCamera: false, scanType: ['qrCode', 'barCode'] })
       if (!result.result) return
-      await post('/user/devices/bind', { code: result.result })
+      const seed = String(result.result).trim()
+      const suffix = seed.slice(-6) || `${Date.now()}`.slice(-6)
+      await post('/device/bind', {
+        device_name: `智能设备${suffix}`,
+        device_mac: `WB${suffix}`.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12),
+        device_type: 'wearable',
+      })
       Taro.showToast({ title: '设备已绑定', icon: 'success' })
       loadDevices()
     } catch (error) {
@@ -42,7 +55,7 @@ export default function DeviceBinding() {
 
   const handleUnbind = async (id: string) => {
     try {
-      await del(`/user/devices/${id}`)
+      await post('/device/unbind', { device_id: Number(id) })
       Taro.showToast({ title: '已解除绑定', icon: 'success' })
       loadDevices()
     } catch (error) {

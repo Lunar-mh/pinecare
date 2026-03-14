@@ -6,6 +6,8 @@ const UserModel = require('../models/user');
 const EmergencyContactModel = require('../models/emergencyContact');
 const FamilyBindingModel = require('../models/familyBinding');
 const smsService = require('./smsService');
+const deviceService = require('./deviceService');
+const { buildUserPageConfig } = require('./userPageConfigService');
 const { createBusinessError } = require('../utils/serviceError');
 const { writeAuditLog: writeAuditEntry } = require('../utils/auditLogHelper');
 
@@ -125,6 +127,15 @@ async function getProfile(userId) {
     throw createBusinessError(403, 'Account has been deleted.', null, 403);
   }
   return profile;
+}
+
+async function getPageConfig(userId) {
+  const profile = await getProfile(userId);
+  const emergencyContacts = await EmergencyContactModel.listByUserId(userId);
+  return buildUserPageConfig({
+    profile,
+    emergencyContactCount: emergencyContacts.length,
+  });
 }
 
 async function updateProfile(userId, payload, context = {}) {
@@ -322,8 +333,89 @@ async function deleteAccount(userId, code, context = {}) {
   return deleteAccountByCode(userId, code, context);
 }
 
+function buildDeviceMacFromCode(code) {
+  const source = String(code || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  const seed = source || String(Date.now());
+  const raw = `WB${seed}`.slice(0, 12);
+  return raw.padEnd(12, '0');
+}
+
+async function listDevices(userId) {
+  await assertUserAvailable(userId);
+  const data = await deviceService.list(userId);
+  const list = Array.isArray(data && data.list) ? data.list : [];
+  return list.map((item) => ({
+    id: String(item.id),
+    name: item.deviceName,
+    type: item.deviceType,
+    status: item.bindStatus === 'bound' ? '在线' : '离线',
+    bindTime: item.createdAt,
+    batteryLevel: item.batteryLevel,
+    isPrimary: item.isPrimary,
+  }));
+}
+
+async function bindDevice(userId, payload = {}, context = {}) {
+  await assertUserAvailable(userId);
+  const code = String(payload.code || '').trim();
+  if (!code) {
+    throw createBusinessError(400, 'code is required.', null, 400);
+  }
+
+  const created = await deviceService.bind(userId, {
+    device_name: `智能设备${code.slice(-6) || '000001'}`,
+    device_mac: buildDeviceMacFromCode(code),
+    device_type: 'wearable',
+    is_primary: false,
+  });
+
+  await writeAuditLog(userId, 'device_bind', context, {
+    deviceId: created && created.device ? created.device.id : null,
+    sourceCode: code.slice(0, 12),
+  });
+
+  return created && created.device ? created.device : null;
+}
+
+async function unbindDevice(userId, deviceId, context = {}) {
+  await assertUserAvailable(userId);
+  const numericId = Number(deviceId);
+  if (!Number.isInteger(numericId) || numericId <= 0) {
+    throw createBusinessError(400, 'device id is invalid.', null, 400);
+  }
+
+  const result = await deviceService.unbind(userId, {
+    device_id: numericId,
+  });
+
+  await writeAuditLog(userId, 'device_unbind', context, { deviceId: numericId });
+  return result;
+}
+
+async function submitFeedback(userId, payload = {}, context = {}) {
+  await assertUserAvailable(userId);
+  const content = String(payload.content || '').trim();
+  if (!content) {
+    throw createBusinessError(400, 'content is required.', null, 400);
+  }
+  if (content.length > 500) {
+    throw createBusinessError(400, 'content is too long.', null, 400);
+  }
+
+  await writeAuditLog(userId, 'user_feedback_submit', context, {
+    content,
+    source: 'mini_program',
+  });
+
+  return {
+    accepted: true,
+    submittedAt: new Date().toISOString(),
+  };
+}
+
 module.exports = {
   getProfile,
+  getPageConfig,
   updateProfile,
   listEmergencyContacts,
   createEmergencyContact,
@@ -335,4 +427,8 @@ module.exports = {
   deleteAccount,
   deleteAccountByCode,
   unlockAccount,
+  listDevices,
+  bindDevice,
+  unbindDevice,
+  submitFeedback,
 };

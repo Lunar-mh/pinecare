@@ -1,0 +1,53 @@
+??: subpackages/ai_companion/pages/index/index
+??: frontend/src/subpackages/ai_companion/pages/index/index.tsx
+??: 2026-03-14T06:16:36.496Z
+??: GET /ai-companion/companion/games
+HTTP: 200
+???:
+null
+???:
+{
+  "code": 0,
+  "message": "games ok",
+  "data": [
+    {
+      "gameType": "memory",
+      "name": "数字记忆",
+      "description": "短时记忆训练，帮助保持注意力和记忆力。",
+      "rules": "系统展示一组数字，短暂记忆后按顺序输入。",
+      "difficulties": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "gameType": "word_chain",
+      "name": "词语接龙",
+      "description": "语言联想训练，帮助保持思维活跃。",
+      "rules": "根据上一个词的末字接出下一个词。",
+      "difficulties": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "gameType": "puzzle",
+      "name": "拼图",
+      "description": "空间认知训练，帮助保持专注和耐心。",
+      "rules": "在限定时间内完成图块拼接。",
+      "difficulties": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    }
+  ]
+}

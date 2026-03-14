@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
@@ -24,10 +24,10 @@ const confirmedCount = computed(() => events.value.filter(item => item.status ==
 const falseAlarmCount = computed(() => events.value.filter(item => item.status === 'false_alarm').length)
 
 function statusLabel(status: FallEventStatus): string {
-  if (status === 'detecting') return 'Detecting'
-  if (status === 'confirmed') return 'Confirmed'
-  if (status === 'cancelled') return 'Cancelled'
-  return 'False Alarm'
+  if (status === 'detecting') return '监测中'
+  if (status === 'confirmed') return '已确认'
+  if (status === 'cancelled') return '已取消'
+  return '误报'
 }
 
 function statusTagType(status: FallEventStatus): 'warning' | 'success' | 'info' {
@@ -37,9 +37,9 @@ function statusTagType(status: FallEventStatus): 'warning' | 'success' | 'info' 
 }
 
 function sensitivityLabel(level: 'high' | 'medium' | 'low'): string {
-  if (level === 'high') return 'High'
-  if (level === 'low') return 'Low'
-  return 'Medium'
+  if (level === 'high') return '高灵敏'
+  if (level === 'low') return '低灵敏'
+  return '标准'
 }
 
 function readMetric(sensorData: Record<string, unknown> | null, key: string): string {
@@ -53,7 +53,7 @@ async function fetchHistory() {
   try {
     await loadData({ status: statusFilter.value || undefined })
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : 'Failed to load fall events')
+    ElMessage.error(err instanceof Error ? err.message : '跌倒事件加载失败')
   }
 }
 
@@ -71,9 +71,9 @@ async function saveSettings() {
   try {
     const data = await updateFallSettings(sensitivity.value)
     sensitivity.value = data.sensitivity
-    ElMessage.success('Sensitivity updated')
+    ElMessage.success('灵敏度策略已更新')
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : 'Failed to update sensitivity')
+    ElMessage.error(err instanceof Error ? err.message : '灵敏度更新失败')
   } finally {
     settingsSaving.value = false
   }
@@ -219,5 +219,6 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+
 
 

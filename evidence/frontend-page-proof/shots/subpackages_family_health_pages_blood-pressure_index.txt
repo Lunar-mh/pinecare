@@ -1,0 +1,13 @@
+??: subpackages/family_health/pages/blood-pressure/index
+??: frontend/src/subpackages/family_health/pages/blood-pressure/index.tsx
+??: 2026-03-14T06:16:36.360Z
+??: GET /health-archive/blood-pressure/latest
+HTTP: 200
+???:
+null
+???:
+{
+  "code": 0,
+  "message": "Latest blood pressure loaded.",
+  "data": null
+}

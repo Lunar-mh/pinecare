@@ -31,12 +31,25 @@ function normalizeValue(value) {
   }
 
   if (typeof value === 'string') {
-    const ts = Date.parse(value);
-    if (!Number.isNaN(ts)) {
-      return ts;
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return '';
     }
 
-    return value.trim();
+    // MySQL DECIMAL often comes back as string; keep numeric semantics stable.
+    if (/^-?\d+(?:\.\d+)?$/.test(trimmed)) {
+      return Number(trimmed);
+    }
+
+    // Only date-like strings should be parsed into timestamps.
+    if (/^\d{4}-\d{2}-\d{2}(?:[ T].*)?$/.test(trimmed)) {
+      const ts = Date.parse(trimmed);
+      if (!Number.isNaN(ts)) {
+        return ts;
+      }
+    }
+
+    return trimmed;
   }
 
   if (typeof value === 'object') {

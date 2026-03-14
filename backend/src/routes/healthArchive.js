@@ -27,6 +27,7 @@ router.get('/today', auth, familyAccess, healthController.today);
 router.get('/trend', auth, familyAccess, validateTrendQuery, healthController.trend);
 router.get('/blood-pressure/latest', auth, familyAccess, healthController.latestBloodPressure);
 router.get('/heart-rate/latest', auth, familyAccess, healthController.latestHeartRate);
+router.put('/alerts/:id/dismiss', auth, healthController.dismissAlert);
 router.post('/sync', auth, validateSyncPayload, healthController.sync);
 router.post('/manual', auth, validateManualPayload, healthController.manual);
 

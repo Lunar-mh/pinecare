@@ -1,0 +1,19 @@
+??: subpackages/health/pages/records/index
+??: frontend/src/subpackages/health/pages/records/index.tsx
+??: 2026-03-14T06:16:36.352Z
+??: GET /health-archive/trend?metric_type=heart_rate&period=30d
+HTTP: 200
+???:
+null
+???:
+{
+  "code": 0,
+  "message": "Health trend loaded.",
+  "data": {
+    "userId": 8038,
+    "metricType": "heart_rate",
+    "period": "30d",
+    "list": [],
+    "alerts": []
+  }
+}

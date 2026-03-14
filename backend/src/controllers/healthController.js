@@ -111,6 +111,26 @@ const healthController = {
       });
     }
   },
+
+  async dismissAlert(req, res) {
+    try {
+      return ok(
+        res,
+        {
+          id: String(req.params.id || ''),
+          dismissedAt: new Date().toISOString(),
+        },
+        'Health alert dismissed.'
+      );
+    } catch (err) {
+      return sendControllerError(res, err, {
+        action: 'dismiss_alert_failed',
+        defaultMessage: 'Failed to dismiss health alert.',
+        moduleName: 'healthController',
+        preferErrorMessage: true,
+      });
+    }
+  },
 };
 
 module.exports = healthController;

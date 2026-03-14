@@ -83,7 +83,7 @@ function handleLogout() {
           <div class="workbench-layout__title">{{ currentItem?.label || '社区管理工作台' }}</div>
         </div>
         <div class="header-actions">
-          <div class="wb-chip">
+          <div class="wb-chip" @click="router.push('/sos')" style="cursor: pointer;" title="查看待处理事项">
             <el-icon><Bell /></el-icon>
             <span>待处理 {{ notificationCount }}</span>
           </div>

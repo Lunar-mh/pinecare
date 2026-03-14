@@ -6,6 +6,7 @@ const { createRateLimiter } = require('../middleware/rateLimiter');
 const {
   sendChat,
   getHistory,
+  clearHistory,
   voiceConsult,
   getProfile,
   updateProfile,
@@ -21,6 +22,7 @@ router.post('/chat', auth, aiRateLimiter, sendChat);
 
 // US1: 查询咨询历史
 router.get('/history', auth, getHistory);
+router.post('/history/clear', auth, clearHistory);
 
 // US2: 语音健康咨询
 router.post('/voice', auth, aiRateLimiter, voiceConsult);

@@ -1,0 +1,13 @@
+??: pages/index/FamilyDashboard
+??: frontend/src/pages/index/FamilyDashboard.tsx
+??: 2026-03-14T06:16:36.259Z
+??: GET /family/elderly-overview
+HTTP: 200
+???:
+null
+???:
+{
+  "code": 0,
+  "message": "success",
+  "data": null
+}

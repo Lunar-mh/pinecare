@@ -1,0 +1,23 @@
+??: subpackages/timebank/pages/index/index
+??: frontend/src/subpackages/timebank/pages/index/index.tsx
+??: 2026-03-14T06:16:36.436Z
+??: GET /time-bank/account
+HTTP: 200
+???:
+null
+???:
+{
+  "code": 0,
+  "message": "Time bank account loaded.",
+  "data": {
+    "id": 17051,
+    "userId": 8038,
+    "balance": 0,
+    "totalEarned": 0,
+    "totalSpent": 0,
+    "creditScore": 100,
+    "creditLevel": "angel",
+    "createdAt": "2026-03-14T06:13:21.000Z",
+    "updatedAt": "2026-03-14T06:13:21.000Z"
+  }
+}

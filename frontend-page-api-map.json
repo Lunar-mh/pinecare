@@ -1,0 +1,154 @@
+[
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/pages/index/FamilyDashboard.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/pages/index/index.tsx",
+    "calls": [
+      {
+        "function": "getTodayHealthOverview",
+        "method": null,
+        "endpoint": null
+      },
+      {
+        "function": "getTodayMedications",
+        "method": null,
+        "endpoint": null
+      }
+    ]
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/pages/login/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/pages/profile/index.tsx",
+    "calls": [
+      {
+        "function": "getUserInfo",
+        "method": "GET",
+        "endpoint": "/user/info"
+      },
+      {
+        "function": "getUserPageConfig",
+        "method": "GET",
+        "endpoint": "/user/page-config"
+      }
+    ]
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/pages/services/index.tsx",
+    "calls": [
+      {
+        "function": "getUserPageConfig",
+        "method": "GET",
+        "endpoint": "/user/page-config"
+      }
+    ]
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/ai_companion/pages/index/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/ai_consult/pages/index/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/drug_check/pages/index/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/family_health/pages/blood-pressure/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/family_health/pages/heart-rate/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/family_space/pages/index/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/health/pages/blood-pressure/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/health/pages/heart-rate/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/health/pages/index/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/health/pages/records/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/health/pages/trend/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/location/pages/index/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/medical/pages/index/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/medication/pages/add/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/medication/pages/index/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/settings/pages/about/index.tsx",
+    "calls": [
+      {
+        "function": "getUserPageConfig",
+        "method": "GET",
+        "endpoint": "/user/page-config"
+      }
+    ]
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/settings/pages/device/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/settings/pages/emergency/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/settings/pages/feedback/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/settings/pages/index/index.tsx",
+    "calls": [
+      {
+        "function": "getUserPageConfig",
+        "method": "GET",
+        "endpoint": "/user/page-config"
+      }
+    ]
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/sos/pages/index/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/timebank/pages/index/index.tsx",
+    "calls": []
+  },
+  {
+    "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/voice_ai/pages/index/index.tsx",
+    "calls": []
+  }
+]

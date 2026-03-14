@@ -120,6 +120,21 @@ async function getHistory(req, res) {
   }
 }
 
+async function clearHistory(req, res) {
+  try {
+    const userId = req.user.userId;
+    const sessionId = req.body && req.body.sessionId ? String(req.body.sessionId).trim() : '';
+
+    const deleted = sessionId
+      ? await ConsultRecord.deleteBySession(userId, sessionId)
+      : await ConsultRecord.deleteByUser(userId);
+
+    return ok(res, { deleted }, 'success');
+  } catch (err) {
+    return handleError(res, err);
+  }
+}
+
 async function voiceConsult(req, res) {
   try {
     const userId = req.user.userId;
@@ -224,6 +239,7 @@ async function updateProfile(req, res) {
 module.exports = {
   sendChat,
   getHistory,
+  clearHistory,
   voiceConsult,
   getProfile,
   updateProfile,

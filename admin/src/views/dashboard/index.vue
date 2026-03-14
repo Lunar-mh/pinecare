@@ -1,11 +1,31 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getRecentActivities } from '@/services'
 import type { ActivityItem } from '@/services'
 
+const router = useRouter()
 const recentEvents = ref<ActivityItem[]>([])
 const eventsLoading = ref(false)
+
+const EVENT_TYPE_MAP: Record<string, string> = {
+  sos: 'SOS 事件',
+  fall: '跌倒告警',
+  medication: '用药告警',
+  gps: '定位告警',
+  location: '定位告警',
+}
+
+const EVENT_STATUS_MAP: Record<string, string> = {
+  trigger: '触发中',
+  confirm: '已确认',
+  resolve: '已解决',
+  complete: '已解决',
+  cancel: '已取消',
+  pending: '待处理',
+  processing: '处理中',
+}
 
 function formatTime(value: string): string {
   const date = new Date(value)
@@ -13,8 +33,17 @@ function formatTime(value: string): string {
   return date.toLocaleTimeString('zh-CN', { hour12: false })
 }
 
+function findInMap(normalized: string, map: Record<string, string>): string | undefined {
+  for (const key in map) {
+    if (normalized.includes(key)) {
+      return map[key]
+    }
+  }
+  return undefined
+}
+
 function eventDesc(item: ActivityItem): string {
-  return `${item.type} - ${item.status}`
+  return `${formatEventType(item.type)} - ${formatEventStatus(item.status)}`
 }
 
 function isDanger(item: ActivityItem): boolean {
@@ -23,15 +52,72 @@ function isDanger(item: ActivityItem): boolean {
   return normalizedStatus.includes('trigger') || normalizedType.includes('sos')
 }
 
+function formatEventType(value: string): string {
+  const normalized = String(value || '').trim().toLowerCase()
+  if (!normalized) return '未知事件'
+  if (normalized.includes('sos')) return 'SOS 事件'
+  if (normalized.includes('fall')) return '跌倒告警'
+  if (normalized.includes('medication')) return '用药告警'
+  if (normalized.includes('gps') || normalized.includes('location')) return '定位告警'
+  return String(value || '')
+  return findInMap(normalized, EVENT_TYPE_MAP) || String(value || '')
+}
+
+function formatEventStatus(value: string): string {
+  const normalized = String(value || '').trim().toLowerCase()
+  if (!normalized) return '未知状态'
+  if (normalized.includes('trigger')) return '触发中'
+  if (normalized.includes('confirm')) return '已确认'
+  if (normalized.includes('resolve') || normalized.includes('complete')) return '已解决'
+  if (normalized.includes('cancel')) return '已取消'
+  if (normalized.includes('pending')) return '待处理'
+  if (normalized.includes('processing')) return '处理中'
+  return String(value || '')
+  return findInMap(normalized, EVENT_STATUS_MAP) || String(value || '')
+}
+
+function formatEventUser(value: string): string {
+  const raw = String(value || '').trim()
+  if (!raw) return '匿名用户'
+  const elderMatch = /^elder[_-]?(\d+)$/i.exec(raw)
+  if (elderMatch) return `长辈${elderMatch[1]}`
+  const familyMatch = /^family[_-]?(\d+)$/i.exec(raw)
+  if (familyMatch) return `家属${familyMatch[1]}`
+  const volunteerMatch = /^volunteer[_-]?(\d+)$/i.exec(raw)
+  if (volunteerMatch) return `志愿者${volunteerMatch[1]}`
+  return raw
+}
+
 async function fetchRecentEvents() {
   eventsLoading.value = true
   try {
     recentEvents.value = await getRecentActivities(5)
   } catch (error: unknown) {
     recentEvents.value = []
-    ElMessage.error(error instanceof Error ? error.message : 'Failed to load recent events')
+    ElMessage.error(error instanceof Error ? error.message : '实时事件加载失败')
   } finally {
     eventsLoading.value = false
+  }
+}
+
+function handleEventClick(item: ActivityItem) {
+  // Simplified logic: isDanger already covers the 'sos' case.
+  if (isDanger(item)) {
+    router.push('/sos')
+  } else {
+    router.push('/users')
+  }
+}
+
+function quickAction(type: string) {
+
+  const routes: Record<string, string> = {
+    sos: '/sos',
+    users: '/users',
+    analytics: '/analytics',
+  }
+  if (routes[type]) {
+    router.push(routes[type])
   }
 }
 
@@ -46,7 +132,7 @@ onMounted(fetchRecentEvents)
         <div class="logo-orb"></div>
         <div class="brand-text">
           <h1>曜银·全域智慧指挥系统</h1>
-          <p>LUSTROUS INTELLIGENT COMMAND SYSTEM v3.0</p>
+          <p>全域智慧指挥系统 v3.0</p>
         </div>
       </div>
       <div class="global-stats">
@@ -65,30 +151,40 @@ onMounted(fetchRecentEvents)
       <!-- 左侧：AI 预测与态势 -->
       <aside class="side-panel left">
         <div class="cyber-card glass-v2 radar-section">
-          <div class="card-tag">RISK RADAR</div>
-          <h3 class="card-title">全域健康风险雷达</h3>
-          <div class="radar-view">
-            <div class="radar-beam"></div>
-            <div class="radar-circles">
-              <span></span><span></span><span></span>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="card-tag">风险雷达</div>
+            <div class="quick-actions">
+              <el-button size="small" type="primary" plain @click="quickAction('sos')">处理报警</el-button>
+              <el-button size="small" @click="quickAction('users')">人员</el-button>
             </div>
           </div>
+          <h3 class="card-title">全域健康风险雷达</h3>
+          <el-tooltip content="实时全域高发频段预警，当前夜间跌倒告警概率上升 15%" placement="right">
+            <div class="radar-view" style="cursor:help;">
+              <div class="radar-beam"></div>
+              <div class="radar-circles">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+          </el-tooltip>
         </div>
         <div class="cyber-card glass-v2 trend-section">
-          <div class="card-tag">TREND ANALYSIS</div>
+          <div class="card-tag">趋势分析</div>
           <h3 class="card-title">24h 告警趋势预测</h3>
-          <div class="trend-mock-chart">
-            <svg viewBox="0 0 400 150">
-              <path d="M0,100 Q50,80 100,120 T200,60 T300,90 T400,40" fill="none" stroke="var(--glow-blue)" stroke-width="3" />
-              <path d="M0,100 Q50,80 100,120 T200,60 T300,90 T400,40 V150 H0 Z" fill="url(#grad)" opacity="0.2" />
-              <defs>
-                <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="var(--glow-blue)" />
-                  <stop offset="100%" stop-color="transparent" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
+          <el-tooltip content="点击查看详细报表" placement="right">
+            <div class="trend-mock-chart" @click="quickAction('analytics')" style="cursor:pointer;">
+              <svg viewBox="0 0 400 150">
+                <path d="M0,100 Q50,80 100,120 T200,60 T300,90 T400,40" fill="none" stroke="var(--glow-blue)" stroke-width="3" />
+                <path d="M0,100 Q50,80 100,120 T200,60 T300,90 T400,40 V150 H0 Z" fill="url(#grad)" opacity="0.2" />
+                <defs>
+                  <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--glow-blue)" />
+                    <stop offset="100%" stop-color="transparent" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+          </el-tooltip>
         </div>
       </aside>
 
@@ -100,8 +196,8 @@ onMounted(fetchRecentEvents)
             <!-- 模拟 3D 建筑与点位 -->
             <div class="building b1"></div>
             <div class="building b2"></div>
-            <div class="point-p1 active-pulse"></div>
-            <div class="point-p2 alert-pulse"></div>
+            <el-tooltip content="长辈12号：一切正常" placement="top"><div class="point-p1 active-pulse" style="cursor:pointer;"></div></el-tooltip>
+            <el-tooltip content="长辈18号：发生了跌倒，待处理" placement="top"><div class="point-p2 alert-pulse" style="cursor:pointer;" @click="quickAction('sos')"></div></el-tooltip>
           </div>
           <div class="map-hud-overlay">
             <div class="hud-top">坐标：116.397, 39.908 | 缩放：14.5x</div>
@@ -117,21 +213,28 @@ onMounted(fetchRecentEvents)
       <!-- 右侧：指令中心与实时流 -->
       <aside class="side-panel right">
         <div class="cyber-card glass-v2 stream-section">
-          <div class="card-tag">REAL-TIME EVENTS</div>
+          <div class="card-tag">实时事件</div>
           <h3 class="card-title">实时全域事件流</h3>
           <div class="event-stream" v-loading="eventsLoading">
-            <div v-for="item in recentEvents" :key="item.id" class="event-item" :class="{ danger: isDanger(item) }">
+            <div 
+              v-for="item in recentEvents" 
+              :key="item.id" 
+              class="event-item" 
+              :class="{ danger: isDanger(item) }"
+              @click="handleEventClick(item)"
+              style="cursor:pointer;"
+            >
               <div class="event-time">{{ formatTime(item.time) }}</div>
               <div class="event-body">
-                <span class="user">{{ item.user }}</span>
+                <span class="user">{{ formatEventUser(item.user) }}</span>
                 <p>{{ eventDesc(item) }}</p>
               </div>
             </div>
-            <div v-if="!eventsLoading && recentEvents.length === 0" class="event-empty">No recent events</div>
+            <div v-if="!eventsLoading && recentEvents.length === 0" class="event-empty">暂无实时事件</div>
           </div>
         </div>
         <div class="cyber-card glass-v2 dispatch-section">
-          <div class="card-tag">DISPATCH OPS</div>
+          <div class="card-tag">调度执行</div>
           <h3 class="card-title">资源调度效率</h3>
           <div class="circle-stats">
             <div class="c-item">
@@ -313,3 +416,4 @@ onMounted(fetchRecentEvents)
   50% { transform: scale(1.1); opacity: 1; }
 }
 </style>
+

@@ -1,0 +1,15 @@
+??: subpackages/voice_ai/pages/index/index
+??: frontend/src/subpackages/voice_ai/pages/index/index.tsx
+??: 2026-03-14T06:16:36.423Z
+??: GET /ai-consult/history?sessionId=proof-1773468996186&limit=20
+HTTP: 200
+???:
+null
+???:
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "records": []
+  }
+}

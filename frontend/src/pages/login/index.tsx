@@ -1,4 +1,4 @@
-﻿﻿import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, Input } from '@tarojs/components'
 import { loginByPhone, loginByWechat, sendSmsCode } from '@/services/modules/user'
@@ -160,7 +160,7 @@ export default function LoginPage() {
                 value={phone}
                 placeholder="请输入手机号"
                 onInput={(event) => {
-                  setPhone(event.detail.value)
+                  setPhone(event.detail.value.replace(/\\D/g, '').slice(0, 11))
                   if (phoneError) setPhoneError('')
                 }}
               />
@@ -181,7 +181,7 @@ export default function LoginPage() {
                 value={code}
                 placeholder="请输入验证码"
                 onInput={(event) => {
-                  setCode(event.detail.value)
+                  setCode(event.detail.value.replace(/\\D/g, '').slice(0, 6))
                   if (codeError) setCodeError('')
                 }}
               />

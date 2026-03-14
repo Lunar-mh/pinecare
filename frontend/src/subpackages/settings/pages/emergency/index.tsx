@@ -16,8 +16,8 @@ export default function EmergencyContacts() {
   const loadContacts = async () => {
     setLoading(true)
     try {
-      const response = (await get('/user/emergency-contacts')) as { data?: Contact[] }
-      setContacts(response?.data || [])
+      const response = (await get('/user/emergency-contacts')) as Contact[]
+      setContacts(response || [])
     } catch (error) {
       console.error('load emergency contacts failed', error)
       setContacts([])

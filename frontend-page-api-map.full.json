@@ -1,0 +1,532 @@
+{
+  "generatedAt": "2026-03-14T05:49:32.694Z",
+  "totalPages": 28,
+  "pagesWithApi": 23,
+  "pageMap": [
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/pages/index/FamilyDashboard.tsx",
+      "apiCalls": [
+        {
+          "function": "getElderlyOverview",
+          "module": "family",
+          "method": "GET",
+          "endpoint": "/family/elderly-overview"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/pages/index/index.tsx",
+      "apiCalls": []
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/pages/login/index.tsx",
+      "apiCalls": [
+        {
+          "function": "loginByPhone",
+          "module": "user",
+          "method": "POST",
+          "endpoint": "/auth/phone"
+        },
+        {
+          "function": "loginByWechat",
+          "module": "user",
+          "method": "POST",
+          "endpoint": "/auth/wechat"
+        },
+        {
+          "function": "sendSmsCode",
+          "module": "user",
+          "method": "POST",
+          "endpoint": "/auth/sms-code"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/pages/profile/index.tsx",
+      "apiCalls": [
+        {
+          "function": "getUserInfo",
+          "module": "user",
+          "method": "GET",
+          "endpoint": "/user/info"
+        },
+        {
+          "function": "getUserPageConfig",
+          "module": "user",
+          "method": "GET",
+          "endpoint": "/user/page-config"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/pages/services/index.tsx",
+      "apiCalls": [
+        {
+          "function": "getUserPageConfig",
+          "module": "user",
+          "method": "GET",
+          "endpoint": "/user/page-config"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/ai_companion/pages/index/index.tsx",
+      "apiCalls": [
+        {
+          "function": "getCompanionGames",
+          "module": "companion",
+          "method": "GET",
+          "endpoint": "/companion/games"
+        },
+        {
+          "function": "getEmotionTrend",
+          "module": "companion",
+          "method": "GET",
+          "endpoint": "/companion/emotion"
+        },
+        {
+          "function": "getNostalgiaContent",
+          "module": "companion",
+          "method": "GET",
+          "endpoint": "/companion/nostalgia"
+        },
+        {
+          "function": "sendCompanionMessage",
+          "module": "companion",
+          "method": "POST",
+          "endpoint": "/companion/chat"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/ai_consult/pages/index/index.tsx",
+      "apiCalls": [
+        {
+          "function": "getConsultHistory",
+          "module": "ai_consult",
+          "method": "GET",
+          "endpoint": "/ai-consult/history"
+        },
+        {
+          "function": "getHealthProfile",
+          "module": "ai_consult",
+          "method": "GET",
+          "endpoint": "/ai-consult/profile"
+        },
+        {
+          "function": "sendConsultMessage",
+          "module": "ai_consult",
+          "method": "POST",
+          "endpoint": "/ai-consult/chat"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/drug_check/pages/index/index.tsx",
+      "apiCalls": [
+        {
+          "function": "acknowledgeRisk",
+          "module": "drug_interaction",
+          "method": "POST",
+          "endpoint": "/drug-interaction/acknowledge"
+        },
+        {
+          "function": "checkContraindication",
+          "module": "drug_interaction",
+          "method": "GET",
+          "endpoint": "/drug-interaction/contraindication"
+        },
+        {
+          "function": "checkDrugInteraction",
+          "module": "drug_interaction",
+          "method": "POST",
+          "endpoint": "/drug-interaction/check"
+        },
+        {
+          "function": "checkFoodInteraction",
+          "module": "drug_interaction",
+          "method": "GET",
+          "endpoint": "/drug-interaction/food"
+        },
+        {
+          "function": "getInteractionHistory",
+          "module": "drug_interaction",
+          "method": "GET",
+          "endpoint": "/drug-interaction/history"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/family_health/pages/blood-pressure/index.tsx",
+      "apiCalls": [
+        {
+          "function": "getBloodPressureRecords",
+          "module": "health",
+          "method": "GET",
+          "endpoint": "/health-archive/blood-pressure"
+        },
+        {
+          "function": "getLatestBloodPressure",
+          "module": "health",
+          "method": "GET",
+          "endpoint": "/health-archive/blood-pressure/latest"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/family_health/pages/heart-rate/index.tsx",
+      "apiCalls": [
+        {
+          "function": "getHeartRateRecords",
+          "module": "health",
+          "method": "GET",
+          "endpoint": "/health-archive/heart-rate"
+        },
+        {
+          "function": "getLatestHeartRate",
+          "module": "health",
+          "method": "GET",
+          "endpoint": "/health-archive/heart-rate/latest"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/family_space/pages/index/index.tsx",
+      "apiCalls": [
+        {
+          "function": "getAlbumPhotos",
+          "module": "family",
+          "method": "GET",
+          "endpoint": "/family-space/album/list"
+        },
+        {
+          "function": "getFamilyMembers",
+          "module": "family",
+          "method": "GET",
+          "endpoint": "/family-space/member/list"
+        },
+        {
+          "function": "getUnreadMessageCount",
+          "module": "family",
+          "method": "GET",
+          "endpoint": "/family-space/message/unread-count"
+        },
+        {
+          "function": "getVoiceMessages",
+          "module": "family",
+          "method": "GET",
+          "endpoint": "/family-space/message/list"
+        },
+        {
+          "function": "markMessageRead",
+          "module": "family",
+          "method": "POST",
+          "endpoint": "/family-space/message/${id}/read"
+        },
+        {
+          "function": "uploadAlbumPhoto",
+          "module": "family",
+          "method": "POST",
+          "endpoint": "/family-space/album/upload"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/health/pages/blood-pressure/index.tsx",
+      "apiCalls": [
+        {
+          "function": "addBloodPressureRecord",
+          "module": "health",
+          "method": "POST",
+          "endpoint": "/health-archive/blood-pressure"
+        },
+        {
+          "function": "getBloodPressureRecords",
+          "module": "health",
+          "method": "GET",
+          "endpoint": "/health-archive/blood-pressure"
+        },
+        {
+          "function": "getLatestBloodPressure",
+          "module": "health",
+          "method": "GET",
+          "endpoint": "/health-archive/blood-pressure/latest"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/health/pages/heart-rate/index.tsx",
+      "apiCalls": [
+        {
+          "function": "addHeartRateRecord",
+          "module": "health",
+          "method": "POST",
+          "endpoint": "/health-archive/heart-rate"
+        },
+        {
+          "function": "getHeartRateRecords",
+          "module": "health",
+          "method": "GET",
+          "endpoint": "/health-archive/heart-rate"
+        },
+        {
+          "function": "getLatestHeartRate",
+          "module": "health",
+          "method": "GET",
+          "endpoint": "/health-archive/heart-rate/latest"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/health/pages/index/index.tsx",
+      "apiCalls": [
+        {
+          "function": "dismissHealthAlert",
+          "module": "health",
+          "method": "PUT",
+          "endpoint": "/health-archive/alerts/${id}/dismiss"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/health/pages/records/index.tsx",
+      "apiCalls": [
+        {
+          "function": "getBloodPressureRecords",
+          "module": "health",
+          "method": "GET",
+          "endpoint": "/health-archive/blood-pressure"
+        },
+        {
+          "function": "getHeartRateRecords",
+          "module": "health",
+          "method": "GET",
+          "endpoint": "/health-archive/heart-rate"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/health/pages/trend/index.tsx",
+      "apiCalls": [
+        {
+          "function": "getBloodPressureTrend",
+          "module": "health",
+          "method": "GET",
+          "endpoint": "/health-archive/blood-pressure/trend"
+        },
+        {
+          "function": "getHeartRateTrend",
+          "module": "health",
+          "method": "GET",
+          "endpoint": "/health-archive/heart-rate/trend"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/location/pages/index/index.tsx",
+      "apiCalls": [
+        {
+          "function": "createSafeZone",
+          "module": "location",
+          "method": "POST",
+          "endpoint": "/location/safe-zones"
+        },
+        {
+          "function": "getCurrentLocation",
+          "module": "location",
+          "method": "GET",
+          "endpoint": "/location/current"
+        },
+        {
+          "function": "getFamilyLocations",
+          "module": "location",
+          "method": "GET",
+          "endpoint": "/location/family"
+        },
+        {
+          "function": "getSafeZones",
+          "module": "location",
+          "method": "GET",
+          "endpoint": "/location/safe-zones"
+        },
+        {
+          "function": "toggleSafeZone",
+          "module": "location",
+          "method": "POST",
+          "endpoint": "/location/safe-zones/${id}/toggle"
+        },
+        {
+          "function": "updateLocation",
+          "module": "location",
+          "method": "POST",
+          "endpoint": "/location/update"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/medical/pages/index/index.tsx",
+      "apiCalls": [
+        {
+          "function": "createAppointment",
+          "module": "medical",
+          "method": "POST",
+          "endpoint": "/medical/appointments"
+        },
+        {
+          "function": "getMedicalConsultations",
+          "module": "medical",
+          "method": "GET",
+          "endpoint": "/medical/consult"
+        },
+        {
+          "function": "getMedicalReports",
+          "module": "medical",
+          "method": "GET",
+          "endpoint": "/medical/reports"
+        },
+        {
+          "function": "getMyAppointments",
+          "module": "medical",
+          "method": "GET",
+          "endpoint": "/medical/appointments"
+        },
+        {
+          "function": "searchDoctors",
+          "module": "medical",
+          "method": "GET",
+          "endpoint": "/medical/doctors"
+        },
+        {
+          "function": "startMedicalConsultation",
+          "module": "medical",
+          "method": "POST",
+          "endpoint": "/medical/consult/start"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/medication/pages/add/index.tsx",
+      "apiCalls": [
+        {
+          "function": "addMedication",
+          "module": "medication",
+          "method": "POST",
+          "endpoint": "/medication/plans"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/medication/pages/index/index.tsx",
+      "apiCalls": [
+        {
+          "function": "deleteMedication",
+          "module": "medication",
+          "method": "DEL",
+          "endpoint": "/medication/plans/${id}"
+        },
+        {
+          "function": "getMedications",
+          "module": "medication",
+          "method": "GET",
+          "endpoint": "/medication/plans"
+        },
+        {
+          "function": "markMedicationTaken",
+          "module": "medication",
+          "method": "POST",
+          "endpoint": "/medication/confirm"
+        },
+        {
+          "function": "skipMedication",
+          "module": "medication",
+          "method": "POST",
+          "endpoint": "/medication/confirm"
+        },
+        {
+          "function": "updateMedication",
+          "module": "medication",
+          "method": "PUT",
+          "endpoint": "/medication/plans/${id}"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/settings/pages/about/index.tsx",
+      "apiCalls": [
+        {
+          "function": "getUserPageConfig",
+          "module": "user",
+          "method": "GET",
+          "endpoint": "/user/page-config"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/settings/pages/device/index.tsx",
+      "apiCalls": []
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/settings/pages/emergency/index.tsx",
+      "apiCalls": []
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/settings/pages/feedback/index.tsx",
+      "apiCalls": []
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/settings/pages/index/index.tsx",
+      "apiCalls": [
+        {
+          "function": "getUserPageConfig",
+          "module": "user",
+          "method": "GET",
+          "endpoint": "/user/page-config"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/sos/pages/index/index.tsx",
+      "apiCalls": [
+        {
+          "function": "cancelSOS",
+          "module": "sos",
+          "method": "POST",
+          "endpoint": "/sos/cancel"
+        },
+        {
+          "function": "getElderlyOverview",
+          "module": "family",
+          "method": "GET",
+          "endpoint": "/family/elderly-overview"
+        }
+      ]
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/timebank/pages/index/index.tsx",
+      "apiCalls": []
+    },
+    {
+      "file": "D:/03_Study/Desktop/old/frontend/src/subpackages/voice_ai/pages/index/index.tsx",
+      "apiCalls": [
+        {
+          "function": "clearChatHistory",
+          "module": "voice",
+          "method": "POST",
+          "endpoint": "/voice/history/clear"
+        },
+        {
+          "function": "getChatHistory",
+          "module": "voice",
+          "method": "GET",
+          "endpoint": "/voice/history"
+        },
+        {
+          "function": "sendTextMessage",
+          "module": "voice",
+          "method": "POST",
+          "endpoint": "/voice/chat"
+        }
+      ]
+    }
+  ]
+}

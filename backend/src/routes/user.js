@@ -19,6 +19,7 @@ const unlockLimiter = rateLimit({
 });
 
 router.get('/profile', auth, userController.getProfile);
+router.get('/page-config', auth, userController.getPageConfig);
 router.put('/profile', auth, userController.updateProfile);
 
 // 兼容旧版小程序客户端的别名路由
@@ -30,6 +31,12 @@ router.post('/emergency-contacts', auth, userController.createEmergencyContact);
 router.put('/emergency-contacts/:id', auth, userController.updateEmergencyContact);
 router.put('/emergency-contacts/:id/primary', auth, userController.setPrimaryContact);
 router.delete('/emergency-contacts/:id', auth, userController.deleteEmergencyContact);
+
+// 小程序设置页兼容接口
+router.get('/devices', auth, userController.listDevices);
+router.post('/devices/bind', auth, userController.bindDevice);
+router.delete('/devices/:id', auth, userController.unbindDevice);
+router.post('/feedback', auth, userController.submitFeedback);
 
 // 兼容旧版删除调用的别名路由
 router.post(

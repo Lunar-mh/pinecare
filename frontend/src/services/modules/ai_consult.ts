@@ -1,26 +1,27 @@
-/**
- * ai_consult.ts - AI健康顾问相关API
- */
-
-import { get, post, put } from '../request';
+﻿import { get, post, put } from '../request';
 import type { ConsultMessage, HealthProfile } from '../types';
 
-// 发送咨询消息
 export const sendConsultMessage = (data: { message: string; sessionId: string }) =>
   post<{ reply: string; sessionId: string }>('/ai-consult/chat', data);
 
-// 获取会话历史
-export const getConsultHistory = (params: { sessionId: string; limit?: number }) =>
-  get<ConsultMessage[]>('/ai-consult/history', params);
+export const getConsultHistory = async (params: { sessionId: string; limit?: number }) => {
+  const response = await get<{ records?: Array<{ id?: string | number; role?: 'user' | 'assistant'; content?: string; session_id?: string; created_at?: string }> }>('/ai-consult/history', params);
+  return (response?.records || []).map((item) => ({
+    id: String(item.id || ''),
+    role: item.role || 'assistant',
+    content: String(item.content || ''),
+    sessionId: String(item.session_id || params.sessionId),
+    createdAt: String(item.created_at || new Date().toISOString()),
+  })) as ConsultMessage[];
+};
 
-// 语音咨询
 export const sendVoiceConsult = (data: { audioData: string; sessionId: string }) =>
   post<{ reply: string; audioData?: string }>('/ai-consult/voice', data);
 
-// 获取健康画像
-export const getHealthProfile = () =>
-  get<HealthProfile>('/ai-consult/profile');
+export const getHealthProfile = async () => {
+  const response = await get<{ profile?: HealthProfile | null }>('/ai-consult/profile');
+  return (response?.profile || null) as HealthProfile | null;
+};
 
-// 更新健康画像
 export const updateHealthProfile = (data: Partial<HealthProfile>) =>
   put<void>('/ai-consult/profile', data);
