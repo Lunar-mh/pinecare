@@ -1,159 +1,106 @@
-import { useCallback, useMemo, useState, useEffect } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro, { useDidShow, useLoad } from '@tarojs/taro'
 import { getElderlyOverview } from '@/services/modules/family'
 import type { ElderlyOverview } from '@/services/types'
-import { Icon, UserIcon, AlertIcon } from '@/components/icons'
-import { 
-  ActionGrid, 
-  DataPanel, 
-  EmptyState, 
-  HeroHeader, 
-  PageShell, 
-  SectionBlock, 
-  StatusCard, 
-  StickyPrimaryAction 
-} from '@/components/shell'
+import { Icon, UserIcon } from '@/components/icons'
+import { PageShell } from '@/components/shell'
 import { homeQuickActionsByRole } from '@/design/navigation'
 import { buildFamilySummaryCards } from '@/view-models/dashboard'
-import './FamilyDashboard.scss'
+import './family.scss'
 
 export default function FamilyDashboard() {
   const [overview, setOverview] = useState<ElderlyOverview | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isInitialLoad, setIsInitialLoad] = useState(true)
 
   const loadData = useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true)
     try {
       const data = await getElderlyOverview()
       setOverview(data)
-    } catch (err) {
-      console.error('Failed to fetch overview:', err)
     } finally {
-      setLoading(false)
-      setIsInitialLoad(false)
+      if (!isSilent) setLoading(false)
     }
   }, [])
 
-  useLoad(() => {
-    loadData()
-  })
-
-  useDidShow(() => {
-    if (!isInitialLoad) {
-      loadData(true)
-    }
-  })
+  useLoad(() => { loadData() })
+  useDidShow(() => { if (overview) loadData(true) })
 
   const summaryCards = useMemo(() => buildFamilySummaryCards(overview), [overview])
   const quickActions = homeQuickActionsByRole.family
 
-  // 动画偏好设置：仅在非低功耗模式下运行高性能动画
-  const ringOffset = (progress: number) => 201 - (201 * (progress || 0)) / 100
-
   return (
     <PageShell roleTone="family" className="family-dashboard" loading={loading}>
-      <HeroHeader
-        roleTone="family"
-        eyebrow={overview?.name || '家属端'}
-        title="守护者的智慧之窗"
-        subtitle="基于实时 IoT 数据，全方位感知长辈动态。"
-        aside={
-          <View 
-            className="avatar-luxe" 
-            role="link" 
-            aria-label="查看家属个人资料"
-            onClick={() => Taro.navigateTo({ url: '/pages/profile/index' })}
-          >
-            <UserIcon size={28} color="#fff" />
-          </View>
-        }
-      />
-
-      <View className="guardian-rings" role="region" aria-label="核心指标圆环">
-        <View className="ring-item">
-          <View className="ring-svg-wrapper">
-            <svg viewBox="0 0 80 80">
-              <circle className="bg" cx="40" cy="40" r="32" />
-              <circle 
-                className="progress animate-draw" 
-                cx="40" cy="40" r="32" 
-                strokeDasharray="201" 
-                strokeDashoffset={ringOffset(overview?.todayHealth.medicationProgress || 0)} 
-              />
-            </svg>
-          </View>
-          <Text className="label">用药进度</Text>
+      <View className="family-header">
+        <View className="family-greeting">
+          <Text className="greeting-title">关注长辈最新状态</Text>
+          <Text className="greeting-sub">随时掌握家人的健康与安全</Text>
         </View>
-        <View className="ring-item">
-          <View className="ring-svg-wrapper">
-            <svg viewBox="0 0 80 80">
-              <circle className="bg" cx="40" cy="40" r="32" />
-              <circle 
-                className="progress health animate-draw" 
-                cx="40" cy="40" r="32" 
-                stroke="#2D5AEE" 
-                strokeDasharray="201" 
-                strokeDashoffset={ringOffset(85)} 
-              />
-            </svg>
-          </View>
-          <Text className="label">健康评分</Text>
-        </View>
-        <View className="ring-item">
-          <View className="ring-svg-wrapper">
-            <svg viewBox="0 0 80 80">
-              <circle className="bg" cx="40" cy="40" r="32" />
-              <circle 
-                className="progress active-val animate-draw" 
-                cx="40" cy="40" r="32" 
-                stroke="#C97B55" 
-                strokeDasharray="201" 
-                strokeDashoffset={ringOffset(60)} 
-              />
-            </svg>
-          </View>
-          <Text className="label">活跃强度</Text>
+        <View className="avatar-btn" onClick={() => Taro.navigateTo({ url: '/pages/profile/index' })}>
+          <UserIcon size={32} color="#fff" />
         </View>
       </View>
 
-      <SectionBlock title="实时体征" description="基于 IoT 设备每 5 分钟同步一次。">
-        <View className="summary-grid">
-          {summaryCards.map(({ key, ...rest }) => (
-            <StatusCard key={key} {...rest} />
+      <View className="status-overview">
+        <View className="status-item">
+          <Text className="val">{overview?.todayHealth.medicationProgress || 0}%</Text>
+          <Text className="label">用药进度</Text>
+        </View>
+        <View className="status-divider" />
+        <View className="status-item">
+          <Text className="val">85分</Text>
+          <Text className="label">健康评分</Text>
+        </View>
+        <View className="status-divider" />
+        <View className="status-item">
+          <Text className="val" style={{color: '#C97B55'}}>正常</Text>
+          <Text className="label">活跃状态</Text>
+        </View>
+      </View>
+
+      <View className="family-section">
+        <Text className="section-title">实时位置</Text>
+        <View className="location-card" onClick={() => Taro.navigateTo({ url: '/subpackages/location/pages/index/index' })}>
+          <View className="location-info">
+            <Icon name="location" size={24} color="#C97B55" />
+            <Text className="address">{overview?.location?.address || '获取位置中...'}</Text>
+          </View>
+          <View className="location-meta">
+            <Text className="meta-text">{overview?.location?.updatedAt || ''} 更新</Text>
+            <View className="location-action">地图查看</View>
+          </View>
+        </View>
+      </View>
+
+      <View className="family-section">
+        <Text className="section-title">今日体征指标</Text>
+        <View className="stats-grid">
+          {summaryCards.map(({ key, title, value, unit, hint }) => (
+            <View key={key} className="stat-card">
+              <Text className="stat-title">{title}</Text>
+              <View className="stat-value">
+                <Text className="val">{value}</Text>
+                <Text className="unit">{unit}</Text>
+              </View>
+              <Text className="stat-hint">{hint}</Text>
+            </View>
           ))}
         </View>
-      </SectionBlock>
+      </View>
 
-      <SectionBlock title="位置态势" description="电子围栏已开启，状态正常。">
-        <View className="bento-layout">
-          <DataPanel className="location-panel">
-            <Text className="location-address">{overview?.location?.address || '位置同步中...'}</Text>
-            <Text className="update-time">{overview?.location?.updatedAt} 更新</Text>
-          </DataPanel>
-          <DataPanel className="safety-index">
-            <Text className="label">安全指数</Text>
-            <Text className="val">98</Text>
-          </DataPanel>
+      <View className="family-section">
+        <Text className="section-title">常用管理功能</Text>
+        <View className="action-grid">
+          {quickActions.map(item => (
+            <View key={item.key} className="action-item" onClick={() => Taro.navigateTo({ url: item.path })}>
+              <View className="action-icon">
+                <Icon name={item.icon} size={28} color="#C97B55" />
+              </View>
+              <Text className="action-label">{item.label}</Text>
+            </View>
+          ))}
         </View>
-      </SectionBlock>
-
-      <SectionBlock title="守护中心" description="点击图标快速进入对应模块。">
-        <ActionGrid
-          items={quickActions.map(item => ({
-            ...item,
-            icon: <Icon name={item.icon} size={32} color="#2F6C5B" />
-          }))}
-          onSelect={(path) => Taro.navigateTo({ url: path })}
-        />
-      </SectionBlock>
-
-      <StickyPrimaryAction 
-        label="实时定位追踪" 
-        tone="family" 
-        onClick={() => Taro.navigateTo({ url: '/subpackages/location/pages/index/index' })} 
-      />
+      </View>
     </PageShell>
   )
 }

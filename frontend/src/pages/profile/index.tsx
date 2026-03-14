@@ -105,7 +105,7 @@ export default function ProfilePage() {
         roleTone={role === 'elder' ? 'elder' : 'family'}
         eyebrow={role === 'elder' ? '身份卡' : '家庭守护身份'}
         title={role === 'elder' ? '我的照护设置与家庭关系' : '我的守护设置与家庭关系'}
-        subtitle="个人资料、角色切换、设置入口均由后端接口驱动。"
+        subtitle={role === 'elder' ? '管理您的个人信息与系统设置' : '管理家庭设置与长辈资料'}
       />
 
       <View className="profile-card">
