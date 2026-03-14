@@ -3,14 +3,8 @@
 const path = require('path');
 const familySpaceModel = require('../models/familySpace');
 const ossService = require('./ossService');
+const { createBizError } = require('../utils/serviceError');
 
-function createBizError(code, message, statusCode, data) {
-  const error = new Error(message);
-  error.code = code;
-  error.statusCode = statusCode || code;
-  error.data = data || null;
-  return error;
-}
 
 function parsePage(page) {
   const value = Number(page);

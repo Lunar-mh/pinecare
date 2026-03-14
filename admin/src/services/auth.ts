@@ -1,4 +1,5 @@
-﻿﻿import http from './api'
+﻿import http from './api'
+import { clearAdminSession } from './session'
 
 export interface LoginPayload {
   username: string
@@ -11,6 +12,7 @@ export interface LoginResult {
   role: string
   refresh_token?: string
   expires_in?: number
+  csrf_token?: string
 }
 
 export async function adminLogin(payload: LoginPayload): Promise<LoginResult> {
@@ -18,5 +20,5 @@ export async function adminLogin(payload: LoginPayload): Promise<LoginResult> {
 }
 
 export function adminLogout(): void {
-  sessionStorage.removeItem('admin_token')
+  clearAdminSession()
 }

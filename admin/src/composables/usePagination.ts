@@ -1,12 +1,24 @@
-import { ref, type Ref } from 'vue'
+﻿import { ref, type Ref } from 'vue'
 
-/**
- * 通用分页 composable — 封装 page / pageSize / total / list 状态
- * fetcher 返回一个包含 list 数组的对象，total 可选（优先 total，其次 count）
- */
+type PaginationPayload = {
+  total?: number
+  count?: number
+  pagination?: {
+    total?: number
+    count?: number
+    page?: number
+    page_size?: number
+    pageSize?: number
+  }
+}
+
+type PaginationResponse<T> = PaginationPayload & {
+  list?: T[]
+}
+
 export function usePagination<T>(
-  fetcher: (...args: any[]) => Promise<{ list: T[]; total?: number; count?: number }>,
-  defaultPageSize = 20
+  fetcher: (params: Record<string, unknown>) => Promise<PaginationResponse<T>>,
+  defaultPageSize = 10
 ) {
   const page = ref(1)
   const pageSize = ref(defaultPageSize)
@@ -23,7 +35,13 @@ export function usePagination<T>(
         ...extra,
       })
       list.value = result.list || []
-      total.value = result.total ?? result.count ?? list.value.length
+      total.value = Number(
+        result.total ??
+          result.count ??
+          result.pagination?.total ??
+          result.pagination?.count ??
+          list.value.length
+      )
     } finally {
       loading.value = false
     }

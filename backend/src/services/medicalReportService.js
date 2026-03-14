@@ -4,13 +4,8 @@ const medicalApiService = require('./medicalApiService');
 const medicalReportModel = require('../models/medicalReportModel');
 const { createMedicalMeta } = require('./medicalMeta');
 const { logThirdPartyError } = require('../utils/thirdParty');
+const { createBizError } = require('../utils/serviceError');
 
-function createBizError(code, message, statusCode) {
-  const error = new Error(message);
-  error.code = code;
-  error.statusCode = statusCode || code;
-  return error;
-}
 
 function normalizePositiveInt(value, fieldName) {
   const parsed = Number(value);

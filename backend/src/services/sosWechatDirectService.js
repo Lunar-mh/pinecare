@@ -5,17 +5,11 @@ const { resolveIntegrationMode } = require('../config/integrationMode');
 const { createUpstreamError, isRetryableError, logThirdPartyError } = require('../utils/thirdParty');
 const { recordProviderSuccess } = require('../utils/providerRuntime');
 const { buildCapabilityReport } = require('./integrationCapability/buildReport');
+const { createBizErrorFromMessage: createBizError } = require('../utils/serviceError');
 
 const DEFAULT_TIMEOUT_MS = Number(process.env.SOS_WECHAT_TIMEOUT_MS || 5000);
 const MAX_RETRY = Math.max(0, Number(process.env.SOS_NOTIFY_MAX_RETRY || 2));
 
-function createBizError(message, code = 503, statusCode = 503, data = null) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode;
-  err.data = data;
-  return err;
-}
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

@@ -27,9 +27,14 @@ export default function LoginPage() {
 
   const isPhoneValid = (val: string) => /^1[3-9]\d{9}$/.test(val)
 
-  const onLoginSuccess = useCallback((token: string, userInfo: unknown) => {
-    Taro.setStorageSync('token', token)
-    Taro.setStorageSync('userInfo', JSON.stringify(userInfo))
+  const onLoginSuccess = useCallback((payload: { token: string; refresh_token?: string; userInfo: unknown }) => {
+    Taro.setStorageSync('token', payload.token)
+    if (payload.refresh_token) {
+      Taro.setStorageSync('refresh_token', payload.refresh_token)
+    } else {
+      Taro.removeStorageSync('refresh_token')
+    }
+    Taro.setStorageSync('userInfo', JSON.stringify(payload.userInfo))
     Taro.setStorageSync('userRole', activeRole)
     Taro.reLaunch({ url: '/pages/index/index' })
   }, [activeRole])
@@ -76,7 +81,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const result = await loginByPhone(phone, code)
-      onLoginSuccess(result.token, result.userInfo)
+      onLoginSuccess(result)
     } catch (error) {
       const err = error as { message?: string }
       Taro.showToast({ title: err.message || '登录失败，请稍后重试', icon: 'none' })
@@ -90,7 +95,7 @@ export default function LoginPage() {
     try {
       const loginRes = await Taro.login()
       const result = await loginByWechat(loginRes.code)
-      onLoginSuccess(result.token, result.userInfo)
+      onLoginSuccess(result)
     } catch (error) {
       const err = error as { message?: string }
       Taro.showToast({ title: err.message || '微信登录失败，请稍后重试', icon: 'none' })

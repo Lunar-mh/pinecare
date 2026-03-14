@@ -1,17 +1,12 @@
 'use strict';
 
+const { createBizError } = require('../../utils/serviceError');
 const DEFAULT_NOTIFICATION_SETTINGS = {
   healthAlertEnabled: true,
   medicationReminderEnabled: true,
   sosAlertEnabled: true,
 };
 
-function createBizError(code, message, statusCode) {
-  const error = new Error(message);
-  error.code = code;
-  error.statusCode = statusCode || code;
-  return error;
-}
 
 function normalizeElderId(elderId) {
   if (elderId === undefined || elderId === null || elderId === '') {

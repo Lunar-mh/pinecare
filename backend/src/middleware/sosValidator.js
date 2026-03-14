@@ -43,6 +43,16 @@ function validateEventId(req, res, next) {
   return next();
 }
 
+function validateEventIdParam(req, res, next) {
+  const eventIdResult = parsePositiveInt(req.params && req.params.eventId, 'eventId');
+  if (!eventIdResult.ok) {
+    return fail(res, 400, eventIdResult.message, null, 400);
+  }
+
+  req.params.eventId = String(eventIdResult.data);
+  return next();
+}
+
 function validateHistoryQuery(req, res, next) {
   const paginationResult = parsePagination(req.query || {}, { defaultPage: 1, defaultPageSize: 10, maxPageSize: 100 });
   if (!paginationResult.ok) {
@@ -65,5 +75,6 @@ function validateHistoryQuery(req, res, next) {
 module.exports = {
   validateTrigger,
   validateEventId,
+  validateEventIdParam,
   validateHistoryQuery,
 };

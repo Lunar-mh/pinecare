@@ -1,16 +1,10 @@
 ﻿'use strict';
 
 const medicationPlanModel = require('../models/medicationPlanModel');
+const { createBizError } = require('../utils/serviceError');
 
 const VALID_FREQUENCIES = ['once_daily', 'twice_daily', 'three_times', 'as_needed'];
 
-function createBizError(code, message, statusCode, data) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  err.data = data || null;
-  return err;
-}
 
 function normalizeDate(input, fieldName) {
   if (input === undefined) return undefined;

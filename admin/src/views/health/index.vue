@@ -1,33 +1,37 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
 import { getAdminHealthOverview } from '@/services'
+import { usePagination } from '@/composables/usePagination'
 import type { AdminHealthOverviewItem } from '@/services'
 
-const loading = ref(false)
 const search = ref('')
-const page = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
-const list = ref<AdminHealthOverviewItem[]>([])
+
+const {
+  page,
+  pageSize,
+  total,
+  list,
+  loading,
+  loadData,
+} = usePagination<AdminHealthOverviewItem>(getAdminHealthOverview, 10)
+
 const warningCount = computed(() => list.value.filter(item => item.riskLevel === 'warning').length)
 const dangerCount = computed(() => list.value.filter(item => item.riskLevel === 'danger').length)
 
 async function fetchHealthOverview() {
-  loading.value = true
   try {
-    const data = await getAdminHealthOverview({ page: page.value, pageSize: pageSize.value, search: search.value || undefined })
-    list.value = data.list || []
-    total.value = data.pagination?.total || 0
+    await loadData({ search: search.value || undefined })
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : '健康总览加载失败')
-  } finally {
-    loading.value = false
+    ElMessage.error(err instanceof Error ? err.message : 'Failed to load health overview')
   }
 }
 
-watch(search, () => { page.value = 1; fetchHealthOverview() })
+watch(search, () => {
+  page.value = 1
+  fetchHealthOverview()
+})
 onMounted(fetchHealthOverview)
 </script>
 

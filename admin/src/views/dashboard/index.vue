@@ -1,3 +1,43 @@
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { getRecentActivities } from '@/services'
+import type { ActivityItem } from '@/services'
+
+const recentEvents = ref<ActivityItem[]>([])
+const eventsLoading = ref(false)
+
+function formatTime(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '--:--:--'
+  return date.toLocaleTimeString('zh-CN', { hour12: false })
+}
+
+function eventDesc(item: ActivityItem): string {
+  return `${item.type} - ${item.status}`
+}
+
+function isDanger(item: ActivityItem): boolean {
+  const normalizedStatus = item.status.toLowerCase()
+  const normalizedType = item.type.toLowerCase()
+  return normalizedStatus.includes('trigger') || normalizedType.includes('sos')
+}
+
+async function fetchRecentEvents() {
+  eventsLoading.value = true
+  try {
+    recentEvents.value = await getRecentActivities(5)
+  } catch (error: unknown) {
+    recentEvents.value = []
+    ElMessage.error(error instanceof Error ? error.message : 'Failed to load recent events')
+  } finally {
+    eventsLoading.value = false
+  }
+}
+
+onMounted(fetchRecentEvents)
+</script>
+
 <template>
   <div class="yao-dashboard cyber-theme">
     <!-- 顶部全景导航 -->
@@ -79,14 +119,15 @@
         <div class="cyber-card glass-v2 stream-section">
           <div class="card-tag">REAL-TIME EVENTS</div>
           <h3 class="card-title">实时全域事件流</h3>
-          <div class="event-stream">
-            <div v-for="i in 5" :key="i" class="event-item" :class="{ danger: i === 1 }">
-              <div class="event-time">14:42:0{{i}}</div>
+          <div class="event-stream" v-loading="eventsLoading">
+            <div v-for="item in recentEvents" :key="item.id" class="event-item" :class="{ danger: isDanger(item) }">
+              <div class="event-time">{{ formatTime(item.time) }}</div>
               <div class="event-body">
-                <span class="user">用户 #0{{i}}21</span>
-                <p>{{ i === 1 ? '触发 SOS 紧急求助' : '设备步数数据同步' }}</p>
+                <span class="user">{{ item.user }}</span>
+                <p>{{ eventDesc(item) }}</p>
               </div>
             </div>
+            <div v-if="!eventsLoading && recentEvents.length === 0" class="event-empty">No recent events</div>
           </div>
         </div>
         <div class="cyber-card glass-v2 dispatch-section">
@@ -256,6 +297,15 @@
     .user { font-weight: 700; color: #CBD5E1; }
     p { font-size: 13px; color: #94A3B8; margin-top: 4px; }
   }
+}
+
+.event-empty {
+  padding: 24px 16px;
+  border-radius: 20px;
+  text-align: center;
+  color: #94A3B8;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
 }
 
 @keyframes orbitPulse {

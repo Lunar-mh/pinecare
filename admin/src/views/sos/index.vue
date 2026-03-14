@@ -1,36 +1,58 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import { confirmSosEvent, getSosHistory, resolveSosEvent } from '@/services'
+import { usePagination } from '@/composables/usePagination'
 import type { SosEventItem, SosEventStatus } from '@/services'
 
-const loading = ref(false)
-const list = ref<SosEventItem[]>([])
-const total = ref(0)
-const page = ref(1)
-const pageSize = ref(10)
 const statusFilter = ref<SosEventStatus | ''>('')
+
+const {
+  page,
+  pageSize,
+  total,
+  list,
+  loading,
+  loadData,
+} = usePagination<SosEventItem>(getSosHistory, 10)
+
 const triggeredCount = computed(() => list.value.filter(item => item.event_status === 'triggered').length)
 const confirmedCount = computed(() => list.value.filter(item => item.event_status === 'confirmed').length)
 const resolvedCount = computed(() => list.value.filter(item => item.event_status === 'resolved').length)
 
 async function fetchHistory() {
-  loading.value = true
   try {
-    const data = await getSosHistory({ page: page.value, pageSize: pageSize.value, status: statusFilter.value || undefined })
-    list.value = data.list || []
-    total.value = data.pagination?.total || 0
+    await loadData({ status: statusFilter.value || undefined })
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : 'SOS 记录加载失败')
-  } finally {
-    loading.value = false
+    ElMessage.error(err instanceof Error ? err.message : 'Failed to load SOS history')
   }
 }
 
-async function handleConfirm(row: SosEventItem) { try { await confirmSosEvent(row.event_id); ElMessage.success('事件已确认'); fetchHistory() } catch (err: unknown) { ElMessage.error(err instanceof Error ? err.message : '确认失败') } }
-async function handleResolve(row: SosEventItem) { try { await resolveSosEvent(row.event_id); ElMessage.success('事件已处理'); fetchHistory() } catch (err: unknown) { ElMessage.error(err instanceof Error ? err.message : '处理失败') } }
-watch(statusFilter, () => { page.value = 1; fetchHistory() })
+async function handleConfirm(row: SosEventItem) {
+  try {
+    await confirmSosEvent(row.event_id)
+    ElMessage.success('Event confirmed')
+    await fetchHistory()
+  } catch (err: unknown) {
+    ElMessage.error(err instanceof Error ? err.message : 'Operation failed')
+  }
+}
+
+async function handleResolve(row: SosEventItem) {
+  try {
+    await resolveSosEvent(row.event_id)
+    ElMessage.success('Event resolved')
+    await fetchHistory()
+  } catch (err: unknown) {
+    ElMessage.error(err instanceof Error ? err.message : 'Operation failed')
+  }
+}
+
+watch(statusFilter, () => {
+  page.value = 1
+  fetchHistory()
+})
 onMounted(fetchHistory)
 </script>
 

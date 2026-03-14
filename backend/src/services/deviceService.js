@@ -1,6 +1,7 @@
 'use strict';
 
 const deviceBindingModel = require('../models/deviceBindingModel');
+const { createBizError } = require('../utils/serviceError');
 
 /**
  * 创建业务错误
@@ -9,12 +10,6 @@ const deviceBindingModel = require('../models/deviceBindingModel');
  * @param {number} [statusCode]
  * @returns {Error}
  */
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
 
 /**
  * 解析设备 ID

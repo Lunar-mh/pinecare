@@ -1,32 +1,37 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
 import { getAdminFamilyBindings } from '@/services'
+import { usePagination } from '@/composables/usePagination'
 import type { FamilyBindingItem } from '@/services'
 
-const loading = ref(false)
 const search = ref('')
 const status = ref('')
-const page = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
-const list = ref<FamilyBindingItem[]>([])
 const selected = ref<FamilyBindingItem | null>(null)
 const drawerVisible = ref(false)
+
+const {
+  page,
+  pageSize,
+  total,
+  list,
+  loading,
+  loadData,
+} = usePagination<FamilyBindingItem>(getAdminFamilyBindings, 10)
 
 const activeBindings = computed(() => list.value.filter(item => item.status === 'active').length)
 const withArchive = computed(() => list.value.filter(item => item.healthArchive.id).length)
 const namedElders = computed(() => list.value.filter(item => item.elderProfile.realName || item.elderProfile.nickname).length)
 
 function elderName(item: FamilyBindingItem): string {
-  return item.elderProfile.realName || item.elderProfile.nickname || `长辈 #${item.elderId}`
+  return item.elderProfile.realName || item.elderProfile.nickname || ('Elder #' + item.elderId)
 }
 
 function statusLabel(value: string): string {
-  if (value === 'active') return '已绑定'
-  if (value === 'disabled') return '已停用'
-  return '未激活'
+  if (value === 'active') return 'Active'
+  if (value === 'disabled') return 'Disabled'
+  return 'Inactive'
 }
 
 function statusTagType(value: string): 'success' | 'warning' | 'info' {
@@ -36,22 +41,13 @@ function statusTagType(value: string): 'success' | 'warning' | 'info' {
 }
 
 async function fetchBindings() {
-  loading.value = true
   try {
-    const data = await getAdminFamilyBindings({
-      page: page.value,
-      pageSize: pageSize.value,
+    await loadData({
       search: search.value || undefined,
       status: status.value || undefined,
     })
-    list.value = data.list || []
-    total.value = data.pagination?.total || 0
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : '家庭绑定数据加载失败')
-    list.value = []
-    total.value = 0
-  } finally {
-    loading.value = false
+    ElMessage.error(err instanceof Error ? err.message : 'Failed to load family bindings')
   }
 }
 

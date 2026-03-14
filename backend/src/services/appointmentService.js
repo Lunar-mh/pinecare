@@ -4,16 +4,11 @@ const crypto = require('crypto');
 const appointmentModel = require('../models/appointmentModel');
 const medicalApiService = require('./medicalApiService');
 const { createMedicalMeta } = require('./medicalMeta');
+const { createBizError } = require('../utils/serviceError');
 
 const CANCELLABLE_STATUS = new Set(['pending', 'confirmed']);
 const ALLOWED_STATUS_FILTER = new Set(['pending', 'confirmed', 'completed', 'cancelled']);
 
-function createBizError(code, message, statusCode) {
-  const error = new Error(message);
-  error.code = code;
-  error.statusCode = statusCode || code;
-  return error;
-}
 
 function normalizePositiveInt(value, fieldName) {
   const parsed = Number(value);

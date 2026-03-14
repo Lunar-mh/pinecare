@@ -3,15 +3,10 @@
 const onlineConsultationModel = require('../models/onlineConsultationModel');
 const medicalApiService = require('./medicalApiService');
 const { createMedicalMeta } = require('./medicalMeta');
+const { createBizError } = require('../utils/serviceError');
 
 const ALLOWED_CONSULT_STATUS = ['pending', 'active', 'completed', 'cancelled'];
 
-function createBizError(code, message, statusCode) {
-  const error = new Error(message);
-  error.code = code;
-  error.statusCode = statusCode || code;
-  return error;
-}
 
 function normalizePositiveInt(value, fieldName) {
   const parsed = Number(value);

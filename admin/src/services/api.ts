@@ -1,4 +1,21 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:3001'
+import {
+  clearAdminSession,
+  getAdminRefreshToken,
+  getAdminToken,
+  getCsrfToken,
+  setAdminRefreshToken,
+  setAdminToken,
+  setCsrfToken,
+} from './session'
+
+const DEV_BASE_URL = 'http://127.0.0.1:3001'
+const EXPLICIT_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '').trim()
+
+if (import.meta.env.PROD && !EXPLICIT_BASE_URL) {
+  throw new Error('VITE_API_BASE_URL is required for production builds.')
+}
+
+const BASE_URL = EXPLICIT_BASE_URL || DEV_BASE_URL
 
 export interface ApiResponse<T = unknown> {
   code: number
@@ -8,14 +25,14 @@ export interface ApiResponse<T = unknown> {
 
 function toUserFacingMessage(code?: number): string {
   const mergedCode = Number(code || 0)
-  if (mergedCode === 400 || mergedCode === 422) return '提交的信息有误，请检查后重试'
-  if (mergedCode === 401) return '登录状态已失效，请重新登录'
-  if (mergedCode === 403) return '当前账号暂无该操作权限'
-  if (mergedCode === 404) return '请求的数据不存在'
-  if (mergedCode === 409) return '数据状态已变化，请刷新后重试'
-  if (mergedCode === 429) return '操作过于频繁，请稍后再试'
-  if (mergedCode === 503 || mergedCode === 504) return '服务暂时不可用，请稍后再试'
-  return '请求失败，请稍后重试'
+  if (mergedCode === 400 || mergedCode === 422) return 'Invalid request payload. Please verify and retry.'
+  if (mergedCode === 401) return 'Session expired. Please login again.'
+  if (mergedCode === 403) return 'You do not have access to this operation.'
+  if (mergedCode === 404) return 'Requested resource was not found.'
+  if (mergedCode === 409) return 'Data has changed. Please refresh and retry.'
+  if (mergedCode === 429) return 'Too many requests. Please try again later.'
+  if (mergedCode === 503 || mergedCode === 504) return 'Service is temporarily unavailable. Please retry later.'
+  return 'Request failed. Please try again later.'
 }
 
 class ApiError extends Error {
@@ -38,8 +55,29 @@ async function parseJsonSafe<T>(res: Response): Promise<ApiResponse<T> | null> {
   }
 }
 
-async function request<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
-  const token = sessionStorage.getItem('admin_token')
+function isAuthPath(path: string): boolean {
+  return path.startsWith('/api/v1/auth/')
+}
+
+let isRedirectingToLogin = false
+function redirectToLogin(): void {
+  if (isRedirectingToLogin || typeof window === 'undefined') {
+    return
+  }
+
+  isRedirectingToLogin = true
+  clearAdminSession()
+  window.location.href = '/#/login'
+}
+
+async function sendRequest<T = unknown>(
+  method: string,
+  path: string,
+  body?: unknown,
+  tokenOverride?: string | null
+): Promise<{ res: Response; json: ApiResponse<T> | null }> {
+  const token = tokenOverride === undefined ? getAdminToken() : tokenOverride || ''
+  const csrfToken = getCsrfToken()
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -47,6 +85,9 @@ async function request<T = unknown>(method: string, path: string, body?: unknown
 
   if (token) {
     headers.Authorization = `Bearer ${token}`
+  }
+  if (csrfToken) {
+    headers['X-CSRF-Token'] = csrfToken
   }
 
   const options: RequestInit = {
@@ -59,12 +100,77 @@ async function request<T = unknown>(method: string, path: string, body?: unknown
   }
 
   const res = await fetch(`${BASE_URL}${path}`, options)
-  const json = await parseJsonSafe<T>(res)
+  const refreshedCsrfToken = res.headers.get('x-csrf-token') || res.headers.get('X-CSRF-Token')
+  if (refreshedCsrfToken) {
+    setCsrfToken(refreshedCsrfToken)
+  }
 
-  if (res.status === 401) {
-    sessionStorage.removeItem('admin_token')
-    window.location.href = '/#/login'
-    throw new ApiError(401, toUserFacingMessage(401), json?.message)
+  const json = await parseJsonSafe<T>(res)
+  return { res, json }
+}
+
+let refreshPromise: Promise<string> | null = null
+
+async function refreshAdminAccessToken(): Promise<string> {
+  const refreshToken = getAdminRefreshToken()
+  if (!refreshToken) {
+    throw new ApiError(401, toUserFacingMessage(401), 'Admin refresh token is missing.')
+  }
+
+  const { res, json } = await sendRequest<{ access_token?: string; refresh_token?: string }>(
+    'POST',
+    '/api/v1/auth/refresh-token',
+    { refresh_token: refreshToken },
+    ''
+  )
+
+  if (!res.ok || !json || json.code !== 0) {
+    throw new ApiError(401, toUserFacingMessage(401), json?.message || `Refresh failed: HTTP ${res.status}`)
+  }
+
+  const accessToken = String(json.data?.access_token || '').trim()
+  const nextRefreshToken = String(json.data?.refresh_token || refreshToken).trim()
+
+  if (!accessToken || !nextRefreshToken) {
+    throw new ApiError(401, toUserFacingMessage(401), 'Refresh payload is missing token fields.')
+  }
+
+  setAdminToken(accessToken)
+  setAdminRefreshToken(nextRefreshToken)
+  return accessToken
+}
+
+function ensureRefresh(): Promise<string> {
+  if (!refreshPromise) {
+    refreshPromise = refreshAdminAccessToken().finally(() => {
+      refreshPromise = null
+    })
+  }
+  return refreshPromise
+}
+
+async function request<T = unknown>(method: string, path: string, body?: unknown, hasRetried = false): Promise<T> {
+  const { res, json } = await sendRequest<T>(method, path, body)
+
+  const isUnauthorized = res.status === 401 || Number(json?.code || 0) === 401
+  const canRetryWithRefresh = !hasRetried && !isAuthPath(path) && isUnauthorized && Boolean(getAdminRefreshToken())
+
+  if (canRetryWithRefresh) {
+    try {
+      await ensureRefresh()
+      return await request<T>(method, path, body, true)
+    } catch (err: unknown) {
+      redirectToLogin()
+      const debugMessage = err instanceof Error ? err.message : String(err || '')
+      throw new ApiError(401, toUserFacingMessage(401), debugMessage)
+    }
+  }
+
+  if (isUnauthorized) {
+    if (!isAuthPath(path)) {
+      redirectToLogin()
+    }
+    throw new ApiError(401, toUserFacingMessage(401), json?.message || `HTTP ${res.status}`)
   }
 
   if (!res.ok) {
@@ -72,7 +178,7 @@ async function request<T = unknown>(method: string, path: string, body?: unknown
   }
 
   if (!json) {
-    throw new ApiError(500, '服务返回格式异常，请稍后重试', 'Invalid response payload')
+    throw new ApiError(500, 'Invalid response payload from server.', 'Invalid response payload')
   }
 
   if (json.code !== 0) {

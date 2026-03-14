@@ -1,18 +1,13 @@
 'use strict';
 
 const axios = require('axios');
+const { createBizError } = require('../utils/serviceError');
 
 const QWEN_ENDPOINT =
   'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
 const QWEN_MODEL = process.env.QWEN_MODEL || 'qwen-turbo';
 const QWEN_TIMEOUT = Number(process.env.QWEN_TIMEOUT_MS || 30000);
 
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
 
 async function chatWithQwen(messages, userId) {
   if (!process.env.DASHSCOPE_API_KEY) {

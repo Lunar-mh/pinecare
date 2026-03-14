@@ -1,7 +1,8 @@
-import './app.scss'
+﻿import './app.scss'
 
-import { PropsWithChildren } from 'react'
+import type { PropsWithChildren } from 'react'
+import ErrorBoundary from './components/ErrorBoundary'
 
 export default function App(props: PropsWithChildren) {
-  return props.children
+  return <ErrorBoundary>{props.children}</ErrorBoundary>
 }

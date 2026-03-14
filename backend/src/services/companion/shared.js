@@ -4,13 +4,8 @@ const AuditLogModel = require('../../models/auditLog');
 const { resolveIntegrationMode } = require('../../config/integrationMode');
 const logger = require('../../utils/logger');
 const { DEFAULT_DECADE, GAME_LIST } = require('./content');
+const { createBizError } = require('../../utils/serviceError');
 
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
 
 const getModeStrategy = () =>
   resolveIntegrationMode({

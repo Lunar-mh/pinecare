@@ -2,6 +2,7 @@
 
 const healthRecordModel = require('../models/healthRecordModel');
 const { collectAlerts } = require('../utils/healthAlert');
+const { createBizError } = require('../utils/serviceError');
 
 const VALID_METRIC_TYPES = [
   'blood_pressure',
@@ -15,12 +16,6 @@ const VALID_METRIC_TYPES = [
 
 const VALID_PERIODS = ['7d', '30d'];
 
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
 
 function ensureMetricType(metricType) {
   if (!VALID_METRIC_TYPES.includes(metricType)) {

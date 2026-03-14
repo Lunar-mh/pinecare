@@ -2,6 +2,7 @@
 
 const drugInteractionModel = require('../models/drugInteraction');
 const knowledgeGraphService = require('./knowledgeGraphService');
+const { createBizError } = require('../utils/serviceError');
 const {
   RISK_WEIGHT,
   normalizeDrugName,
@@ -13,12 +14,6 @@ const {
 const CHECK_CONCURRENCY = 8;
 const QUERY_TIMEOUT_MS = 400;
 
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
 
 function createBatchId() {
   return `batch_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;

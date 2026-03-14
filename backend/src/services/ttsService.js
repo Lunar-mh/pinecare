@@ -3,15 +3,10 @@
 const axios = require('axios');
 const { getVoiceEnv, validateVoiceEnv } = require('../config/voiceEnv');
 const logger = require('../utils/logger');
+const { createBizError } = require('../utils/serviceError');
 
 const TARGET_SPEED_WPM = 150;
 
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
 
 function getSpeechRateByWpm(wpm) {
   const baseWpm = 300;

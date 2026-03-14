@@ -154,6 +154,8 @@ describe('authController', () => {
     expect(res.body.code).toBe(0);
     expect(res.body.data).toEqual({
       token: 'access',
+      refresh_token: 'refresh',
+      expires_in: 900,
       userInfo: { id: 3, phone: '13800138000' },
     });
   });

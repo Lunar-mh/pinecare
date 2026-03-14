@@ -3,18 +3,13 @@
 const VoiceModel = require('../models/voice');
 const asrService = require('./asrService');
 const ttsService = require('./ttsService');
+const { createBizError } = require('../utils/serviceError');
 
 const WAKE_WORD = '银伴银伴';
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
 
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
 
 function toPagination(page, pageSize) {
   const parsedPage = Number(page);

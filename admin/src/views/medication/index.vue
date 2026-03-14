@@ -1,46 +1,52 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
 import { getAdminMedicationLogs, updateAdminMedicationLogStatus } from '@/services'
+import { usePagination } from '@/composables/usePagination'
 import type { AdminMedicationLogItem } from '@/services'
 
-const loading = ref(false)
 const search = ref('')
 const status = ref<'' | 'pending' | 'taken' | 'skipped' | 'missed'>('')
-const page = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
-const list = ref<AdminMedicationLogItem[]>([])
+
+const {
+  page,
+  pageSize,
+  total,
+  list,
+  loading,
+  loadData,
+} = usePagination<AdminMedicationLogItem>(getAdminMedicationLogs, 10)
 
 const pendingCount = computed(() => list.value.filter(item => item.status === 'pending').length)
 const takenCount = computed(() => list.value.filter(item => item.status === 'taken').length)
 const missedCount = computed(() => list.value.filter(item => item.status === 'missed').length)
 
 async function fetchAdminMedicationLogs() {
-  loading.value = true
   try {
-    const data = await getAdminMedicationLogs({ page: page.value, pageSize: pageSize.value, search: search.value || undefined, status: status.value || undefined })
-    list.value = data.list || []
-    total.value = data.pagination?.total || 0
+    await loadData({
+      search: search.value || undefined,
+      status: status.value || undefined,
+    })
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : '用药日志加载失败')
-  } finally {
-    loading.value = false
+    ElMessage.error(err instanceof Error ? err.message : 'Failed to load medication logs')
   }
 }
 
 async function updateStatus(row: AdminMedicationLogItem, nextStatus: 'taken' | 'skipped' | 'missed') {
   try {
     await updateAdminMedicationLogStatus(row.id, nextStatus)
-    ElMessage.success('状态已更新')
-    fetchAdminMedicationLogs()
+    ElMessage.success('Status updated')
+    await fetchAdminMedicationLogs()
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : '状态更新失败')
+    ElMessage.error(err instanceof Error ? err.message : 'Failed to update status')
   }
 }
 
-watch([search, status], () => { page.value = 1; fetchAdminMedicationLogs() })
+watch([search, status], () => {
+  page.value = 1
+  fetchAdminMedicationLogs()
+})
 onMounted(fetchAdminMedicationLogs)
 </script>
 

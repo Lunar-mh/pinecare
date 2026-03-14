@@ -1,17 +1,22 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { bootstrapDemoScenario, getCommunityVolunteers } from '@/services'
+import { usePagination } from '@/composables/usePagination'
 import type { CommunityVolunteerItem } from '@/services'
 
-const loading = ref(false)
 const bootstrapLoading = ref(false)
 const keyword = ref('')
-const volunteers = ref<CommunityVolunteerItem[]>([])
-const total = ref(0)
-const page = ref(1)
-const pageSize = ref(10)
+
+const {
+  page,
+  pageSize,
+  total,
+  list: volunteers,
+  loading,
+  loadData,
+} = usePagination<CommunityVolunteerItem>(getCommunityVolunteers, 10)
 
 const pageCount = computed(() => volunteers.value.length)
 const adminCount = computed(() => volunteers.value.filter(item => item.role === 'admin').length)
@@ -19,28 +24,17 @@ const leaderCount = computed(() => volunteers.value.filter(item => item.role ===
 const volunteerCount = computed(() => volunteers.value.filter(item => item.role === 'volunteer').length)
 
 function roleText(role: string): string {
-  if (role === 'admin') return '管理员'
-  if (role === 'leader') return '负责人'
-  return '志愿者'
+  if (role === 'admin') return 'Admin'
+  if (role === 'leader') return 'Leader'
+  return 'Volunteer'
 }
 
 async function fetchVolunteers() {
-  loading.value = true
   try {
-    const data = await getCommunityVolunteers({
-      page: page.value,
-      pageSize: pageSize.value,
-      keyword: keyword.value || undefined,
-    })
-    volunteers.value = data.list || []
-    total.value = data.pagination?.total || 0
+    await loadData({ keyword: keyword.value || undefined })
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : '志愿者名单加载失败'
+    const message = err instanceof Error ? err.message : 'Failed to load volunteer list'
     ElMessage.error(message)
-    volunteers.value = []
-    total.value = 0
-  } finally {
-    loading.value = false
   }
 }
 
@@ -48,9 +42,9 @@ async function handleBootstrap() {
   bootstrapLoading.value = true
   try {
     const result = await bootstrapDemoScenario('volunteer-task-execution')
-    ElMessage.success(`志愿者闭环已准备：${result.title}`)
+    ElMessage.success('Volunteer flow prepared: ' + result.title)
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : '志愿者闭环准备失败')
+    ElMessage.error(err instanceof Error ? err.message : 'Failed to prepare volunteer flow')
   } finally {
     bootstrapLoading.value = false
   }

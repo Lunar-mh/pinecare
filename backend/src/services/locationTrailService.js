@@ -1,6 +1,7 @@
 'use strict';
 
 const locationRecordModel = require('../models/locationRecordModel');
+const { createBizError } = require('../utils/serviceError');
 
 const DEFAULT_LIMIT = 1000;
 const MAX_LIMIT = 5000;
@@ -12,12 +13,6 @@ const MAX_LIMIT = 5000;
  * @param {number} [statusCode]
  * @returns {Error}
  */
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
 
 /**
  * 校验并解析时间参数

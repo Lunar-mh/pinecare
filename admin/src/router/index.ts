@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import { clearAdminSession, getAdminRefreshToken, getAdminToken } from '@/services/session'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -35,31 +36,60 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, _from, next) => {
-  const token = sessionStorage.getItem('admin_token')
-  if (to.name !== 'Login') {
-    if (!token) {
-      return next({ name: 'Login' })
-    }
-    try {
-      const parts = token.split('.')
-      if (parts.length < 2 || !parts[1]) {
-        sessionStorage.removeItem('admin_token')
-        return next({ name: 'Login' })
-      }
-      const payload = JSON.parse(atob(parts[1])) as { exp?: number }
-      if (payload.exp && payload.exp * 1000 < Date.now()) {
-        sessionStorage.removeItem('admin_token')
-        return next({ name: 'Login' })
-      }
-    } catch (e) {
-      sessionStorage.removeItem('admin_token')
-      return next({ name: 'Login' })
-    }
-    next()
-  } else {
-    next()
+function decodeJwtPayload(token: string): { exp?: number } | null {
+  const parts = token.split('.')
+  if (parts.length < 2 || !parts[1]) return null
+
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=')
+    return JSON.parse(atob(padded)) as { exp?: number }
+  } catch (_error: unknown) {
+    return null
   }
+}
+
+router.beforeEach((to, _from, next) => {
+  if (to.name === 'Login') {
+    next()
+    return
+  }
+
+  const token = getAdminToken()
+  const refreshToken = getAdminRefreshToken()
+
+  if (!token && !refreshToken) {
+    next({ name: 'Login' })
+    return
+  }
+
+  if (!token && refreshToken) {
+    next()
+    return
+  }
+
+  const payload = decodeJwtPayload(token)
+  if (!payload) {
+    if (refreshToken) {
+      next()
+      return
+    }
+    clearAdminSession()
+    next({ name: 'Login' })
+    return
+  }
+
+  if (payload.exp && payload.exp * 1000 < Date.now()) {
+    if (refreshToken) {
+      next()
+      return
+    }
+    clearAdminSession()
+    next({ name: 'Login' })
+    return
+  }
+
+  next()
 })
 
 export default router

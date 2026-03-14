@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const { createHmac } = require('crypto');
 const { getCorsAllowedOrigins, getServerRole } = require('./http');
@@ -239,9 +239,9 @@ function validateEnv() {
   normalized.RUNTIME_MODE = mode;
   normalized.PRODUCTION_LIVE = process.env.PRODUCTION_LIVE;
   normalized.COMPETITION_SANDBOX = process.env.COMPETITION_SANDBOX;
-  normalized.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
   validateJwtSecretStrength();
+  normalized.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
   validateProductionSecrets();
   validateAiConfig();
   validateVoiceConfig();

@@ -1,64 +1,105 @@
-/**
- * user.ts - 用户相关API
- */
-
 import Taro from '@tarojs/taro';
-import { get, post, put } from '../request';
-import type { UserInfo, EmergencyContact, PaginatedResult } from '../types';
+import {
+  API_BASE_URL,
+  clearAuthSession,
+  get,
+  getAccessToken,
+  getRefreshToken,
+  post,
+  put,
+  redirectToLogin,
+  refreshAccessToken,
+} from '../request';
+import type { UserInfo, EmergencyContact } from '../types';
 
-const UPLOAD_BASE_URL = String(process.env.TARO_APP_API_BASE_URL || '').trim() || 'http://127.0.0.1:3001/api/v1';
+// Auth
+export const sendSmsCode = (phone: string) => post<void>('/auth/sms-code', { phone });
 
-// 发送短信验证码
-export const sendSmsCode = (phone: string) =>
-  post<void>('/auth/sms-code', { phone });
+export const loginByWechat = (code: string) =>
+  post<{ token: string; refresh_token?: string; expires_in?: number; userInfo: UserInfo }>('/auth/wechat', { code });
 
-// 微信登录
-export const loginByWechat = (code: string) => 
-  post<{ token: string; userInfo: UserInfo }>('/auth/wechat', { code });
-
-// 手机号登录
 export const loginByPhone = (phone: string, code: string) =>
-  post<{ token: string; userInfo: UserInfo }>('/auth/phone', { phone, code });
+  post<{ token: string; refresh_token?: string; expires_in?: number; userInfo: UserInfo }>('/auth/phone', { phone, code });
 
-// 获取用户信息
-export const getUserInfo = () =>
-  get<UserInfo>('/user/info');
+// Profile
+export const getUserInfo = () => get<UserInfo>('/user/info');
 
-// 更新用户信息
-export const updateUserInfo = (data: Partial<UserInfo>) =>
-  put<UserInfo>('/user/info', data);
+export const updateUserInfo = (data: Partial<UserInfo>) => put<UserInfo>('/user/info', data);
 
-// 上传头像
-export const uploadAvatar = (filePath: string) => {
-  const token = Taro.getStorageSync('token') || '';
-  return Taro.uploadFile({
-    url: `${UPLOAD_BASE_URL}/user/avatar`,
+type UploadEnvelope = {
+  code?: number;
+  message?: string;
+  data?: unknown;
+};
+
+function parseUploadEnvelope(raw: string): UploadEnvelope | null {
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw) as UploadEnvelope;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function isUnauthorizedUpload(statusCode: number, envelope: UploadEnvelope | null): boolean {
+  return statusCode === 401 || Number(envelope?.code || 0) === 401;
+}
+
+async function uploadAvatarOnce(filePath: string, token: string) {
+  return await Taro.uploadFile({
+    url: `${API_BASE_URL}/user/avatar`,
     filePath,
     name: 'file',
     header: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
-};
+}
 
-// ==================== 紧急联系人 ====================
+export async function uploadAvatar(filePath: string) {
+  let token = getAccessToken();
+  let result = await uploadAvatarOnce(filePath, token);
+  let envelope = parseUploadEnvelope(result.data);
 
-// 获取紧急联系人列表
-export const getEmergencyContacts = () =>
-  get<EmergencyContact[]>('/user/emergency-contacts');
+  if (isUnauthorizedUpload(result.statusCode, envelope) && getRefreshToken()) {
+    try {
+      token = await refreshAccessToken();
+      result = await uploadAvatarOnce(filePath, token);
+      envelope = parseUploadEnvelope(result.data);
+    } catch (_error) {
+      clearAuthSession();
+      redirectToLogin();
+      throw new Error('Session expired. Please login again.');
+    }
+  }
 
-// 添加紧急联系人
+  if (isUnauthorizedUpload(result.statusCode, envelope)) {
+    clearAuthSession();
+    redirectToLogin();
+    throw new Error('Session expired. Please login again.');
+  }
+
+  if (result.statusCode < 200 || result.statusCode >= 300) {
+    throw new Error(envelope?.message || 'Avatar upload failed. Please retry later.');
+  }
+
+  if (envelope && envelope.code !== undefined && envelope.code !== 0 && envelope.code !== 200) {
+    throw new Error(envelope.message || 'Avatar upload failed. Please retry later.');
+  }
+
+  return result;
+}
+
+// Emergency contacts
+export const getEmergencyContacts = () => get<EmergencyContact[]>('/user/emergency-contacts');
+
 export const addEmergencyContact = (data: Omit<EmergencyContact, 'id'>) =>
   post<EmergencyContact>('/user/emergency-contacts', data);
 
-// 更新紧急联系人
 export const updateEmergencyContact = (id: string, data: Partial<EmergencyContact>) =>
   put<EmergencyContact>(`/user/emergency-contacts/${id}`, data);
 
-// 删除紧急联系人
-export const deleteEmergencyContact = (id: string) =>
-  post<void>(`/user/emergency-contacts/${id}/delete`);
+export const deleteEmergencyContact = (id: string) => post<void>(`/user/emergency-contacts/${id}/delete`);
 
-// 设置主要联系人
-export const setPrimaryContact = (id: string) =>
-  put<void>(`/user/emergency-contacts/${id}/primary`);
+export const setPrimaryContact = (id: string) => put<void>(`/user/emergency-contacts/${id}/primary`);

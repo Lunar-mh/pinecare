@@ -6,17 +6,12 @@ const { createUpstreamError, isRetryableError, logThirdPartyError } = require('.
 const { recordProviderSuccess } = require('../utils/providerRuntime');
 const { resolveIntegrationMode } = require('../config/integrationMode');
 const { buildCapabilityReport } = require('./integrationCapability/buildReport');
+const { createBizErrorFromMessage: createBizError } = require('../utils/serviceError');
 
 const DASHSCOPE_BASE = 'https://dashscope.aliyuncs.com/api/v1';
 const REQUEST_TIMEOUT_MS = Number(process.env.VOICE_SERVICE_TIMEOUT_MS || 15000);
 const MAX_RETRY = Math.max(0, Number(process.env.VOICE_SERVICE_MAX_RETRY || 2));
 
-function createBizError(message, code = 503, statusCode = 503) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode;
-  return err;
-}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const getModeStrategy = () =>

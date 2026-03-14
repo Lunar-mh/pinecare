@@ -2,6 +2,7 @@
 
 const axios = require('axios');
 const AuditLogModel = require('../../models/auditLog');
+const { createBizError } = require('../../utils/serviceError');
 const {
   createUpstreamError,
   isRetryableError,
@@ -19,12 +20,6 @@ const CIRCUIT_BREAKER_COOLDOWN_MS = Math.max(
   Number(process.env.MEDICAL_API_CIRCUIT_BREAKER_COOLDOWN_MS || 30000)
 );
 
-function createBizError(code, message, statusCode) {
-  const error = new Error(message);
-  error.code = code;
-  error.statusCode = statusCode || code;
-  return error;
-}
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

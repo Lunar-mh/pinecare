@@ -1,13 +1,8 @@
 'use strict';
 
 const medicationSettingModel = require('../models/medicationSettingModel');
+const { createBizError } = require('../utils/serviceError');
 
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
 
 function parseSwitch(value, fieldName) {
   if (value === undefined) {

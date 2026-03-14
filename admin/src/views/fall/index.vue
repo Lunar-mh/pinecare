@@ -1,28 +1,33 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import { getFallHistory, getFallSettings, updateFallSettings } from '@/services'
+import { usePagination } from '@/composables/usePagination'
 import type { FallEventItem, FallEventStatus } from '@/services'
 
-const loading = ref(false)
 const settingsSaving = ref(false)
-const events = ref<FallEventItem[]>([])
-const total = ref(0)
-const page = ref(1)
-const pageSize = ref(10)
 const statusFilter = ref<FallEventStatus | ''>('')
 const sensitivity = ref<'high' | 'medium' | 'low'>('medium')
+
+const {
+  page,
+  pageSize,
+  total,
+  list: events,
+  loading,
+  loadData,
+} = usePagination<FallEventItem>(getFallHistory, 10)
 
 const detectingCount = computed(() => events.value.filter(item => item.status === 'detecting').length)
 const confirmedCount = computed(() => events.value.filter(item => item.status === 'confirmed').length)
 const falseAlarmCount = computed(() => events.value.filter(item => item.status === 'false_alarm').length)
 
 function statusLabel(status: FallEventStatus): string {
-  if (status === 'detecting') return '监测中'
-  if (status === 'confirmed') return '已确认'
-  if (status === 'cancelled') return '已取消'
-  return '误报'
+  if (status === 'detecting') return 'Detecting'
+  if (status === 'confirmed') return 'Confirmed'
+  if (status === 'cancelled') return 'Cancelled'
+  return 'False Alarm'
 }
 
 function statusTagType(status: FallEventStatus): 'warning' | 'success' | 'info' {
@@ -32,9 +37,9 @@ function statusTagType(status: FallEventStatus): 'warning' | 'success' | 'info' 
 }
 
 function sensitivityLabel(level: 'high' | 'medium' | 'low'): string {
-  if (level === 'high') return '高灵敏'
-  if (level === 'low') return '低灵敏'
-  return '标准'
+  if (level === 'high') return 'High'
+  if (level === 'low') return 'Low'
+  return 'Medium'
 }
 
 function readMetric(sensorData: Record<string, unknown> | null, key: string): string {
@@ -45,21 +50,10 @@ function readMetric(sensorData: Record<string, unknown> | null, key: string): st
 }
 
 async function fetchHistory() {
-  loading.value = true
   try {
-    const data = await getFallHistory({
-      page: page.value,
-      pageSize: pageSize.value,
-      status: statusFilter.value || undefined,
-    })
-    events.value = data.list || []
-    total.value = data.pagination?.total || 0
+    await loadData({ status: statusFilter.value || undefined })
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : '跌倒事件加载失败')
-    events.value = []
-    total.value = 0
-  } finally {
-    loading.value = false
+    ElMessage.error(err instanceof Error ? err.message : 'Failed to load fall events')
   }
 }
 
@@ -77,9 +71,9 @@ async function saveSettings() {
   try {
     const data = await updateFallSettings(sensitivity.value)
     sensitivity.value = data.sensitivity
-    ElMessage.success('灵敏度已更新')
+    ElMessage.success('Sensitivity updated')
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : '灵敏度更新失败')
+    ElMessage.error(err instanceof Error ? err.message : 'Failed to update sensitivity')
   } finally {
     settingsSaving.value = false
   }

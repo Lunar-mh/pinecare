@@ -10,16 +10,11 @@ const { mergeProviderRuntime, recordProviderSuccess } = require('../utils/provid
 const { resolveIntegrationMode } = require('../config/integrationMode');
 const logger = require('../utils/logger');
 const { buildCapabilityReport } = require('./integrationCapability/buildReport');
+const { createBizErrorFromMessage: createBizError } = require('../utils/serviceError');
 const DASHSCOPE_URL = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
 const REQUEST_TIMEOUT_MS = Number(process.env.AI_CONSULT_TIMEOUT_MS || 30000);
 const MAX_RETRY = Math.max(0, Number(process.env.AI_CONSULT_MAX_RETRY || 2));
 
-function createBizError(message, code = 503, statusCode = 503) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode;
-  return err;
-}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const getModeStrategy = () =>

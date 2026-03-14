@@ -1,16 +1,11 @@
 'use strict';
 
 const geoFenceModel = require('../models/geoFenceModel');
+const { createBizError } = require('../utils/serviceError');
 
 const VALID_FENCE_TYPES = ['circle', 'polygon'];
 const VALID_ALERT_TYPES = ['enter', 'exit', 'both'];
 
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
 
 function ensureLatLng(lat, lng) {
   if (!Number.isFinite(lat) || lat < -90 || lat > 90) {

@@ -22,10 +22,19 @@ function handleError(res, err) {
 }
 
 function toMiniProgramLoginPayload(serviceData) {
-  return {
+  const payload = {
     token: serviceData.access_token,
     userInfo: serviceData.user,
   };
+
+  if (serviceData.refresh_token) {
+    payload.refresh_token = serviceData.refresh_token;
+  }
+  if (serviceData.expires_in !== undefined) {
+    payload.expires_in = serviceData.expires_in;
+  }
+
+  return payload;
 }
 
 async function sendSms(req, res) {

@@ -1,57 +1,60 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus, Refresh, Search } from '@element-plus/icons-vue'
 import { createCommunityActivity, getCommunityActivities, getCommunityStats } from '@/services'
+import { usePagination } from '@/composables/usePagination'
 import type { CommunityActivityItem, CommunityStats } from '@/services'
 
-const loading = ref(false)
 const stats = ref<CommunityStats | null>(null)
-const activities = ref<CommunityActivityItem[]>([])
-const total = ref(0)
-const page = ref(1)
-const pageSize = ref(10)
 const keyword = ref('')
 const dialogVisible = ref(false)
 const submitLoading = ref(false)
 const form = reactive({ title: '', content: '', start_time: '', end_time: '', max_participants: null as number | null })
 
+const {
+  page,
+  pageSize,
+  total,
+  list: activities,
+  loading,
+  loadData,
+} = usePagination<CommunityActivityItem>(getCommunityActivities, 10)
+
 async function fetchData() {
-  loading.value = true
   try {
-    const [statsData, activitiesData] = await Promise.all([
+    const [statsData] = await Promise.all([
       getCommunityStats(),
-      getCommunityActivities({ page: page.value, pageSize: pageSize.value, keyword: keyword.value || undefined }),
+      loadData({ keyword: keyword.value || undefined }),
     ])
     stats.value = statsData
-    activities.value = activitiesData.list || []
-    total.value = activitiesData.pagination?.total || 0
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : '社区运营数据加载失败')
-  } finally {
-    loading.value = false
+    ElMessage.error(err instanceof Error ? err.message : 'Failed to load community operations data')
   }
 }
 
 async function submitCreateActivity() {
   if (!form.title || !form.content || !form.start_time || !form.end_time) {
-    ElMessage.warning('请把活动名称、内容和时间补完整')
+    ElMessage.warning('Please provide title, content, and time fields')
     return
   }
   submitLoading.value = true
   try {
     await createCommunityActivity(form)
     dialogVisible.value = false
-    ElMessage.success('活动已创建')
-    fetchData()
+    ElMessage.success('Activity created')
+    await fetchData()
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : '创建活动失败')
+    ElMessage.error(err instanceof Error ? err.message : 'Failed to create activity')
   } finally {
     submitLoading.value = false
   }
 }
 
-watch(keyword, () => { page.value = 1; fetchData() })
+watch(keyword, () => {
+  page.value = 1
+  fetchData()
+})
 onMounted(fetchData)
 </script>
 

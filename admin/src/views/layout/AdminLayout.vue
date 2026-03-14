@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { Bell, Search, SwitchButton } from '@element-plus/icons-vue'
 import { workbenchNavGroups, findWorkbenchItem } from '@/design/navigation'
 import { resolveWorkbenchRole } from '@/view-models/workbenchRoles'
+import { clearAdminSession } from '@/services/session'
 
 const router = useRouter()
 const route = useRoute()
@@ -37,7 +38,7 @@ function handleSearch() {
 }
 
 function handleLogout() {
-  localStorage.removeItem('admin_token')
+  clearAdminSession()
   router.push('/login')
 }
 </script>

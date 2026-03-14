@@ -1,5 +1,6 @@
 'use strict';
 
+const { createBizError } = require('../../utils/serviceError');
 const VALID_SENSITIVITY = ['high', 'medium', 'low'];
 const THRESHOLDS = {
   high: { vertical: 2.5, horizontal: 1.5 },
@@ -7,12 +8,6 @@ const THRESHOLDS = {
   low: { vertical: 4.0, horizontal: 2.5 },
 };
 
-function createBizError(code, message, status) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = status || code;
-  return err;
-}
 
 function normalizeSensorData(sensorData) {
   const data = sensorData || {};

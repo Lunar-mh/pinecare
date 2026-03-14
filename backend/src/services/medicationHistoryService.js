@@ -1,13 +1,8 @@
 ﻿'use strict';
 
 const medicationLogModel = require('../models/medicationLogModel');
+const { createBizError } = require('../utils/serviceError');
 
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
 
 function parseMonth(month) {
   const text = String(month || '').trim();

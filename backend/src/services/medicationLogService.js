@@ -2,13 +2,8 @@
 
 const medicationLogModel = require('../models/medicationLogModel');
 const medicationPlanModel = require('../models/medicationPlanModel');
+const { createBizError } = require('../utils/serviceError');
 
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
 
 function normalizeDate(value, field) {
   if (!value) {

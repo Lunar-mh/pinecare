@@ -6,15 +6,10 @@ const fenceAlertModel = require('../models/fenceAlertModel');
 const locationCacheService = require('./locationCacheService');
 const { recordCareEvent } = require('./eventTimelineService');
 const { checkFenceViolation, isInsideFence } = require('../utils/geoFenceMath');
+const { createBizError } = require('../utils/serviceError');
 
 const VALID_LOCATION_TYPES = ['gps', 'wifi', 'smart_band', 'cell_tower'];
 
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
 
 function normalizeLocationPayload(payload) {
   const latitude = Number(payload.latitude);

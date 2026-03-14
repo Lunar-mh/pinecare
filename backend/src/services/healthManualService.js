@@ -2,6 +2,7 @@
 
 const healthRecordModel = require('../models/healthRecordModel');
 const { evaluateRecord } = require('../utils/healthAlert');
+const { createBizError } = require('../utils/serviceError');
 
 const VALID_METRIC_TYPES = [
   'blood_pressure',
@@ -20,12 +21,6 @@ const VALID_METRIC_TYPES = [
  * @param {number} [statusCode]
  * @returns {Error}
  */
-function createBizError(code, message, statusCode) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode || code;
-  return err;
-}
 
 /**
  * 解析血压字符串（如 138/88）

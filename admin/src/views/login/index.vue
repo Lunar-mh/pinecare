@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Lock, User } from '@element-plus/icons-vue'
 import { adminLogin } from '@/services'
+import { setAdminRefreshToken, setAdminToken, setCsrfToken } from '@/services/session'
 
 const router = useRouter()
 const loading = ref(false)
@@ -23,7 +24,13 @@ async function handleLogin() {
   error.value = ''
   try {
     const result = await adminLogin({ username: form.username, password: form.password })
-    sessionStorage.setItem('admin_token', result.token)
+    setAdminToken(result.token)
+    if (result.refresh_token) {
+      setAdminRefreshToken(result.refresh_token)
+    }
+    if (result.csrf_token) {
+      setCsrfToken(result.csrf_token)
+    }
     router.push('/dashboard')
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : '登录失败，请检查账号密码'

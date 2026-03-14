@@ -39,6 +39,15 @@ async function history(req, res) {
   }
 }
 
+async function detail(req, res) {
+  try {
+    const data = await sosService.getEventById(req.user.userId, req.params.eventId);
+    return ok(res, data, 'SOS event loaded.');
+  } catch (error) {
+    return sendSosError(res, error, 'detail_failed', 'Failed to load SOS event.');
+  }
+}
+
 async function confirm(req, res) {
   try {
     const data = await sosService.confirmSos(req.user.userId, req.body.event_id);
@@ -61,6 +70,7 @@ module.exports = {
   trigger,
   cancel,
   history,
+  detail,
   confirm,
   resolve,
 };

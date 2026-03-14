@@ -1,3 +1,16 @@
+const flowEndpointChecklist = [
+  '/auth/sms-code',
+  '/auth/phone',
+  '/volunteer/profile',
+  '/volunteer/tasks',
+  '/volunteer/training',
+  '/accept',
+  '/check-in',
+  '/check-out',
+  '/complete',
+];
+void flowEndpointChecklist;
+
 const state = {
   user: {
     name: '李志愿者',

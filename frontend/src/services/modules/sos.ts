@@ -1,28 +1,39 @@
-/**
- * sos.ts - SOS 紧急求助相关 API
- */
-
-import { get, post } from '../request';
+﻿import { get, post } from '../request';
 import type { EmergencyContactWithLocation, SOSEvent } from '../types';
 
 type SosHistoryRow = {
-  event_id: number;
-  event_status: 'triggered' | 'confirmed' | 'resolved' | 'cancelled';
-  trigger_type: 'manual' | 'fall' | 'abnormal_vital';
+  eventId?: number;
+  event_id?: number;
+  eventStatus?: 'triggered' | 'confirmed' | 'resolved' | 'cancelled';
+  event_status?: 'triggered' | 'confirmed' | 'resolved' | 'cancelled';
+  triggerType?: 'manual' | 'fall' | 'abnormal_vital';
+  trigger_type?: 'manual' | 'fall' | 'abnormal_vital';
   latitude: number | null;
   longitude: number | null;
   address: string | null;
-  created_at: string;
+  createdAt?: string;
+  created_at?: string;
+  confirmedAt?: string | null;
   confirmed_at?: string | null;
+  resolvedAt?: string | null;
   resolved_at?: string | null;
+  cancelledAt?: string | null;
   cancelled_at?: string | null;
 };
 
 function mapHistoryItem(item: SosHistoryRow): SOSEvent {
+  const eventId = Number(item.event_id ?? item.eventId ?? 0);
+  const triggerType = item.trigger_type ?? item.triggerType ?? 'manual';
+  const eventStatus = item.event_status ?? item.eventStatus ?? 'triggered';
+  const createdAt = item.created_at ?? item.createdAt ?? new Date().toISOString();
+  const confirmedAt = item.confirmed_at ?? item.confirmedAt ?? undefined;
+  const resolvedAt = item.resolved_at ?? item.resolvedAt ?? undefined;
+  const cancelledAt = item.cancelled_at ?? item.cancelledAt ?? undefined;
+
   return {
-    id: String(item.event_id),
-    type: item.trigger_type,
-    status: item.event_status,
+    id: String(eventId),
+    type: triggerType,
+    status: eventStatus,
     location:
       item.latitude != null && item.longitude != null
         ? {
@@ -31,9 +42,9 @@ function mapHistoryItem(item: SosHistoryRow): SOSEvent {
             address: item.address || undefined,
           }
         : undefined,
-    triggeredAt: item.created_at,
-    confirmedAt: item.confirmed_at || undefined,
-    resolvedAt: item.resolved_at || item.cancelled_at || undefined,
+    triggeredAt: createdAt,
+    confirmedAt: confirmedAt || undefined,
+    resolvedAt: resolvedAt || cancelledAt || undefined,
   };
 }
 
@@ -69,9 +80,11 @@ export const getSOSEvents = async (params: {
     list: SosHistoryRow[];
     pagination: {
       page: number;
-      page_size: number;
+      page_size?: number;
+      pageSize?: number;
       total: number;
-      total_pages: number;
+      total_pages?: number;
+      totalPages?: number;
     };
   }>('/sos/history', {
     page: params.page || 1,
@@ -79,13 +92,16 @@ export const getSOSEvents = async (params: {
     status: params.status,
   });
 
+  const currentPage = Number(data.pagination?.page || params.page || 1);
+  const currentPageSize = Number(data.pagination?.page_size || data.pagination?.pageSize || params.pageSize || 10);
+  const totalPages = Number(data.pagination?.total_pages || data.pagination?.totalPages || 1);
+
   return {
     list: (data.list || []).map(mapHistoryItem),
     total: Number(data.pagination?.total || 0),
-    page: Number(data.pagination?.page || params.page || 1),
-    pageSize: Number(data.pagination?.page_size || params.pageSize || 10),
-    hasMore:
-      Number(data.pagination?.page || 1) < Number(data.pagination?.total_pages || 1),
+    page: currentPage,
+    pageSize: currentPageSize,
+    hasMore: currentPage < totalPages,
   };
 };
 
@@ -108,15 +124,25 @@ export const resolveSOS = (eventId: string) =>
   post<void>('/sos/resolve', { event_id: Number(eventId) });
 
 export const getSOSEvent = async (eventId: string) => {
-  const history = await getSOSEvents({ page: 1, pageSize: 50 });
-  const target = history.list.find(item => item.id === eventId);
-  if (!target) {
-    throw new Error('未找到对应 SOS 事件');
+  const normalizedId = Number(eventId);
+
+  try {
+    const event = await get<SosHistoryRow>(`/sos/events/${normalizedId}`);
+    return {
+      ...mapHistoryItem(event),
+      responders: [],
+    };
+  } catch (_error) {
+    const history = await getSOSEvents({ page: 1, pageSize: 50 });
+    const target = history.list.find(item => item.id === eventId);
+    if (!target) {
+      throw new Error('SOS event not found.');
+    }
+    return {
+      ...target,
+      responders: [],
+    };
   }
-  return {
-    ...target,
-    responders: [],
-  };
 };
 
 export const getEmergencyContactsWithLocation = async (): Promise<EmergencyContactWithLocation[]> => {
@@ -132,7 +158,7 @@ export const getEmergencyContactsWithLocation = async (): Promise<EmergencyConta
     id: String(item.id),
     name: item.name,
     phone: item.phone,
-    relation: item.relationship || item.relation || '紧急联系人',
+    relation: item.relationship || item.relation || 'Emergency Contact',
     canLocate: false,
   }));
 };

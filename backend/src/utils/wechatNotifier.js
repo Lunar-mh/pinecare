@@ -6,17 +6,11 @@ const { createUpstreamError, isRetryableError, logThirdPartyError } = require('.
 const { recordProviderSuccess } = require('./providerRuntime');
 const { buildCapabilityReport } = require('../services/integrationCapability/buildReport');
 const { resolveIntegrationMode } = require('../config/integrationMode');
+const { createBizErrorFromMessage: createBizError } = require('./serviceError');
 
 const DEFAULT_TIMEOUT = 5000;
 const DEFAULT_RETRY_TIMES = 2;
 
-function createBizError(message, code = 502, statusCode = 502, data = null) {
-  const err = new Error(message);
-  err.code = code;
-  err.statusCode = statusCode;
-  err.data = data;
-  return err;
-}
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
