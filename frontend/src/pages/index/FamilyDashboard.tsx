@@ -7,7 +7,6 @@ import { Icon, UserIcon } from '@/components/icons'
 import { PageShell } from '@/components/shell'
 import { homeQuickActionsByRole } from '@/design/navigation'
 import { buildFamilySummaryCards } from '@/view-models/dashboard'
-import './family.scss'
 
 export default function FamilyDashboard() {
   const [overview, setOverview] = useState<ElderlyOverview | null>(null)
@@ -30,77 +29,103 @@ export default function FamilyDashboard() {
   const quickActions = homeQuickActionsByRole.family
 
   return (
-    <PageShell roleTone="family" className="family-dashboard" loading={loading}>
-      <View className="family-header">
-        <View className="family-greeting">
-          <Text className="greeting-title">关注长辈最新状态</Text>
-          <Text className="greeting-sub">随时掌握家人的健康与安全</Text>
-        </View>
-        <View className="avatar-btn" onClick={() => Taro.navigateTo({ url: '/pages/profile/index' })}>
-          <UserIcon size={32} color="#fff" />
-        </View>
-      </View>
-
-      <View className="status-overview">
-        <View className="status-item">
-          <Text className="val">{overview?.todayHealth.medicationProgress || 0}%</Text>
-          <Text className="label">用药进度</Text>
-        </View>
-        <View className="status-divider" />
-        <View className="status-item">
-          <Text className="val">85分</Text>
-          <Text className="label">健康评分</Text>
-        </View>
-        <View className="status-divider" />
-        <View className="status-item">
-          <Text className="val" style={{color: '#C97B55'}}>正常</Text>
-          <Text className="label">活跃状态</Text>
-        </View>
-      </View>
-
-      <View className="family-section">
-        <Text className="section-title">实时位置</Text>
-        <View className="location-card" onClick={() => Taro.navigateTo({ url: '/subpackages/location/pages/index/index' })}>
-          <View className="location-info">
-            <Icon name="location" size={24} color="#C97B55" />
-            <Text className="address">{overview?.location?.address || '获取位置中...'}</Text>
+    <PageShell roleTone="family" className="bg-yinban-bg min-h-screen pb-10" loading={loading}>
+      {/* 顶部深色 Header (科技感/医疗感) */}
+      <View className="bg-yinban-secondary pt-8 pb-12 px-6 rounded-b-dash shadow-dash relative">
+        <View className="flex justify-between items-center">
+          <View>
+            <Text className="block text-dash-hero font-bold text-white mb-1">照护大盘</Text>
+            <Text className="block text-dash-body text-white/80">随时掌握父母健康与安全</Text>
           </View>
-          <View className="location-meta">
-            <Text className="meta-text">{overview?.location?.updatedAt || ''} 更新</Text>
-            <View className="location-action">地图查看</View>
+          <View 
+            className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center active:scale-95 transition-transform" 
+            onClick={() => Taro.navigateTo({ url: '/pages/profile/index' })}
+          >
+            <UserIcon size={32} color="#ffffff" />
           </View>
         </View>
       </View>
 
-      <View className="family-section">
-        <Text className="section-title">今日体征指标</Text>
-        <View className="stats-grid">
+      {/* 核心状态卡片 (悬浮于 Header 之上) */}
+      <View className="px-4 -mt-6">
+        <View className="bg-dash-card rounded-dash shadow-dash p-5 flex justify-between items-center">
+          <View className="text-center flex-1 border-r border-dash-border">
+            <Text className="block text-dash-title font-bold text-dash-text-main">
+              {overview?.todayHealth.medicationProgress || 0}%
+            </Text>
+            <Text className="block text-dash-tiny text-dash-text-sub mt-1">今日用药</Text>
+          </View>
+          <View className="text-center flex-1 border-r border-dash-border">
+            <Text className="block text-dash-title font-bold text-yinban-primary">85分</Text>
+            <Text className="block text-dash-tiny text-dash-text-sub mt-1">健康评分</Text>
+          </View>
+          <View className="text-center flex-1">
+            <Text className="block text-dash-title font-bold text-yinban-primary">正常</Text>
+            <Text className="block text-dash-tiny text-dash-text-sub mt-1">设备状态</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* 实时位置 Widget */}
+      <View className="px-4 mt-6">
+        <Text className="block text-dash-title font-bold text-dash-text-main mb-3 ml-1">实时安全</Text>
+        <View 
+          className="bg-dash-card rounded-dash shadow-dash p-5 active:scale-[0.98] transition-transform"
+          onClick={() => Taro.navigateTo({ url: '/subpackages/location/pages/index/index' })}
+        >
+          <View className="flex items-start">
+            <View className="bg-blue-50 p-3 rounded-full mr-4">
+              <Icon name="location" size={28} color="#3B82F6" />
+            </View>
+            <View className="flex-1">
+              <Text className="block text-dash-body font-bold text-dash-text-main line-clamp-1">
+                {overview?.location?.address || '上海市浦东新区张江高科技园区'}
+              </Text>
+              <View className="flex justify-between items-center mt-2">
+                <Text className="text-dash-tiny text-dash-text-sub">更新于 {overview?.location?.updatedAt || '刚刚'}</Text>
+                <Text className="text-dash-tiny font-bold text-yinban-secondary">查看地图 &gt;</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* 体征指标 Widget Grid */}
+      <View className="px-4 mt-6">
+        <Text className="block text-dash-title font-bold text-dash-text-main mb-3 ml-1">健康数据</Text>
+        <View className="grid grid-cols-2 gap-4">
           {summaryCards.map(({ key, title, value, unit, hint }) => (
-            <View key={key} className="stat-card">
-              <Text className="stat-title">{title}</Text>
-              <View className="stat-value">
-                <Text className="val">{value}</Text>
-                <Text className="unit">{unit}</Text>
+            <View key={key} className="bg-dash-card rounded-dash shadow-dash p-4">
+              <Text className="block text-dash-body font-medium text-dash-text-sub mb-2">{title}</Text>
+              <View className="flex items-baseline">
+                <Text className="text-dash-title font-bold text-dash-text-main mr-1">{value}</Text>
+                <Text className="text-dash-tiny text-dash-text-sub">{unit}</Text>
               </View>
-              <Text className="stat-hint">{hint}</Text>
+              <Text className="block text-dash-tiny text-yinban-primary mt-2">{hint}</Text>
             </View>
           ))}
         </View>
       </View>
 
-      <View className="family-section">
-        <Text className="section-title">常用管理功能</Text>
-        <View className="action-grid">
+      {/* 远程管理功能 */}
+      <View className="px-4 mt-6">
+        <Text className="block text-dash-title font-bold text-dash-text-main mb-3 ml-1">远程管理</Text>
+        <View className="grid grid-cols-4 gap-4 bg-dash-card rounded-dash shadow-dash p-4">
           {quickActions.map(item => (
-            <View key={item.key} className="action-item" onClick={() => Taro.navigateTo({ url: item.path })}>
-              <View className="action-icon">
-                <Icon name={item.icon} size={28} color="#C97B55" />
+            <View 
+              key={item.key} 
+              className="flex flex-col items-center active:opacity-50"
+              onClick={() => Taro.navigateTo({ url: item.path })}
+            >
+              <View className="bg-gray-50 p-3 rounded-xl mb-2">
+                <Icon name={item.icon} size={28} color="#64748B" />
               </View>
-              <Text className="action-label">{item.label}</Text>
+              <Text className="text-dash-tiny text-dash-text-main">{item.label}</Text>
             </View>
           ))}
         </View>
       </View>
+
     </PageShell>
   )
 }

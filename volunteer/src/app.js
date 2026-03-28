@@ -420,29 +420,25 @@ function handleLogout() {
 
 function renderLogin() {
   return `
-    <main class="vol-shell">
-      <section class="vol-card">
-        <h1>志愿者执行端</h1>
-        <p class="muted">真实接口联调模式，不再使用静态演示数据。</p>
+    <div class="full-panel">
+      <h1>志愿者工作台</h1>
+      <p class="muted" style="text-align:center; margin-bottom: 30px;">真实接口联调模式，一站式任务执行</p>
 
-        <label class="field-label">API 基线</label>
-        <input id="api-base" class="field" value="${escapeHtml(state.apiBase || API_BASE_CANDIDATES[0])}" placeholder="http://127.0.0.1:3999/api/v1" />
+      <input id="api-base" class="field" value="${escapeHtml(state.apiBase || API_BASE_CANDIDATES[0])}" placeholder="http://127.0.0.1:3999/api/v1" />
+      <input id="phone" class="field" value="${escapeHtml(state.phone)}" placeholder="手机号 (例如 13710000051)" />
+      
+      <div style="display:flex; gap:10px;">
+        <input id="code" class="field" value="${escapeHtml(state.code)}" placeholder="输入验证码" style="flex:1;" />
+        <button id="send-sms" class="btn btn-outline" style="width:120px;" ${state.smsLoading ? 'disabled' : ''}>${state.smsLoading ? '发送中' : '获取验证码'}</button>
+      </div>
 
-        <label class="field-label">手机号</label>
-        <input id="phone" class="field" value="${escapeHtml(state.phone)}" placeholder="例如 13710000051" />
+      <button id="login" class="btn btn-primary" style="margin-top:20px; width:100%;" ${state.loginLoading ? 'disabled' : ''}>
+        ${state.loginLoading ? '登录中...' : '登录'}
+      </button>
 
-        <label class="field-label">验证码</label>
-        <div class="field-row">
-          <input id="code" class="field" value="${escapeHtml(state.code)}" placeholder="输入验证码" />
-          <button id="send-sms" class="btn btn-light" ${state.smsLoading ? 'disabled' : ''}>${state.smsLoading ? '发送中...' : '获取验证码'}</button>
-        </div>
-
-        ${state.error ? `<p class="error">${escapeHtml(state.error)}</p>` : ''}
-        <p class="hint">${escapeHtml(state.info)}</p>
-
-        <button id="login" class="btn btn-primary" ${state.loginLoading ? 'disabled' : ''}>${state.loginLoading ? '登录中...' : '登录并进入任务台'}</button>
-      </section>
-    </main>
+      ${state.error ? `<p class="error" style="text-align:center;">${escapeHtml(state.error)}</p>` : ''}
+      <p class="hint" style="text-align:center; margin-top:10px;">${escapeHtml(state.info)}</p>
+    </div>
   `;
 }
 
@@ -558,33 +554,41 @@ function renderDashboard() {
   const profileName = normalizeDisplayName(state.profile && state.profile.name, '\u5fd7\u613f\u8005');
 
   return `
-    <main class="vol-shell">
-      <header class="topbar">
+    <div class="map-layer">
+      <div style="position:absolute; top:20px; right:20px;">
+         <button id="logout" class="btn btn-outline" style="background:#fff; height:36px; border-radius:18px;">退出登录</button>
+      </div>
+    </div>
+    
+    <div class="bottom-sheet">
+      <div class="drag-handle"></div>
+      <div class="sheet-header">
         <div>
-          <h1>${escapeHtml(profileName)}，辛苦了</h1>
-          <p class="muted">任务执行链路：接单 -> 签到 -> 签退 -> 完成</p>
+          <h2>${escapeHtml(profileName)}，辛苦了</h2>
+          <p class="muted" style="margin: 4px 0 0; font-size:12px;">已在线服务 3 小时</p>
         </div>
-        <button id="logout" class="btn btn-light">退出</button>
-      </header>
+      </div>
 
-      ${renderSummary()}
+      <div class="scroll-area">
+        ${renderSummary()}
 
-      <nav class="tabs">
-        <button class="tab ${state.currentTab === 'tasks' ? 'active' : ''}" data-tab="tasks">任务</button>
-        <button class="tab ${state.currentTab === 'training' ? 'active' : ''}" data-tab="training">培训</button>
-        <button class="tab ${state.currentTab === 'profile' ? 'active' : ''}" data-tab="profile">我的</button>
-      </nav>
+        <nav class="tabs" style="display:flex; background:#E2E8F0; padding:4px; border-radius:12px; margin-bottom:16px;">
+          <button style="flex:1; border:none; background:${state.currentTab === 'tasks' ? '#fff' : 'transparent'}; border-radius:8px; height:32px; font-weight:600; cursor:pointer;" class="tab ${state.currentTab === 'tasks' ? 'active' : ''}" data-tab="tasks">接单大厅</button>
+          <button style="flex:1; border:none; background:${state.currentTab === 'training' ? '#fff' : 'transparent'}; border-radius:8px; height:32px; font-weight:600; cursor:pointer;" class="tab ${state.currentTab === 'training' ? 'active' : ''}" data-tab="training">技能培训</button>
+          <button style="flex:1; border:none; background:${state.currentTab === 'profile' ? '#fff' : 'transparent'}; border-radius:8px; height:32px; font-weight:600; cursor:pointer;" class="tab ${state.currentTab === 'profile' ? 'active' : ''}" data-tab="profile">我的账户</button>
+        </nav>
 
-      ${state.currentTab === 'tasks' ? renderTaskFilter() : ''}
-      ${state.error ? `<p class="error">${escapeHtml(state.error)}</p>` : ''}
-      <p class="hint">${escapeHtml(state.info)}</p>
+        ${state.currentTab === 'tasks' ? renderTaskFilter() : ''}
+        ${state.error ? `<p class="error">${escapeHtml(state.error)}</p>` : ''}
+        <p class="hint" style="margin-bottom:16px;">${escapeHtml(state.info)}</p>
 
-      <section class="panel">
-        ${state.currentTab === 'tasks' ? renderTasks() : ''}
-        ${state.currentTab === 'training' ? renderTraining() : ''}
-        ${state.currentTab === 'profile' ? renderProfile() : ''}
-      </section>
-    </main>
+        <div>
+          ${state.currentTab === 'tasks' ? renderTasks() : ''}
+          ${state.currentTab === 'training' ? renderTraining() : ''}
+          ${state.currentTab === 'profile' ? renderProfile() : ''}
+        </div>
+      </div>
+    </div>
   `;
 }
 
@@ -592,7 +596,7 @@ function render() {
   const root = document.getElementById('app');
   if (!root) return;
 
-  root.innerHTML = `<div class="vol-container">${state.token ? renderDashboard() : renderLogin()}</div>`;
+  root.innerHTML = state.token ? renderDashboard() : renderLogin();
 
   const apiInput = document.getElementById('api-base');
   if (apiInput) {
