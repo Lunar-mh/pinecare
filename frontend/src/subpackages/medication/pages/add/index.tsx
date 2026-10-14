@@ -1,13 +1,20 @@
-﻿import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, ScrollView, Input, Switch } from '@tarojs/components'
-import { Add } from '@nutui/icons-react-taro'
+import { Add, Warning } from '@nutui/icons-react-taro'
 import { DataPanel, HeroHeader, PageShell, SectionBlock, StickyPrimaryAction } from '@/components/shell'
 import { addMedication } from '@/services/modules/medication'
+import { useRole } from '@/hooks/useRole'
 import type { MedicationSchedule } from '@/services/types'
 import './index.scss'
 
+/**
+ * 用药计划新增页面 - 仅家属端可用
+ * 长辈端应由家属或医生代为添加，避免误操作
+ */
 export default function MedicationAddPage() {
+  const { isElder, isFamily } = useRole()
+  const [permissionChecked, setPermissionChecked] = useState(false)
   const [name, setName] = useState('')
   const [dosage, setDosage] = useState('1片')
   const [instructions, setInstructions] = useState('')
@@ -50,9 +57,44 @@ export default function MedicationAddPage() {
     }
   }
 
+  // 权限检查：长辈端不允许新增用药计划
+  useEffect(() => {
+    setPermissionChecked(true)
+  }, [])
+
+  // 长辈端显示权限拒绝页面
+  if (permissionChecked && isElder) {
+    return (
+      <PageShell roleTone="elder" className="medication-form-page">
+        <View className="permission-denied">
+          <View className="permission-denied-icon">
+            <Warning size={64} color="#E67E22" />
+          </View>
+          <Text className="permission-denied-title">此功能需要家属操作</Text>
+          <Text className="permission-denied-desc">
+            为了您的用药安全，新增用药计划需要由家属或医生代为添加。
+            请联系您的家人帮助您完成此操作。
+          </Text>
+          <View 
+            className="permission-denied-button"
+            onClick={() => Taro.navigateBack()}
+          >
+            <Text>返回上一页</Text>
+          </View>
+          <View 
+            className="permission-denied-link"
+            onClick={() => Taro.navigateTo({ url: '/subpackages/family_space/pages/index/index' })}
+          >
+            <Text>联系家人</Text>
+          </View>
+        </View>
+      </PageShell>
+    )
+  }
+
   return (
-    <PageShell roleTone="elder" className="medication-form-page">
-      <HeroHeader roleTone="elder" eyebrow="新增用药计划" title="把一张药单拆成清楚的几步" subtitle="先填药名和剂量，再补充时间与提醒，不再被长表单压住。" />
+    <PageShell roleTone="family" className="medication-form-page">
+      <HeroHeader roleTone="family" eyebrow="新增用药计划" title="为长辈添加用药提醒" subtitle="填写药物信息和服药时间，系统将按时提醒长辈服药。" />
       <ScrollView className="detail-shell-scroll" scrollY>
         <SectionBlock title="基本信息" description="先把药名、剂量和备注写清楚。">
           <DataPanel tone="primary"><View className="detail-form"><View><Text className="detail-label">药物名称</Text><Input className="detail-input" value={name} onInput={e => setName(e.detail.value)} /></View><View><Text className="detail-label">常用剂量</Text><Input className="detail-input" value={dosage} onInput={e => setDosage(e.detail.value)} /></View><View><Text className="detail-label">服药说明</Text><Input className="detail-input" value={instructions} onInput={e => setInstructions(e.detail.value)} /></View></View></DataPanel>

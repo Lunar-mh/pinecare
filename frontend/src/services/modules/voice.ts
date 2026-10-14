@@ -1,4 +1,4 @@
-﻿import Taro from '@tarojs/taro';
+import Taro from '@tarojs/taro';
 import { get, post } from '../request';
 import type { ChatMessage } from '../types';
 

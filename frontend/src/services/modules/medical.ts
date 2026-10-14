@@ -1,4 +1,4 @@
-﻿import { get, post } from '../request';
+import { get, post } from '../request';
 import type { Doctor, Appointment, MedicalReport, PaginatedResult } from '../types';
 
 export interface MedicalConsultation {

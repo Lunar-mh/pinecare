@@ -1,4 +1,4 @@
-﻿import Taro from '@tarojs/taro';
+import Taro from '@tarojs/taro';
 import {
   API_BASE_URL,
   clearAuthSession,
@@ -145,4 +145,14 @@ export const updateEmergencyContact = (id: string, data: Partial<EmergencyContac
 export const deleteEmergencyContact = (id: string) => post<void>(`/user/emergency-contacts/${id}/delete`);
 
 export const setPrimaryContact = (id: string) => put<void>(`/user/emergency-contacts/${id}/primary`);
+
+// Password reset
+export const requestPasswordReset = (phone: string) =>
+  post<{ message: string }>('/auth/password-reset/request', { phone });
+
+export const confirmPasswordReset = (phone: string, code: string, newPassword: string) =>
+  post<{ message: string }>('/auth/password-reset/confirm', { phone, code, new_password: newPassword });
+
+// Logout
+export const logout = () => post<{ message: string }>('/auth/logout');
 

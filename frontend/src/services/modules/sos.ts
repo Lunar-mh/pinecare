@@ -1,4 +1,4 @@
-﻿import { get, post } from '../request';
+import { get, post } from '../request';
 import type { EmergencyContactWithLocation, SOSEvent } from '../types';
 
 type SosHistoryRow = {

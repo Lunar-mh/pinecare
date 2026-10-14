@@ -20,20 +20,22 @@ const STORAGE_KEYS = {
   token: 'volunteer_token',
   refreshToken: 'volunteer_refresh_token',
   phone: 'volunteer_phone',
+  offlineQueue: 'volunteer_offline_queue',
 };
 
 const state = {
   apiBase: readStorage(STORAGE_KEYS.apiBase) || '',
   token: readStorage(STORAGE_KEYS.token) || '',
   refreshToken: readStorage(STORAGE_KEYS.refreshToken) || '',
-  phone: readStorage(STORAGE_KEYS.phone) || '13710000051',
-  code: '000000',
+  phone: readStorage(STORAGE_KEYS.phone) || '',
+  code: '',
   loginLoading: false,
   smsLoading: false,
   loading: false,
   currentTab: 'tasks',
   taskFilter: '',
   profile: null,
+  serviceHours: 0,
   taskSummary: {
     available_count: 0,
     assigned_count: 0,
@@ -44,8 +46,78 @@ const state = {
   training: [],
   error: '',
   actionEndpoint: '',
-  info: '当前默认验证码支持 000000（非 live 模式）。',
+  info: '',
+  isOnline: navigator.onLine,
+  offlineQueue: [],
 };
+
+// 离线队列管理
+function loadOfflineQueue() {
+  try {
+    const stored = readStorage(STORAGE_KEYS.offlineQueue);
+    if (stored) {
+      state.offlineQueue = JSON.parse(stored);
+    }
+  } catch (_error) {
+    state.offlineQueue = [];
+  }
+}
+
+function saveOfflineQueue() {
+  try {
+    writeStorage(STORAGE_KEYS.offlineQueue, JSON.stringify(state.offlineQueue));
+  } catch (_error) {
+    // ignore
+  }
+}
+
+function addToOfflineQueue(path, options) {
+  state.offlineQueue.push({
+    id: Date.now().toString(),
+    path,
+    options,
+    timestamp: new Date().toISOString(),
+  });
+  saveOfflineQueue();
+}
+
+async function processOfflineQueue() {
+  if (state.offlineQueue.length === 0) return;
+  
+  const queue = [...state.offlineQueue];
+  state.offlineQueue = [];
+  saveOfflineQueue();
+  
+  for (const item of queue) {
+    try {
+      await request(item.path, item.options);
+    } catch (_error) {
+      // 失败的请求重新入队
+      state.offlineQueue.push(item);
+    }
+  }
+  saveOfflineQueue();
+  
+  if (state.offlineQueue.length === 0) {
+    showInfo('离线数据已同步');
+  }
+}
+
+// 网络状态监听
+function setupNetworkListeners() {
+  window.addEventListener('online', () => {
+    state.isOnline = true;
+    showInfo('网络已恢复，正在同步数据...');
+    render();
+    processOfflineQueue();
+  });
+  
+  window.addEventListener('offline', () => {
+    state.isOnline = false;
+    showError('网络已断开，数据将在恢复后同步');
+    render();
+  });
+}
 
 function readStorage(key) {
   try {
@@ -153,6 +225,39 @@ function extractMessage(payload, fallback) {
   return cn || message || fallback;
 }
 
+// Token刷新状态
+let isRefreshing = false;
+let refreshPromise = null;
+
+// 刷新Token
+async function refreshToken() {
+  if (!state.refreshToken) {
+    throw new Error('No refresh token available');
+  }
+  
+  const apiBase = normalizeApiBase(state.apiBase) || (await detectApiBase());
+  const response = await fetch(`${apiBase}/auth/refresh-token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: state.refreshToken }),
+  });
+  
+  const payload = await response.json();
+  if (!response.ok || payload.code !== 0) {
+    throw new Error('Token refresh failed');
+  }
+  
+  // 更新Token
+  state.token = payload.data.token;
+  if (payload.data.refresh_token) {
+    state.refreshToken = payload.data.refresh_token;
+    writeStorage(STORAGE_KEYS.refreshToken, payload.data.refresh_token);
+  }
+  writeStorage(STORAGE_KEYS.token, payload.data.token);
+  
+  return payload.data.token;
+}
+
 async function request(path, options = {}) {
   const method = options.method || 'GET';
   const body = options.body === undefined ? undefined : JSON.stringify(options.body);
@@ -166,11 +271,44 @@ async function request(path, options = {}) {
     headers.Authorization = `Bearer ${state.token}`;
   }
 
-  const response = await fetch(`${apiBase}${path}`, {
+  let response = await fetch(`${apiBase}${path}`, {
     method,
     headers,
     body,
   });
+
+  // 401 Token过期 - 尝试刷新
+  if (response.status === 401 && state.refreshToken && options.auth !== false) {
+    try {
+      // 避免并发刷新
+      if (!isRefreshing) {
+        isRefreshing = true;
+        refreshPromise = refreshToken();
+      }
+      
+      await refreshPromise;
+      isRefreshing = false;
+      refreshPromise = null;
+      
+      // 用新Token重试
+      headers.Authorization = `Bearer ${state.token}`;
+      response = await fetch(`${apiBase}${path}`, {
+        method,
+        headers,
+        body,
+      });
+    } catch (refreshError) {
+      isRefreshing = false;
+      refreshPromise = null;
+      // 刷新失败，清除登录状态
+      state.token = '';
+      state.refreshToken = '';
+      writeStorage(STORAGE_KEYS.token, '');
+      writeStorage(STORAGE_KEYS.refreshToken, '');
+      render();
+      throw new Error('登录已过期，请重新登录');
+    }
+  }
 
   let payload = null;
   try {
@@ -290,6 +428,8 @@ async function loadDashboard() {
     ]);
 
     state.profile = profileData || null;
+    // 从 profile 获取服务时长
+    state.serviceHours = (profileData && profileData.service_hours) || 0;
     state.taskSummary = (taskData && taskData.summary) || state.taskSummary;
     state.tasks = (taskData && taskData.list) || [];
     state.training = (trainingData && trainingData.list) || [];
@@ -314,8 +454,15 @@ async function loadDashboard() {
 }
 
 async function handleSendSms() {
+  // 验证手机号格式
+  const phoneRegex = /^1[3-9]\d{9}$/;
   if (!state.phone) {
     state.error = '请输入手机号';
+    render();
+    return;
+  }
+  if (!phoneRegex.test(state.phone)) {
+    state.error = '请输入有效的11位手机号';
     render();
     return;
   }
@@ -331,7 +478,7 @@ async function handleSendSms() {
       auth: false,
       body: { phone: state.phone, purpose: 'login' },
     });
-    toast('验证码已发送（非 live 模式可直接使用 000000）');
+    toast('验证码已发送，请查收短信');
   } catch (error) {
     state.error = error instanceof Error ? error.message : '发送验证码失败';
   } finally {
@@ -341,8 +488,22 @@ async function handleSendSms() {
 }
 
 async function handleLogin() {
+  // 验证手机号和验证码格式
+  const phoneRegex = /^1[3-9]\d{9}$/;
+  const codeRegex = /^\d{6}$/;
+  
   if (!state.phone || !state.code) {
     state.error = '请输入手机号和验证码';
+    render();
+    return;
+  }
+  if (!phoneRegex.test(state.phone)) {
+    state.error = '请输入有效的11位手机号';
+    render();
+    return;
+  }
+  if (!codeRegex.test(state.code)) {
+    state.error = '验证码必须是6位数字';
     render();
     return;
   }
@@ -420,24 +581,24 @@ function handleLogout() {
 
 function renderLogin() {
   return `
-    <div class="full-panel">
+    <div class="full-panel" role="form">
       <h1>志愿者工作台</h1>
       <p class="muted" style="text-align:center; margin-bottom: 30px;">真实接口联调模式，一站式任务执行</p>
 
-      <input id="api-base" class="field" value="${escapeHtml(state.apiBase || API_BASE_CANDIDATES[0])}" placeholder="http://127.0.0.1:3999/api/v1" />
-      <input id="phone" class="field" value="${escapeHtml(state.phone)}" placeholder="手机号 (例如 13710000051)" />
+      <input id="api-base" class="field" value="${escapeHtml(state.apiBase || API_BASE_CANDIDATES[0])}" placeholder="http://127.0.0.1:3999/api/v1" aria-label="API 服务器地址" />
+      <input id="phone" class="field" value="${escapeHtml(state.phone)}" placeholder="手机号 (例如 13710000051)" aria-label="手机号" aria-required="true" ${state.error && state.error.includes('手机号') ? 'aria-invalid="true"' : ''} />
       
       <div style="display:flex; gap:10px;">
-        <input id="code" class="field" value="${escapeHtml(state.code)}" placeholder="输入验证码" style="flex:1;" />
-        <button id="send-sms" class="btn btn-outline" style="width:120px;" ${state.smsLoading ? 'disabled' : ''}>${state.smsLoading ? '发送中' : '获取验证码'}</button>
+        <input id="code" class="field" value="${escapeHtml(state.code)}" placeholder="输入验证码" style="flex:1;" aria-label="验证码" aria-required="true" aria-describedby="code-error" ${state.error && state.error.includes('验证码') ? 'aria-invalid="true"' : ''} />
+        <button id="send-sms" class="btn btn-outline" style="width:120px;" ${state.smsLoading ? 'disabled' : ''} aria-busy="${state.smsLoading}">${state.smsLoading ? '发送中' : '获取验证码'}</button>
       </div>
 
-      <button id="login" class="btn btn-primary" style="margin-top:20px; width:100%;" ${state.loginLoading ? 'disabled' : ''}>
+      <button id="login" class="btn btn-primary" style="margin-top:20px; width:100%;" ${state.loginLoading ? 'disabled' : ''} aria-busy="${state.loginLoading}">
         ${state.loginLoading ? '登录中...' : '登录'}
       </button>
 
-      ${state.error ? `<p class="error" style="text-align:center;">${escapeHtml(state.error)}</p>` : ''}
-      <p class="hint" style="text-align:center; margin-top:10px;">${escapeHtml(state.info)}</p>
+      ${state.error ? `<p id="code-error" class="error" style="text-align:center;" role="alert" aria-live="polite">${escapeHtml(state.error)}</p>` : ''}
+      <p class="hint" style="text-align:center; margin-top:10px;" aria-live="polite">${escapeHtml(state.info)}</p>
     </div>
   `;
 }
@@ -477,18 +638,18 @@ function renderTaskFilter() {
 
 function renderTasks() {
   if (state.loading) {
-    return '<p class="muted">任务加载中...</p>';
+    return '<p class="muted" aria-live="polite" aria-busy="true">任务加载中...</p>';
   }
 
   if (!state.tasks.length) {
-    return '<p class="muted">当前没有可处理任务。</p>';
+    return '<p class="muted" aria-live="polite">当前没有可处理任务。</p>';
   }
 
-  return state.tasks
+  return `<div role="list" aria-label="任务列表">${state.tasks
     .map((task) => {
       const actions = taskActions(task);
       return `
-        <article class="task-card ${task.status === 'pending' ? 'pending' : ''}">
+        <article class="task-card ${task.status === 'pending' ? 'pending' : ''}" role="listitem" aria-label="任务 ${escapeHtml(task.order_no || `#${task.id}`)}: ${escapeHtml(getStatusLabel(task.status))}">
           <div class="task-head">
             <strong>${escapeHtml(task.order_no || `任务 #${task.id}`)}</strong>
             <span class="task-status">${escapeHtml(getStatusLabel(task.status))}</span>
@@ -500,29 +661,29 @@ function renderTasks() {
           ${
             actions.length
               ? `<div class="task-actions">${actions
-                  .map((item) => { const pending = state.actionEndpoint === item.endpoint; return `<button class=\"btn btn-primary\" data-endpoint=\"${item.endpoint}\" ${pending ? 'disabled' : ''}>${pending ? '\\u5904\\u7406\\u4e2d...' : escapeHtml(item.label)}</button>`; })
+                  .map((item) => { const pending = state.actionEndpoint === item.endpoint; return `<button class=\"btn btn-primary\" data-endpoint=\"${item.endpoint}\" ${pending ? 'disabled' : ''} aria-busy="${pending}">${pending ? '\\u5904\\u7406\\u4e2d...' : escapeHtml(item.label)}</button>`; })
                   .join('')}</div>`
               : '<p class="hint">该任务当前无需操作。</p>'
           }
         </article>
       `;
     })
-    .join('');
+    .join('')}</div>`;
 }
 
 function renderTraining() {
   if (state.loading) {
-    return '<p class="muted">培训记录加载中...</p>';
+    return '<p class="muted" aria-live="polite" aria-busy="true">培训记录加载中...</p>';
   }
 
   if (!state.training.length) {
-    return '<p class="muted">暂无培训记录。</p>';
+    return '<p class="muted" aria-live="polite">暂无培训记录。</p>';
   }
 
   return state.training
     .map(
       (item) => `
-      <article class="training-card">
+      <article class="training-card" aria-label="培训课程：${escapeHtml(item.training_title || '培训课程')}">
         <div class="task-head">
           <strong>${escapeHtml(item.training_title || '培训课程')}</strong>
           <span class="task-status">${escapeHtml(mapTrainingStatusLabel(item.training_status))}</span>
@@ -560,31 +721,37 @@ function renderDashboard() {
       </div>
     </div>
     
-    <div class="bottom-sheet">
+    <div class="bottom-sheet" role="main">
       <div class="drag-handle"></div>
       <div class="sheet-header">
         <div>
           <h2>${escapeHtml(profileName)}，辛苦了</h2>
-          <p class="muted" style="margin: 4px 0 0; font-size:12px;">已在线服务 3 小时</p>
+          <p class="muted" style="margin: 4px 0 0; font-size:12px;">已累计服务 ${state.serviceHours} 小时</p>
         </div>
       </div>
 
       <div class="scroll-area">
         ${renderSummary()}
 
-        <nav class="tabs" style="display:flex; background:#E2E8F0; padding:4px; border-radius:12px; margin-bottom:16px;">
-          <button style="flex:1; border:none; background:${state.currentTab === 'tasks' ? '#fff' : 'transparent'}; border-radius:8px; height:32px; font-weight:600; cursor:pointer;" class="tab ${state.currentTab === 'tasks' ? 'active' : ''}" data-tab="tasks">接单大厅</button>
-          <button style="flex:1; border:none; background:${state.currentTab === 'training' ? '#fff' : 'transparent'}; border-radius:8px; height:32px; font-weight:600; cursor:pointer;" class="tab ${state.currentTab === 'training' ? 'active' : ''}" data-tab="training">技能培训</button>
-          <button style="flex:1; border:none; background:${state.currentTab === 'profile' ? '#fff' : 'transparent'}; border-radius:8px; height:32px; font-weight:600; cursor:pointer;" class="tab ${state.currentTab === 'profile' ? 'active' : ''}" data-tab="profile">我的账户</button>
+        <nav aria-label="主菜单" role="navigation">
+          <div class="tabs" style="display:flex; background:#E2E8F0; padding:4px; border-radius:12px; margin-bottom:16px;" role="tablist">
+            <button style="flex:1; border:none; background:${state.currentTab === 'tasks' ? '#fff' : 'transparent'}; border-radius:8px; height:32px; font-weight:600; cursor:pointer;" class="tab ${state.currentTab === 'tasks' ? 'active' : ''}" data-tab="tasks" role="tab" aria-selected="${state.currentTab === 'tasks'}" aria-controls="tab-tasks">接单大厅</button>
+            <button style="flex:1; border:none; background:${state.currentTab === 'training' ? '#fff' : 'transparent'}; border-radius:8px; height:32px; font-weight:600; cursor:pointer;" class="tab ${state.currentTab === 'training' ? 'active' : ''}" data-tab="training" role="tab" aria-selected="${state.currentTab === 'training'}" aria-controls="tab-training">技能培训</button>
+            <button style="flex:1; border:none; background:${state.currentTab === 'profile' ? '#fff' : 'transparent'}; border-radius:8px; height:32px; font-weight:600; cursor:pointer;" class="tab ${state.currentTab === 'profile' ? 'active' : ''}" data-tab="profile" role="tab" aria-selected="${state.currentTab === 'profile'}" aria-controls="tab-profile">我的账户</button>
+          </div>
         </nav>
 
         ${state.currentTab === 'tasks' ? renderTaskFilter() : ''}
-        ${state.error ? `<p class="error">${escapeHtml(state.error)}</p>` : ''}
-        <p class="hint" style="margin-bottom:16px;">${escapeHtml(state.info)}</p>
+        ${state.error ? `<p class="error" role="alert" aria-live="polite">${escapeHtml(state.error)}</p>` : ''}
+        <p class="hint" style="margin-bottom:16px;" aria-live="polite">${escapeHtml(state.info)}</p>
 
-        <div>
+        <div role="tabpanel" id="tab-tasks" ${state.currentTab === 'tasks' ? '' : 'hidden'}>
           ${state.currentTab === 'tasks' ? renderTasks() : ''}
+        </div>
+        <div role="tabpanel" id="tab-training" ${state.currentTab === 'training' ? '' : 'hidden'}>
           ${state.currentTab === 'training' ? renderTraining() : ''}
+        </div>
+        <div role="tabpanel" id="tab-profile" ${state.currentTab === 'profile' ? '' : 'hidden'}>
           ${state.currentTab === 'profile' ? renderProfile() : ''}
         </div>
       </div>
@@ -668,11 +835,19 @@ function render() {
 }
 
 async function bootstrap() {
+  // 初始化离线队列和网络监听
+  loadOfflineQueue();
+  setupNetworkListeners();
+  
   await detectApiBase();
   render();
 
   if (state.token) {
     await loadDashboard();
+    // 恢复网络后处理离线队列
+    if (state.isOnline && state.offlineQueue.length > 0) {
+      processOfflineQueue();
+    }
   }
 }
 

@@ -1,6 +1,9 @@
 import type { UserConfigExport } from '@tarojs/cli'
 import path from 'path'
 
+// 添加 weapp-tailwindcss 的 webpack 插件
+const { UnifiedWebpackPluginV5 } = require('weapp-tailwindcss/webpack')
+
 const config: UserConfigExport = {
   projectName: 'yinban-frontend',
   date: '2026-02-19',
@@ -34,6 +37,14 @@ const config: UserConfigExport = {
   mini: {
     miniCssExtractPluginOption: {
       ignoreOrder: true,
+    },
+    webpackChain(chain, webpack) {
+      // 注册 weapp-tailwindcss 插件以处理小程序的特殊选择器和语法
+      chain.plugin('weapp-tailwindcss').use(UnifiedWebpackPluginV5, [
+        {
+          appType: 'taro'
+        }
+      ])
     },
     postcss: {
       pxtransform: {

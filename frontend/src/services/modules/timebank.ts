@@ -1,4 +1,4 @@
-﻿import { get, post } from '../request';
+import { get, post } from '../request';
 import type { TimeBankAccount, ServiceRequest, PaginatedResult } from '../types';
 
 export const getTimeBankAccount = async () => {

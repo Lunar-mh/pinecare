@@ -70,6 +70,12 @@ export type IconName =
   | 'settings'
   | 'transit'
   | 'order'
+  | 'bell'
+  | 'medication'
+  | 'gallery'
+  | 'heart-pulse'
+  | 'shield-check'
+  | 'wechat'
 interface IconProps {
   name: IconName
   size?: number
@@ -111,6 +117,12 @@ const ICON_MAP: Record<IconName, React.ComponentType<any>> = {
   settings: Setting,
   transit: Transit,
   order: List,
+  bell: Notice,
+  medication: Health,
+  gallery: Category,
+  'heart-pulse': HeartFill,
+  'shield-check': Checked,
+  wechat: Message,
 }
 
 /**

@@ -8,6 +8,7 @@
     "typecheck:volunteer": "npm --prefix volunteer run typecheck"
   },
   "dependencies": {
+    "classnames": "^2.5.1",
     "opencode-antigravity-auth": "^1.6.0"
   }
 }

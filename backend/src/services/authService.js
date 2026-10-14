@@ -431,6 +431,81 @@ async function unlockAccountByCode(phone, code, context = {}) {
   };
 }
 
+/**
+ * 请求密码重置 - 发送验证码
+ */
+async function requestPasswordReset(phone, context = {}) {
+  const user = await UserModel.findByPhone(phone);
+
+  if (!user) {
+    // 为了安全，不透露账号是否存在
+    await writeAuditLog(null, 'password_reset_request', context, { phone, reason: 'not_found' });
+    return { message: 'If the phone number is registered, you will receive an SMS code.' };
+  }
+
+  if (user.account_status === 'deleted') {
+    await writeAuditLog(user.id, 'password_reset_request', context, { reason: 'deleted' });
+    return { message: 'If the phone number is registered, you will receive an SMS code.' };
+  }
+
+  await smsService.sendSms(phone, 'reset_password');
+  await writeAuditLog(user.id, 'password_reset_request', context, { phone });
+
+  return { message: 'If the phone number is registered, you will receive an SMS code.' };
+}
+
+/**
+ * 确认密码重置 - 验证码 + 新密码
+ */
+async function confirmPasswordReset({ phone, code, newPassword, ipAddress, userAgent, requestId }) {
+  const context = createContext(ipAddress, userAgent, requestId);
+
+  // 验证短信码
+  await verifySmsCode(phone, code, 'reset_password', 'Invalid or expired SMS code.');
+
+  const user = await UserModel.findByPhone(phone);
+  if (!user) {
+    throw createBusinessError(404, 'User not found.', null, 404);
+  }
+
+  if (user.account_status === 'deleted') {
+    throw createBusinessError(403, 'Account has been deleted.', null, 403);
+  }
+
+  // 更新密码
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await UserModel.updatePassword(user.id, passwordHash);
+
+  // 清除锁定状态（如果有）
+  if (user.account_status === 'locked') {
+    await UserModel.clearFailedAttempts(user.id);
+  }
+
+  // 使旧的 refresh token 失效
+  await redis.del(refreshTokenKey(user.id));
+
+  await writeAuditLog(user.id, 'password_reset_success', context, { method: 'sms_code' });
+
+  return { message: 'Password has been reset successfully. Please login with your new password.' };
+}
+
+/**
+ * 登出 - 使 refresh token 失效
+ */
+async function logout(userId, sessionId, context = {}) {
+  // 删除用户的 refresh token
+  await redis.del(refreshTokenKey(userId));
+
+  // 如果是管理员，删除 session
+  if (Number(userId) === 0 && sessionId) {
+    await redis.del(adminSessionKey(sessionId));
+  }
+
+  await writeAuditLog(userId, 'logout', context, null);
+
+  return { message: 'Logged out successfully.' };
+}
+
 module.exports = {
   sendSms,
   getAdminCredentials,
@@ -441,6 +516,9 @@ module.exports = {
   refreshToken,
   loginWithWechat,
   unlockAccountByCode,
+  requestPasswordReset,
+  confirmPasswordReset,
+  logout,
 };
 
 

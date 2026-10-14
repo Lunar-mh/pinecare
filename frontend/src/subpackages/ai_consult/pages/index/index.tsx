@@ -1,31 +1,40 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react'
-import { View, Text, ScrollView, Input } from '@tarojs/components'
-import { Message, Service, Star } from '@nutui/icons-react-taro'
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
+import Taro from '@tarojs/taro'
+import { View, Text, ScrollView, Input, Button } from '@tarojs/components'
+import { Message, Service, Star, Medical, Heart, Trash } from '@nutui/icons-react-taro'
+import { Dialog, Toast } from '@nutui/nutui-react-taro'
 import { ActionGrid, DataPanel, EmptyState, HeroHeader, PageShell, SectionBlock, StickyPrimaryAction } from '@/components/shell'
-import { getConsultHistory, getHealthProfile, sendConsultMessage } from '@/services/modules/ai_consult'
+import { getConsultHistory, getHealthProfile, sendConsultMessage, shouldNotifyFamily, notifyFamilyAboutConsult } from '@/services/modules/ai_consult'
 import type { ConsultMessage, HealthProfile } from '@/services/types'
+import { useRole } from '@/hooks/useRole'
 import './index.scss'
 
 const QUICK_QUESTIONS = [
-  { key: 'bp', label: '看血压', description: '让我用简单的话解释今天的血压', icon: <Service size={24} /> },
-  { key: 'drug', label: '问用药', description: '帮我确认今天的服药注意点', icon: <Star size={24} /> },
-  { key: 'doctor', label: '是否就医', description: '帮我判断要不要及时问医生', icon: <Message size={24} /> },
-  { key: 'family', label: '发给家属', description: '整理一句给家人的说明', icon: <Star size={24} /> },
+  { key: 'bp', label: '看血压', description: '高不高？', icon: <Heart size={24} /> },
+  { key: 'drug', label: '问用药', description: '怎么吃？', icon: <Star size={24} /> },
+  { key: 'doctor', label: '要看医生吗', description: '帮忙判断', icon: <Medical size={24} /> },
+  { key: 'diet', label: '能不能吃', description: '忌口查询', icon: <Service size={24} /> },
 ]
 
-const QUESTION_MAP: Record<string, string> = {
-  bp: '请用长辈容易理解的话解释我今天的血压。',
-  drug: '请提醒我今天用药上最需要注意的地方。',
-  doctor: '请帮我判断什么情况需要尽快联系医生。',
-  family: '请帮我整理一句发给家属的健康说明。',
+const PROMPTS: Record<string, string> = {
+  bp: '请用最简单的话帮我看看最近的血压正不正常。',
+  drug: '请帮我看看今天的药有没有要注意的副作用。',
+  doctor: '我感觉有点不舒服，请帮我判断什么情况必须去医院。',
+  diet: '请告诉我高血压有哪些东西绝对不能吃。',
 }
 
 export default function AiConsultIndex() {
+  const { isElder } = useRole()
   const [messages, setMessages] = useState<ConsultMessage[]>([])
   const [profile, setProfile] = useState<HealthProfile | null>(null)
   const [inputText, setInputText] = useState('')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [showNotifyDialog, setShowNotifyDialog] = useState(false)
+  const [pendingNotify, setPendingNotify] = useState<{ message: string; urgency: 'low' | 'medium' | 'high'; keywords: string[] } | null>(null)
+  const scrollRef = useRef<string>('')
+  
+  // Use a persistent session ID or generate one
   const sessionId = useMemo(() => `consult-${Date.now()}`, [])
 
   const loadData = useCallback(async () => {
@@ -35,15 +44,14 @@ export default function AiConsultIndex() {
         getConsultHistory({ sessionId, limit: 20 }),
         getHealthProfile().catch(() => null),
       ])
-      setMessages(
-        history?.length
-          ? history
-          : [{ id: 'welcome', role: 'assistant', content: '先说你最担心的一个问题，我会尽量用直白的话回答。', sessionId, createdAt: new Date().toISOString() }],
-      )
+      
+      const list = history || []
+      // Reverse to chronological order for chat view
+      setMessages(list.slice().reverse())
       setProfile(healthProfile)
-    } catch (error) {
-      console.error('load ai consult failed', error)
-      setMessages([{ id: 'fallback', role: 'assistant', content: '网络有点慢，我们也可以从一句简短的问题开始。', sessionId, createdAt: new Date().toISOString() }])
+      
+    } catch (e) {
+      console.error('load consult failed', e)
     } finally {
       setLoading(false)
     }
@@ -51,68 +59,219 @@ export default function AiConsultIndex() {
 
   useEffect(() => { loadData() }, [loadData])
 
-  const handleSend = async (raw?: string) => {
-    const content = (raw ?? inputText).trim()
+  useEffect(() => {
+    if (messages.length > 0) {
+       scrollRef.current = `msg-${messages[messages.length - 1].id}`
+    }
+  }, [messages])
+
+  // 发送消息并检查是否需要通知家属
+  const handleSend = async (rawText?: string) => {
+    const content = (rawText || inputText).trim()
     if (!content || sending) return
-    const userMessage: ConsultMessage = { id: `user-${Date.now()}`, role: 'user', content, sessionId, createdAt: new Date().toISOString() }
-    setMessages(prev => [...prev, userMessage])
+
+    // 检查是否需要通知家属（仅长辈端）
+    if (isElder) {
+      const notifyCheck = shouldNotifyFamily(content)
+      if (notifyCheck.should) {
+        setPendingNotify({ message: content, ...notifyCheck })
+        setShowNotifyDialog(true)
+        return
+      }
+    }
+
+    await doSend(content)
+  }
+
+  // 实际发送逻辑
+  const doSend = async (content: string, notifyFamily = false) => {
+    const userMsg: ConsultMessage = {
+       id: `local-${Date.now()}`,
+       role: 'user',
+       content,
+       sessionId,
+       createdAt: new Date().toISOString()
+    }
+    
+    setMessages(prev => [...prev, userMsg])
     setInputText('')
     setSending(true)
+
     try {
       const reply = await sendConsultMessage({ message: content, sessionId })
-      setMessages(prev => [...prev, { id: `assistant-${Date.now()}`, role: 'assistant', content: reply.reply, sessionId: reply.sessionId, createdAt: new Date().toISOString() }])
-    } catch (error) {
-      console.error('send consult message failed', error)
-      setMessages(prev => [...prev, { id: `assistant-error-${Date.now()}`, role: 'assistant', content: '我刚刚没有完整收到内容，我们换一句更短的话再试一次。', sessionId, createdAt: new Date().toISOString() }])
+      setMessages(prev => [...prev, reply])
+
+      // 如果需要通知家属
+      if (notifyFamily && pendingNotify) {
+        try {
+          await notifyFamilyAboutConsult({
+            consultId: reply.id,
+            summary: `长辈咨询了关于"${pendingNotify.keywords.join('、')}"的问题`,
+            urgency: pendingNotify.urgency,
+          })
+          Taro.showToast({ title: '已通知家属关注', icon: 'success' })
+        } catch (e) {
+          console.error('notify family failed', e)
+        }
+      }
+    } catch (e) {
+      setMessages(prev => [...prev, {
+         id: `err-${Date.now()}`,
+         role: 'assistant',
+         content: '抱歉，我现在有点连接不畅。',
+         sessionId,
+         createdAt: new Date().toISOString()
+      }])
     } finally {
       setSending(false)
+      setPendingNotify(null)
     }
   }
 
-  return (
-    <PageShell roleTone="family" className="consult-page">
-      <HeroHeader roleTone="family" eyebrow="AI 健康咨询" title="把复杂解释成听得懂的话" subtitle="统一消息流、建议卡和输入区，让咨询页和语音页保持同一家族体验。" />
-      <ScrollView className="detail-shell-scroll" scrollY>
-        <SectionBlock title="常用问题" description="不知道从哪里开始，就先点一个最接近的。">
-          <ActionGrid items={QUICK_QUESTIONS} columns={2} onSelect={key => handleSend(QUESTION_MAP[key])} />
-        </SectionBlock>
+  // 处理通知对话框确认
+  const handleNotifyConfirm = () => {
+    setShowNotifyDialog(false)
+    if (pendingNotify) {
+      doSend(pendingNotify.message, true)
+    }
+  }
 
-        <SectionBlock title="健康背景" description="有资料就显示，没有也不打断咨询。">
-          {!profile ? (
-            <EmptyState title="暂未同步健康档案" description="你仍然可以直接发起咨询，助手会按你当前的问题回答。" icon={<Service size={28} />} />
-          ) : (
-            <View className="detail-stack">
-              <DataPanel tone="primary"><Text className="detail-title">基础信息</Text><Text className="detail-text">年龄 {profile.age || '--'} · {profile.gender === 'female' ? '女' : profile.gender === 'male' ? '男' : '未设置'}</Text></DataPanel>
-              <DataPanel tone="warning"><Text className="detail-title">慢病与过敏</Text><Text className="detail-text">慢病：{profile.chronicDiseases?.join('、') || '暂无'}；过敏：{profile.allergies?.join('、') || '暂无'}</Text></DataPanel>
+  // 处理通知对话框取消（不通知家属，直接发送）
+  const handleNotifyCancel = () => {
+    setShowNotifyDialog(false)
+    if (pendingNotify) {
+      doSend(pendingNotify.message, false)
+    }
+  }
+
+  // --- ELDER VIEW ---
+  const renderElderView = () => (
+    <PageShell roleTone="elder" className="h-screen flex flex-col bg-yinban-bg">
+      <HeroHeader 
+        roleTone="elder"
+        eyebrow="健康顾问"
+        title="哪里不舒服？"
+        subtitle="我是您的专属健康助手，可以直接对我说。"
+      />
+
+      <ScrollView className="flex-1 px-4 py-2" scrollY scrollIntoView={scrollRef.current}>
+         {/* WELCOME */}
+         {messages.length === 0 && !loading && (
+            <View className="mt-4">
+               <Text className="text-gray-500 mb-4 block text-center">您可以试着问问这些：</Text>
+               <ActionGrid items={QUICK_QUESTIONS} columns={2} onSelect={key => handleSend(PROMPTS[key])} />
             </View>
-          )}
-        </SectionBlock>
+         )}
 
-        <SectionBlock title="咨询消息" description="问题和建议放在同一个上下文里，便于家属或长辈回看。">
-          {loading ? <DataPanel tone="info"><Text className="detail-text">正在载入最近咨询内容...</Text></DataPanel> : (
-            <View className="consult-page__messages">
-              {messages.map(item => (
-                <View key={item.id} className={`consult-page__message consult-page__message--${item.role}`}>
-                  <Text className="consult-page__message-text">{item.content}</Text>
-                  <Text className="consult-page__message-time">{new Date(item.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</Text>
-                </View>
-              ))}
-              {sending ? <DataPanel tone="info"><Text className="detail-text">正在生成建议...</Text></DataPanel> : null}
-            </View>
-          )}
-        </SectionBlock>
-
-        <SectionBlock title="输入区" description="支持一句话直问，当前先把核心健康问答和背景资料放在同一页。">
-          <DataPanel tone="primary">
-            <Text className="detail-label">输入你的问题</Text>
-            <Input className="detail-input" value={inputText} placeholder="例如：今天这个数值严重吗？" onInput={e => setInputText(e.detail.value)} confirmType="send" onConfirm={() => handleSend()} />
-            <View className="detail-actions"><View className="detail-button detail-button--family-primary" onClick={() => handleSend()}><Text>{sending ? '发送中...' : '发送问题'}</Text></View></View>
-          </DataPanel>
-        </SectionBlock>
-        <View className="detail-bottom-space" />
+         {/* CHAT */}
+         <View className="space-y-4 pb-24">
+            {messages.map(msg => (
+               <View key={msg.id} id={`msg-${msg.id}`} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <View className={`max-w-[85%] p-5 rounded-3xl text-lg leading-relaxed shadow-sm ${
+                     msg.role === 'user' 
+                       ? 'bg-emerald-600 text-white rounded-br-none' 
+                       : 'bg-white text-gray-900 rounded-bl-none border border-emerald-50'
+                  }`}>
+                     <Text>{msg.content}</Text>
+                  </View>
+               </View>
+            ))}
+            {sending && (
+               <View className="flex justify-start">
+                  <View className="bg-white px-5 py-3 rounded-full border border-emerald-50 text-emerald-600 italic">
+                     正在思考...
+                  </View>
+               </View>
+            )}
+         </View>
       </ScrollView>
-      <StickyPrimaryAction tone="family" label="发起一次新咨询" icon={<Message size={22} />} onClick={() => handleSend('请先帮我理解今天最需要注意的健康问题。')} />
+
+      {/* INPUT */}
+      <View className="bg-white p-4 pb-8 shadow-[0_-4px_16px_rgba(0,0,0,0.04)]">
+         <View className="flex gap-2">
+            <Input 
+              className="flex-1 bg-gray-100 h-14 rounded-xl px-4 text-lg" 
+              placeholder="例如：我头有点晕"
+              value={inputText}
+              onInput={e => setInputText(e.detail.value)}
+              confirmType="send"
+              onConfirm={() => handleSend()}
+            />
+            <Button 
+              className={`h-14 w-24 flex items-center justify-center rounded-xl text-white font-bold border-none m-0 shadow-lg ${
+                 inputText ? 'bg-emerald-600' : 'bg-gray-300'
+              }`}
+              onClick={() => handleSend()}
+            >
+              问一问
+            </Button>
+         </View>
+      </View>
+
+      {/* 家属通知确认对话框 */}
+      <Dialog
+        visible={showNotifyDialog}
+        title="检测到健康关注点"
+        onConfirm={handleNotifyConfirm}
+        onCancel={handleNotifyCancel}
+        confirmText="通知家属"
+        cancelText="不用了"
+      >
+        <View className="py-4 text-center">
+          <Text className="text-lg text-gray-700 block mb-3">
+            您提到了"{pendingNotify?.keywords.join('、')}"
+          </Text>
+          <Text className="text-base text-gray-500 block">
+            是否同时通知家属关注您的健康状况？
+          </Text>
+        </View>
+      </Dialog>
     </PageShell>
   )
-}
 
+  // --- FAMILY VIEW ---
+  const renderFamilyView = () => (
+    <PageShell roleTone="family" className="bg-gray-50 min-h-screen">
+       <View className="bg-white p-4 pt-12 shadow-sm sticky top-0 z-10 flex justify-between items-center">
+         <View>
+           <Text className="text-xl font-bold text-gray-900 block">健康咨询记录</Text>
+           <Text className="text-xs text-gray-500">关注长辈的健康困惑点</Text>
+         </View>
+         <Button size="mini" className="bg-red-50 text-red-500 border-none rounded-full px-3 text-xs m-0">导出记录</Button>
+       </View>
+
+       <ScrollView className="p-4" scrollY>
+          {loading ? (
+             <View className="text-center py-10 text-gray-400">加载中...</View>
+          ) : messages.length === 0 ? (
+             <View className="text-center py-10 text-gray-400">暂无咨询记录</View>
+          ) : (
+             <View className="space-y-6">
+                {messages.map(msg => (
+                  <View key={msg.id} className="flex gap-3">
+                     <View className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${
+                        msg.role === 'user' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'
+                     }`}>
+                        {msg.role === 'user' ? <Star size={16} /> : <Medical size={16} />}
+                     </View>
+                     <View className="flex-1">
+                        <View className="flex justify-between items-baseline mb-1">
+                           <Text className="text-xs font-bold text-gray-600">{msg.role === 'user' ? '长辈提问' : '医生/AI 回复'}</Text>
+                           <Text className="text-xs text-gray-400">{new Date(msg.createdAt).toLocaleString()}</Text>
+                        </View>
+                        <View className={`p-3 rounded-lg text-sm leading-relaxed ${
+                           msg.role === 'user' ? 'bg-white border border-gray-100 shadow-sm' : 'bg-blue-50 text-gray-800'
+                        }`}>
+                           <Text>{msg.content}</Text>
+                        </View>
+                     </View>
+                  </View>
+                ))}
+             </View>
+          )}
+       </ScrollView>
+    </PageShell>
+  )
+
+  return isElder ? renderElderView() : renderFamilyView()
+}

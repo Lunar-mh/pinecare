@@ -20,6 +20,9 @@ export function useRole() {
   const setRole = useCallback((newRole: UserRole) => {
     Taro.setStorageSync(ROLE_KEY, newRole)
     setRoleState(newRole)
+    Taro.setStorageSync('roleSelectTime', Date.now())
+    const url = newRole === 'elder' ? '/pages/index/index' : '/pages/dashboard/index'
+    Taro.reLaunch({ url })
   }, [])
 
   const clearRole = useCallback(() => {

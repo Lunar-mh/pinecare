@@ -1,6 +1,6 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { View, Text } from '@tarojs/components'
-import Taro from '@tarojs/taro'
+import Taro, { useDidShow } from '@tarojs/taro'
 import { ActionGrid, HeroHeader, PageShell, SectionBlock } from '@/components/shell'
 import { Icon, type IconName } from '@/components/icons'
 import { getUserPageConfig, type PageConfigCluster } from '@/services'
@@ -11,6 +11,14 @@ export default function ServicesPage() {
   const { role } = useRole()
   const [clusters, setClusters] = useState<PageConfigCluster[]>([])
   const [loading, setLoading] = useState(true)
+
+  useDidShow(() => {
+    const pageCtx = Taro.getCurrentInstance().page
+    const tabbar = Taro.getTabBar<any>(pageCtx)
+    if (tabbar && typeof tabbar.setSelected === 'function') {
+      tabbar.setSelected(1)
+    }
+  })
 
   useEffect(() => {
     let mounted = true

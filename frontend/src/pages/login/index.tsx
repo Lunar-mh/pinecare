@@ -1,28 +1,21 @@
 import { useState, useCallback, useEffect } from 'react'
 import Taro from '@tarojs/taro'
-import { View, Text, Input } from '@tarojs/components'
+import { View, Text, Input, Image } from '@tarojs/components'
 import { loginByPhone, loginByWechat, sendSmsCode } from '@/services/modules/user'
-import { Icon, PhoneIcon, AlertIcon, InfoIcon, UserIcon, FamilyIcon } from '@/components/icons'
-import './index.scss'
+import { Icon } from '@/components/icons'
 
 type LoginTab = 'phone' | 'wechat'
-type UserRole = 'elder' | 'family'
 
 export default function LoginPage() {
-  const [activeRole, setActiveRole] = useState<UserRole>('elder')
   const [activeTab, setActiveTab] = useState<LoginTab>('phone')
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
   const [countdown, setCountdown] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [phoneError, setPhoneError] = useState('')
-  const [codeError, setCodeError] = useState('')
 
+  // 初始化时清除之前的角色选择，确保必须重新选择
   useEffect(() => {
-    const storedRole = Taro.getStorageSync('userRole') as UserRole
-    if (storedRole === 'elder' || storedRole === 'family') {
-      setActiveRole(storedRole)
-    }
+    Taro.removeStorageSync('userRole')
   }, [])
 
   const isPhoneValid = (val: string) => /^1[3-9]\d{9}$/.test(val)
@@ -35,18 +28,17 @@ export default function LoginPage() {
       Taro.removeStorageSync('refresh_token')
     }
     Taro.setStorageSync('userInfo', JSON.stringify(payload.userInfo))
-    Taro.setStorageSync('userRole', activeRole)
+    // 登录成功后，跳转到专门的身份选择页面
     Taro.reLaunch({ url: '/pages/role-select/index' })
-  }, [activeRole])
+  }, [])
 
   const handleSendCode = useCallback(async () => {
     if (countdown > 0) return
     if (!isPhoneValid(phone)) {
-      setPhoneError('请输入正确的手机号')
+      Taro.showToast({ title: '请输入正确的手机号', icon: 'none' })
       return
     }
 
-    setPhoneError('')
     try {
       await sendSmsCode(phone)
       Taro.showToast({ title: '验证码已发送', icon: 'success' })
@@ -68,23 +60,21 @@ export default function LoginPage() {
 
   const handlePhoneLogin = useCallback(async () => {
     if (!isPhoneValid(phone)) {
-      setPhoneError('请输入正确的手机号')
+      Taro.showToast({ title: '请输入正确的手机号', icon: 'none' })
       return
     }
     if (code.length !== 6) {
-      setCodeError('请输入 6 位验证码')
+      Taro.showToast({ title: '请输入 6 位验证码', icon: 'none' })
       return
     }
 
-    setPhoneError('')
-    setCodeError('')
     setLoading(true)
     try {
       const result = await loginByPhone(phone, code)
       onLoginSuccess(result)
     } catch (error) {
       const err = error as { message?: string }
-      Taro.showToast({ title: err.message || '登录失败，请稍后重试', icon: 'none' })
+      Taro.showToast({ title: err.message || '登录失败，请检查验证码', icon: 'none' })
     } finally {
       setLoading(false)
     }
@@ -105,128 +95,119 @@ export default function LoginPage() {
   }, [onLoginSuccess])
 
   return (
-    <View className={`login-page login-page--${activeRole}`}>
-      <View className="login-hero">
-        <View className="login-hero__badge">银伴全域智慧照护</View>
-        <Text className="login-hero__title">把照护做得更安心，也更轻松</Text>
-        <Text className="login-hero__subtitle">先选择您的身份，再用熟悉的方式登录。</Text>
+    <View className="min-h-screen bg-white flex flex-col">
+      {/* 顶部 Hero 区域 */}
+      <View className="pt-24 px-8 pb-10 flex flex-col items-center">
+        <View className="w-20 h-20 bg-yinban-primary/10 rounded-3xl flex items-center justify-center mb-6">
+          <Icon name="heart-pulse" size={48} color="#10B981" />
+        </View>
+        <Text className="text-dash-hero font-bold text-dash-text-main mb-3">欢迎来到银伴</Text>
+        <Text className="text-dash-body text-dash-text-sub text-center">全域智慧照护平台，守护您的每一天</Text>
       </View>
 
-      <View className="login-panel">
-        <View className="login-stage">
-          <Text className="login-stage__index">01</Text>
-          <Text className="login-stage__title">选择当前身份</Text>
-        </View>
-
-        <View className="login-role-grid">
-          <View className={`login-role-card ${activeRole === 'elder' ? 'login-role-card--active' : ''}`} onClick={() => setActiveRole('elder')}>
-            <View className="login-role-card__icon login-role-card__icon--elder">
-              <UserIcon size={32} color="#2f6c5b" />
-            </View>
-            <Text className="login-role-card__title">我是长辈</Text>
-            <Text className="login-role-card__desc">健康管理、用药提醒、紧急守护和语音陪伴。</Text>
+      {/* 登录表单区域 */}
+      <View className="px-8 flex-1">
+        {/* 登录方式切换 Tab */}
+        <View className="flex border-b border-dash-border mb-8">
+          <View 
+            className={`flex-1 pb-3 text-center ${activeTab === 'phone' ? 'border-b-2 border-yinban-primary' : ''}`}
+            onClick={() => setActiveTab('phone')}
+          >
+            <Text className={`text-dash-title font-medium ${activeTab === 'phone' ? 'text-yinban-primary' : 'text-dash-text-sub'}`}>手机快捷登录</Text>
           </View>
-          <View className={`login-role-card login-role-card--family ${activeRole === 'family' ? 'login-role-card--active' : ''}`} onClick={() => setActiveRole('family')}>
-            <View className="login-role-card__icon login-role-card__icon--family">
-              <FamilyIcon size={32} color="#c97b55" />
-            </View>
-            <Text className="login-role-card__title">我是家属</Text>
-            <Text className="login-role-card__desc">远程看护、异常提醒、定位守护与家庭互动。</Text>
-          </View>
-        </View>
-
-        <View className="login-stage">
-          <Text className="login-stage__index">02</Text>
-          <Text className="login-stage__title">选择登录方式</Text>
-        </View>
-
-        <View className="login-tabs">
-          <View className={`login-tab ${activeTab === 'phone' ? 'login-tab--active' : ''}`} onClick={() => setActiveTab('phone')}>
-            <Text className="login-tab__text">手机号登录</Text>
-          </View>
-          <View className={`login-tab ${activeTab === 'wechat' ? 'login-tab--active' : ''}`} onClick={() => setActiveTab('wechat')}>
-            <Text className="login-tab__text">微信快捷登录</Text>
+          <View 
+            className={`flex-1 pb-3 text-center ${activeTab === 'wechat' ? 'border-b-2 border-yinban-primary' : ''}`}
+            onClick={() => setActiveTab('wechat')}
+          >
+            <Text className={`text-dash-title font-medium ${activeTab === 'wechat' ? 'text-yinban-primary' : 'text-dash-text-sub'}`}>微信一键登录</Text>
           </View>
         </View>
 
         {activeTab === 'phone' ? (
-          <View className="login-form">
-            <View className={`login-field ${phoneError ? 'login-field--error' : ''}`}>
-              <View className="login-field__icon"><PhoneIcon size={20} color="#8d98a3" /></View>
+          <View className="space-y-6">
+            {/* 手机号输入框 */}
+            <View className="bg-yinban-bg h-14 rounded-2xl flex items-center px-4">
+              <Icon name="phone" size={24} color="#64748B" />
               <Input
-                className="login-field__input"
+                className="flex-1 ml-3 text-dash-body text-dash-text-main h-full"
                 type="number"
                 maxlength={11}
                 value={phone}
                 placeholder="请输入手机号"
-                onInput={(event) => {
-                  setPhone(event.detail.value.replace(/\\D/g, '').slice(0, 11))
-                  if (phoneError) setPhoneError('')
-                }}
+                placeholderTextColor="#94A3B8"
+                onInput={(event) => setPhone(event.detail.value.replace(/\D/g, '').slice(0, 11))}
               />
             </View>
-            {phoneError ? (
-              <View className="login-error">
-                <AlertIcon size={16} color="#d75a4a" />
-                <Text className="login-error__text">{phoneError}</Text>
-              </View>
-            ) : null}
 
-            <View className={`login-field ${codeError ? 'login-field--error' : ''}`}>
-              <View className="login-field__icon"><Icon name="eye" size={20} color="#8d98a3" /></View>
+            {/* 验证码输入框 */}
+            <View className="bg-yinban-bg h-14 rounded-2xl flex items-center px-4">
+              <Icon name="shield-check" size={24} color="#64748B" />
               <Input
-                className="login-field__input"
+                className="flex-1 ml-3 text-dash-body text-dash-text-main h-full"
                 type="number"
                 maxlength={6}
                 value={code}
                 placeholder="请输入验证码"
-                onInput={(event) => {
-                  setCode(event.detail.value.replace(/\\D/g, '').slice(0, 6))
-                  if (codeError) setCodeError('')
-                }}
+                placeholderTextColor="#94A3B8"
+                onInput={(event) => setCode(event.detail.value.replace(/\D/g, '').slice(0, 6))}
               />
-              <View className={`send-code-btn ${countdown > 0 ? 'send-code-btn--disabled' : ''}`} onClick={handleSendCode}>
-                <Text className="send-code-btn__text">{countdown > 0 ? `${countdown}s` : '发送验证码'}</Text>
+              <View 
+                className={`px-4 h-8 rounded-full flex items-center justify-center transition-opacity ${countdown > 0 ? 'bg-gray-200' : 'bg-yinban-primary/10 active:opacity-50'}`}
+                onClick={handleSendCode}
+              >
+                <Text className={`text-dash-tiny font-medium ${countdown > 0 ? 'text-gray-500' : 'text-yinban-primary'}`}>
+                  {countdown > 0 ? `${countdown}s 后重新获取` : '获取验证码'}
+                </Text>
               </View>
             </View>
-            {codeError ? (
-              <View className="login-error">
-                <AlertIcon size={16} color="#d75a4a" />
-                <Text className="login-error__text">{codeError}</Text>
-              </View>
-            ) : null}
 
-        {process.env.NODE_ENV === 'development' && (
-          <View className="login-tip">
-            <InfoIcon size={16} color="#3d7ca6" />
-            <Text className="login-tip__text">开发环境可使用固定验证码 000000。</Text>
-          </View>
-        )}
+            {process.env.NODE_ENV === 'development' && (
+              <Text className="block text-center text-dash-tiny text-dash-text-sub">
+                开发环境提示: 测试手机号可直接输入验证码 000000
+              </Text>
+            )}
 
-            <View className={`login-submit ${loading ? 'login-submit--loading' : ''}`} onClick={loading ? undefined : handlePhoneLogin}>
-              <Text className="login-submit__text">{loading ? '登录中...' : '进入银伴'}</Text>
+            {/* 忘记密码链接 */}
+            <View className="flex justify-end">
+              <Text 
+                className="text-dash-tiny text-yinban-primary active:opacity-50"
+                onClick={() => Taro.navigateTo({ url: '/pages/reset-password/index' })}
+              >
+                忘记密码？
+              </Text>
+            </View>
+
+            {/* 登录按钮 */}
+            <View 
+              className={`h-14 rounded-full flex items-center justify-center transition-all mt-8 ${loading ? 'bg-yinban-primary/70' : 'bg-yinban-primary active:scale-[0.98]'}`}
+              onClick={loading ? undefined : handlePhoneLogin}
+            >
+              <Text className="text-white text-dash-title font-bold">{loading ? '登录中...' : '登录 / 注册'}</Text>
             </View>
           </View>
         ) : (
-          <View className="wechat-panel">
-            <View className="wechat-panel__icon"><Icon name="check" size={40} color="#4b8d63" /></View>
-            <Text className="wechat-panel__text">使用微信授权快速登录，登录后将进入对应身份首页。</Text>
-            <View className={`login-submit login-submit--wechat ${loading ? 'login-submit--loading' : ''}`} onClick={loading ? undefined : handleWechatLogin}>
-              <Text className="login-submit__text">{loading ? '登录中...' : '微信快捷登录'}</Text>
+          <View className="flex flex-col items-center justify-center py-10">
+            <View className="w-20 h-20 bg-[#07C160]/10 rounded-full flex items-center justify-center mb-6">
+              <Icon name="wechat" size={48} color="#07C160" />
+            </View>
+            <Text className="text-dash-body text-dash-text-sub text-center px-6 mb-10">
+              平台将获取您的微信公开信息（如昵称、头像）以快速创建或绑定账户。
+            </Text>
+            <View 
+              className={`w-full h-14 rounded-full flex items-center justify-center transition-all ${loading ? 'bg-[#07C160]/70' : 'bg-[#07C160] active:scale-[0.98]'}`}
+              onClick={loading ? undefined : handleWechatLogin}
+            >
+              <Text className="text-white text-dash-title font-bold">{loading ? '登录中...' : '授权微信登录'}</Text>
             </View>
           </View>
         )}
-
-        <View className="login-benefits">
-          <View className="login-benefits__item">
-            <Text className="login-benefits__title">适老体验</Text>
-            <Text className="login-benefits__desc">更大字号、更清晰层级、主操作更靠前。</Text>
-          </View>
-          <View className="login-benefits__item">
-            <Text className="login-benefits__title">家庭协同</Text>
-            <Text className="login-benefits__desc">长辈与家属同应用分角色进入，关系更清楚。</Text>
-          </View>
-        </View>
+      </View>
+      
+      {/* 底部协议声明 */}
+      <View className="pb-10 flex justify-center items-center px-8">
+        <Text className="text-dash-tiny text-dash-text-sub text-center">
+          登录即代表您同意银伴<Text className="text-yinban-primary">《用户服务协议》</Text>与<Text className="text-yinban-primary">《隐私政策》</Text>
+        </Text>
       </View>
     </View>
   )

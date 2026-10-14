@@ -19,9 +19,10 @@ const {
 const router = express.Router();
 
 router.post('/companion/chat', auth, companionChatRateLimiter, validateChat, chat);
-router.get('/companion/games', getGames);
+// 修复：添加 auth 中间件保护游戏列表和怀旧内容
+router.get('/companion/games', auth, getGames);
 router.post('/companion/game/record', auth, validateGameRecord, recordGame);
 router.get('/companion/emotion', auth, getEmotion);
-router.get('/companion/nostalgia', validateNostalgia, getNostalgia);
+router.get('/companion/nostalgia', auth, validateNostalgia, getNostalgia);
 
 module.exports = router;

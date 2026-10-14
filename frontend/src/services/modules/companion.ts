@@ -1,4 +1,4 @@
-﻿import { get, post } from '../request';
+import { get, post } from '../request';
 import type { ChatMessage, CompanionGame, GameRecord, EmotionTrend, NostalgiaContent } from '../types';
 
 export const sendCompanionMessage = async (data: { message: string }) => {

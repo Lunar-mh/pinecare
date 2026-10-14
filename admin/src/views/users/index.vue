@@ -149,19 +149,52 @@ async function toggleStatus(row: UserItem): Promise<void> {
 }
 
 function exportCurrentPage(): void {
-  const header = 'ID,昵称,手机号,角色,状态,注册日期,最近活跃'
-  const body = users.value
-    .map((item) => [item.id, item.nickname, item.phone, roleLabel(item.role), item.status, item.registerDate, item.lastActive].join(','))
-    .join('\n')
-  const csv = `${header}\n${body}`
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `admin-users-page-${page.value}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
-  ElMessage.success('已导出当前页用户数据')
+  try {
+    // 检查数据
+    if (!users.value || users.value.length === 0) {
+      ElMessage.warning('当前页没有数据可导出')
+      return
+    }
+
+    const header = 'ID,昵称,手机号,角色,状态,注册日期,最近活跃'
+    const body = users.value
+      .map((item) => {
+        // 转义CSV特殊字符
+        const escapeField = (field: unknown) => {
+          const str = String(field ?? '')
+          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return `"${str.replace(/"/g, '""')}"`
+          }
+          return str
+        }
+        return [
+          item.id,
+          escapeField(item.nickname),
+          escapeField(item.phone),
+          escapeField(roleLabel(item.role)),
+          escapeField(item.status),
+          escapeField(item.registerDate),
+          escapeField(item.lastActive)
+        ].join(',')
+      })
+      .join('\n')
+    
+    // 添加BOM以支持Excel正确识别UTF-8
+    const BOM = '\uFEFF'
+    const csv = `${BOM}${header}\n${body}`
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    const timestamp = new Date().toISOString().slice(0, 10)
+    a.download = `用户数据-第${page.value}页-${timestamp}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    ElMessage.success('已导出当前页用户数据')
+  } catch (err) {
+    console.error('Export failed:', err)
+    ElMessage.error('导出失败，请稍后重试')
+  }
 }
 
 function gotoHealth(userId: number): void {

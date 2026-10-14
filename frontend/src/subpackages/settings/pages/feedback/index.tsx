@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, ScrollView, Textarea } from '@tarojs/components'
 import { Message } from '@nutui/icons-react-taro'

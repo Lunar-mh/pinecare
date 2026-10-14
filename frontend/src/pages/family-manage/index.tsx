@@ -1,0 +1,1 @@
+import { View, Text } from '@tarojs/components'; export default function FamilyManage() { return <View><Text>Content</Text></View>; }

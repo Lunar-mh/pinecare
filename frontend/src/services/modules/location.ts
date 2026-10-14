@@ -1,4 +1,4 @@
-﻿import { del, get, post, put } from '../request';
+import { del, get, post, put } from '../request';
 import type { LocationData, SafeZone } from '../types';
 
 export interface FamilyMemberLocation {

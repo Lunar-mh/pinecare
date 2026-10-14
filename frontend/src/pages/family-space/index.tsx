@@ -1,0 +1,1 @@
+import { View, Text } from '@tarojs/components'; export default function FamilySpace() { return <View><Text>Content</Text></View>; }

@@ -4,6 +4,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { fail } = require('../utils/response');
 const authController = require('../controllers/authController');
+const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -39,5 +40,12 @@ router.post('/phone', loginLimiter, authController.loginPhoneByCode);
 router.post('/refresh-token', authController.refreshToken);
 router.post('/login/wechat', loginLimiter, authController.loginWechat);
 router.post('/wechat', loginLimiter, authController.loginWechatMiniProgram);
+
+// 密码重置
+router.post('/password-reset/request', smsLimiter, authController.requestPasswordReset);
+router.post('/password-reset/confirm', loginLimiter, authController.confirmPasswordReset);
+
+// 登出（需要认证）
+router.post('/logout', authMiddleware, authController.logout);
 
 module.exports = router;

@@ -1,4 +1,4 @@
-﻿import Taro from '@tarojs/taro';
+import Taro from '@tarojs/taro';
 
 declare const __TARO_APP_API_BASE_URL__: string | undefined;
 

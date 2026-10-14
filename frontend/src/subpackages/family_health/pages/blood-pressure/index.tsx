@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { View, Text, ScrollView } from '@tarojs/components'
 import { DataPanel, HeroHeader, PageShell, SectionBlock } from '@/components/shell'
 import { getBloodPressureRecords, getLatestBloodPressure } from '@/services/modules/health'

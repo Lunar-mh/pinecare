@@ -1,4 +1,4 @@
-﻿import { get, post, put } from '../request';
+import { get, post, put } from '../request';
 import type { BloodPressureRecord, HeartRateRecord, PaginatedResult, TodayHealthOverview } from '../types';
 
 type HealthArchiveRecord = {

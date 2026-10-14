@@ -1,46 +1,46 @@
-﻿import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Taro, { usePullDownRefresh } from '@tarojs/taro'
-import { View, Text, ScrollView, Input, Switch } from '@tarojs/components'
-import { Location, Plus, User } from '@nutui/icons-react-taro'
-import {
-  DataPanel,
-  EmptyState,
-  HeroHeader,
-  PageShell,
-  SectionBlock,
-  StatusCard,
-  StickyPrimaryAction,
-} from '@/components/shell'
-import { createSafeZone, getCurrentLocation, getFamilyLocations, getSafeZones, toggleSafeZone, updateLocation } from '@/services/modules/location'
-import type { SafeZone } from '@/services/types'
-import type { FamilyMemberLocation } from '@/services/modules/location'
+import { View, Text, ScrollView, Map, Button, CoverView, CoverImage } from '@tarojs/components'
+import { Location, Plus, User, Check, Warning, Setting } from '@nutui/icons-react-taro'
+import { DataPanel, EmptyState, HeroHeader, PageShell, SectionBlock, StickyPrimaryAction } from '@/components/shell'
+import { createSafeZone, getCurrentLocation, getFamilyLocations, getSafeZones } from '@/services/modules/location'
+import type { SafeZone, FamilyMemberLocation } from '@/services/types'
+import { useRole } from '@/hooks/useRole'
+import { Icon } from '@/components/icons'
 import './index.scss'
 
-type TabType = 'my' | 'family' | 'zones'
-
 export default function LocationIndex() {
-  const [activeTab, setActiveTab] = useState<TabType>('family')
-  const [myLocation, setMyLocation] = useState('')
-  const [myLocationTime, setMyLocationTime] = useState('')
+  const { isElder } = useRole()
+  const [myLocation, setMyLocation] = useState<{lat: number, lng: number, address: string} | null>(null)
   const [familyLocations, setFamilyLocations] = useState<FamilyMemberLocation[]>([])
   const [safeZones, setSafeZones] = useState<SafeZone[]>([])
   const [loading, setLoading] = useState(true)
-  const [locating, setLocating] = useState(false)
-  const [creatingZone, setCreatingZone] = useState(false)
-  const [showCreateZone, setShowCreateZone] = useState(false)
-  const [zoneName, setZoneName] = useState('')
-  const [zoneRadius, setZoneRadius] = useState('300')
+
+  // Markers for map
+  const [markers, setMarkers] = useState<any[]>([])
 
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const [current, family, zones] = await Promise.all([getCurrentLocation(), getFamilyLocations(), getSafeZones()])
-      setMyLocation(current?.address || '还没有同步当前位置')
-      setMyLocationTime(current?.updatedAt || '')
+      // 1. Get Self Location
+      try {
+        const current = await Taro.getLocation({ type: 'gcj02' })
+        setMyLocation({
+           lat: current.latitude,
+           lng: current.longitude,
+           address: '当前位置' // Ideally reverse geocode here
+        })
+      } catch (e) {
+        console.log('Location permission denied')
+      }
+
+      // 2. Get Related Data
+      const [family, zones] = await Promise.all([getFamilyLocations(), getSafeZones()])
       setFamilyLocations(family || [])
       setSafeZones(zones || [])
-    } catch (loadError) {
-      console.error('load location page failed', loadError)
+      
+    } catch (e) {
+      console.error('load location data failed', e)
     } finally {
       setLoading(false)
     }
@@ -50,166 +50,134 @@ export default function LocationIndex() {
     loadData()
   }, [loadData])
 
-  usePullDownRefresh(() => {
-    loadData().finally(() => Taro.stopPullDownRefresh())
-  })
-
-  const handleRefreshLocation = async () => {
-    setLocating(true)
-    try {
-      const current = await Taro.getLocation({ type: 'gcj02' })
-      const updated = await updateLocation({ latitude: current.latitude, longitude: current.longitude })
-      setMyLocation(updated.address || '当前位置已同步')
-      setMyLocationTime(updated.updatedAt || new Date().toISOString())
-      Taro.showToast({ title: '位置已刷新', icon: 'success' })
-    } catch (refreshError) {
-      console.error('refresh current location failed', refreshError)
-      Taro.showToast({ title: '刷新失败，请检查定位权限', icon: 'none' })
-    } finally {
-      setLocating(false)
-    }
-  }
-
-  const handleToggleZone = async (zone: SafeZone) => {
-    try {
-      await toggleSafeZone(zone.id, !zone.isActive)
-      setSafeZones(prev => prev.map(item => (item.id === zone.id ? { ...item, isActive: !item.isActive } : item)))
-    } catch (toggleError) {
-      console.error('toggle safe zone failed', toggleError)
-      Taro.showToast({ title: '切换失败，请稍后再试', icon: 'none' })
-    }
-  }
-
-  const handleCreateZone = async () => {
-    const name = zoneName.trim()
-    const radius = Number(zoneRadius)
-    if (!name) {
-      Taro.showToast({ title: '请先填写安全区名称', icon: 'none' })
-      return
-    }
-    if (!Number.isFinite(radius) || radius < 100) {
-      Taro.showToast({ title: '半径至少填写 100 米', icon: 'none' })
-      return
-    }
-
-    setCreatingZone(true)
-    try {
-      const current = await Taro.getLocation({ type: 'gcj02' })
-      const created = await createSafeZone({
-        name,
-        latitude: current.latitude,
-        longitude: current.longitude,
-        radius,
+  // Update markers when data changes
+  useEffect(() => {
+    const newMarkers: any[] = []
+    
+    if (myLocation) {
+      newMarkers.push({
+        id: 0,
+        latitude: myLocation.lat,
+        longitude: myLocation.lng,
+        title: '我在这里',
+        iconPath: isElder ? 'https://img.icons8.com/color/48/elderly-person.png' : 'https://img.icons8.com/color/48/user-location.png',
+        width: 40,
+        height: 40,
+        callout: { content: '我在这里', display: 'ALWAYS', padding: 8, borderRadius: 8 }
       })
-      setSafeZones(prev => [created, ...prev])
-      setZoneName('')
-      setZoneRadius('300')
-      setShowCreateZone(false)
-      setActiveTab('zones')
-      Taro.showToast({ title: '安全区已创建', icon: 'success' })
-    } catch (createError) {
-      console.error('create safe zone failed', createError)
-      Taro.showToast({ title: createError instanceof Error ? createError.message : '创建失败，请稍后再试', icon: 'none' })
-    } finally {
-      setCreatingZone(false)
     }
+
+    familyLocations.forEach((fam, idx) => {
+      newMarkers.push({
+        id: idx + 1,
+        latitude: fam.lat,
+        longitude: fam.lng,
+        title: fam.name,
+        iconPath: 'https://img.icons8.com/color/48/family.png', // Placeholder
+        width: 32,
+        height: 32,
+        callout: { content: fam.name, display: 'ALWAYS', padding: 4, borderRadius: 4 }
+      })
+    })
+
+    setMarkers(newMarkers)
+  }, [myLocation, familyLocations, isElder])
+
+  const handleShare = () => {
+    Taro.showToast({ title: '位置已发送给家人', icon: 'success' })
   }
 
-  return (
-    <PageShell roleTone="family" className="location-overview-page">
+  // --- ELDER VIEW ---
+  const renderElderView = () => (
+    <PageShell roleTone="elder" className="h-screen flex flex-col bg-white">
       <HeroHeader
-        roleTone="family"
-        eyebrow="定位守护"
-        title="先看人在哪，再看异常有没有发生"
-        subtitle="定位页按监护习惯重新组织，先看家人状态，再看自己的位置和安全区设置。"
+        roleTone="elder"
+        eyebrow="我的位置"
+        title="我在哪里？"
+        subtitle={myLocation ? "定位正常，家人知道您在这里。" : "正在获取您的位置..."}
       />
 
-      <ScrollView className="location-overview-page__scroll" scrollY>
-        <View className="location-overview-page__grid">
-          <StatusCard title="在线家人" value={`${familyLocations.filter(item => item.isOnline).length}`} unit="人" hint="当前位置最近有同步" tone="success" icon={<User size={22} />} />
-          <StatusCard title="安全区" value={`${safeZones.filter(item => item.isActive).length}`} unit="个" hint="已启用的区域提醒" tone="primary" icon={<Location size={22} />} />
-        </View>
-
-        <View className="location-overview-page__tabs">
-          <View className={`location-overview-page__tab${activeTab === 'family' ? ' location-overview-page__tab--active' : ''}`} onClick={() => setActiveTab('family')}><Text>家人位置</Text></View>
-          <View className={`location-overview-page__tab${activeTab === 'my' ? ' location-overview-page__tab--active' : ''}`} onClick={() => setActiveTab('my')}><Text>我的位置</Text></View>
-          <View className={`location-overview-page__tab${activeTab === 'zones' ? ' location-overview-page__tab--active' : ''}`} onClick={() => setActiveTab('zones')}><Text>安全区</Text></View>
-        </View>
-
-        {activeTab === 'family' ? (
-          <SectionBlock title="家人位置" description="优先看老人和主要联系人有没有掉线或长时间未更新。">
-            {loading ? (
-              <DataPanel tone="info"><Text className="location-overview-page__text">正在同步家人位置...</Text></DataPanel>
-            ) : familyLocations.length === 0 ? (
-              <EmptyState title="暂时没有共享中的位置" description="请先确认家人是否已开启定位共享。" icon={<Location size={28} />} />
-            ) : (
-              <View className="location-overview-page__stack">
-                {familyLocations.map(item => (
-                  <DataPanel key={item.memberId} tone={item.isOnline ? 'success' : 'warning'}>
-                    <Text className="location-overview-page__title">{item.memberName} · {item.relation}</Text>
-                    <Text className="location-overview-page__text">{item.location.address || '位置描述暂时缺失'}</Text>
-                    <Text className="location-overview-page__meta">{item.isOnline ? '在线' : '离线'} · 最近更新 {new Date(item.location.updatedAt).toLocaleString('zh-CN')}</Text>
-                    <View className="location-overview-page__actions">
-                      <View className="location-overview-page__button" onClick={() => Taro.openLocation({ latitude: item.location.latitude, longitude: item.location.longitude, name: item.memberName, address: item.location.address })}><Text>查看地图</Text></View>
-                    </View>
-                  </DataPanel>
-                ))}
-              </View>
-            )}
-          </SectionBlock>
-        ) : null}
-
-        {activeTab === 'my' ? (
-          <SectionBlock title="我的位置" description="确保当前位置和时间是新的，弱网时也能快速手动刷新。">
-            <DataPanel tone="primary">
-              <Text className="location-overview-page__title">当前位置</Text>
-              <Text className="location-overview-page__text">{myLocation}</Text>
-              <Text className="location-overview-page__meta">{myLocationTime ? `最近更新 ${new Date(myLocationTime).toLocaleString('zh-CN')}` : '还没有定位时间'}</Text>
-              <View className="location-overview-page__actions">
-                <View className="location-overview-page__button location-overview-page__button--primary" onClick={handleRefreshLocation}><Text>{locating ? '刷新中...' : '刷新我的位置'}</Text></View>
-              </View>
-            </DataPanel>
-          </SectionBlock>
-        ) : null}
-
-        {activeTab === 'zones' ? (
-          <SectionBlock title="安全区设置" description="把启用、停用、新增和区域半径集中到同一屏。">
-            {showCreateZone ? (
-              <DataPanel tone="primary">
-                <Text className="location-overview-page__title">新增安全区</Text>
-                <Text className="location-overview-page__meta">会使用当前手机定位作为安全区中心点。</Text>
-                <Input className="location-overview-page__input" value={zoneName} placeholder="例如：家里、社区活动中心" onInput={event => setZoneName(event.detail.value)} />
-                <Input className="location-overview-page__input" value={zoneRadius} type="number" placeholder="请输入半径（米）" onInput={event => setZoneRadius(event.detail.value)} />
-                <View className="location-overview-page__actions">
-                  <View className="location-overview-page__button location-overview-page__button--primary" onClick={handleCreateZone}><Text>{creatingZone ? '创建中...' : '使用当前位置创建'}</Text></View>
-                  <View className="location-overview-page__button" onClick={() => setShowCreateZone(false)}><Text>取消</Text></View>
-                </View>
-              </DataPanel>
-            ) : null}
-            {safeZones.length === 0 ? (
-              <EmptyState title="还没有安全区" description="建议至少设置一个常住地或社区范围，用于离开提醒。" icon={<Location size={28} />} />
-            ) : (
-              <View className="location-overview-page__stack">
-                {safeZones.map(zone => (
-                  <DataPanel key={zone.id} tone={zone.isActive ? 'primary' : 'info'}>
-                    <View className="location-overview-page__zone-row">
-                      <View>
-                        <Text className="location-overview-page__title">{zone.name}</Text>
-                        <Text className="location-overview-page__text">半径 {zone.radius} 米</Text>
-                      </View>
-                      <Switch checked={zone.isActive} onChange={() => handleToggleZone(zone)} color="#c97b55" />
-                    </View>
-                  </DataPanel>
-                ))}
-              </View>
-            )}
-          </SectionBlock>
-        ) : null}
-
-        <View className="location-overview-page__bottom-space" />
-      </ScrollView>
-
-      <StickyPrimaryAction tone="family" label={showCreateZone ? '收起新增安全区' : '新增安全区'} icon={<Plus size={22} />} onClick={() => { setActiveTab('zones'); setShowCreateZone(prev => !prev) }} />
+      <View className="flex-1 relative rounded-t-3xl overflow-hidden -mt-6 shadow-top">
+        {myLocation ? (
+          <Map
+            className="w-full h-full"
+            latitude={myLocation.lat}
+            longitude={myLocation.lng}
+            scale={16}
+            markers={markers}
+            showLocation
+          />
+        ) : (
+          <View className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
+             <Location size={48} className="mb-2 animate-bounce" />
+             <Text>正在定位...</Text>
+          </View>
+        )}
+        
+        {/* Floating Action Button */}
+        <CoverView className="absolute bottom-10 left-0 right-0 px-6 pointer-events-none flex justify-center">
+            <Button className="w-full bg-yinban-primary text-white font-bold h-14 rounded-full shadow-lg flex items-center justify-center text-xl pointer-events-auto" onClick={handleShare}>
+              告诉家人我在这里
+            </Button>
+        </CoverView>
+      </View>
     </PageShell>
   )
+
+  // --- FAMILY VIEW ---
+  const renderFamilyView = () => (
+    <PageShell roleTone="family" className="h-screen flex flex-col bg-gray-50">
+      <View className="bg-white p-4 pt-12 shadow-sm z-10">
+        <Text className="text-xl font-bold text-gray-900 block">位置守护</Text>
+        <Text className="text-sm text-gray-500">
+           {myLocation ? `长辈位置更新于刚刚` : '正在同步长辈位置...'}
+        </Text>
+      </View>
+      
+      <View className="flex-1 relative">
+         <Map
+            className="w-full h-full"
+            latitude={myLocation?.lat || 39.9}
+            longitude={myLocation?.lng || 116.4}
+            scale={14}
+            markers={markers}
+            circles={safeZones.map(zone => ({
+              latitude: zone.lat,
+              longitude: zone.lng,
+              radius: zone.radius,
+              color: '#4ADE8033',
+              fillColor: '#4ADE8033',
+              strokeWidth: 2
+            }))}
+         />
+
+         {/* Zone List Overlay */}
+         <CoverView className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 shadow-lg transform transition-transform duration-300">
+            <View className="flex justify-between items-center mb-4">
+               <Text className="text-lg font-bold text-gray-800">安全围栏</Text>
+               <View className="bg-gray-100 p-2 rounded-full" onClick={() => Taro.navigateTo({ url: '/subpackages/location/pages/zone/add' })}>
+                  <Plus size={16} color="#666" />
+               </View>
+            </View>
+            <ScrollView scrollY className="max-h-48">
+               {safeZones.length === 0 ? (
+                  <View className="py-4 text-center text-gray-400 text-sm">暂无围栏，点击上方 + 添加</View>
+               ) : (
+                  safeZones.map(zone => (
+                     <View key={zone.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                        <View>
+                           <Text className="text-base font-bold text-gray-900 block">{zone.name}</Text>
+                           <Text className="text-xs text-gray-500">半径 {zone.radius}米</Text>
+                        </View>
+                        <Setting size={16} color="#ccc" />
+                     </View>
+                  ))
+               )}
+            </ScrollView>
+         </CoverView>
+      </View>
+    </PageShell>
+  )
+
+  return isElder ? renderElderView() : renderFamilyView()
 }

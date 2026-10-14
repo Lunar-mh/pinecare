@@ -1,4 +1,4 @@
-﻿import type { IconName } from '@/components/icons'
+import type { IconName } from '@/components/icons'
 
 export interface NavAction {
   key: string
@@ -36,7 +36,7 @@ export const homeQuickActionsByRole: Record<'elder' | 'family', NavAction[]> = {
     { key: 'sos', label: '紧急求助', description: '一键求助并通知家人', icon: 'sos', path: '/subpackages/sos/pages/index/index', badge: '重要' },
   ],
   family: [
-    { key: 'overview', label: '长辈状态', description: '查看今日状态与风险提醒', icon: 'heart', path: '/pages/index/index' },
+    { key: 'overview', label: '长辈状态', description: '查看今日状态与风险提醒', icon: 'heart', path: '/subpackages/health/pages/index/index' },
     { key: 'location', label: '实时定位', description: '查看位置共享与安全区域', icon: 'location', path: '/subpackages/location/pages/index/index' },
     { key: 'family-space', label: '家庭空间', description: '相册、留言与陪伴互动', icon: 'family', path: '/subpackages/family_space/pages/index/index' },
     { key: 'medical', label: '服务协调', description: '医疗与社区资源协同', icon: 'stethoscope', path: '/subpackages/medical/pages/index/index' },

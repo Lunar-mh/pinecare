@@ -53,5 +53,6 @@ tmp-*.js
 
 # Local agent tooling
 .opencode/
+.claude/
 __pycache__/
 

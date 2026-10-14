@@ -199,6 +199,74 @@ async function loginPhoneByCode(req, res) {
   }
 }
 
+/**
+ * 请求密码重置
+ */
+async function requestPasswordReset(req, res) {
+  try {
+    const required = validateRequired(req.body || {}, ['phone']);
+    if (!required.valid) return fail(res, 400, required.message, null, 400);
+
+    const phoneCheck = validatePhone(req.body.phone);
+    if (!phoneCheck.valid) return fail(res, 400, phoneCheck.message, null, 400);
+
+    const data = await authService.requestPasswordReset(req.body.phone, getRequestContext(req));
+    return ok(res, data);
+  } catch (err) {
+    return handleError(res, err);
+  }
+}
+
+/**
+ * 确认密码重置
+ */
+async function confirmPasswordReset(req, res) {
+  try {
+    const required = validateRequired(req.body || {}, ['phone', 'code', 'new_password']);
+    if (!required.valid) return fail(res, 400, required.message, null, 400);
+
+    const phoneCheck = validatePhone(req.body.phone);
+    if (!phoneCheck.valid) return fail(res, 400, phoneCheck.message, null, 400);
+
+    const codeCheck = validateSmsCode(req.body.code);
+    if (!codeCheck.valid) return fail(res, 400, codeCheck.message, null, 400);
+
+    const passwordCheck = validatePassword(req.body.new_password);
+    if (!passwordCheck.valid) return fail(res, 400, passwordCheck.message, null, 400);
+
+    const data = await authService.confirmPasswordReset({
+      phone: req.body.phone,
+      code: req.body.code,
+      newPassword: req.body.new_password,
+      ...getRequestContext(req),
+    });
+
+    return ok(res, data);
+  } catch (err) {
+    return handleError(res, err);
+  }
+}
+
+/**
+ * 登出
+ */
+async function logout(req, res) {
+  try {
+    // 从 token 中获取用户信息
+    const userId = req.user?.userId ?? req.userId;
+    const sessionId = req.user?.sid ?? null;
+
+    if (userId === undefined || userId === null) {
+      return fail(res, 401, 'Not authenticated.', null, 401);
+    }
+
+    const data = await authService.logout(userId, sessionId, getRequestContext(req));
+    return ok(res, data);
+  } catch (err) {
+    return handleError(res, err);
+  }
+}
+
 module.exports = {
   sendSms,
   registerPhone,
@@ -208,4 +276,7 @@ module.exports = {
   loginWechat,
   loginWechatMiniProgram,
   loginPhoneByCode,
+  requestPasswordReset,
+  confirmPasswordReset,
+  logout,
 };

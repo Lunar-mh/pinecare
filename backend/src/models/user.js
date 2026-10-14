@@ -194,6 +194,17 @@ class UserModel {
     await query(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
     return this.getProfileById(userId);
   }
+
+  /**
+   * 更新用户密码
+   */
+  static async updatePassword(userId, passwordHash) {
+    await query(
+      `UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?`,
+      [passwordHash, userId]
+    );
+    return this.findById(userId);
+  }
 }
 
 module.exports = UserModel;

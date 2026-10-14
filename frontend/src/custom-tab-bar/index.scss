@@ -1,0 +1,71 @@
+.custom-tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  background: white;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  z-index: 9999;
+}
+
+.tab-bar-wrap {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 64px; /* 默认高度增强 */
+}
+
+/* 长辈模式高亮放大 */
+.elder-mode .tab-bar-wrap {
+  height: 72px; 
+}
+.elder-mode .tab-bar-item {
+  padding: 8px 0;
+}
+.elder-mode .tab-bar-icon {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 4px;
+}
+.elder-mode .tab-bar-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: #4A4A4A;
+}
+.elder-mode .tab-bar-item.active .tab-bar-text {
+  color: #10B981; /* Primary for elder */
+  font-weight: bold;
+}
+
+/* 家属模式适度大小 */
+.family-mode .tab-bar-wrap {
+  height: 56px;
+}
+.family-mode .tab-bar-icon {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 2px;
+}
+.family-mode .tab-bar-text {
+  font-size: 12px;
+  color: #64748B;
+}
+.family-mode .tab-bar-item.active .tab-bar-text {
+  color: #3B82F6; /* Primary for family */
+}
+
+.tab-bar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.safe-area-bottom {
+  height: env(safe-area-inset-bottom);
+  background: white;
+}

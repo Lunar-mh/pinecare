@@ -1,0 +1,203 @@
+===============================================
+RESET PASSWORD MODULE - SETUP INSTRUCTIONS
+===============================================
+
+## QUICK START - Choose One Method:
+
+### Method 1: Run via Node.js (RECOMMENDED)
+cd D:\03_Study\Desktop\old
+node setup-reset-password-final.js
+
+### Method 2: Run via Python
+cd D:\03_Study\Desktop\old
+python execute-create-reset-password.py
+
+### Method 3: Run via Batch File (Windows)
+Double-click: D:\03_Study\Desktop\old\final-setup-reset-password.bat
+
+===============================================
+
+## FILES THAT WILL BE CREATED:
+
+Location: D:\03_Study\Desktop\old\frontend\src\pages\reset-password\
+
+Files:
+1. index.config.ts         - Page configuration file
+2. index.tsx               - React component (3-step flow)
+
+===============================================
+
+## COMPONENT FEATURES:
+
+✓ Step 1: Phone Number Input
+  - Validates 11-digit phone number
+  - Sends SMS verification code
+  - 60-second countdown before retry
+
+✓ Step 2: Verification Code
+  - 6-digit code input
+  - Verify against sent code
+  - Option to resend code
+
+✓ Step 3: New Password
+  - Password validation:
+    * Minimum 8 characters
+    * Contains uppercase letter
+    * Contains lowercase letter
+    * Contains digit
+  - Confirm password matching
+  - Success notification
+
+===============================================
+
+## VISUAL REPRESENTATION:
+
+[Diagram of 3-Step Flow]
+
+    Phone Input          Verify Code          Set Password
+        ↓                    ↓                      ↓
+    [Step 1/3]  ───→  [Step 2/3]  ───→  [Step 3/3]
+        ↓                    ↓                      ↓
+    Get SMS Code      Verify Code        Reset Password
+        ↓                    ↓                      ↓
+  Back button ←─────  Back button ←──────  Back button
+    Resend SMS                                    Login
+
+===============================================
+
+## REQUIRED API ENDPOINTS:
+
+The component expects these services to be implemented:
+
+1. sendSmsCode(phone: string)
+   - Sends verification code to phone number
+   - Returns: { success: boolean, message?: string }
+
+2. verifyCode(phone: string, code: string)
+   - Verifies the code is correct
+   - Returns: { success: boolean, message?: string }
+
+3. resetPassword(data: { phone, code, password })
+   - Resets password with verified code
+   - Returns: { success: boolean, message?: string }
+
+Update the import path in index.tsx if needed:
+From: @/services/modules/user
+To:   Your actual service location
+
+===============================================
+
+## STYLING:
+
+The component uses:
+- Tailwind CSS for styling
+- Responsive design (mobile-friendly)
+- Blue gradient background
+- Smooth transitions and animations
+- Accessible form inputs
+
+CSS Classes Used:
+- Grid/Flex layouts
+- Rounded corners (rounded-lg, rounded-2xl)
+- Shadow effects (shadow-2xl)
+- Hover states (hover:bg-blue-600)
+- Disabled states (disabled:bg-gray-50)
+- Transitions (transition-all)
+
+===============================================
+
+## INTEGRATION EXAMPLE:
+
+// In your routing setup:
+import ResetPasswordPage from '@/pages/reset-password'
+
+// Next.js pages/reset-password.tsx
+export default ResetPasswordPage
+
+// Or in your routes configuration:
+{
+  path: '/reset-password',
+  component: ResetPasswordPage,
+}
+
+===============================================
+
+## ENVIRONMENT VALIDATION:
+
+Before running, verify:
+✓ Node.js or Python is installed
+✓ Parent directory exists:
+  D:\03_Study\Desktop\old\frontend\src\pages\
+✓ You have write permissions to the directory
+
+Check Node.js:
+  node --version
+
+Check Python:
+  python --version
+
+===============================================
+
+## TROUBLESHOOTING:
+
+Issue: Script fails to run
+Solution: 
+  1. Open Command Prompt in D:\03_Study\Desktop\old
+  2. Run: node setup-reset-password-final.js
+  3. Check error messages
+
+Issue: Directory already exists
+Solution:
+  Scripts will not overwrite existing files
+  To force recreate, manually delete:
+  D:\03_Study\Desktop\old\frontend\src\pages\reset-password
+
+Issue: Permission denied
+Solution:
+  Run command prompt as Administrator
+  Or change directory permissions
+
+Issue: Module not found errors
+Solution:
+  Update the import paths in index.tsx to match
+  your project's service structure
+
+===============================================
+
+## NEXT STEPS AFTER SETUP:
+
+1. ✓ Run one of the setup scripts above
+2. ✓ Verify files exist in:
+   D:\03_Study\Desktop\old\frontend\src\pages\reset-password\
+3. ✓ Implement the required API endpoints
+4. ✓ Update import paths if needed
+5. ✓ Test the component in your application
+6. ✓ Connect to your authentication system
+
+===============================================
+
+## FILE STRUCTURE:
+
+D:\03_Study\Desktop\old\
+├── setup-reset-password-final.js        ← Run this (Node.js)
+├── execute-create-reset-password.py     ← Or this (Python)
+├── final-setup-reset-password.bat       ← Or this (Batch)
+└── frontend\src\pages\
+    └── reset-password\                  ← Created directory
+        ├── index.config.ts              ← Created file
+        └── index.tsx                    ← Created file
+
+===============================================
+
+## SUPPORT:
+
+If issues persist:
+1. Check that both files (index.config.ts and index.tsx) were created
+2. Verify file encoding is UTF-8
+3. Ensure no special characters in file paths
+4. Check Node.js/Python installation and PATH
+
+Created: 2024
+Status: Ready for deployment
+
+===============================================
