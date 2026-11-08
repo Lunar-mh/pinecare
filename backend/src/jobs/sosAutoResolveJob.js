@@ -1,13 +1,14 @@
-﻿'use strict';
+'use strict';
 
 const cron = require('node-cron');
+const redisKeys = require('../config/redisKeys');
 const sosService = require('../services/sosService');
 const sosQueueService = require('../services/sosQueueService');
 const logger = require('../utils/logger');
 
 const CRON_EXPRESSION = process.env.SOS_AUTO_RESOLVE_CRON || '*/1 * * * *';
 const TIMEOUT_MINUTES = parseInt(process.env.SOS_AUTO_RESOLVE_TIMEOUT_MINUTES || '30', 10);
-const LOCK_KEY = process.env.SOS_AUTO_RESOLVE_LOCK_KEY || 'lock:sos:auto-resolve';
+const LOCK_KEY = process.env.SOS_AUTO_RESOLVE_LOCK_KEY || redisKeys.sosWorkerLock();
 const LOCK_TTL_MS = parseInt(process.env.SOS_AUTO_RESOLVE_LOCK_TTL_MS || '45000', 10);
 
 let cronTask = null;

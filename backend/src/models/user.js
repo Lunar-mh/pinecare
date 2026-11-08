@@ -28,21 +28,43 @@ function normalizeUserRow(row) {
 }
 
 class UserModel {
+  /**
+   * @description 根据用户主键ID查询账号完整信息
+   * @param {number} id 用户主键ID
+   * @returns {Promise<object|null>} 规整后的用户对象或 null
+   */
   static async findById(id) {
     const [rows] = await query(`SELECT ${USER_COLUMNS} FROM users WHERE id = ? LIMIT 1`, [id]);
     return normalizeUserRow(rows[0] || null);
   }
 
+  /**
+   * @description 根据手机号查询用户账号
+   * @param {string} phone 11位手机号
+   * @returns {Promise<object|null>}
+   */
   static async findByPhone(phone) {
     const [rows] = await query(`SELECT ${USER_COLUMNS} FROM users WHERE phone = ? LIMIT 1`, [phone]);
     return normalizeUserRow(rows[0] || null);
   }
 
+  /**
+   * @description 根据微信 openid 查询绑定的用户账号
+   * @param {string} openid 微信用户唯一标识
+   * @returns {Promise<object|null>}
+   */
   static async findByOpenid(openid) {
     const [rows] = await query(`SELECT ${USER_COLUMNS} FROM users WHERE openid = ? LIMIT 1`, [openid]);
     return normalizeUserRow(rows[0] || null);
   }
 
+  /**
+   * @description 使用手机号与密码哈希创建新用户
+   * @param {object} payload
+   * @param {string} payload.phone 手机号
+   * @param {string} payload.passwordHash 加密哈希
+   * @returns {Promise<object>} 新建用户对象
+   */
   static async createWithPhone({ phone, passwordHash }) {
     const [result] = await query(
       `INSERT INTO users (phone, password_hash, account_status, failed_login_attempts)
@@ -52,6 +74,14 @@ class UserModel {
     return this.findById(result.insertId);
   }
 
+  /**
+   * @description 微信小程序/公众号授权创建新用户
+   * @param {object} payload
+   * @param {string} payload.openid 微信 openid
+   * @param {string} [payload.nickname] 昵称
+   * @param {string} [payload.avatarUrl] 头像地址
+   * @returns {Promise<object>} 新建用户对象
+   */
   static async createWithWechat({ openid, nickname, avatarUrl }) {
     const [result] = await query(
       `INSERT INTO users (openid, nickname, avatar_url, account_status, failed_login_attempts)

@@ -23,6 +23,11 @@ function mapLogRow(row) {
 }
 
 const medicationLogModel = {
+  /**
+   * @description 创建待服药打卡日志（如果同用户同计划同时段已存在则防重幂等返回）
+   * @param {object} payload 日志载荷（user_id, plan_id, scheduled_time）
+   * @returns {Promise<object>} 服药日志对象
+   */
   async createPendingLog(payload) {
     const [existsRows] = await query(
       `SELECT id, user_id, plan_id, scheduled_time, actual_time, status,
@@ -57,6 +62,12 @@ const medicationLogModel = {
     return mapLogRow(rows[0] || null);
   },
 
+  /**
+   * @description 根据记录ID与长辈用户ID安全检索服药记录
+   * @param {number} logId 记录ID
+   * @param {number} userId 长辈用户ID
+   * @returns {Promise<object|null>}
+   */
   async getByIdAndUser(logId, userId) {
     const [rows] = await query(
       `SELECT id, user_id, plan_id, scheduled_time, actual_time, status,

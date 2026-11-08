@@ -2,6 +2,7 @@
 
 const { v4: uuidv4 } = require('uuid');
 const redis = require('../config/redis');
+const redisKeys = require('../config/redisKeys');
 const UserModel = require('../models/user');
 const EmergencyContactModel = require('../models/emergencyContact');
 const FamilyBindingModel = require('../models/familyBinding');
@@ -317,7 +318,7 @@ async function deleteAccountByCode(userId, code, context = {}) {
   }
 
   await UserModel.softDelete(userId);
-  await redis.del(`auth:refresh:${userId}`);
+  await redis.del(redisKeys.authRefreshToken(userId));
 
   await writeAuditLog(userId, 'account_delete', context, null);
   return null;

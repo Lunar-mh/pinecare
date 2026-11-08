@@ -19,15 +19,15 @@
 4. **Succession**: 达到20次派生阈值且无挂起子智能体时自主演进继承
 - **Work items**:
   1. Survey & Architecture Mapping (三维全景勘测) [done]
-  2. Git Branch Isolation & Baseline Fix (M0 分支隔离与阻断修复) [in-progress]
-  3. E2E Testing Track (Track A 4-Tier 测试体系建设) [pending]
-  4. Backend Pruning & Clean Code (M1 业务裁撤与规范化治理) [pending]
+  2. Git Branch Isolation & Baseline Fix (M0 分支隔离与阻断修复) [done]
+  3. E2E Testing Track (Track A 4-Tier 测试体系建设) [in-progress]
+  4. Backend Pruning & Clean Code (M1 业务裁撤与规范化治理) [in-progress]
   5. Frontend Redesign - Liquid Glass Elderly (M2 小程序液态玻璃重构) [pending]
   6. Admin & Volunteer Modernization (M3 管理端与志愿者端重构) [pending]
   7. Final E2E Pass & Hardening (M4 全量 E2E 验收与对抗强化) [pending]
   8. Forensic Integrity Audit & Remote Sync (M5 审计与远程同步) [pending]
-- **Current phase**: Phase 1 (Milestone 0: 分支隔离与基线修复)
-- **Current focus**: 派生 Worker 检出新分支 refactor/code-cleanup-and-frontend、修复后端致命阻断并推送到远程
+- **Current phase**: Phase 2 (双轨推进: Track A E2E测试体系 + Milestone 1 后端瘦身裁撤与规范治理)
+- **Current focus**: 派生 test_writer_e2e 搭建 4-Tier 测试基础设施，派生 worker_m1_backend 执行业务精简裁撤、事务与Redis规范治理及中文注释补齐
 
 ## 🔒 Key Constraints
 - 调度独占（DISPATCH-ONLY）：严禁直接编写或修改业务代码，严禁自行执行构建/测试，全部工作必须委托子智能体。
@@ -45,7 +45,8 @@
 ## Key Decisions Made
 - 决策1：3 位 Explorer 并行全景勘测圆满完成，交付 3 份高质量 Handoff 报告。
 - 决策2：汇聚输出正式架构与契约规范 `PROJECT.md`，确立 4 大刚需核心主线与“暖玉微晶·液态温润”设计系统，定义清晰的 6 大实施里程碑与 E2E 测试轨。
-- 决策3：启动 Milestone 0，派发 Worker 检出专属分支 `refactor/code-cleanup-and-frontend` 并推送远程，修复后端启动阻断缺陷。
+- 决策3：Milestone 0 圆满完成并推送 GitHub 远端；成功检出隔离分支 `refactor/code-cleanup-and-frontend`，解除后端运行时阻断并清理 9 个孤儿文件。
+- 决策4：并行启动 Track A（E2E 测试基础设施）与 Milestone 1（后端路线精简与规范治理）。
 
 ## Team Roster
 | Agent | Type | Work Item | Status | Conv ID |
@@ -53,12 +54,14 @@
 | explorer_survey_1 | teamwork_preview_explorer | 后端架构与业务裁撤调研 | completed | 717e3eb1601a67a43bc1cc918d8fa3ab |
 | explorer_survey_2 | teamwork_preview_explorer | 前端适老与液态玻璃调研 | completed | 2d1e8d007b130417f1ff65050181c428 |
 | explorer_survey_3 | teamwork_preview_explorer | 工程基线与测试体系调研 | completed | 8debefeb45d1ad49e8f4425bb3da29ca |
-| worker_m0_baseline | teamwork_preview_worker | M0 分支隔离与基线修复 | in-progress | 8a45da0b154eed7f770a206d1edfd4a8 |
+| worker_m0_baseline | teamwork_preview_worker | M0 分支隔离与基线修复 | completed | 8a45da0b154eed7f770a206d1edfd4a8 |
+| test_writer_e2e | teamwork_preview_test_writer | Track A 4-Tier 测试基础设施与套件 | in-progress | d08cf7862049e12cee79ff899104772c |
+| worker_m1_backend | teamwork_preview_worker | M1 业务裁撤与后端规范化治理 | in-progress | 4749847088ab841083dcdb8b3eac0815 |
 
 ## Succession Status
 - Succession required: no
-- Spawn count: 4 / 20
-- Pending subagents: 8a45da0b154eed7f770a206d1edfd4a8
+- Spawn count: 6 / 20
+- Pending subagents: d08cf7862049e12cee79ff899104772c, 4749847088ab841083dcdb8b3eac0815
 - Predecessor: none
 - Successor: not yet spawned
 

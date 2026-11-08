@@ -2,14 +2,15 @@
 
 const crypto = require('crypto');
 const redis = require('../config/redis');
+const redisKeys = require('../config/redisKeys');
 const SmsCodeModel = require('../models/smsCode');
 const { createBusinessError } = require('../utils/serviceError');
 const { isProductionLive } = require('../config/runtimeMode');
 
-const CODE_TTL_SECONDS = 300;
+const CODE_TTL_SECONDS = redisKeys.TTL.SMS_CODE;
 const DAILY_LIMIT = 10;
 const VERIFY_FAIL_LIMIT = 5;
-const VERIFY_FAIL_WINDOW_SECONDS = 300;
+const VERIFY_FAIL_WINDOW_SECONDS = redisKeys.TTL.SMS_FAIL;
 const PURPOSES = new Set(['register', 'login', 'bind', 'reset_password', 'account_delete']);
 
 function getDateKey() {
@@ -26,10 +27,10 @@ async function sendSms(phone, purpose) {
   }
 
   const dateKey = getDateKey();
-  const countKey = `sms:count:${phone}:${dateKey}`;
+  const countKey = redisKeys.smsDailyCount(`${phone}:${dateKey}`);
   const count = await redis.incr(countKey);
   if (count === 1) {
-    await redis.expire(countKey, 24 * 60 * 60);
+    await redis.expire(countKey, redisKeys.TTL.SMS_DAILY_LIMIT);
   }
 
   if (count > DAILY_LIMIT) {
@@ -37,7 +38,7 @@ async function sendSms(phone, purpose) {
   }
 
   const code = generateCode();
-  const redisKey = `sms:code:${phone}:${purpose}`;
+  const redisKey = redisKeys.smsCode(`${phone}:${purpose}`);
   await redis.set(redisKey, code, 'EX', CODE_TTL_SECONDS);
 
   await SmsCodeModel.create({
@@ -49,6 +50,7 @@ async function sendSms(phone, purpose) {
 
   return {
     sent: true,
+    code_ttl_seconds: CODE_TTL_SECONDS,
   };
 }
 
@@ -58,7 +60,7 @@ async function verifyAndConsumeCode(phone, code, purpose) {
   }
 
   const normalizedCode = String(code || '').trim();
-  const failKey = `sms:verify_fail:${phone}:${purpose}`;
+  const failKey = redisKeys.smsVerifyFail(`${phone}:${purpose}`);
 
   if (!isProductionLive() && normalizedCode === '000000') {
     await redis.del(failKey);
@@ -70,7 +72,7 @@ async function verifyAndConsumeCode(phone, code, purpose) {
     return { valid: false, message: 'Too many failed verification attempts. Please request a new code.' };
   }
 
-  const redisKey = `sms:code:${phone}:${purpose}`;
+  const redisKey = redisKeys.smsCode(`${phone}:${purpose}`);
   const cachedCode = await redis.get(redisKey);
 
   if (cachedCode) {

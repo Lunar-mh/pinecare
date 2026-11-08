@@ -161,7 +161,8 @@ const volunteerModel = {
     return result;
   },
 
-  async updateOwnedTaskStatus(taskId, volunteerUserId, status, extra = {}) {
+  async updateOwnedTaskStatus(taskId, volunteerUserId, status, extra = {}, connection = null) {
+    const exec = connection || { query };
     const sets = ['status = ?'];
     const params = [status];
 
@@ -170,7 +171,7 @@ const volunteerModel = {
       params.push(extra.completedAt);
     }
 
-    const [result] = await query(
+    const [result] = await exec.query(
       `UPDATE service_orders
        SET ${sets.join(', ')}
        WHERE id = ?
@@ -181,8 +182,9 @@ const volunteerModel = {
     return result;
   },
 
-  async upsertAttendance(payload) {
-    const [result] = await query(
+  async upsertAttendance(payload, connection = null) {
+    const exec = connection || { query };
+    const [result] = await exec.query(
       `INSERT INTO volunteer_attendance_logs
        (order_id, community_id, volunteer_user_id, check_in_at, check_out_at)
        VALUES (?, ?, ?, ?, ?)
@@ -199,6 +201,33 @@ const volunteerModel = {
     );
 
     return result;
+  },
+
+  /**
+   * @description 查询志愿者已完成工单的累计服务工时汇总
+   * @param {object} scope 志愿者会话作用域
+   * @param {import('mysql2/promise').PoolConnection} [connection] 可选事务连接
+   * @returns {Promise<{ completed_count: number, total_service_hours: number }>}
+   */
+  async getServiceHoursSummary(scope, connection = null) {
+    const exec = connection || { query };
+    const [rows] = await exec.query(
+      `SELECT
+         COUNT(1) AS completed_count,
+         COALESCE(SUM(TIMESTAMPDIFF(MINUTE, val.check_in_at, COALESCE(val.check_out_at, so.completed_at))), 0) / 60 AS total_hours
+       FROM service_orders so
+       LEFT JOIN volunteer_attendance_logs val ON val.order_id = so.id AND val.volunteer_user_id = so.volunteer_id
+       WHERE so.volunteer_id = ?
+         AND so.status = 'completed'`,
+      [Number(scope.userId)]
+    );
+
+    const row = rows[0] || {};
+    const totalHours = Math.round(Number(row.total_hours || 0) * 10) / 10;
+    return {
+      completed_count: Number(row.completed_count || 0),
+      total_service_hours: totalHours,
+    };
   },
 
   async getAttendanceByOrderId(scope, taskId) {

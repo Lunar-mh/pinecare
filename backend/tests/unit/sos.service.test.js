@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 jest.mock('../../src/models/sosEvent', () => ({
   createEvent: jest.fn(),
@@ -75,7 +75,13 @@ describe('sosService', () => {
     const result = await sosService.cancelSos(2001, 102);
 
     expect(result).toEqual({ event_id: 102, event_status: 'cancelled' });
-    expect(SosEventModel.transitionStatus).toHaveBeenCalledWith(102, 2001, 'triggered', 'cancelled');
+    expect(SosEventModel.transitionStatus).toHaveBeenCalledWith(
+      102,
+      2001,
+      'triggered',
+      'cancelled',
+      expect.anything()
+    );
     expect(recordCareEvent).toHaveBeenCalledWith(
       'sos.cancelled',
       expect.objectContaining({ entityId: 102, status: 'cancelled' })

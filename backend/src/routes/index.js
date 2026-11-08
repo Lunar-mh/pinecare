@@ -30,17 +30,15 @@ safeUse('/user', './user');
 safeUse('/admin/users', './adminUsers');
 safeUse('/admin', './adminOps');
 
+safeUse('/health', './healthArchive');
 safeUse('/health-archive', './healthArchive');
 safeUse('/device', './deviceCompat');
 safeUse('/medication', './medication');
 safeUse('/sos', './sos');
 safeUse('/family', './family');
-safeUse('/voice', './voice');
 safeUse('/fall-detection', './fallDetection');
-safeUse('/time-bank', './timeBank');
 safeUse('/community', './community');
 safeUse('/volunteer', './volunteer');
 safeUse('/gps', './gpsTracking');
-safeUse('/statistics', './statistics');
 
 module.exports = router;

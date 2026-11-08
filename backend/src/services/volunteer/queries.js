@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const volunteerModel = require('../../models/volunteerModel');
 const { requireVolunteerScope, ensureOwnedTask, normalizePagination, trimText, buildPagination, createBizError } = require('./shared');
@@ -28,14 +28,17 @@ async function getTasks(scope, query = {}) {
 
 async function getProfile(scope) {
   requireVolunteerScope(scope);
-  const [profile, summary] = await Promise.all([
+  const [profile, summary, hoursSummary] = await Promise.all([
     volunteerModel.findProfileByUserId(scope.userId, scope.communityId),
     volunteerModel.countTaskSummary(scope),
+    volunteerModel.getServiceHoursSummary(scope),
   ]);
 
   if (!profile) {
     throw createBizError('Volunteer not found.', 404, 404);
   }
+
+  const totalServiceHours = Number((hoursSummary && hoursSummary.total_service_hours) || 0);
 
   return {
     id: Number(profile.id),
@@ -45,6 +48,8 @@ async function getProfile(scope) {
     role: profile.role,
     joined_at: profile.created_at,
     task_summary: summary,
+    total_service_hours: totalServiceHours,
+    service_hours_summary: hoursSummary || { completed_count: 0, total_service_hours: 0 },
   };
 }
 

@@ -2,7 +2,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const voiceService = require('../../voiceService');
 const ossService = require('../../ossService');
 const { COMPETITION_SEED_ASSETS } = require('../../../data/competitionSeedAssets');
 const { resolveMode } = require('../../../config/runtimeMode');
@@ -132,7 +131,6 @@ function buildCompetitionSeedNotes(competitionSeed) {
 }
 
 function buildIntegrationRows() {
-  const voiceCapability = voiceService.getCapabilityReport();
   const ossCapability = ossService.getCapabilityReport();
   const wechatCapability = wechatNotifier.getCapabilityReport();
   const sosSmsCapability = smsNotifyService.getCapabilityReport();
@@ -141,7 +139,6 @@ function buildIntegrationRows() {
   const runtimeMode = resolveMode();
 
   return [
-    buildCapabilityItem('voice', voiceCapability),
     buildCapabilityItem('oss', ossCapability),
     {
       key: 'competition_seed',

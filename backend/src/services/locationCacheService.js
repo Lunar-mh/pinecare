@@ -1,8 +1,9 @@
 'use strict';
 
 const redis = require('../config/redis');
+const redisKeys = require('../config/redisKeys');
 
-const LOCATION_CACHE_TTL_SECONDS = 3600;
+const LOCATION_CACHE_TTL_SECONDS = redisKeys.TTL.LOCATION_CACHE;
 
 /**
  * 生成最新位置缓存 key
@@ -10,7 +11,7 @@ const LOCATION_CACHE_TTL_SECONDS = 3600;
  * @returns {string}
  */
 function getLocationKey(userId) {
-  return `location:${userId}`;
+  return redisKeys.locationLatest(userId);
 }
 
 const locationCacheService = {

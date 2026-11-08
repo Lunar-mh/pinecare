@@ -1,7 +1,6 @@
-﻿'use strict';
+'use strict';
 
 const adminOpsModel = require('../../models/adminOpsModel');
-const timeBankModel = require('../../models/timeBank');
 const {
   buildEmptyPagedResult,
   buildPagination,
@@ -270,7 +269,7 @@ const adminCareOverviewService = {
       throw createBizError(409, 'Only pending records can be settled.', 409);
     }
 
-    await timeBankModel.settleServiceRecord(recordId, action);
+    await adminOpsModel.settleServiceRecord(recordId, action);
     return {
       recordId,
       status: action === 'confirm' ? 'confirmed' : 'cancelled',

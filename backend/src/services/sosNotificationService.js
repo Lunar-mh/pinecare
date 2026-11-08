@@ -1,6 +1,7 @@
 'use strict';
 
 const redis = require('../config/redis');
+const redisKeys = require('../config/redisKeys');
 const EmergencyContactModel = require('../models/emergencyContact');
 const SosNotificationModel = require('../models/sosNotification');
 const sosQueueService = require('./sosQueueService');
@@ -9,7 +10,7 @@ const smsNotifyService = require('./smsNotifyService');
 
 const CHANNELS = ['wechat', 'sms'];
 const MAX_RETRY = parseInt(process.env.SOS_NOTIFY_MAX_RETRY || '2', 10);
-const DEDUPE_TTL_SECONDS = parseInt(process.env.SOS_NOTIFY_DEDUPE_TTL_SECONDS || '600', 10);
+const DEDUPE_TTL_SECONDS = parseInt(process.env.SOS_NOTIFY_DEDUPE_TTL_SECONDS || String(redisKeys.TTL.SOS_NOTIFY_DEDUPE), 10);
 
 async function ensureRedisReady() {
   if (redis.status === 'ready' || redis.status === 'connect') {
@@ -105,7 +106,7 @@ async function consumeTask(task) {
   }
 
   await ensureRedisReady();
-  const dedupeKey = `sos:notify:dedupe:${task.notification_id}:${task.retry_count || 0}`;
+  const dedupeKey = redisKeys.sosNotifyDedupe(task.notification_id, task.retry_count || 0);
   const dedupeResult = await redis.set(dedupeKey, '1', 'NX', 'EX', DEDUPE_TTL_SECONDS);
   if (dedupeResult !== 'OK') {
     return { success: false, reason: 'duplicate-task' };

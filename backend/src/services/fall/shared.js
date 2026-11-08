@@ -80,12 +80,14 @@ function ensureSensitivity(sensitivity) {
   return normalized;
 }
 
+const redisKeys = require('../../config/redisKeys');
+
 function timerKey(eventId) {
-  return `fall:timer:${eventId}`;
+  return redisKeys.fallTimer(eventId);
 }
 
 function settingsKey(userId) {
-  return `fall:settings:${userId}`;
+  return redisKeys.fallSettings(userId);
 }
 
 module.exports = {

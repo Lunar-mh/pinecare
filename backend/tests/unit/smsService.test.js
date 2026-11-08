@@ -74,7 +74,10 @@ describe('smsService', () => {
   });
 
   it('returns invalid when cached code mismatches', async () => {
-    redis.get.mockResolvedValue('999999');
+    redis.get.mockImplementation(async (key) => {
+      if (key && String(key).includes('fail')) return null;
+      return '999999';
+    });
 
     const result = await smsService.verifyAndConsumeCode('13800138000', '123456', 'login');
 
@@ -85,7 +88,10 @@ describe('smsService', () => {
   });
 
   it('consumes matching redis code and marks latest record used', async () => {
-    redis.get.mockResolvedValue('123456');
+    redis.get.mockImplementation(async (key) => {
+      if (key && String(key).includes('fail')) return null;
+      return '123456';
+    });
     redis.del.mockResolvedValue(1);
     SmsCodeModel.findLatestByPhoneAndPurpose.mockResolvedValue({
       id: 99,

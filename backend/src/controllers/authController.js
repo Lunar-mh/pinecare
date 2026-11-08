@@ -37,6 +37,12 @@ function toMiniProgramLoginPayload(serviceData) {
   return payload;
 }
 
+/**
+ * @description 发送短信验证码控制器
+ * @param {import('express').Request} req HTTP 请求对象，需包含 body.phone 与 body.purpose
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>} 统一输出 { code: 0, message: 'SMS sent.', data: null }
+ */
 async function sendSms(req, res) {
   try {
     const required = validateRequired(req.body || {}, ['phone', 'purpose']);
@@ -56,6 +62,12 @@ async function sendSms(req, res) {
   }
 }
 
+/**
+ * @description 手机号密码注册控制器
+ * @param {import('express').Request} req HTTP 请求对象，需包含 phone, code, password
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>} 注册成功并签发双 Token
+ */
 async function registerPhone(req, res) {
   try {
     const required = validateRequired(req.body || {}, ['phone', 'code', 'password']);
@@ -83,6 +95,12 @@ async function registerPhone(req, res) {
   }
 }
 
+/**
+ * @description 手机号密码登录控制器
+ * @param {import('express').Request} req HTTP 请求对象，需包含 phone, password
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>} 登录成功返回用户信息与双 Token
+ */
 async function loginPhone(req, res) {
   try {
     const required = validateRequired(req.body || {}, ['phone', 'password']);
@@ -103,6 +121,12 @@ async function loginPhone(req, res) {
   }
 }
 
+/**
+ * @description 后台管理员账密登录控制器
+ * @param {import('express').Request} req HTTP 请求对象，需包含 username, password
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>} 管理员凭据与有效 Token
+ */
 async function adminLogin(req, res) {
   try {
     const required = validateRequired(req.body || {}, ['username', 'password']);
@@ -126,6 +150,12 @@ async function adminLogin(req, res) {
   }
 }
 
+/**
+ * @description 刷新访问 Token 控制器
+ * @param {import('express').Request} req HTTP 请求对象，需包含 body.refresh_token
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>} 返回新的 access_token 与 refresh_token
+ */
 async function refreshToken(req, res) {
   try {
     const required = validateRequired(req.body || {}, ['refresh_token']);
@@ -142,6 +172,12 @@ async function refreshToken(req, res) {
   }
 }
 
+/**
+ * @description 微信快捷授权登录控制器
+ * @param {import('express').Request} req HTTP 请求对象，需包含 body.code
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>} 微信登录授权结果
+ */
 async function loginWechat(req, res) {
   try {
     const required = validateRequired(req.body || {}, ['code']);
@@ -159,6 +195,12 @@ async function loginWechat(req, res) {
   }
 }
 
+/**
+ * @description 微信小程序专属静默/快速登录控制器
+ * @param {import('express').Request} req HTTP 请求对象，需包含 body.code
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>} 小程序标准 token + userInfo 结构
+ */
 async function loginWechatMiniProgram(req, res) {
   try {
     const required = validateRequired(req.body || {}, ['code']);
@@ -176,6 +218,12 @@ async function loginWechatMiniProgram(req, res) {
   }
 }
 
+/**
+ * @description 手机号验证码免密登录控制器
+ * @param {import('express').Request} req HTTP 请求对象，需包含 phone, code
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>} 免密登录成功并签发 Token
+ */
 async function loginPhoneByCode(req, res) {
   try {
     const required = validateRequired(req.body || {}, ['phone', 'code']);

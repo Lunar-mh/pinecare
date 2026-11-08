@@ -1,6 +1,7 @@
 'use strict';
 
 const redis = require('../config/redis');
+const redisKeys = require('../config/redisKeys');
 const adminUserModel = require('../models/adminUserModel');
 const { createBusinessError } = require('../utils/serviceError');
 
@@ -174,7 +175,7 @@ const adminUserService = {
       throw createBusinessError(404, 'User not found.', 404);
     }
 
-    await redis.del(`auth:refresh:${userId}`);
+    await redis.del(redisKeys.authRefreshToken(userId));
     return null;
   },
 };

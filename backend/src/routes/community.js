@@ -11,8 +11,6 @@ const {
   validateCreateOrder,
   validateAssignOrder,
   validateUpdateOrderStatus,
-  validateActivityQuery,
-  validateCreateActivity,
   validateStatsQuery,
   validateHealthOverviewQuery,
   validateMedicationLogsQuery,
@@ -57,9 +55,6 @@ router.patch(
   validateUpdateOrderStatus,
   communityAdminController.updateOrderStatus
 );
-
-router.get('/activities', validateActivityQuery, communityAdminController.getActivities);
-router.post('/activities', validateCreateActivity, communityAdminController.createActivity);
 
 router.get('/stats', validateStatsQuery, communityAdminController.getStats);
 router.get(

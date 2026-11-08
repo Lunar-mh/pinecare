@@ -1,10 +1,11 @@
-﻿'use strict';
+'use strict';
 
 const redis = require('../config/redis');
+const redisKeys = require('../config/redisKeys');
 const logger = require('../utils/logger');
 
-const SOS_QUEUE_KEY = process.env.SOS_QUEUE_KEY || 'queue:sos:notification';
-const DEFAULT_LOCK_TTL_MS = parseInt(process.env.SOS_LOCK_TTL_MS || '15000', 10);
+const SOS_QUEUE_KEY = process.env.SOS_QUEUE_KEY || redisKeys.sosNotificationQueue();
+const DEFAULT_LOCK_TTL_MS = parseInt(process.env.SOS_LOCK_TTL_MS || String(redisKeys.TTL.SOS_LOCK_MS), 10);
 
 async function ensureRedisReady() {
   if (redis.status === 'ready' || redis.status === 'connect') {
