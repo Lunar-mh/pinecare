@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, ScrollView, Input, Button } from '@tarojs/components'
-import { Message, Microphone, Service, Star, Trash, Check, PlayStart } from '@nutui/icons-react-taro'
+import { Message, Microphone, Service, Star, Check, PlayStart } from '@nutui/icons-react-taro'
 import { ActionGrid, DataPanel, EmptyState, HeroHeader, PageShell, SectionBlock, StickyPrimaryAction } from '@/components/shell'
 import { clearChatHistory, getChatHistory, sendTextMessage } from '@/services/modules/voice'
 import type { ChatMessage } from '@/services/types'

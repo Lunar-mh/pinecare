@@ -74,7 +74,7 @@ export default function TimeBankIndex() {
                {services.filter(s => s.status === 'pending' || s.status === 'assigned').map(svc => (
                   <View key={svc.id} className="bg-white rounded-[24px] p-6 shadow-sm mb-4 border-l-8 border-orange-400">
                      <Text className="text-2xl font-bold text-gray-900 mb-2 block">{svc.serviceType}</Text>
-                     <Text className="text-lg text-gray-500 mb-4">{new Date(svc.scheduledTime).toLocaleDateString()} 上门</Text>
+                     <Text className="text-lg text-gray-500 mb-4">{new Date(svc.scheduledTime || svc.createdAt).toLocaleDateString()} 上门</Text>
                      <View className="bg-orange-50 text-orange-700 px-4 py-2 rounded-xl text-center font-bold">
                         {svc.status === 'pending' ? '等待志愿者接单' : '志愿者正在赶来'}
                      </View>
@@ -128,7 +128,7 @@ export default function TimeBankIndex() {
                       <View key={svc.id} className="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center">
                          <View>
                             <Text className="font-bold text-gray-900 block">{svc.serviceType}</Text>
-                            <Text className="text-xs text-gray-500">{new Date(svc.scheduledTime).toLocaleString()}</Text>
+                            <Text className="text-xs text-gray-500">{new Date(svc.scheduledTime || svc.createdAt).toLocaleString()}</Text>
                          </View>
                          <Text className={`text-xs px-2 py-1 rounded ${
                             svc.status === 'completed' ? 'bg-green-100 text-green-700' : 

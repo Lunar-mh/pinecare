@@ -8,7 +8,6 @@ import React, { useState, useCallback } from 'react'
 import { Icon } from '@/components/icons'
 import { PageShell } from '@/components/shell'
 import { getTodayMedications } from '@/services/modules/medication'
-import { getUnreadMessageCount } from '@/services/modules/family'
 import { getUserInfo } from '@/services/modules/user'
 
 // 获取时间段问候语
@@ -36,17 +35,15 @@ const getTodayDate = (): string => {
 export default function ElderHome() {
   const [userName, setUserName] = useState('')
   const [pendingMeds, setPendingMeds] = useState(0)
-  const [newMessages, setNewMessages] = useState(0)
   const [loading, setLoading] = useState(true)
 
   // 加载实时数据
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const [userInfo, medsData, messagesData] = await Promise.all([
+      const [userInfo, medsData] = await Promise.all([
         getUserInfo().catch(() => null),
         getTodayMedications().catch(() => []),
-        getUnreadMessageCount().catch(() => ({ count: 0 })),
       ])
       
       // 设置用户名（优先显示昵称，其次真名，最后默认"您"）
@@ -56,7 +53,6 @@ export default function ElderHome() {
       // 计算待服药次数
       const pendingCount = medsData.filter(m => m.status === 'pending').length
       setPendingMeds(pendingCount)
-      setNewMessages(messagesData.count || 0)
     } catch (error) {
       console.error('Failed to load home data:', error)
     } finally {
@@ -72,7 +68,6 @@ export default function ElderHome() {
   const handleSos = () => Taro.navigateTo({ url: '/subpackages/sos/pages/index/index' })
   const handleVoice = () => Taro.navigateTo({ url: '/subpackages/voice_ai/pages/index/index' })
   const handleMedication = () => Taro.navigateTo({ url: '/subpackages/medication/pages/index/index' })
-  const handleFamilySpace = () => Taro.navigateTo({ url: '/subpackages/family_space/pages/index/index' })
   const handleHealth = () => Taro.navigateTo({ url: '/subpackages/health/pages/index/index' })
   const handleServices = () => Taro.navigateTo({ url: '/pages/services/index' })
 
@@ -164,24 +159,17 @@ export default function ElderHome() {
             </View>
           </View>
 
-          {/* ===== 家庭相册 (1x1) ===== */}
+          {/* ===== 健康档案 (1x1) ===== */}
           <View
-            className="col-span-1 row-span-1 bg-family-primary rounded-bento shadow-bento overflow-hidden active:scale-[0.97] transition-all duration-base min-h-touch-elder"
-            onClick={handleFamilySpace}
+            className="col-span-1 row-span-1 bg-elder-primary-soft border border-elder-primary/30 rounded-bento shadow-bento overflow-hidden active:scale-[0.97] transition-all duration-base min-h-touch-elder"
+            onClick={handleHealth}
           >
             <View className="h-full flex flex-col justify-between p-5">
               <View className="flex justify-between items-start">
-                <Icon name="gallery" size={36} color="#FFFFFF" />
-                {newMessages > 0 && (
-                  <View className="bg-white px-3 py-1 rounded-full">
-                    <Text className="text-family-caption font-bold text-family-primary">
-                      {newMessages}条新
-                    </Text>
-                  </View>
-                )}
+                <Icon name="heart" size={36} color="#2F8C6B" />
               </View>
-              <Text className="text-elder-body font-bold text-white">
-                看孙子
+              <Text className="text-elder-body font-bold text-elder-text-primary">
+                健康档案
               </Text>
             </View>
           </View>
@@ -189,22 +177,22 @@ export default function ElderHome() {
         </View>
       </View>
 
-      {/* ========== 健康快捷入口 ========== */}
+      {/* ========== 社区互助快捷入口 ========== */}
       <View className="px-page-elder mt-6">
         <View
           className="bg-elder-surface rounded-bento-sm shadow-card p-5 flex items-center justify-between active:scale-[0.98] transition-all duration-base"
-          onClick={handleHealth}
+          onClick={() => Taro.navigateTo({ url: '/subpackages/timebank/pages/index/index' })}
         >
           <View className="flex items-center">
             <View className="w-14 h-14 bg-elder-primary-soft rounded-2xl flex items-center justify-center mr-4">
-              <Icon name="heart" size={32} color="#2F8C6B" />
+              <Icon name="clock" size={32} color="#2F8C6B" />
             </View>
             <View>
               <Text className="block text-elder-body font-bold text-elder-text-primary">
-                健康档案
+                时间银行互助
               </Text>
               <Text className="block text-elder-caption text-elder-text-secondary mt-1">
-                血压、心率记录
+                社区志愿关怀与互助派单服务
               </Text>
             </View>
           </View>
@@ -227,7 +215,7 @@ export default function ElderHome() {
                 更多服务
               </Text>
               <Text className="block text-elder-caption text-elder-text-secondary mt-1">
-                AI问诊、挂号等
+                安全定位、设备与守护设置
               </Text>
             </View>
           </View>

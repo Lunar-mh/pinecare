@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const express = require('express');
 const { ok } = require('../utils/response');
@@ -37,15 +37,10 @@ safeUse('/sos', './sos');
 safeUse('/family', './family');
 safeUse('/voice', './voice');
 safeUse('/fall-detection', './fallDetection');
-safeUse('/ai-consult', './aiConsult');
-safeUse('/drug-interaction', './drugInteraction');
 safeUse('/time-bank', './timeBank');
-safeUse('/ai-companion', './aiCompanion');
-safeUse('/family-space', './familySpace');
 safeUse('/community', './community');
 safeUse('/volunteer', './volunteer');
 safeUse('/gps', './gpsTracking');
-safeUse('/medical', './medicalIntegration');
 safeUse('/statistics', './statistics');
 
 module.exports = router;

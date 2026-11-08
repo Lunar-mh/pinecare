@@ -83,7 +83,7 @@ export default function MedicationAddPage() {
           </View>
           <View 
             className="permission-denied-link"
-            onClick={() => Taro.navigateTo({ url: '/subpackages/family_space/pages/index/index' })}
+            onClick={() => Taro.navigateTo({ url: '/subpackages/settings/pages/emergency/index' })}
           >
             <Text>联系家人</Text>
           </View>

@@ -49,7 +49,6 @@ export default class CustomTabBar extends Component {
     const familyList = [
       { pagePath: '/pages/dashboard/index', text: '看板', icon: homeIcon, activeIcon: homeActiveIcon },
       { pagePath: '/pages/care/index', text: '照护干预', icon: servicesIcon, activeIcon: servicesActiveIcon },
-      { pagePath: '/pages/family-space/index', text: '家庭空间', icon: servicesIcon, activeIcon: servicesActiveIcon },
       { pagePath: '/pages/family-manage/index', text: '设备管理', icon: servicesIcon, activeIcon: servicesActiveIcon },
       { pagePath: '/pages/profile/index', text: '我的', icon: profileIcon, activeIcon: profileActiveIcon }
     ]

@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
-import { getDashboardStats, getRecentActivities } from '@/services'
+import { getDashboardOverviewData, getRecentActivities } from '@/services'
 import type { DashboardStats, ActivityItem } from '@/services'
 
 const router = useRouter()
@@ -88,7 +88,7 @@ function renderCharts() {
 async function fetchAnalyticsData() {
   loading.value = true
   try {
-    const [overview, recent] = await Promise.all([getDashboardStats(), getRecentActivities(50)])
+    const [overview, recent] = await Promise.all([getDashboardOverviewData(), getRecentActivities(50)])
     stats.value = overview.stats || []
     activities.value = recent || []
     await nextTick()

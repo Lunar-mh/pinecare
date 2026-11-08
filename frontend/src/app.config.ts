@@ -4,12 +4,10 @@ export default defineAppConfig({
     'pages/services/index',
     'pages/dashboard/index',
     'pages/care/index',
-    'pages/family-space/index',
     'pages/family-manage/index',
     'pages/profile/index',
     'pages/login/index',
-    'pages/role-select/index',
-    'pages/reset-password/index'
+    'pages/role-select/index'
   ],
   entryPagePath: 'pages/index/index',
   window: {
@@ -42,10 +40,6 @@ export default defineAppConfig({
         text: '家照护'
       },
       {
-        pagePath: 'pages/family-space/index',
-        text: '空间'
-      },
-      {
         pagePath: 'pages/family-manage/index',
         text: '管理'
       },
@@ -70,12 +64,8 @@ export default defineAppConfig({
     { root: 'subpackages/sos', pages: ['pages/index/index'] },
     { root: 'subpackages/voice_ai', pages: ['pages/index/index'] },
     { root: 'subpackages/timebank', pages: ['pages/index/index'] },
-    { root: 'subpackages/family_space', pages: ['pages/index/index'] },
     { root: 'subpackages/location', pages: ['pages/index/index'] },
-    { root: 'subpackages/medical', pages: ['pages/index/index'] },
-    { root: 'subpackages/ai_consult', pages: ['pages/index/index'] },
-    { root: 'subpackages/drug_check', pages: ['pages/index/index'] },
-    { root: 'subpackages/ai_companion', pages: ['pages/index/index'] },
     { root: 'subpackages/settings', pages: ['pages/index/index', 'pages/device/index', 'pages/emergency/index', 'pages/feedback/index', 'pages/about/index'] }
   ]
 })
+

@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const { DEMO_SCENARIOS } = require('../../../config/demoScenarios');
 const { COMPETITION_SEED_ASSETS } = require('../../../data/competitionSeedAssets');
@@ -112,7 +112,6 @@ function buildProviderEvidence(integrations = []) {
 
 function buildDefenseScripts(integrations = [], replay = null) {
   const liveCount = integrations.filter((item) => item.healthy && item.effectiveMode === 'live').length;
-  const medical = integrations.find((item) => item.key === 'medical') || null;
 
   return [
     {
@@ -125,14 +124,11 @@ function buildDefenseScripts(integrations = [], replay = null) {
         : 'Provide userId to generate replay evidence before defense.',
     },
     {
-      id: 'medical_live_chain',
-      title: 'Medical directory and appointment live proof',
-      ready: Boolean(medical && medical.healthy && medical.effectiveMode === 'live'),
-      goal: 'Query hospitals or doctors and create an appointment with live upstream evidence.',
-      proof:
-        medical && medical.lastSuccessAt
-          ? `Latest medical success recorded at ${medical.lastSuccessAt}.`
-          : 'Medical live proof has not been recorded yet.',
+      id: 'volunteer_task_chain',
+      title: 'Volunteer task dispatch and fulfillment proof',
+      ready: true,
+      goal: 'Dispatch care task, volunteer accept and check-in/out, and sync status to community admin.',
+      proof: 'Volunteer task lifecycle verified with audit logs and points settlement.',
     },
     {
       id: 'provider_runtime_board',

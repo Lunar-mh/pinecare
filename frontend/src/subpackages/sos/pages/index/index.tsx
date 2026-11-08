@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, useRef } from 'react'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { View, Text, ScrollView, Map, Button, Image } from '@tarojs/components'
-import { Phone, Service, Warning, Location, Check, Power } from '@nutui/icons-react-taro'
+import { Phone, Service, Warning, Location, Check } from '@nutui/icons-react-taro'
 import { DataPanel, EmptyState, HeroHeader, PageShell, SectionBlock, StickyPrimaryAction } from '@/components/shell'
 import { cancelSOS, getCurrentSOSStatus, getEmergencyContactsWithLocation, triggerSOS } from '@/services/modules/sos'
 import { getElderlyOverview } from '@/services/modules/family'
@@ -29,7 +29,7 @@ export default function SOSIndex() {
       }
 
       const status = await getCurrentSOSStatus()
-      setActiveSOS(status)
+      setActiveSOS(status.event || null)
       
       const contactsData = await getEmergencyContactsWithLocation()
       setContacts(contactsData || [])
@@ -48,10 +48,10 @@ export default function SOSIndex() {
   const handleSOS = async () => {
     setTriggering(true)
     try {
-      await triggerSOS({ type: 'manual', location: location ? `${location.lat},${location.lng}` : undefined })
+      await triggerSOS({ type: 'manual', location: location ? { latitude: location.lat, longitude: location.lng } : undefined })
       Taro.vibrateLong()
       const status = await getCurrentSOSStatus()
-      setActiveSOS(status)
+      setActiveSOS(status.event || null)
       Taro.showToast({ title: '求救信号已发出', icon: 'success' })
     } catch (e) {
       Taro.showToast({ title: '发送失败，请直接拨打120', icon: 'none' })
@@ -63,7 +63,7 @@ export default function SOSIndex() {
   const handleCancel = async () => {
     if (!activeSOS) return
     try {
-      await cancelSOS(activeSOS.id, '误触/已安全')
+      await cancelSOS(activeSOS.id)
       setActiveSOS(null)
       Taro.showToast({ title: '警报已解除', icon: 'success' })
     } catch (e) {
@@ -158,12 +158,12 @@ export default function SOSIndex() {
             {activeSOS ? '⚠️ 紧急求助触发中' : '安全监控中'}
          </Text>
          <Text className={`text-sm ${activeSOS ? 'text-white/80' : 'text-gray-500'}`}>
-            {activeSOS ? `长辈在 ${new Date(activeSOS.timestamp).toLocaleTimeString()} 发出了求救信号` : '设备一切正常，未检测到异常。'}
+            {activeSOS ? `长辈在 ${new Date(activeSOS.triggeredAt).toLocaleTimeString()} 发出了求救信号` : '设备一切正常，未检测到异常。'}
          </Text>
 
          {activeSOS && (
             <View className="mt-6 flex gap-3">
-               <Button className="flex-1 bg-white text-red-600 font-bold border-none" onClick={() => activeSOS.location && Taro.openLocation({ latitude: parseFloat(activeSOS.location.split(',')[0]), longitude: parseFloat(activeSOS.location.split(',')[1]) })}>
+               <Button className="flex-1 bg-white text-red-600 font-bold border-none" onClick={() => activeSOS.location && Taro.openLocation({ latitude: activeSOS.location.latitude, longitude: activeSOS.location.longitude })}>
                   <Location size={18} className="mr-1" /> 查看位置
                </Button>
                <Button className="flex-1 bg-red-800 text-white font-bold border-none" onClick={() => handleCall(contacts[0]?.phone || '')}>
@@ -180,6 +180,7 @@ export default function SOSIndex() {
                longitude={location.lng} 
                latitude={location.lat}
                scale={16}
+               onError={() => {}}
                markers={[{
                   id: 1,
                   longitude: location.lng,

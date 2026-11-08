@@ -2,10 +2,16 @@ export interface UserInfo {
   id: string;
   phone: string;
   name: string;
+  nickname?: string;
+  real_name?: string;
   avatar?: string;
   birthday?: string;
   gender?: 'male' | 'female';
+  id_card?: string;
+  address?: string;
+  profile_completion?: number;
   emergencyContact?: EmergencyContact[];
+  emergency_contact?: EmergencyContact[];
   createdAt: string;
 }
 

@@ -1,8 +1,8 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getRecentActivities, getDashboardStats, getSystemStats } from '@/services'
+import { getRecentActivities, getDashboardStats } from '@/services'
 import type { ActivityItem } from '@/services'
 
 const router = useRouter()

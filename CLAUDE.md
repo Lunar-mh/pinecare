@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ├── frontend/     # WeChat Mini Program (Taro 4 + React)
 ├── admin/        # Admin dashboard (Vue 3 + Vite, Node 20)
 ├── volunteer/    # Volunteer workstation (vanilla JS)
-├── specs/        # 15 functional module specifications with OpenAPI
+├── specs/        # 10 core functional module specifications with OpenAPI
 └── design/       # Design system and governance docs
 ```
 

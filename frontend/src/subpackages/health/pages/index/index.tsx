@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Taro, { usePullDownRefresh } from '@tarojs/taro'
 import { View, Text, ScrollView, Button, Canvas } from '@tarojs/components'
-import { Check, Heart, Plus, Refresh, Warning, Trend, Ask } from '@nutui/icons-react-taro'
+import { Check, Heart, Plus, Refresh, Warning, ArrowUp, Ask } from '@nutui/icons-react-taro'
 import {
   ActionGrid,
   DataPanel,
@@ -168,7 +168,7 @@ export default function HealthIndex() {
              <Text className="text-sm text-gray-500">长辈今日身体指标概览</Text>
            </View>
            <View className="bg-green-50 p-2 rounded-full">
-             <Trend size={24} color="#10B981" />
+             <ArrowUp size={24} color="#10B981" />
            </View>
          </View>
          
@@ -227,16 +227,16 @@ export default function HealthIndex() {
             )}
          </View>
          
-         {/* AI Analysis Entry */}
-         <View className="bg-purple-50 rounded-[20px] p-5 flex items-center" onClick={() => navigateTo('/subpackages/ai_consult/pages/index/index')}>
-            <View className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
-               <Ask size={24} color="#9333EA" />
+         {/* Voice AI Entry */}
+         <View className="bg-emerald-50 rounded-[20px] p-5 flex items-center" onClick={() => navigateTo('/subpackages/voice_ai/pages/index/index')}>
+            <View className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mr-4">
+               <Ask size={24} color="#059669" />
             </View>
             <View className="flex-1">
-               <Text className="text-lg font-bold text-purple-900 block">AI 健康报告</Text>
-               <Text className="text-sm text-purple-700">基于近期数据生成的分析建议</Text>
+               <Text className="text-lg font-bold text-emerald-900 block">语音健康助手</Text>
+               <Text className="text-sm text-emerald-700">说句话即可查询健康指标与防护建议</Text>
             </View>
-            <Icon name="arrow-right" size={16} color="#9333EA" />
+            <Icon name="arrow-right" size={16} color="#059669" />
          </View>
 
       </ScrollView>

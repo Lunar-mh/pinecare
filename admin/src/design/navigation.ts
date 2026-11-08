@@ -10,10 +10,8 @@ import {
   Warning,
   House,
   Bell,
-  MagicStick,
   Timer,
   Location,
-  Management,
 } from '@element-plus/icons-vue'
 
 export interface WorkbenchNavItem {
@@ -56,8 +54,6 @@ export const workbenchNavGroups: WorkbenchNavGroup[] = [
       { index: '/sos', label: 'SOS 风险中心', subtitle: '紧急事件响应与闭环', icon: Warning },
       { index: '/gps', label: '定位风险中心', subtitle: '位置共享与安全区域', icon: Location },
       { index: '/fall', label: '跌倒监测', subtitle: '被动风险预警与策略调整', icon: Bell },
-      { index: '/drug', label: '药物风险', subtitle: '联用风险识别与知悉处理', icon: MagicStick },
-      { index: '/medical', label: '医疗资源网络', subtitle: '医疗目录与报告同步', icon: Management },
     ],
   },
   {

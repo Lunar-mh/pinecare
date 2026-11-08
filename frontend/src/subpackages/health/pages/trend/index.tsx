@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Taro from '@tarojs/taro'
 import { View, Text, ScrollView } from '@tarojs/components'
-import { Loading, TrendingUp } from '@nutui/icons-react-taro'
+import { Loading, ArrowUp } from '@nutui/icons-react-taro'
 import { PageShell, HeroHeader, DataPanel, SectionBlock } from '@/components/shell'
 import { getBloodPressureTrend, getHeartRateTrend } from '@/services/modules/health'
 import { useRole } from '@/hooks/useRole'
@@ -80,7 +80,7 @@ export default function HealthTrendPage() {
            <Text className="text-xl font-bold text-gray-900 block">七日趋势</Text>
            <Text className="text-xs text-gray-500">近一周的关键指标波动情况</Text>
          </View>
-         <TrendingUp size={24} color="#3B82F6" />
+         <ArrowUp size={24} color="#3B82F6" />
        </View>
 
        <ScrollView className="p-4" scrollY>

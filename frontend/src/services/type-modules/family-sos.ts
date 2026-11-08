@@ -49,6 +49,12 @@ export interface ElderlyOverview {
     bloodPressure?: BloodPressureRecord;
     heartRate?: HeartRateRecord;
     medicationProgress: number;
+    healthScore?: number;
+  };
+  deviceStatus?: 'normal' | 'offline' | 'abnormal' | {
+    isOnline: boolean;
+    batteryLevel?: number;
+    lastReportedAt?: string;
   };
   alerts: {
     id: string;

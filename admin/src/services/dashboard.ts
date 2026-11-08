@@ -62,6 +62,17 @@ function devFallbackOverviewStats(): DashboardOverviewStats {
   }
 }
 
+export async function getDashboardOverviewData(): Promise<DashboardStats> {
+  try {
+    return await http.get<DashboardStats>('/api/v1/statistics/overview')
+  } catch (err: unknown) {
+    if (import.meta.env.DEV) {
+      return devFallbackStats()
+    }
+    throw err
+  }
+}
+
 export async function getDashboardStats(): Promise<DashboardOverviewStats> {
   try {
     // 并行请求多个统计接口
@@ -98,7 +109,8 @@ export async function getDashboardStats(): Promise<DashboardOverviewStats> {
 
     // 从SOS接口获取待处理告警数
     if (sosRes.status === 'fulfilled' && sosRes.value) {
-      stats.pendingAlerts = sosRes.value.total || 0
+      const val = sosRes.value as any
+      stats.pendingAlerts = val.pagination?.total ?? val.total ?? 0
     }
 
     // 从系统统计获取负载

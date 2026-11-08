@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Taro, { usePullDownRefresh, useDidShow } from '@tarojs/taro'
 import { View, Text, ScrollView, Button } from '@tarojs/components'
-import { Check, Clock, List, Warning, ArrowRight, More, Plus, Trash } from '@nutui/icons-react-taro'
+import { Check, Clock, List, Warning, ArrowRight, More, Plus } from '@nutui/icons-react-taro'
 import { DataPanel, EmptyState, HeroHeader, PageShell, SectionBlock, StatusCard, StickyPrimaryAction } from '@/components/shell'
 import { getMedications, getTodayMedications, markMedicationTaken, skipMedication } from '@/services/modules/medication'
 import type { Medication, TodayMedication } from '@/services/types'

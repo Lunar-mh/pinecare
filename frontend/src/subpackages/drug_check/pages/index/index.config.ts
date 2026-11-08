@@ -1,5 +1,0 @@
-export default definePageConfig({
-  navigationBarTitleText: '用药安全检查',
-  navigationBarBackgroundColor: '#6a1b9a',
-  navigationBarTextStyle: 'white',
-})

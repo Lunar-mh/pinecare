@@ -2,10 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const aiService = require('../../aiService');
-const companionService = require('../../companionService');
 const voiceService = require('../../voiceService');
-const medicalApiService = require('../../medicalApiService');
 const ossService = require('../../ossService');
 const { COMPETITION_SEED_ASSETS } = require('../../../data/competitionSeedAssets');
 const { resolveMode } = require('../../../config/runtimeMode');
@@ -135,18 +132,8 @@ function buildCompetitionSeedNotes(competitionSeed) {
 }
 
 function buildIntegrationRows() {
-  const aiCapability = aiService.getCapabilityReport();
-  const companionCapability = companionService.getCapabilityReport();
   const voiceCapability = voiceService.getCapabilityReport();
   const ossCapability = ossService.getCapabilityReport();
-  const medicalCapability =
-    typeof medicalApiService.getCapabilityReport === 'function'
-      ? medicalApiService.getCapabilityReport()
-      : null;
-  const medicalSource =
-    typeof medicalApiService.getSourceTag === 'function'
-      ? medicalApiService.getSourceTag()
-      : 'third_party_stub';
   const wechatCapability = wechatNotifier.getCapabilityReport();
   const sosSmsCapability = smsNotifyService.getCapabilityReport();
   const sosWechatCapability = wechatNotifyService.getCapabilityReport();
@@ -154,8 +141,6 @@ function buildIntegrationRows() {
   const runtimeMode = resolveMode();
 
   return [
-    buildCapabilityItem('ai_consult', aiCapability),
-    buildCapabilityItem('ai_companion', companionCapability),
     buildCapabilityItem('voice', voiceCapability),
     buildCapabilityItem('oss', ossCapability),
     {
@@ -190,22 +175,6 @@ function buildIntegrationRows() {
       lastError: null,
       errorCount: 0,
       lastOutcome: competitionSeed.verification.available ? 'success' : null,
-    },
-    {
-      ...buildCapabilityItem('medical', medicalCapability, {
-        source: medicalSource,
-        notes:
-          medicalSource === 'third_party_live'
-            ? 'Medical requests currently use the live upstream integration path.'
-            : 'Medical requests currently use curated dataset fallback or deterministic stub data for competition replay.',
-      }),
-      configured: Boolean(medicalCapability && medicalCapability.liveConfigured),
-      effectiveMode:
-        medicalCapability && medicalCapability.effectiveMode
-          ? medicalCapability.effectiveMode
-          : medicalSource === 'third_party_live'
-            ? 'live'
-            : 'stub',
     },
     buildCapabilityItem('wechat_notify', wechatCapability, {
       source: 'wechat_template_api',

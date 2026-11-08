@@ -13,9 +13,11 @@ export interface ServiceRequest {
   description: string;
   duration: number;
   location: string;
-  status: 'open' | 'accepted' | 'completed' | 'cancelled';
+  status: 'open' | 'accepted' | 'completed' | 'cancelled' | 'pending' | 'assigned';
   requesterId: string;
   providerId?: string;
+  serviceType?: string;
+  scheduledTime?: string;
   createdAt: string;
 }
 
@@ -33,4 +35,8 @@ export interface SafeZone {
   longitude: number;
   radius: number;
   isActive: boolean;
+  lat?: number;
+  lng?: number;
 }
+
+

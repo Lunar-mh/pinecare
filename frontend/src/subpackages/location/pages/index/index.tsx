@@ -4,7 +4,8 @@ import { View, Text, ScrollView, Map, Button, CoverView, CoverImage } from '@tar
 import { Location, Plus, User, Check, Warning, Setting } from '@nutui/icons-react-taro'
 import { DataPanel, EmptyState, HeroHeader, PageShell, SectionBlock, StickyPrimaryAction } from '@/components/shell'
 import { createSafeZone, getCurrentLocation, getFamilyLocations, getSafeZones } from '@/services/modules/location'
-import type { SafeZone, FamilyMemberLocation } from '@/services/types'
+import type { SafeZone } from '@/services/types'
+import type { FamilyMemberLocation } from '@/services/modules/location'
 import { useRole } from '@/hooks/useRole'
 import { Icon } from '@/components/icons'
 import './index.scss'
@@ -70,13 +71,13 @@ export default function LocationIndex() {
     familyLocations.forEach((fam, idx) => {
       newMarkers.push({
         id: idx + 1,
-        latitude: fam.lat,
-        longitude: fam.lng,
-        title: fam.name,
+        latitude: fam.location?.latitude ?? (fam as any).lat ?? 39.9,
+        longitude: fam.location?.longitude ?? (fam as any).lng ?? 116.4,
+        title: fam.memberName || (fam as any).name || '家人',
         iconPath: 'https://img.icons8.com/color/48/family.png', // Placeholder
         width: 32,
         height: 32,
-        callout: { content: fam.name, display: 'ALWAYS', padding: 4, borderRadius: 4 }
+        callout: { content: fam.memberName || (fam as any).name || '家人', display: 'ALWAYS', padding: 4, borderRadius: 4 }
       })
     })
 
@@ -106,6 +107,7 @@ export default function LocationIndex() {
             scale={16}
             markers={markers}
             showLocation
+            onError={() => {}}
           />
         ) : (
           <View className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
@@ -141,9 +143,10 @@ export default function LocationIndex() {
             longitude={myLocation?.lng || 116.4}
             scale={14}
             markers={markers}
+            onError={() => {}}
             circles={safeZones.map(zone => ({
-              latitude: zone.lat,
-              longitude: zone.lng,
+              latitude: zone.latitude ?? zone.lat ?? 39.9,
+              longitude: zone.longitude ?? zone.lng ?? 116.4,
               radius: zone.radius,
               color: '#4ADE8033',
               fillColor: '#4ADE8033',
