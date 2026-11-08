@@ -5,7 +5,6 @@ const { createBizError } = require('../utils/serviceError');
 
 const VALID_FREQUENCIES = ['once_daily', 'twice_daily', 'three_times', 'as_needed'];
 
-
 function normalizeDate(input, fieldName) {
   if (input === undefined) return undefined;
   if (input === null || input === '') return null;

@@ -82,7 +82,10 @@ describe('userService', () => {
 
     UserModel.getProfileById.mockResolvedValue(profile);
     EmergencyContactModel.listByUserId.mockResolvedValue(contacts);
-    buildUserPageConfig.mockReturnValue({ settingsItems: [], profileMeta: { completion: 80, appVersion: '1.0.0' } });
+    buildUserPageConfig.mockReturnValue({
+      settingsItems: [],
+      profileMeta: { completion: 80, appVersion: '1.0.0' },
+    });
 
     const result = await userService.getPageConfig(1);
 

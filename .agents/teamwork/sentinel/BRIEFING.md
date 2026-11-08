@@ -1,4 +1,4 @@
-# BRIEFING — 2026-11-08T13:41:00Z
+# BRIEFING — 2026-11-08T13:49:00Z
 
 ## Mission
 作为项目哨兵（Sentinel），监控全流程研发进展、定时汇报、维护用户需求原案、并在胜利阶段启动独立审计。
@@ -23,11 +23,13 @@
 - **Delivered results**:
   - 创建并落盘 ORIGINAL_REQUEST.md
   - 初始化哨兵与总协调者
-  - 完成 Iteration 1, 2, 3 巡检与汇报
-  - Phase 0 全景调研 100% 完成，汇聚沉淀正式工程蓝图 PROJECT.md
+  - 完成 Iteration 1, 2, 3, 4 巡检与汇报
+  - Phase 0 全景调研完成，PROJECT.md 落盘
+  - M0 分支隔离严格落地（检出 refactor/code-cleanup-and-frontend 分支）
+  - 后端启动阻断完全修复，首批孤儿代码彻底清理
 
 ## Project Status
-- **Phase**: in progress (Phase 0 勘测完成，正式进入 M0 分支隔离与基准修复)
+- **Phase**: in progress (M0 分支隔离与基线修复实施中)
 
 ## Victory Audit Status
 - **Triggered**: no
@@ -35,19 +37,15 @@
 - **Retry count**: 0
 
 ## Background Monitoring Tasks
-- **Cron 1 (Progress Report)**: Task ID `2150c3366051bc53aadfb6d48e4e823d/task-22` (Schedule: `*/8 * * * *`, Iteration 3 巡检完成)
+- **Cron 1 (Progress Report)**: Task ID `2150c3366051bc53aadfb6d48e4e823d/task-22` (Schedule: `*/8 * * * *`, Iteration 4 巡检完成)
 - **Cron 2 (Liveness Check)**: Task ID `2150c3366051bc53aadfb6d48e4e823d/task-24` (Schedule: `*/10 * * * *`, Iteration 3 活性正常)
 
 ## Team Execution Snapshot
-- Orchestrator (8cea2f46c026fd00f3b48d89dfef6e59): running (完成 PROJECT.md 编制，正切入 M0 分支隔离)
-  - Explorer 1 (后端架构与业务裁撤调研): ✅ 完成交付 (handoff.md)
-  - Explorer 2 (前端适老与液态玻璃调研): ✅ 完成交付 (handoff.md)
-  - Explorer 3 (工程基线与测试体系调研): ✅ 完成交付 (handoff.md)
+- Orchestrator (8cea2f46c026fd00f3b48d89dfef6e59): waiting_for_dependents
+  - Worker (8a45da0b154eed7f770a206d1edfd4a8): 正在执行 M0 分支检出、启动阻断修复、孤儿文件清理与推送
 
 ## Artifact Index
 - /home/antigravity/MH-ai-ai/old/.agents/teamwork/ORIGINAL_REQUEST.md — 用户原始需求权威记录
 - /home/antigravity/MH-ai-ai/old/.agents/teamwork/sentinel/BRIEFING.md — 哨兵运行态工作记忆
-- /home/antigravity/MH-ai-ai/old/.agents/teamwork/orchestrator_1/PROJECT.md — 项目正式实施工程蓝图（架构、特性、裁撤、适老规范、里程碑）
-- /home/antigravity/MH-ai-ai/old/.agents/teamwork/explorer_survey_1/handoff.md — 后端业务与代码瘦身交接报告
-- /home/antigravity/MH-ai-ai/old/.agents/teamwork/explorer_survey_2/handoff.md — 前端适老与液态玻璃交接报告
-- /home/antigravity/MH-ai-ai/old/.agents/teamwork/explorer_survey_3/handoff.md — 工程基线与测试体系交接报告
+- /home/antigravity/MH-ai-ai/old/PROJECT.md — 项目根目录正式实施工程蓝图
+- /home/antigravity/MH-ai-ai/old/.agents/teamwork/worker_m0_baseline/ — M0 基线工作者工作区

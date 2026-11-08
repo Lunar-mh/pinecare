@@ -1,7 +1,6 @@
-﻿﻿'use strict';
+'use strict';
 
 const familyModel = require('../models/family');
-const familySpaceModel = require('../models/familySpace');
 const SosEventModel = require('../models/sosEvent');
 const medicationLogService = require('./medicationLogService');
 const {
@@ -66,7 +65,7 @@ async function getOverviewResources(elderId, familyId) {
     safeFetch(medicationLogService.getTodaySchedule(elderId), []),
     safeFetch(SosEventModel.listActiveByUser(elderId, 3), []),
     safeFetch(familyModel.getLatestLocation(elderId), null),
-    safeFetch(familySpaceModel.getInteractionEvidenceSummary(familyId), null),
+    Promise.resolve(null),
   ]);
 }
 

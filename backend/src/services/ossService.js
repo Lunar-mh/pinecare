@@ -2,7 +2,11 @@
 
 const axios = require('axios');
 const ossConfig = require('../config/oss');
-const { createUpstreamError, isRetryableError, logThirdPartyError } = require('../utils/thirdParty');
+const {
+  createUpstreamError,
+  isRetryableError,
+  logThirdPartyError,
+} = require('../utils/thirdParty');
 const { recordProviderSuccess } = require('../utils/providerRuntime');
 const { resolveIntegrationMode } = require('../config/integrationMode');
 const { buildCapabilityReport } = require('./integrationCapability/buildReport');

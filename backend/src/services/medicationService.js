@@ -1,6 +1,5 @@
-﻿'use strict';
+'use strict';
 
-const drugInteractionService = require('./drugInteractionService');
 const logger = require('../utils/logger');
 
 class MedicationService {
@@ -13,49 +12,30 @@ class MedicationService {
       throw err;
     }
 
-    const currentDrugList = Array.isArray(payload.currentDrugList) ? payload.currentDrugList : [];
-    const merged = [...currentDrugList, drugName];
-
-    const checkResult = await this.triggerInteractionCheck(userId, merged);
-
     return {
-      message: 'Medication added and interaction scan completed.',
+      message: 'Medication added.',
       drugName,
-      checkBatchId: checkResult.checkBatchId || null,
-      riskCount: checkResult.interactionCount || 0,
-      highestRiskLevel: checkResult.highestRiskLevel || null,
+      checkBatchId: null,
+      riskCount: 0,
+      highestRiskLevel: null,
     };
   }
 
   async editMedication(userId, payload) {
-    const updatedDrugList = Array.isArray(payload && payload.updatedDrugList)
-      ? payload.updatedDrugList
-      : [];
-
-    const checkResult = await this.triggerInteractionCheck(userId, updatedDrugList);
-
     return {
-      message: 'Medication updated and interaction scan refreshed.',
-      checkBatchId: checkResult.checkBatchId || null,
-      riskCount: checkResult.interactionCount || 0,
-      highestRiskLevel: checkResult.highestRiskLevel || null,
+      message: 'Medication updated.',
+      checkBatchId: null,
+      riskCount: 0,
+      highestRiskLevel: null,
     };
   }
 
-  async triggerInteractionCheck(userId, drugList) {
-    try {
-      return await drugInteractionService.checkInteractions(userId, drugList);
-    } catch (err) {
-      logger.warn('medicationService', 'interaction_check_degraded', {
-        userId,
-        message: err.message,
-      });
-      return {
-        checkBatchId: null,
-        interactionCount: 0,
-        highestRiskLevel: null,
-      };
-    }
+  async triggerInteractionCheck() {
+    return {
+      checkBatchId: null,
+      interactionCount: 0,
+      highestRiskLevel: null,
+    };
   }
 }
 

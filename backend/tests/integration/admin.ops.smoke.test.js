@@ -487,4 +487,3 @@ describe('admin ops smoke', () => {
     expect(res.body.data.competitionDataAssets.commands).toContain('npm run seed:competition:sql');
   });
 });
-

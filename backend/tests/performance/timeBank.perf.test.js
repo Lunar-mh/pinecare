@@ -83,4 +83,3 @@ describe('time bank leaderboard performance', () => {
     expect(endToEndMetrics.p95).toBeLessThanOrEqual(P95_THRESHOLD_MS);
   });
 });
-

@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const mysql = require('mysql2/promise');
 const logger = require('../utils/logger');
@@ -21,7 +21,6 @@ const pool = mysql.createPool({
   enableKeepAlive: true,
   keepAliveInitialDelay: 10000,
   connectTimeout: 10000,
-  acquireTimeout: 30000,
 });
 
 if (typeof pool.on === 'function') {
