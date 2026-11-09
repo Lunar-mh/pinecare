@@ -14,11 +14,12 @@ export default defineConfig({
     port: 5173,
   },
   build: {
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            if (id.includes('echarts') || id.includes('zrender')) return 'chunk-echarts'
             if (id.includes('element-plus')) return 'element-plus'
             if (id.includes('@element-plus/icons-vue')) return 'element-plus-icons'
             if (id.includes('vue-router')) return 'vue-router'
