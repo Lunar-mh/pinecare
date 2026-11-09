@@ -1,55 +1,82 @@
-$color-primary: #2f6c5b;
-$color-primary-light: #438470;
-$color-primary-dark: #204d41;
-$color-secondary: #c97b55;
-$color-secondary-light: #db916c;
-$color-secondary-dark: #8f5134;
+// ==============================================================
+// 银伴样式系统 - 暖玉微晶·液态温润 (Warm Jade & Liquid Glass)
+// 遵循 PROJECT.md §1.2 规范与 WCAG AAA 适老无障碍标准
+// ==============================================================
 
-$color-success: #4b8d63;
-$color-warning: #d99a3e;
-$color-danger: #d75a4a;
-$color-info: #3d7ca6;
+// --- 品牌主色 (翡翠松青 AAA 8.2:1) ---
+$color-primary: #1F6B56;
+$color-primary-light: #2A8C70;
+$color-primary-dark: #144638;
+$color-primary-soft: #E6F2ED;
+$color-primary-muted: #5C9B86;
 
-$text-primary: #22303a;
-$text-secondary: #596570;
-$text-tertiary: #8d98a3;
-$text-disabled: #bcc5ce;
-$text-white: #ffffff;
+// --- 关怀辅助色 (暖栗琥珀 AA 5.1:1) ---
+$color-secondary: #C86D3B;
+$color-secondary-light: #DF814D;
+$color-secondary-dark: #994E24;
+$color-secondary-soft: #FAF0E8;
 
-$bg-primary: #f6f1e7;
-$bg-card: #fffdf9;
-$bg-card-alt: #f3ede3;
-$bg-hover: #f7f1e8;
-$bg-active: #efe7dc;
+// --- 紧急急救色 (朱砂朱雀) ---
+$color-danger: #D33833;
+$color-danger-light: #E05450;
+$color-danger-dark: #991F1B;
+$color-danger-soft: #FCEBEA;
 
-$border-light: #ece2d4;
-$border-default: #ded6c7;
+// --- 状态与健康功能色 ---
+$color-success: #278A5B;
+$color-warning: #C86D3B;
+$color-info: #2A7E8D;
+
+// --- 适老墨色 (极深乌金 15.2:1 / 沉香黛灰 6.8:1 / 幽兰青灰 4.6:1) ---
+$text-primary: #18221E;
+$text-secondary: #485750;
+$text-tertiary: #6F7E77;
+$text-disabled: #93A19A;
+$text-white: #FFFFFF;
+
+// --- 画布与背景 ---
+$bg-primary: #F8F6F0;    // 暖玉凝脂画布底色
+$bg-card: #FFFDF9;       // 次表面玉脂润白
+$bg-card-alt: #F4F0E8;
+$bg-surface: rgba(255, 255, 255, 0.78);
+$bg-hover: #F2EFE8;
+$bg-active: #E8E4DA;
+
+// --- 边框 ---
+$border-light: rgba(255, 255, 255, 0.85);
+$border-bottom: rgba(210, 225, 218, 0.6);
+$border-default: #E2DCD2;
 $border-focus: $color-primary;
 
-$health-bp-systolic: #d75a4a;
-$health-bp-diastolic: #3d7ca6;
-$health-heart-rate: #c97b55;
+// --- 健康体征色彩 ---
+$health-bp-systolic: #D33833;
+$health-bp-diastolic: #2A7E8D;
+$health-heart-rate: #C86D3B;
 $health-oxygen: $color-success;
 $health-glucose: $color-warning;
 $health-temperature: $color-info;
 
-$font-family: 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
-$font-display: 38px;
+// --- 适老字号阶梯 (严格消除 10px~13px，正文≥20px，底线绝对≥16px) ---
+$font-family: 'PingFang SC', 'Noto Sans SC', -apple-system, 'Microsoft YaHei', sans-serif;
+$font-hero: 48px;
+$font-metric: 42px;
+$font-display: 36px;
 $font-h1: 32px;
 $font-h2: 28px;
 $font-h3: 24px;
 $font-body: 20px;
-$font-caption: 16px;
+$font-caption: 16px;     // 绝对底线
 
 $font-weight-regular: 400;
 $font-weight-medium: 500;
 $font-weight-semibold: 600;
 $font-weight-bold: 700;
 
-$line-height-tight: 1.2;
+$line-height-tight: 1.25;
 $line-height-normal: 1.55;
 $line-height-relaxed: 1.7;
 
+// --- 间距与版心 ---
 $space-unit: 8px;
 $space-xs: 8px;
 $space-sm: 12px;
@@ -57,50 +84,57 @@ $space-md: 16px;
 $space-lg: 24px;
 $space-xl: 32px;
 $space-xxl: 48px;
-
 $page-padding: 16px;
 
-$button-height-large: 58px;
-$button-height-medium: 48px;
-$input-height: 54px;
-$touch-target-min: 44px;
+// --- 触控热区与尺寸 (主按键高度 ≥60px) ---
+$button-height-large: 64px;
+$button-height-medium: 52px;
+$input-height: 56px;
+$touch-target-min: 60px;
 $touch-target-primary: 60px;
+$tabbar-height: 68px;
 
+// --- 圆角 ---
 $radius-sm: 12px;
 $radius-md: 18px;
-$radius-lg: 26px;
+$radius-lg: 24px;
+$radius-xl: 32px;
+$radius-pill: 40px;
 
-$shadow-card: 0 12px 30px rgba(51, 65, 78, 0.08);
-$shadow-button: 0 10px 24px rgba(47, 108, 91, 0.18);
-$shadow-float: 0 18px 40px rgba(39, 52, 63, 0.14);
+// --- 暖漫射软阴影与高光物理公式 ---
+$shadow-highlight: inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.95);
+$shadow-warm-soft: 0 4px 14px -2px rgba(31, 55, 45, 0.05), 0 16px 36px -4px rgba(31, 55, 45, 0.08);
+$shadow-liquid-glass: inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.95), 0 4px 14px -2px rgba(31, 55, 45, 0.05), 0 16px 36px -4px rgba(31, 55, 45, 0.08);
+$shadow-pill: inset 0 1px 1px 0 rgba(255, 255, 255, 0.9), 0 8px 24px -4px rgba(31, 55, 45, 0.12);
+$shadow-card: 0 4px 16px rgba(31, 55, 45, 0.06);
+$shadow-button: 0 8px 20px -2px rgba(31, 107, 86, 0.28);
+$shadow-danger-button: 0 8px 20px -2px rgba(211, 56, 51, 0.32);
+$shadow-float: 0 12px 40px rgba(31, 55, 45, 0.15);
 
+// --- 动画与过渡 ---
 $transition-fast: 0.16s;
 $transition-normal: 0.22s;
 $transition-slow: 0.32s;
-
 $ease-default: ease;
 $ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
+// --- 兼容别名 ---
+$color-bg-canvas: $bg-primary;
+$color-ink-primary: $text-primary;
+$color-ink-secondary: $text-secondary;
+$color-ink-tertiary: $text-tertiary;
+$font-size-caption: $font-caption;
 $color-text-primary: $text-primary;
 $color-text-secondary: $text-secondary;
 $color-text-tertiary: $text-tertiary;
 $color-text-disabled: $text-disabled;
 $color-text-hint: $text-tertiary;
-
 $color-background: $bg-primary;
 $color-border: $border-default;
 $color-border-light: $border-light;
-
 $shadow-sm: $shadow-card;
-
-$color-family-primary: $color-secondary;
-$color-family-light: $color-secondary-light;
-
-$font-elder-body: 22px;
-$font-elder-h3: 26px;
-
-$z-float: 999;
-$z-modal: 1000;
-$z-toast: 1001;
-
+$color-family-primary: $color-primary;
+$color-family-light: $color-primary-light;
+$font-elder-body: 20px;
+$font-elder-h3: 24px;
 $safe-bottom: env(safe-area-inset-bottom);

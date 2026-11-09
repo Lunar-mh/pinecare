@@ -107,13 +107,70 @@ export const getMedicationSettings = () =>
 export const updateMedicationSettings = (data: any) =>
   put<any>('/medication/settings', data);
 
-// 获取用药日历
-export const getMedicationCalendar = (month: string) =>
-  get<{
-    date: string;
-    status: 'complete' | 'partial' | 'missed' | 'none';
-    count: number;
-  }[]>('/medication/history/calendar', { month });
+export interface MedicationCalendarDay {
+  date: string;
+  taken: number;
+  missed: number;
+  skipped: number;
+  pending: number;
+  total: number;
+  status: 'complete' | 'partial' | 'missed' | 'none';
+}
+
+export interface MedicationCalendarData {
+  month: string;
+  days: MedicationCalendarDay[];
+  adherenceRate: number;
+}
+
+// 获取用药日历与遵从打卡率
+export const getMedicationCalendar = async (month: string): Promise<MedicationCalendarData> => {
+  const res = await get<any>('/medication/history/calendar', { month });
+  const rawDays: any[] = Array.isArray(res?.days) ? res.days : Array.isArray(res) ? res : [];
+
+  let totalScheduled = 0;
+  let totalTaken = 0;
+
+  const days: MedicationCalendarDay[] = rawDays.map(item => {
+    const taken = Number(item.taken || 0);
+    const missed = Number(item.missed || 0);
+    const skipped = Number(item.skipped || 0);
+    const pending = Number(item.pending || 0);
+    const total = Number(item.total || (taken + missed + skipped + pending));
+
+    totalScheduled += total;
+    totalTaken += taken;
+
+    let status: MedicationCalendarDay['status'] = 'none';
+    if (total > 0) {
+      if (taken === total) {
+        status = 'complete';
+      } else if (taken > 0 || skipped > 0) {
+        status = 'partial';
+      } else if (missed > 0) {
+        status = 'missed';
+      }
+    }
+
+    return {
+      date: item.date,
+      taken,
+      missed,
+      skipped,
+      pending,
+      total,
+      status: item.status || status,
+    };
+  });
+
+  const adherenceRate = totalScheduled > 0 ? Math.round((totalTaken / totalScheduled) * 100) : 100;
+
+  return {
+    month: res?.month || month,
+    days,
+    adherenceRate,
+  };
+};
 
 // 获取用药依从性统计
 export const getMedicationAdherence = (period: 'week' | 'month' = 'week') =>

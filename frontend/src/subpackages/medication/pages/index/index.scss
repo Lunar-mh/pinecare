@@ -1,114 +1,480 @@
 @use '../../../../styles/theme/variables.scss' as *;
+@use '../../../../styles/theme/glass.scss' as *;
 
-.medication-overview-page {
-  &__scroll {
-    max-height: calc(100vh - 220px);
-  }
+.med-page {
+  min-height: 100vh;
+  background-color: $color-bg-canvas;
+  color: $color-ink-primary;
+  padding-bottom: 120px;
+  box-sizing: border-box;
 
-  &__grid,
-  &__stack {
-    display: grid;
-    gap: $space-md;
-  }
-
-  &__progress-ring {
-    width: 86px;
-    height: 86px;
-    border-radius: 50%;
+  &__header {
+    padding: 24px 20px 16px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.16);
-    color: $text-white;
-    font-size: 22px;
-    font-weight: $font-weight-bold;
-    border: 2px solid rgba(255, 255, 255, 0.22);
+    justify-content: space-between;
+    align-items: flex-start;
   }
 
-  &__tabs {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: $space-sm;
-    margin-bottom: $space-lg;
+  &__header-left {
+    flex: 1;
   }
 
-  &__tab {
-    min-height: 52px;
-    border-radius: $radius-md;
-    background: rgba($bg-card, 0.85);
-    border: 1px solid rgba($border-light, 0.9);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: $text-secondary;
+  &__eyebrow {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    background: rgba(200, 109, 59, 0.14);
+    color: $color-secondary;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  &__title {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.25;
+    color: $color-ink-primary;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  &__subtitle {
     font-size: 18px;
-    font-weight: $font-weight-semibold;
-
-    &--active {
-      color: $text-white;
-      background: linear-gradient(135deg, $color-primary, $color-primary-light);
-      box-shadow: $shadow-button;
-    }
-  }
-
-  &__panel-text,
-  &__item-title,
-  &__item-desc,
-  &__item-meta {
+    color: $color-ink-secondary;
+    line-height: 1.45;
     display: block;
   }
 
-  &__panel-text {
-    font-size: 18px;
-    color: $text-secondary;
-  }
-
-  &__item-title {
-    font-size: 22px;
-    color: $text-primary;
-    font-weight: $font-weight-bold;
-  }
-
-  &__item-desc,
-  &__item-meta {
-    margin-top: 8px;
-    font-size: 16px;
-    color: $text-secondary;
-    line-height: $line-height-normal;
-  }
-
-  &__actions {
+  &__progress-bubble {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    @include liquid-glass-pill;
+    border: 2px solid rgba(200, 109, 59, 0.35);
     display: flex;
-    gap: $space-sm;
-    flex-wrap: wrap;
-    margin-top: $space-md;
-  }
-
-  &__btn {
-    min-height: 44px;
-    padding: 0 18px;
-    border-radius: 999px;
-    display: inline-flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba($color-primary, 0.1);
-    color: $color-primary;
-    font-size: 15px;
-    font-weight: $font-weight-semibold;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
 
-    &--primary {
-      background: $color-primary;
-      color: $text-white;
+  &__progress-val {
+    font-size: 26px;
+    font-weight: 800;
+    color: $color-secondary;
+    line-height: 1;
+    font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  }
+
+  &__progress-lbl {
+    font-size: 14px;
+    color: $color-ink-tertiary;
+    margin-top: 2px;
+  }
+
+  /* 顶部切换 Tab 药丸 */
+  &__tabs-wrap {
+    padding: 0 16px 16px;
+    display: flex;
+    gap: 10px;
+  }
+
+  &__tab-pill {
+    flex: 1;
+    height: 52px;
+    border-radius: 26px;
+    @include liquid-glass-pill;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: $color-ink-secondary;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &--active {
+      background: linear-gradient(135deg, $color-secondary 0%, #a85628 100%);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 0 4px 14px rgba(200, 109, 59, 0.3);
     }
 
-    &--danger {
-      background: rgba($color-danger, 0.12);
+    &:active {
+      transform: scale(0.97);
+    }
+  }
+
+  /* 拟物化“早·中·晚·睡前”四格通透大字药盒 */
+  &__pillbox-section {
+    padding: 0 16px 20px;
+  }
+
+  &__pillbox-container {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(20px);
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
+    border-radius: 28px;
+    padding: 16px;
+    box-shadow: 0 8px 30px rgba(31, 55, 45, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* 单个药盒格间 (早/中/晚/睡前) */
+  &__slot-cell {
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 20px;
+    border: 1px solid rgba(24, 34, 30, 0.08);
+    padding: 18px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+
+    &--active {
+      border: 2px solid $color-secondary;
+      background: rgba(255, 250, 245, 0.96);
+      box-shadow: 0 6px 20px rgba(200, 109, 59, 0.18);
+    }
+
+    &--completed {
+      border: 1px solid rgba(31, 107, 86, 0.25);
+      background: rgba(240, 248, 245, 0.85);
+    }
+  }
+
+  &__slot-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  &__slot-time-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__slot-icon-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+
+    &--morning {
+      background: #FFF3E0;
+      color: #E65100;
+    }
+
+    &--noon {
+      background: #FFF8E1;
+      color: #F57F17;
+    }
+
+    &--evening {
+      background: #EDE7F6;
+      color: #512DA8;
+    }
+
+    &--bedtime {
+      background: #E8EAF6;
+      color: #1A237E;
+    }
+  }
+
+  &__slot-label {
+    font-size: 22px;
+    font-weight: 800;
+    color: $color-ink-primary;
+  }
+
+  &__slot-time-text {
+    font-size: 18px;
+    color: $color-ink-secondary;
+    font-weight: 600;
+    margin-left: 4px;
+  }
+
+  /* 状态胶囊标签 (≥16px) */
+  &__status-capsule {
+    font-size: 16px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 12px;
+
+    &--pending {
+      background: rgba(200, 109, 59, 0.15);
+      color: $color-secondary;
+      animation: pulse-soft 2s infinite ease-in-out;
+    }
+
+    &--taken {
+      background: rgba(31, 107, 86, 0.14);
+      color: $color-primary;
+    }
+
+    &--missed {
+      background: rgba(211, 56, 51, 0.14);
       color: $color-danger;
     }
+
+    &--empty {
+      background: rgba(24, 34, 30, 0.06);
+      color: $color-ink-tertiary;
+    }
   }
 
-  &__bottom-space {
-    height: 120px;
+  /* 药品条目展示 */
+  &__med-item {
+    padding: 10px 0;
+    border-bottom: 1px dashed rgba(24, 34, 30, 0.08);
+
+    &:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+  }
+
+  &__med-name-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  &__med-name {
+    font-size: 24px; // 满足药品名称 24px 加粗
+    font-weight: 800;
+    color: $color-ink-primary;
+    line-height: 1.3;
+
+    &--taken {
+      color: $color-ink-tertiary;
+      text-decoration: line-through;
+    }
+  }
+
+  &__med-dosage {
+    font-size: 18px;
+    font-weight: 700;
+    color: $color-secondary;
+
+    &--taken {
+      color: $color-ink-tertiary;
+    }
+  }
+
+  &__med-instruction {
+    font-size: 16px;
+    color: $color-ink-secondary;
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* 60px 拟物化“打卡服药”大按钮 (热区 ≥ 60px) */
+  &__take-action-btn {
+    margin-top: 14px;
+    height: 60px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, $color-secondary 0%, #B85926 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 22px;
+    font-weight: 800;
+    box-shadow: 0 4px 16px rgba(200, 109, 59, 0.35);
+    cursor: pointer;
+
+    &:active {
+      transform: scale(0.975);
+    }
+  }
+
+  &__empty-slot-text {
+    font-size: 18px;
+    color: $color-ink-tertiary;
+    padding: 8px 0;
+    display: block;
+  }
+
+  /* ========== 月度服药遵从日历 (Adherence Calendar) ========== */
+  &__calendar-section {
+    padding: 0 16px 24px;
+  }
+
+  &__calendar-hero-card {
+    @include liquid-glass-card;
+    padding: 20px;
+    border-radius: 24px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__calendar-hero-text {
+    flex: 1;
+    padding-right: 12px;
+  }
+
+  &__adherence-title {
+    font-size: 28px;
+    font-weight: 900;
+    color: $color-primary;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  &__adherence-desc {
+    font-size: 16px;
+    color: $color-ink-secondary;
+    line-height: 1.45;
+    display: block;
+  }
+
+  &__adherence-badge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: rgba(31, 107, 86, 0.15);
+    color: $color-primary;
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  /* 日历网格本体 */
+  &__calendar-box {
+    @include liquid-glass-card;
+    border-radius: 24px;
+    padding: 18px 14px;
+  }
+
+  &__calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(24, 34, 30, 0.08);
+  }
+
+  &__weekday-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: $color-ink-tertiary;
+  }
+
+  &__calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+
+  &__calendar-day-cell {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(24, 34, 30, 0.04);
+    position: relative;
+
+    &--today {
+      border: 2px solid $color-primary;
+      font-weight: 800;
+    }
+  }
+
+  &__day-num {
+    font-size: 16px;
+    font-weight: 600;
+    color: $color-ink-primary;
+  }
+
+  &__dot-indicator {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-top: 3px;
+
+    &--complete {
+      background: $color-primary;
+      box-shadow: 0 0 6px rgba(31, 107, 86, 0.6);
+    }
+
+    &--partial {
+      background: $color-secondary;
+    }
+
+    &--missed {
+      background: $color-danger;
+    }
+
+    &--none {
+      background: transparent;
+    }
+  }
+
+  /* 日历图例 */
+  &__calendar-legend {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding-top: 16px;
+    margin-top: 14px;
+    border-top: 1px solid rgba(24, 34, 30, 0.08);
+  }
+
+  &__legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 16px;
+    color: $color-ink-secondary;
+  }
+
+  /* 长期方案列表 */
+  &__plan-card {
+    @include liquid-glass-card;
+    padding: 18px 20px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+  }
+
+  &__plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  &__plan-name {
+    font-size: 22px;
+    font-weight: 800;
+    color: $color-ink-primary;
+  }
+
+  &__plan-freq {
+    font-size: 16px;
+    font-weight: 600;
+    color: $color-primary;
+    background: rgba(31, 107, 86, 0.1);
+    padding: 2px 10px;
+    border-radius: 8px;
+  }
+
+  &__plan-desc {
+    font-size: 16px;
+    color: $color-ink-secondary;
+    display: block;
   }
 }
-

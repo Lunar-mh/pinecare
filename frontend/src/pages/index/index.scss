@@ -1,0 +1,355 @@
+@use '../../styles/theme/variables.scss' as *;
+@use '../../styles/theme/glass.scss' as *;
+
+.bento-home {
+  min-height: 100vh;
+  background-color: $color-bg-canvas;
+  color: $color-ink-primary;
+  padding-bottom: 140px; // 避让悬浮微晶药丸底部 Dock
+  box-sizing: border-box;
+
+  &__header {
+    padding: 24px 20px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  &__greeting-wrap {
+    flex: 1;
+  }
+
+  &__greeting {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: $color-ink-primary;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  &__date-weather {
+    font-size: $font-size-caption; // 16px
+    color: $color-ink-secondary;
+    line-height: 1.4;
+  }
+
+  &__avatar-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    @include liquid-glass-pill;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: 12px;
+    box-shadow: $shadow-card;
+
+    &:active {
+      transform: scale(0.94);
+    }
+  }
+
+  /* Bento 核心网格架构：单屏 ≤ 3 核心决策卡片 */
+  &__bento-grid {
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Hero 卡片：朱红微晶 · SOS 一键求助 */
+  &__hero-sos {
+    position: relative;
+    border-radius: 28px;
+    background: linear-gradient(135deg, rgba(211, 56, 51, 0.96) 0%, rgba(183, 28, 28, 0.98) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-bottom: 1px solid rgba(139, 0, 0, 0.6);
+    box-shadow: inset 0 2px 2px 0 rgba(255, 255, 255, 0.5), 0 8px 24px -4px rgba(211, 56, 51, 0.35);
+    overflow: hidden;
+    padding: 24px 20px;
+    color: #ffffff;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+    &:active {
+      transform: scale(0.975);
+      box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.3), 0 4px 12px -2px rgba(211, 56, 51, 0.4);
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -30%;
+      right: -20%;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, transparent 70%);
+      pointer-events: none;
+    }
+  }
+
+  &__hero-inner {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__hero-text {
+    flex: 1;
+    padding-right: 12px;
+  }
+
+  &__hero-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(8px);
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  &__hero-title {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 6px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  &__hero-subtitle {
+    font-size: 18px;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.95);
+    display: block;
+  }
+
+  &__hero-ring-wrap {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__hero-pulse-ring {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    animation: pulse-ring 2.4s cubic-bezier(0.25, 0.8, 0.25, 1) infinite;
+  }
+
+  &__hero-icon-bubble {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.28);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4);
+  }
+
+  /* 双列微晶 Bento 卡片区域 */
+  &__dual-bento {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  /* Bento 子卡通用内部布局 */
+  &__sub-card {
+    height: 100%;
+    min-height: 190px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  &__sub-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  &__sub-card-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__sub-card-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &--health {
+      background: rgba(31, 107, 86, 0.12);
+      color: $color-primary;
+    }
+
+    &--med {
+      background: rgba(200, 109, 59, 0.12);
+      color: $color-secondary;
+    }
+  }
+
+  &__sub-card-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: $color-ink-primary;
+  }
+
+  &__sub-card-tag {
+    font-size: 14px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 8px;
+
+    &--emerald {
+      background: rgba(31, 107, 86, 0.12);
+      color: $color-primary;
+    }
+
+    &--amber {
+      background: rgba(200, 109, 59, 0.14);
+      color: $color-secondary;
+    }
+  }
+
+  &__sub-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 6px 0;
+  }
+
+  &__metric-main {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: $color-ink-primary;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', Roboto, sans-serif;
+  }
+
+  &__metric-unit {
+    font-size: 16px;
+    font-weight: 500;
+    color: $color-ink-tertiary;
+    margin-left: 4px;
+  }
+
+  &__metric-sub {
+    font-size: 18px;
+    color: $color-ink-secondary;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__sub-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px solid rgba(24, 34, 30, 0.06);
+    font-size: 16px;
+    font-weight: 600;
+
+    &--health {
+      color: $color-primary;
+    }
+
+    &--med {
+      color: $color-secondary;
+    }
+  }
+
+  /* 底部常驻微晶语音长胶囊条 */
+  &__voice-bar-wrap {
+    padding: 18px 16px 8px;
+  }
+
+  &__voice-bar {
+    @include liquid-glass-pill;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(31, 107, 86, 0.25);
+    box-shadow: 0 4px 16px rgba(31, 107, 86, 0.08);
+    height: 64px; // 满足 ≥ 60px 热区
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+
+    &:active {
+      transform: scale(0.98);
+      background: rgba(240, 248, 245, 0.95);
+    }
+  }
+
+  &__voice-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__voice-mic-bubble {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, $color-primary 0%, #154e3e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(31, 107, 86, 0.3);
+  }
+
+  &__voice-text {
+    font-size: 20px;
+    font-weight: 600;
+    color: $color-ink-primary;
+  }
+
+  &__voice-tip {
+    font-size: 16px;
+    color: $color-primary;
+    font-weight: 500;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+}

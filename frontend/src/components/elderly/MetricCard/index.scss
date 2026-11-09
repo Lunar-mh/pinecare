@@ -1,143 +1,200 @@
 @use '../../../styles/theme/variables.scss' as *;
+
 .metric-card {
-  background: $bg-card;
-  border-radius: $radius-lg;
-  padding: $space-lg;
-  box-shadow: $shadow-card;
+  position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 140px;
-  transition: transform $transition-normal;
-  
-  &:active {
-    transform: scale(0.98);
+  border-radius: $radius-xl;
+  padding: 24px;
+  box-sizing: border-box;
+  overflow: hidden;
+  min-height: 160px;
+  transition: transform $transition-fast $ease-default, box-shadow $transition-fast $ease-default;
+
+  // 1. 降级兜底：玉脂通透实色
+  background: rgba(255, 253, 249, 0.95);
+  border: 1px solid rgba(226, 220, 210, 0.85);
+  box-shadow: 0 4px 16px -2px rgba(31, 55, 45, 0.06);
+
+  // 2. 现代微晶毛玻璃 + 双层微光边框 + 顶部高光 + 暖漫射阴影
+  @supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    background: rgba(255, 255, 255, 0.8);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-bottom: 1px solid rgba(210, 225, 218, 0.6);
+    box-shadow: $shadow-liquid-glass;
   }
-  
-  // 状态样式
+
+  // --- 状态指示晶条 (Crystal Status Bar) ---
   &--normal {
     border-left: 6px solid $color-success;
-    background: linear-gradient(to right, #f1f8e9 0%, $bg-card 100%);
   }
-  
+
   &--warning {
     border-left: 6px solid $color-warning;
-    background: linear-gradient(to right, #fff8e1 0%, $bg-card 100%);
   }
-  
+
   &--danger {
     border-left: 6px solid $color-danger;
-    background: linear-gradient(to right, #ffebee 0%, $bg-card 100%);
   }
 
-  // Loading Skeleton
-  &--loading {
-    border-left: 6px solid $border-light;
-    background: $bg-card;
-    pointer-events: none;
+  &--clickable {
+    cursor: pointer;
+    &:active {
+      transform: translateY(2px) scale(0.975);
+    }
   }
 
-  &__skeleton {
-    background: #f0f0f0;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    animation: skeleton-loading 1.5s infinite ease-in-out;
-
-    &--title { width: 40%; height: 20px; }
-    &--subtitle { width: 60%; height: 16px; margin-bottom: 16px; }
-    &--value { width: 80%; height: 36px; margin-bottom: 12px; }
-    &--footer { width: 30%; height: 24px; border-radius: 12px; }
+  // --- 头部 ---
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
   }
-  
-  // 标题
+
+  &__header-left {
+    display: flex;
+    align-items: center;
+  }
+
+  &__icon {
+    margin-right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   &__title {
-    font-size: $font-body;
+    font-size: 20px;
+    font-weight: $font-weight-semibold;
     color: $text-secondary;
-    margin-bottom: $space-sm;
-    font-weight: $font-weight-medium;
   }
 
-  &__subtitle {
-    font-size: 16px; // Force minimum readable size
-    color: $text-secondary; // Increase contrast (was tertiary)
-    margin-bottom: $space-md;
+  &__measured-at {
+    font-size: 16px;
+    color: $text-tertiary;
   }
-  
-  // 数值行
+
+  // --- 超大生命指标数值行 (44px) ---
   &__value-row {
     display: flex;
     align-items: baseline;
-    margin-bottom: $space-md;
-    flex: 1;
-  }
-  
-  // 数值（大字）
-  &__value {
-    font-size: 40px; // Larger display font for readability
-    font-weight: $font-weight-bold;
-    color: $text-primary;
-    line-height: $line-height-tight;
-    letter-spacing: -1px;
-  }
-  
-  // 单位
-  &__unit {
-    font-size: 18px; // Larger unit for readability
-    color: $text-secondary;
-    margin-left: 6px;
-    font-weight: $font-weight-medium;
+    margin-bottom: 12px;
   }
 
-@keyframes skeleton-loading {
-  0% { opacity: 0.6; }
-  50% { opacity: 0.3; }
-  100% { opacity: 0.6; }
-}
-  
-  // 底部信息
+  &__value {
+    font-size: 44px;
+    font-weight: $font-weight-bold;
+    color: $text-primary;
+    line-height: 1.15;
+    letter-spacing: -0.5px;
+  }
+
+  &__unit {
+    font-size: 20px;
+    font-weight: $font-weight-medium;
+    color: $text-secondary;
+    margin-left: 8px;
+  }
+
+  // --- 说明与参考区间 (严禁低于 16px) ---
+  &__desc-row {
+    margin-bottom: 16px;
+  }
+
+  &__reference,
+  &__subtitle {
+    font-size: 16px;
+    color: $text-tertiary;
+    line-height: 1.4;
+  }
+
+  // --- 底部状态与趋势 ---
   &__footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    margin-top: auto;
   }
-  
-  // 状态标签
-  &__status {
-    font-size: $font-caption;
-    font-weight: $font-weight-semibold;
-    padding: 4px 12px;
-    border-radius: 12px;
-    
+
+  // 状态徽章 (文字明确，不单靠颜色)
+  &__badge {
+    padding: 6px 14px;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+
     &--normal {
-      color: $color-success;
-      background: #e8f5e9;
+      background: #EBF6F0;
+      .metric-card__badge-text {
+        color: $color-success;
+      }
     }
-    
+
     &--warning {
-      color: #e65100;
-      background: #ffe0b2;
+      background: #FAF0E8;
+      .metric-card__badge-text {
+        color: $color-warning;
+      }
     }
-    
+
     &--danger {
-      color: #c62828;
-      background: #ffcdd2;
+      background: #FCEBEA;
+      .metric-card__badge-text {
+        color: $color-danger;
+      }
     }
   }
-  
-  // 趋势
+
+  &__badge-text {
+    font-size: 16px;
+    font-weight: $font-weight-bold;
+  }
+
+  // 趋势标识
   &__trend {
-    font-size: $font-caption;
-    font-weight: $font-weight-medium;
-    
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    font-weight: $font-weight-semibold;
+
     &--up {
       color: $color-danger;
     }
-    
     &--down {
       color: $color-success;
     }
-    
     &--stable {
       color: $text-tertiary;
     }
   }
+
+  &__trend-text {
+    font-size: 16px;
+  }
+
+  // --- 骨架屏态 ---
+  &--loading {
+    pointer-events: none;
+    border-left: 6px solid #E2DCD2;
+  }
+
+  &__skeleton {
+    background: #EFEAE0;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    animation: metric-card-pulse 1.5s infinite ease-in-out;
+
+    &--title { width: 45%; height: 22px; }
+    &--value { width: 75%; height: 42px; }
+    &--footer { width: 35%; height: 26px; border-radius: 14px; margin-bottom: 0; }
+  }
+}
+
+@keyframes metric-card-pulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 0.35; }
+  100% { opacity: 0.7; }
 }

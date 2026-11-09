@@ -1,100 +1,186 @@
 @use '../../../styles/theme/variables.scss' as *;
+
 .elderly-button {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: $radius-md;
   font-weight: $font-weight-semibold;
-  transition: all $transition-normal $ease-default;
+  transition: transform $transition-fast $ease-default, box-shadow $transition-fast $ease-default, opacity $transition-fast $ease-default;
   box-sizing: border-box;
+  overflow: hidden;
+  user-select: none;
   
-  // 适老化大尺寸 - 确保热区≥60px
+  // --- 适老触控规格 (主按键 ≥60px，热区 ≥60×60px) ---
   &--large {
-    height: 60px;
+    height: $button-height-large; // 64px ≥ 60px
+    min-height: $touch-target-min; // 60px
+    min-width: 200px;
     padding: 0 32px;
     font-size: 22px;
-    min-width: 200px;
+    border-radius: 20px;
   }
   
   &--medium {
-    height: 52px;
+    height: $button-height-medium; // 52px
+    min-height: 48px;
+    min-width: 160px;
     padding: 0 24px;
     font-size: 20px;
-    min-width: 160px;
-  }
-  
-  // 主按钮样式
-  &--primary {
-    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
-    color: $text-white;
-    border: none;
-    box-shadow: $shadow-button;
-    
-    &:active {
-      transform: scale(0.98);
-      box-shadow: 0 2px 8px rgba(1, 87, 155, 0.2);
-    }
-  }
-  
-  // 默认按钮样式
-  &--default {
-    background: $bg-card;
-    color: $text-primary;
-    border: 2px solid $border-default;
-    
-    &:active {
-      background: $bg-hover;
-      border-color: #b0b0b0;
-    }
-  }
-  
-  // 危险按钮样式
-  &--danger {
-    background: linear-gradient(135deg, $color-danger 0%, #f44336 100%);
-    color: $text-white;
-    border: none;
-    box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3);
-    
-    &:active {
-      transform: scale(0.98);
-      box-shadow: 0 2px 8px rgba(229, 57, 53, 0.2);
-    }
-  }
-  
-  // 禁用状态
-  &--disabled {
-    opacity: 0.5;
-  }
-  
-  // 加载动画
-  &__loading {
-    width: 20px;
-    height: 20px;
-    margin-right: 8px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: #ffffff;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  
-  &__text {
-    font-size: inherit;
-    font-weight: inherit;
-    color: inherit;
+    border-radius: 16px;
   }
 
-  &__icon {
-    margin-right: 8px;
-    display: flex;
-    align-items: center;
+  &--small {
+    height: 44px;
+    min-height: 44px;
+    min-width: 120px;
+    padding: 0 16px;
+    font-size: 16px;
+    border-radius: 12px;
   }
 
   &--block {
     width: 100%;
+    min-width: 100%;
+  }
+
+  // --- 1. 翡翠松青主按键 ---
+  &--primary {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $text-white;
+    border: none;
+    box-shadow: $shadow-button, inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.4);
+
+    &:active,
+    &.elderly-button--pressing {
+      transform: translateY(2px) scale(0.975);
+      box-shadow: 0 4px 12px rgba(31, 107, 86, 0.2);
+    }
+  }
+
+  // --- 2. 暖栗琥珀辅助按键 (服药与关怀) ---
+  &--secondary {
+    background: linear-gradient(135deg, $color-secondary 0%, $color-secondary-light 100%);
+    color: $text-white;
+    border: none;
+    box-shadow: 0 8px 20px -2px rgba(200, 109, 59, 0.3), inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.4);
+
+    &:active,
+    &.elderly-button--pressing {
+      transform: translateY(2px) scale(0.975);
+      box-shadow: 0 4px 12px rgba(200, 109, 59, 0.2);
+    }
+  }
+
+  // --- 3. 朱砂朱雀急救按键 (SOS 紧急呼救) ---
+  &--danger {
+    background: linear-gradient(135deg, $color-danger 0%, $color-danger-light 100%);
+    color: $text-white;
+    border: none;
+    box-shadow: $shadow-danger-button, inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.45);
+
+    &:active,
+    &.elderly-button--pressing {
+      transform: translateY(2px) scale(0.975);
+      box-shadow: 0 4px 12px rgba(211, 56, 51, 0.25);
+    }
+  }
+
+  // --- 4. 液态微晶按键 ---
+  &--glass {
+    background: rgba(255, 253, 249, 0.95);
+    color: $color-primary;
+    border: 2px solid $color-primary;
+    box-shadow: 0 4px 14px -2px rgba(31, 55, 45, 0.06);
+
+    @supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+      background: rgba(255, 255, 255, 0.82);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      backdrop-filter: blur(20px) saturate(180%);
+      box-shadow: $shadow-liquid-glass;
+    }
+
+    &:active,
+    &.elderly-button--pressing {
+      background: rgba(230, 242, 237, 0.9);
+      transform: translateY(2px) scale(0.975);
+    }
+  }
+
+  // --- 5. 幽兰文本按键 ---
+  &--ghost {
+    background: transparent;
+    color: $text-secondary;
+    border: none;
+
+    &:active,
+    &.elderly-button--pressing {
+      background: rgba(31, 55, 45, 0.06);
+      transform: translateY(2px) scale(0.975);
+    }
+  }
+
+  // --- 长按 3 秒倒计时半透进度层 ---
+  &__progress-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.38);
+    pointer-events: none;
+    z-index: 1;
+    transition: width 0.05s linear;
+  }
+
+  // --- 禁用与加载态 ---
+  &--disabled {
+    opacity: 0.45;
+    pointer-events: none;
+    box-shadow: none !important;
+  }
+
+  &--loading-state {
+    pointer-events: none;
+    opacity: 0.8;
+  }
+
+  &__loading {
+    width: 22px;
+    height: 22px;
+    margin-right: 10px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: elderly-btn-spin 0.8s linear infinite;
+    z-index: 2;
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+
+    &--left {
+      margin-right: 10px;
+    }
+    &--right {
+      margin-left: 10px;
+    }
+  }
+
+  &__text {
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+    z-index: 2;
+    display: flex;
+    align-items: center;
   }
 }
 
-@keyframes spin {
+@keyframes elderly-btn-spin {
   to {
     transform: rotate(360deg);
   }

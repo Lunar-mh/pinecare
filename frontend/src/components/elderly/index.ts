@@ -1,4 +1,7 @@
 // 适老化组件库入口
+export { LiquidGlassCard } from './LiquidGlassCard';
+export type { LiquidGlassCardProps } from './LiquidGlassCard';
+
 export { LargeButton } from './LargeButton';
 export type { LargeButtonProps } from './LargeButton';
 

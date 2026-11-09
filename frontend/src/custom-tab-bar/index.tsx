@@ -1,30 +1,52 @@
-import { View, Image, Text } from '@tarojs/components'
+import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
-import { Component } from 'react'
+import React, { Component } from 'react'
+import Icon, { IconName } from '../components/icons'
 import './index.scss'
 
-import homeIcon from '../assets/tabbar/home.png'
-import homeActiveIcon from '../assets/tabbar/home-active.png'
-import servicesIcon from '../assets/tabbar/services.png'
-import servicesActiveIcon from '../assets/tabbar/services-active.png'
-import profileIcon from '../assets/tabbar/profile.png'
-import profileActiveIcon from '../assets/tabbar/profile-active.png'
+interface TabItem {
+  pagePath: string
+  text: string
+  iconName: IconName
+}
 
-export default class CustomTabBar extends Component {
-  state = {
+interface CustomTabBarState {
+  selected: number
+  role: 'elder' | 'family'
+}
+
+/**
+ * 悬浮微晶药丸底部导航坞 (Floating Pill Dock)
+ * 通透润白微晶材质，双模式动态切换，纯矢量图标，翡翠高光底衬与短震动反馈
+ */
+export default class CustomTabBar extends Component<{}, CustomTabBarState> {
+  state: CustomTabBarState = {
     selected: 0,
-    role: 'elder'
+    role: (Taro.getStorageSync('userRole') as 'elder' | 'family') || 'elder',
   }
 
   componentDidMount() {
-    this.updateRole()
+    this.syncRole()
+    Taro.eventCenter.on('app:roleChange', this.handleRoleChange)
   }
 
-  updateRole = () => {
-    const r = Taro.getStorageSync('userRole') || 'elder'
-    if (this.state.role !== r) {
-      this.setState({ role: r })
+  componentWillUnmount() {
+    Taro.eventCenter.off('app:roleChange', this.handleRoleChange)
+  }
+
+  handleRoleChange = (newRole: 'elder' | 'family') => {
+    if (newRole && (newRole === 'elder' || newRole === 'family')) {
+      this.setState({ role: newRole })
     }
+  }
+
+  syncRole = () => {
+    try {
+      const stored = Taro.getStorageSync('userRole') as 'elder' | 'family'
+      if (stored && stored !== this.state.role) {
+        this.setState({ role: stored })
+      }
+    } catch (_) {}
   }
 
   setSelected(idx: number) {
@@ -32,7 +54,11 @@ export default class CustomTabBar extends Component {
   }
 
   switchTab = (index: number, url: string) => {
-    this.updateRole()
+    try {
+      Taro.vibrateShort({ type: 'light' })
+    } catch (_) {}
+
+    this.syncRole()
     this.setSelected(index)
     Taro.switchTab({ url })
   }
@@ -40,39 +66,62 @@ export default class CustomTabBar extends Component {
   render() {
     const { selected, role } = this.state
 
-    const elderList = [
-      { pagePath: '/pages/index/index', text: '首页', icon: homeIcon, activeIcon: homeActiveIcon },
-      { pagePath: '/pages/services/index', text: '健康陪伴', icon: servicesIcon, activeIcon: servicesActiveIcon },
-      { pagePath: '/pages/profile/index', text: '我的', icon: profileIcon, activeIcon: profileActiveIcon }
+    // 长辈端模式 (3 大核心入口，32px 矢量图标，16px 粗体)
+    const elderList: TabItem[] = [
+      { pagePath: '/pages/index/index', text: '首页', iconName: 'home' },
+      { pagePath: '/pages/services/index', text: '健康陪伴', iconName: 'heart' },
+      { pagePath: '/pages/profile/index', text: '我的', iconName: 'user' },
     ]
 
-    const familyList = [
-      { pagePath: '/pages/dashboard/index', text: '看板', icon: homeIcon, activeIcon: homeActiveIcon },
-      { pagePath: '/pages/care/index', text: '照护干预', icon: servicesIcon, activeIcon: servicesActiveIcon },
-      { pagePath: '/pages/family-manage/index', text: '设备管理', icon: servicesIcon, activeIcon: servicesActiveIcon },
-      { pagePath: '/pages/profile/index', text: '我的', icon: profileIcon, activeIcon: profileActiveIcon }
+    // 家属端模式 (4 大核心入口，26px 矢量图标，16px 适老底线文字)
+    const familyList: TabItem[] = [
+      { pagePath: '/pages/dashboard/index', text: '看板', iconName: 'grid' },
+      { pagePath: '/pages/care/index', text: '照护干预', iconName: 'medication' },
+      { pagePath: '/pages/family-manage/index', text: '设备管理', iconName: 'settings' },
+      { pagePath: '/pages/profile/index', text: '我的', iconName: 'user' },
     ]
 
     const currentList = role === 'elder' ? elderList : familyList
+    const isElder = role === 'elder'
+
+    // 配色方案：激活态翡翠松青 #1F6B56，未激活沉香黛灰 #6F7E77
+    const activeColor = '#1F6B56'
+    const inactiveColor = '#6F7E77'
 
     return (
-      <View className={`custom-tab-bar ${role === 'elder' ? 'elder-mode' : 'family-mode'}`}>
-        <View className="tab-bar-wrap">
-          {currentList.map((item, index) => {
-            const isActive = selected === index
-            return (
-              <View
-                key={item.pagePath}
-                className={`tab-bar-item ${isActive ? 'active' : ''}`}
-                onClick={() => this.switchTab(index, item.pagePath)}
-              >
-                <Image className="tab-bar-icon" src={isActive ? item.activeIcon : item.icon} />
-                <Text className="tab-bar-text" style={{ color: isActive ? '#007AFF' : '#999999' }}>{item.text}</Text>
-              </View>
-            )
-          })}
+      <View className="custom-tab-bar-container">
+        <View className={`custom-tab-bar ${isElder ? 'elder-mode' : 'family-mode'}`}>
+          <View className="tab-bar-wrap">
+            {currentList.map((item, index) => {
+              const isActive = selected === index
+              const iconSize = isElder ? 30 : 24
+              const currentColor = isActive ? activeColor : inactiveColor
+
+              return (
+                <View
+                  key={item.pagePath}
+                  className={`tab-bar-item ${isActive ? 'active' : ''}`}
+                  onClick={() => this.switchTab(index, item.pagePath)}
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-label={item.text}
+                >
+                  <View className="tab-bar-item-inner">
+                    <Icon
+                      name={item.iconName}
+                      size={iconSize}
+                      color={currentColor}
+                      className="tab-bar-vector-icon"
+                    />
+                    <Text className="tab-bar-text" style={{ color: currentColor }}>
+                      {item.text}
+                    </Text>
+                  </View>
+                </View>
+              )
+            })}
+          </View>
         </View>
-        <View className="safe-area-bottom"></View>
       </View>
     )
   }

@@ -1,74 +1,448 @@
 @use '../../../../styles/theme/variables.scss' as *;
+@use '../../../../styles/theme/glass.scss' as *;
 
-.sos-overview-page {
-  &__family-badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.16);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.sos-page {
+  min-height: 100vh;
+  background-color: $color-bg-canvas;
+  color: $color-ink-primary;
+  padding-bottom: 80px;
+  box-sizing: border-box;
+
+  &--alarm {
+    background-color: #FFF5F5;
   }
 
-  &__scroll {
-    max-height: calc(100vh - 220px);
+  &__header {
+    padding: 24px 20px 16px;
   }
 
-  &__stack {
-    display: grid;
-    gap: $space-md;
-  }
-
-  &__title,
-  &__text {
-    display: block;
+  &__eyebrow {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    background: rgba(211, 56, 51, 0.12);
+    color: $color-danger;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
   }
 
   &__title {
-    font-size: 22px;
-    color: $text-primary;
-    font-weight: $font-weight-bold;
-  }
-
-  &__text {
-    margin-top: 8px;
-    font-size: 16px;
-    color: $text-secondary;
-    line-height: $line-height-relaxed;
-  }
-
-  &__actions {
-    margin-top: $space-md;
-    display: flex;
-    gap: $space-sm;
-    flex-wrap: wrap;
-  }
-
-  &__button {
-    min-height: 44px;
-    padding: 0 18px;
-    border-radius: 999px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    background: rgba($color-primary, 0.1);
-    color: $color-primary;
-    font-size: 15px;
-    font-weight: $font-weight-semibold;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.25;
+    color: $color-ink-primary;
+    display: block;
+    margin-bottom: 8px;
 
     &--danger {
-      background: rgba($color-danger, 0.12);
       color: $color-danger;
     }
   }
 
-  &__bottom-space {
-    height: 120px;
+  &__subtitle {
+    font-size: 18px;
+    color: $color-ink-secondary;
+    line-height: 1.5;
+    display: block;
+  }
+
+  /* 核心中央 SOS 呼救行动区 */
+  &__action-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+  }
+
+  /* 朱红微晶大按钮：直径 220px，双层外晕微晶环，高光质感 */
+  &__btn-outer-halo {
+    position: relative;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle, rgba(211, 56, 51, 0.22) 0%, rgba(211, 56, 51, 0.04) 70%, transparent 100%);
+    animation: sos-outer-pulse 3s infinite ease-in-out;
+  }
+
+  &__btn-inner-halo {
+    position: absolute;
+    width: 226px;
+    height: 226px;
+    border-radius: 50%;
+    border: 2px solid rgba(211, 56, 51, 0.35);
+  }
+
+  &__big-btn {
+    width: 210px;
+    height: 210px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #E53935 0%, #D32F2F 50%, #B71C1C 100%);
+    border: 3px solid rgba(255, 255, 255, 0.85);
+    box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.65),
+                inset 0 -4px 8px rgba(0, 0, 0, 0.25),
+                0 12px 32px rgba(211, 56, 51, 0.45);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    user-select: none;
+
+    &:active {
+      transform: scale(0.94);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3),
+                  0 6px 16px rgba(211, 56, 51, 0.35);
+    }
+  }
+
+  &__btn-text-main {
+    font-size: 32px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 1.5px;
+    margin-top: 8px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  }
+
+  &__btn-text-sub {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.9);
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  &__btn-hint {
+    margin-top: 20px;
+    font-size: 16px;
+    color: $color-ink-tertiary;
+    text-align: center;
+  }
+
+  /* 跌倒预警状态与模拟测试卡片 */
+  &__fall-card {
+    margin: 16px 20px 24px;
+    @include liquid-glass-card;
+    border: 1px solid rgba(200, 109, 59, 0.3);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__fall-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__fall-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(200, 109, 59, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $color-secondary;
+  }
+
+  &__fall-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: $color-ink-primary;
+    display: block;
+  }
+
+  &__fall-desc {
+    font-size: 16px;
+    color: $color-ink-secondary;
+    display: block;
+    margin-top: 2px;
+  }
+
+  &__fall-test-btn {
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 22px;
+    background: rgba(200, 109, 59, 0.15);
+    color: $color-secondary;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    &:active {
+      transform: scale(0.96);
+    }
+  }
+
+  /* 5秒冷静期撤销倒计时全屏遮罩与弹窗 */
+  &__cooldown-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(24, 34, 30, 0.75);
+    backdrop-filter: blur(12px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  &__cooldown-card {
+    width: 100%;
+    max-width: 360px;
+    background: #ffffff;
+    border-radius: 32px;
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+    border: 2px solid rgba(211, 56, 51, 0.3);
+  }
+
+  &__countdown-circle {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    border: 6px solid #D33833;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    position: relative;
+    background: rgba(211, 56, 51, 0.06);
+  }
+
+  &__countdown-num {
+    font-size: 54px;
+    font-weight: 900;
+    color: #D33833;
+    font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  }
+
+  &__cooldown-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: $color-ink-primary;
+    margin-bottom: 8px;
+  }
+
+  &__cooldown-desc {
+    font-size: 18px;
+    color: $color-ink-secondary;
+    line-height: 1.45;
+    margin-bottom: 28px;
+  }
+
+  /* 68px 巨型“误触取消”按键 */
+  &__cancel-giant-btn {
+    width: 100%;
+    height: 68px; // 严格满足 68px 巨型热区
+    border-radius: 20px;
+    background: #F8F6F0;
+    border: 2px solid rgba(24, 34, 30, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 800;
+    color: $color-ink-primary;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+
+    &:active {
+      transform: scale(0.97);
+      background: #E8E5DD;
+    }
+  }
+
+  /* 跌倒检测 15 秒自动升级交互卡片 */
+  &__fall-alert-card {
+    width: 100%;
+    max-width: 360px;
+    background: #ffffff;
+    border-radius: 32px;
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 20px 48px rgba(211, 56, 51, 0.3);
+    border: 3px solid #D33833;
+  }
+
+  &__fall-countdown-num {
+    font-size: 48px;
+    font-weight: 900;
+    color: $color-secondary;
+  }
+
+  &__safe-dismiss-btn {
+    width: 100%;
+    height: 68px; // 满足 ≥ 60px
+    border-radius: 20px;
+    background: linear-gradient(135deg, $color-primary 0%, #154e3e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 800;
+    color: #ffffff;
+    box-shadow: 0 6px 18px rgba(31, 107, 86, 0.35);
+    cursor: pointer;
+
+    &:active {
+      transform: scale(0.97);
+    }
+  }
+
+  /* 紧急联系人一键拨打大卡片 (热区 ≥ 60px) */
+  &__contacts-section {
+    padding: 0 20px 24px;
+  }
+
+  &__section-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: $color-ink-primary;
+    margin-bottom: 14px;
+    display: block;
+  }
+
+  &__contacts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  &__contact-card {
+    @include liquid-glass-card;
+    padding: 16px 20px;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 80px;
+
+    &--emergency {
+      border: 1.5px solid rgba(211, 56, 51, 0.35);
+      background: rgba(255, 245, 245, 0.88);
+    }
+  }
+
+  &__contact-info {
+    flex: 1;
+    padding-right: 12px;
+  }
+
+  &__contact-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  &__contact-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: $color-ink-primary;
+  }
+
+  &__contact-relation {
+    font-size: 16px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 8px;
+    background: rgba(31, 107, 86, 0.1);
+    color: $color-primary;
+
+    &--danger {
+      background: rgba(211, 56, 51, 0.12);
+      color: $color-danger;
+    }
+  }
+
+  &__contact-phone {
+    font-size: 18px;
+    color: $color-ink-secondary;
+    font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  }
+
+  /* 一键拨打按钮 (热区 ≥ 60px) */
+  &__call-btn {
+    height: 60px;
+    min-width: 110px;
+    padding: 0 20px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, $color-primary 0%, #154e3e 100%);
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(31, 107, 86, 0.25);
+    cursor: pointer;
+
+    &:active {
+      transform: scale(0.96);
+    }
+
+    &--danger {
+      background: linear-gradient(135deg, $color-danger 0%, #B71C1C 100%);
+      box-shadow: 0 4px 12px rgba(211, 56, 51, 0.3);
+    }
+  }
+
+  /* 呼救生效中状态提示 */
+  &__active-banner {
+    margin: 16px 20px;
+    background: linear-gradient(135deg, rgba(211, 56, 51, 0.95) 0%, rgba(183, 28, 28, 0.98) 100%);
+    border-radius: 24px;
+    padding: 20px;
+    color: #ffffff;
+    box-shadow: 0 8px 24px rgba(211, 56, 51, 0.3);
+  }
+
+  &__active-banner-title {
+    font-size: 24px;
+    font-weight: 800;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  &__active-banner-desc {
+    font-size: 18px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.95);
+    display: block;
   }
 }
 
-
-.sos-progress-ring { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.1); transition: height 0.1s linear; }
-.sos-big-btn { position: relative; overflow: hidden; }
+@keyframes sos-outer-pulse {
+  0% {
+    transform: scale(0.97);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.97);
+    opacity: 0.7;
+  }
+}

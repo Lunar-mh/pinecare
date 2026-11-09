@@ -1,0 +1,104 @@
+@use '../../../styles/theme/variables.scss' as *;
+@use '../../../styles/theme/glass.scss' as *;
+
+.liquid-glass-card {
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: transform $transition-normal $ease-default, box-shadow $transition-normal $ease-default;
+
+  // 1. 降级兜底：玉脂润白微晶实色
+  background: rgba(255, 253, 249, 0.95);
+  border: 1px solid rgba(226, 220, 210, 0.85);
+  box-shadow: 0 4px 16px -2px rgba(31, 55, 45, 0.06);
+
+  // 2. 现代环境：微晶毛玻璃 + 双层微光边框 + 顶部高光 + 暖漫射阴影
+  @supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    background: rgba(255, 255, 255, 0.78);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-bottom: 1px solid rgba(210, 225, 218, 0.6);
+    box-shadow: $shadow-liquid-glass;
+  }
+
+  // --- 圆角变体 ---
+  &--rounded-md {
+    border-radius: 16px;
+  }
+  &--rounded-lg {
+    border-radius: 24px;
+  }
+  &--rounded-xl {
+    border-radius: $radius-xl; // 32px 适老 Bento
+  }
+  &--rounded-pill {
+    border-radius: $radius-pill; // 40px 全圆角
+  }
+
+  // --- 内边距变体 ---
+  &--padding-none {
+    padding: 0;
+  }
+  &--padding-sm {
+    padding: 12px;
+  }
+  &--padding-md {
+    padding: 20px;
+  }
+  &--padding-lg {
+    padding: 28px;
+  }
+
+  // --- 风格变体 ---
+  &--variant-elevated {
+    box-shadow: inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.95), 0 12px 32px -4px rgba(31, 55, 45, 0.12);
+  }
+
+  &--variant-sunken {
+    background: rgba(244, 240, 232, 0.7);
+    box-shadow: inset 0 2px 6px rgba(31, 55, 45, 0.08);
+  }
+
+  &--variant-accent {
+    border: 1.5px solid rgba(200, 109, 59, 0.35);
+    box-shadow: inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.95), 0 4px 16px -2px rgba(200, 109, 59, 0.12);
+  }
+
+  &--variant-danger {
+    border: 1.5px solid rgba(211, 56, 51, 0.35);
+    box-shadow: inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.95), 0 4px 16px -2px rgba(211, 56, 51, 0.15);
+  }
+
+  // --- 次表面呼吸微光 ---
+  &--glow-emerald {
+    box-shadow: inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.95), 0 0 24px rgba(31, 107, 86, 0.18);
+  }
+  &--glow-amber {
+    box-shadow: inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.95), 0 0 24px rgba(200, 109, 59, 0.2);
+  }
+  &--glow-cinnabar {
+    box-shadow: inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.95), 0 0 24px rgba(211, 56, 51, 0.24);
+  }
+
+  // --- 点击交互反馈 ---
+  &--interactive {
+    cursor: pointer;
+    &:active {
+      transform: translateY(2px) scale(0.975);
+      transition: transform 0.12s ease-out;
+    }
+  }
+
+  &__header {
+    margin-bottom: 16px;
+  }
+
+  &__body {
+    width: 100%;
+  }
+
+  &__footer {
+    margin-top: 16px;
+  }
+}

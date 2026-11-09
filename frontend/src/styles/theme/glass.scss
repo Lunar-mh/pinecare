@@ -1,0 +1,68 @@
+@use './variables.scss' as *;
+
+// ==============================================================
+// 液态玻璃物理公式混合宏与工具类 (Liquid Glass Mixin & Fallback)
+// 遵循 PROJECT.md §1.2 规范与纯 CSS 平滑降级准则
+// ==============================================================
+
+@mixin liquid-glass-card {
+  // 1. 降级兜底：玉脂通透微晶实色（低端机或不支持 backdrop-filter 时生效）
+  background: rgba(255, 253, 249, 0.95);
+  border: 1px solid rgba(226, 220, 210, 0.85);
+  box-shadow: 0 4px 16px -2px rgba(31, 55, 45, 0.06);
+  border-radius: $radius-xl;
+  box-sizing: border-box;
+
+  // 2. 现代渲染环境：微晶毛玻璃 + 双层微光边框 + 顶部高光 + 暖漫射阴影
+  @supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    background: rgba(255, 255, 255, 0.78);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-bottom: 1px solid rgba(210, 225, 218, 0.6);
+    box-shadow: $shadow-liquid-glass;
+  }
+
+  // 触控物理反馈：轻微下沉与缩放
+  &:active {
+    transform: translateY(2px) scale(0.975);
+    transition: transform 0.12s ease-out;
+  }
+}
+
+// 浮动药丸底栏混合宏
+@mixin liquid-glass-pill {
+  background: rgba(255, 253, 249, 0.96);
+  border: 1px solid rgba(226, 220, 210, 0.85);
+  box-shadow: 0 8px 24px -4px rgba(31, 55, 45, 0.12);
+  border-radius: $radius-pill;
+
+  @supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+    background: rgba(255, 255, 255, 0.85);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(210, 225, 218, 0.65);
+    box-shadow: $shadow-pill;
+  }
+}
+
+// 低端机强制降级类
+.low-perf-device {
+  .liquid-glass-card,
+  .liquid-glass-pill,
+  .yao-status-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(255, 253, 249, 0.98) !important;
+  }
+}
+
+// 通用工具类
+.liquid-glass-card {
+  @include liquid-glass-card;
+}
+
+.liquid-glass-pill {
+  @include liquid-glass-pill;
+}

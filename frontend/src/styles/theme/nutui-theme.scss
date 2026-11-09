@@ -1,0 +1,77 @@
+@use './variables.scss' as *;
+
+// ==============================================================
+// NutUI React Taro 适老化与暖玉微晶主题定制
+// 接管 NutUI 默认的红色(#fa2c19)与 10px~14px 违规小字
+// 严格遵循 PROJECT.md §1.2 规范
+// ==============================================================
+
+:root,
+page {
+  // 品牌色全面覆写为翡翠松青
+  --nutui-color-primary: #1F6B56;
+  --nutui-color-primary-stop-1: #2A8C70;
+  --nutui-color-primary-stop-2: #1F6B56;
+  --nutui-color-primary-pressed: #144638;
+  --nutui-color-primary-disabled: #8FBCAE;
+  --nutui-brand-1: #E6F2ED;
+  --nutui-brand-2: #CCE5DC;
+  --nutui-brand-3: #99CBBB;
+  --nutui-brand-4: #66B199;
+  --nutui-brand-5: #339778;
+  --nutui-brand-6: #1F6B56;
+  --nutui-brand-7: #144638;
+  --nutui-brand-8: #0E3329;
+
+  // 辅助与状态色
+  --nutui-color-warning: #C86D3B;
+  --nutui-color-danger: #D33833;
+  --nutui-color-success: #278A5B;
+
+  // 严格杜绝 NutUI 默认 10px~14px 违规小字，全面拉升 (底线≥16px)
+  --nutui-font-size-1: 16px; // 原 10px -> 提升至适老底线 16px
+  --nutui-font-size-2: 16px; // 原 12px -> 提升至 16px
+  --nutui-font-size-3: 18px; // 原 14px -> 提升至 18px
+  --nutui-font-size-4: 20px; // 原 16px -> 提升至适老正文 20px
+  --nutui-font-size-5: 22px;
+  --nutui-font-size-6: 24px;
+  --nutui-font-size-7: 28px;
+  --nutui-font-size-8: 32px;
+  --nutui-font-size-9: 36px;
+  --nutui-font-size-10: 42px;
+
+  // 按钮高度与热区覆写 (默认高度提升至 56px，大按钮 64px)
+  --nutui-button-default-height: 56px;
+  --nutui-button-large-height: 64px;
+  --nutui-button-border-radius: 20px;
+  --nutui-button-default-font-size: 20px;
+  --nutui-button-large-font-size: 22px;
+
+  // 标签栏 Tabs 覆写
+  --nutui-tabs-titles-item-font-size: 20px;
+  --nutui-tabs-titles-item-active-font-size: 22px;
+  --nutui-tabs-horizontal-tab-line-color: #1F6B56;
+  --nutui-tabs-titles-item-active-color: #1F6B56;
+
+  // 弹窗 Dialog 与 Toast 覆写
+  --nutui-dialog-title-font-size: 24px;
+  --nutui-dialog-content-font-size: 20px;
+  --nutui-toast-font-size: 20px;
+  --nutui-dialog-border-radius: 28px;
+
+  // 提示条 NoticeBar 覆写
+  --nutui-noticebar-font-size: 18px;
+  --nutui-noticebar-height: 48px;
+}
+
+// 针对未完全响应 CSS 变量的部分 NutUI 组件进行类兜底
+.nut-button--primary {
+  background: #1F6B56 !important;
+  border-color: #1F6B56 !important;
+}
+
+.nut-tag--primary {
+  background: #E6F2ED !important;
+  color: #1F6B56 !important;
+  font-size: 16px !important;
+}

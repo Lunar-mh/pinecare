@@ -7,7 +7,8 @@
     "dev:weapp": "npm run clean && taro build --type weapp --watch",
     "build:weapp": "npm run clean && taro build --type weapp",
     "clean": "node scripts/clean-dist.cjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:weapp": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@nutui/icons-react-taro": "3.0.2-cpp.3.beta.5",

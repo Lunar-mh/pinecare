@@ -26,6 +26,14 @@ export interface HeartRateRecord {
   status: 'normal' | 'warning' | 'danger';
 }
 
+export interface BloodSugarRecord {
+  id: string;
+  value: number;
+  measuredAt: string;
+  mealPeriod?: 'fasting' | 'postprandial' | 'bedtime' | string;
+  status: 'normal' | 'warning' | 'danger';
+}
+
 export interface HealthTrend {
   date: string;
   value: number | { systolic: number; diastolic: number };
@@ -34,6 +42,7 @@ export interface HealthTrend {
 export interface TodayHealthOverview {
   bloodPressure?: BloodPressureRecord;
   heartRate?: HeartRateRecord;
+  bloodSugar?: BloodSugarRecord;
   steps?: number;
   alerts: Array<{
     metricType: string;

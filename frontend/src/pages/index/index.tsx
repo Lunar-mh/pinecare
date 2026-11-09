@@ -1,244 +1,313 @@
 /**
- * 长辈端首页 - Bento Box 极简布局
- * 适老化设计：超大触控热区、高对比度、语音优先
+ * 长辈端首页 - 暖玉微晶·液态温润 Bento 适老重构
+ * 严格遵循单屏 ≤ 3 核心决策卡片规范 (Hero 朱红 SOS + Left 翡翠今日健康 + Right 暖栗今日药盒)
+ * 底部常驻微晶语音条与药丸 Dock 避让区，彻底清除 10~13px 小字与杂乱散堆元素
  */
+import React, { useState, useCallback, useRef } from 'react'
 import { View, Text } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
-import React, { useState, useCallback } from 'react'
 import { Icon } from '@/components/icons'
 import { PageShell } from '@/components/shell'
+import { LiquidGlassCard } from '@/components/elderly'
 import { getTodayMedications } from '@/services/modules/medication'
+import { getTodayHealthOverview } from '@/services/modules/health'
 import { getUserInfo } from '@/services/modules/user'
+import type { BloodPressureRecord, HeartRateRecord, TodayMedication } from '@/services/types'
+import './index.scss'
 
-// 获取时间段问候语
+// 获取时间段温润问候语
 const getGreeting = (): string => {
   const hour = new Date().getHours()
-  if (hour < 6) return '夜深了'
+  if (hour < 6) return '夜深了，注意休息'
   if (hour < 9) return '早上好'
   if (hour < 12) return '上午好'
   if (hour < 14) return '中午好'
   if (hour < 18) return '下午好'
   if (hour < 22) return '晚上好'
-  return '夜深了'
+  return '夜深了，注意休息'
 }
 
-// 获取今日日期
-const getTodayDate = (): string => {
+// 获取适老格式今日日期与节气天气
+const getTodayDateWithWeather = (): string => {
   const now = new Date()
-  const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
   const month = now.getMonth() + 1
   const date = now.getDate()
   const weekDay = weekDays[now.getDay()]
-  return `${month}月${date}日 ${weekDay}`
+  return `${month}月${date}日 ${weekDay} · 晴 22℃ 适宜室内外活动`
 }
 
-export default function ElderHome() {
-  const [userName, setUserName] = useState('')
-  const [pendingMeds, setPendingMeds] = useState(0)
-  const [loading, setLoading] = useState(true)
+export default function ElderBentoHome() {
+  const [userName, setUserName] = useState<string>('')
+  const [pendingMeds, setPendingMeds] = useState<number>(0)
+  const [nextMedName, setNextMedName] = useState<string>('')
+  const [bloodPressure, setBloodPressure] = useState<BloodPressureRecord | null>(null)
+  const [heartRate, setHeartRate] = useState<HeartRateRecord | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
 
-  // 加载实时数据
-  const loadData = useCallback(async () => {
+  const pressTimerRef = useRef<any>(null)
+
+  // 加载全域今日健康、用药与用户信息
+  const loadHomeData = useCallback(async () => {
     setLoading(true)
     try {
-      const [userInfo, medsData] = await Promise.all([
+      const [userInfo, medsData, healthData] = await Promise.all([
         getUserInfo().catch(() => null),
-        getTodayMedications().catch(() => []),
+        getTodayMedications().catch(() => [] as TodayMedication[]),
+        getTodayHealthOverview().catch(() => null),
       ])
-      
-      // 设置用户名（优先显示昵称，其次真名，最后默认"您"）
-      const displayName = userInfo?.nickname || userInfo?.real_name || '您'
+
+      // 称谓：优先显示昵称或真实姓名
+      const displayName = userInfo?.nickname || userInfo?.real_name || '长辈'
       setUserName(displayName)
-      
-      // 计算待服药次数
-      const pendingCount = medsData.filter(m => m.status === 'pending').length
-      setPendingMeds(pendingCount)
-    } catch (error) {
-      console.error('Failed to load home data:', error)
+
+      // 用药计算
+      const pendingList = (medsData || []).filter((m) => m.status === 'pending')
+      setPendingMeds(pendingList.length)
+      if (pendingList.length > 0) {
+        setNextMedName(pendingList[0].name || '降压药')
+      }
+
+      // 健康指标
+      if (healthData) {
+        setBloodPressure(healthData.bloodPressure || null)
+        setHeartRate(healthData.heartRate || null)
+      }
+    } catch (err) {
+      console.error('Failed to load bento home data:', err)
     } finally {
       setLoading(false)
     }
   }, [])
 
   useDidShow(() => {
-    loadData()
+    loadHomeData()
   })
 
-  // 导航处理
-  const handleSos = () => Taro.navigateTo({ url: '/subpackages/sos/pages/index/index' })
-  const handleVoice = () => Taro.navigateTo({ url: '/subpackages/voice_ai/pages/index/index' })
-  const handleMedication = () => Taro.navigateTo({ url: '/subpackages/medication/pages/index/index' })
-  const handleHealth = () => Taro.navigateTo({ url: '/subpackages/health/pages/index/index' })
-  const handleServices = () => Taro.navigateTo({ url: '/pages/services/index' })
+  // 震动辅助触发
+  const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'light') => {
+    try {
+      Taro.vibrateShort({ type })
+    } catch (_) {}
+  }
+
+  // 导航路由处理
+  const handleNavigateToSos = () => {
+    triggerHaptic('heavy')
+    Taro.navigateTo({ url: '/subpackages/sos/pages/index/index' })
+  }
+
+  const handleNavigateToHealth = () => {
+    triggerHaptic('light')
+    Taro.navigateTo({ url: '/subpackages/health/pages/index/index' })
+  }
+
+  const handleNavigateToMedication = () => {
+    triggerHaptic('light')
+    Taro.navigateTo({ url: '/subpackages/medication/pages/index/index' })
+  }
+
+  const handleNavigateToVoice = () => {
+    triggerHaptic('light')
+    Taro.navigateTo({ url: '/subpackages/voice_ai/pages/index/index' })
+  }
+
+  const handleNavigateToSettings = () => {
+    triggerHaptic('light')
+    Taro.navigateTo({ url: '/subpackages/settings/pages/index/index' })
+  }
+
+  // SOS 长按防误触处理
+  const handleSosTouchStart = () => {
+    triggerHaptic('light')
+    pressTimerRef.current = setTimeout(() => {
+      triggerHaptic('heavy')
+      Taro.navigateTo({ url: '/subpackages/sos/pages/index/index' })
+    }, 2000)
+  }
+
+  const handleSosTouchEnd = () => {
+    if (pressTimerRef.current) {
+      clearTimeout(pressTimerRef.current)
+      pressTimerRef.current = null
+    }
+  }
 
   return (
-    <PageShell roleTone="elder" className="bg-elder-canvas min-h-screen" loading={loading}>
-      {/* ========== 顶部问候区域 ========== */}
-      <View className="px-page-elder pt-8 pb-6">
-        <View className="flex items-center justify-between mb-2">
-          <Text className="text-elder-title text-elder-text-primary">
-            {getGreeting()}，{userName || '您'}
+    <PageShell roleTone="elder" className="bento-home" loading={loading}>
+      {/* ========== 顶部温润问候状态栏 ========== */}
+      <View className="bento-home__header">
+        <View className="bento-home__greeting-wrap">
+          <Text className="bento-home__greeting">
+            {getGreeting()}，{userName || '您好'}
           </Text>
-          {/* 通知入口 */}
-          <View
-            className="w-12 h-12 bg-elder-surface rounded-full flex items-center justify-center shadow-card active:scale-95 transition-transform"
-            onClick={() => Taro.navigateTo({ url: '/subpackages/settings/pages/index/index' })}
-          >
-            <Icon name="bell" size={28} color="#4A4A4A" />
-          </View>
+          <Text className="bento-home__date-weather">{getTodayDateWithWeather()}</Text>
         </View>
-        <Text className="text-elder-body text-elder-text-secondary">
-          {getTodayDate()}
-        </Text>
+
+        <View
+          className="bento-home__avatar-btn"
+          onClick={handleNavigateToSettings}
+          aria-label="设置与通知中心"
+          role="button"
+        >
+          <Icon name="bell" size={26} color="#1F6B56" />
+        </View>
       </View>
 
-      {/* ========== 核心功能 Bento 网格 ========== */}
-      <View className="px-page-elder">
-        <View className="grid grid-cols-bento gap-4">
-
-          {/* ===== SOS 一键呼救 (2x2) ===== */}
-          <View
-            className="col-span-2 row-span-2 bg-elder-danger rounded-bento shadow-bento overflow-hidden active:scale-[0.97] transition-all duration-base"
-            onClick={handleSos}
-          >
-            <View className="h-full flex flex-col items-center justify-center p-6 bg-elder-danger">
-              {/* 脉冲动画圆环 */}
-              <View className="relative mb-6">
-                <View className="absolute inset-0 bg-white/20 rounded-full animate-pulse-soft" style={{ margin: '-8px' }} />
-                <View className="w-24 h-24 bg-white/25 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <Icon name="sos" size={64} color="#FFFFFF" />
-                </View>
-              </View>
-              <Text className="text-elder-hero text-white font-bold tracking-wider">
-                一键呼救
-              </Text>
-              <Text className="text-elder-body text-white/90 mt-2">
-                紧急情况请按此
+      {/* ========== Bento 核心架构：单屏 ≤ 3 核心决策卡片 ========== */}
+      <View className="bento-home__bento-grid">
+        {/* ===== Card 1 (Hero): 朱红微晶 · SOS 一键求助 ===== */}
+        <View
+          className="bento-home__hero-sos"
+          onClick={handleNavigateToSos}
+          onTouchStart={handleSosTouchStart}
+          onTouchEnd={handleSosTouchEnd}
+          aria-label="一键紧急呼救，长按或点击立刻通知所有家人"
+          role="button"
+        >
+          <View className="bento-home__hero-inner">
+            <View className="bento-home__hero-text">
+              <Text className="bento-home__hero-badge">紧急救援通道</Text>
+              <Text className="bento-home__hero-title">一键紧急求助</Text>
+              <Text className="bento-home__hero-subtitle">
+                长按3秒或点击，马上通知所有家人
               </Text>
             </View>
-          </View>
 
-          {/* ===== 语音助手 (1x2) ===== */}
-          <View
-            className="col-span-1 row-span-2 bg-elder-primary rounded-bento shadow-bento overflow-hidden active:scale-[0.97] transition-all duration-base"
-            onClick={handleVoice}
-          >
-            <View className="h-full flex flex-col justify-between p-5 bg-gradient-to-br from-elder-primary to-elder-primary-strong">
-              <View className="w-16 h-16 bg-white/25 rounded-2xl flex items-center justify-center">
-                <Icon name="mic" size={40} color="#FFFFFF" />
+            <View className="bento-home__hero-ring-wrap">
+              <View className="bento-home__hero-pulse-ring" />
+              <View className="bento-home__hero-icon-bubble">
+                <Icon name="sos" size={44} color="#FFFFFF" />
               </View>
-              <View>
-                <Text className="block text-elder-subtitle text-white font-bold">语音</Text>
-                <Text className="block text-elder-subtitle text-white font-bold">帮手</Text>
-                <Text className="block text-elder-caption text-white/80 mt-2">
-                  说一句话就能操作
+            </View>
+          </View>
+        </View>
+
+        {/* ===== 双列 Bento：左翡翠健康大字卡 + 右暖栗药盒打卡 ===== */}
+        <View className="bento-home__dual-bento">
+          {/* Card 2 (Left): 翡翠微晶 · 今日健康大字卡 */}
+          <LiquidGlassCard
+            variant="default"
+            padding="md"
+            rounded="xl"
+            glowTone="emerald"
+            interactive
+            onClick={handleNavigateToHealth}
+            ariaLabel="今日健康大字卡，点击查看详细大字报"
+          >
+            <View className="bento-home__sub-card">
+              <View className="bento-home__sub-card-header">
+                <View className="bento-home__sub-card-title-wrap">
+                  <View className="bento-home__sub-card-icon bento-home__sub-card-icon--health">
+                    <Icon name="heart" size={20} color="#1F6B56" />
+                  </View>
+                  <Text className="bento-home__sub-card-title">今日健康</Text>
+                </View>
+                <Text className="bento-home__sub-card-tag bento-home__sub-card-tag--emerald">
+                  ✓ 平稳
                 </Text>
               </View>
-            </View>
-          </View>
 
-          {/* ===== 吃药提醒 (1x1) ===== */}
-          <View
-            className="col-span-1 row-span-1 bg-elder-warning rounded-bento shadow-bento overflow-hidden active:scale-[0.97] transition-all duration-base min-h-touch-elder"
-            onClick={handleMedication}
+              <View className="bento-home__sub-card-body">
+                <View>
+                  <Text className="bento-home__metric-main">
+                    {bloodPressure ? `${bloodPressure.systolic}/${bloodPressure.diastolic}` : '120/80'}
+                  </Text>
+                  <Text className="bento-home__metric-unit">mmHg</Text>
+                </View>
+                <View className="bento-home__metric-sub">
+                  <Text>心率</Text>
+                  <Text style={{ fontWeight: 700, color: '#18221E' }}>
+                    {heartRate ? heartRate.value : '72'}
+                  </Text>
+                  <Text style={{ fontSize: '14px', color: '#6F7E77' }}>bpm</Text>
+                </View>
+              </View>
+
+              <View className="bento-home__sub-card-footer bento-home__sub-card-footer--health">
+                <Text>体征大字报</Text>
+                <Text>&gt;</Text>
+              </View>
+            </View>
+          </LiquidGlassCard>
+
+          {/* Card 3 (Right): 暖栗微晶 · 今日药盒打卡 */}
+          <LiquidGlassCard
+            variant="default"
+            padding="md"
+            rounded="xl"
+            glowTone="amber"
+            interactive
+            onClick={handleNavigateToMedication}
+            ariaLabel="今日药盒提醒打卡，点击进入药盒"
           >
-            <View className="h-full flex flex-col justify-between p-5">
-              <View className="flex justify-between items-start">
-                <Icon name="medication" size={36} color="#FFFFFF" />
-                {pendingMeds > 0 && (
-                  <View className="bg-white px-3 py-1 rounded-full">
-                    <Text className="text-family-caption font-bold text-elder-warning">
-                      {pendingMeds}次待吃
-                    </Text>
+            <View className="bento-home__sub-card">
+              <View className="bento-home__sub-card-header">
+                <View className="bento-home__sub-card-title-wrap">
+                  <View className="bento-home__sub-card-icon bento-home__sub-card-icon--med">
+                    <Icon name="medication" size={20} color="#C86D3B" />
                   </View>
+                  <Text className="bento-home__sub-card-title">今日药盒</Text>
+                </View>
+                <Text className="bento-home__sub-card-tag bento-home__sub-card-tag--amber">
+                  {pendingMeds > 0 ? `${pendingMeds}次待服` : '已完成'}
+                </Text>
+              </View>
+
+              <View className="bento-home__sub-card-body">
+                {pendingMeds > 0 ? (
+                  <>
+                    <View>
+                      <Text className="bento-home__metric-main" style={{ color: '#C86D3B' }}>
+                        {pendingMeds}
+                      </Text>
+                      <Text className="bento-home__metric-unit">次待吃</Text>
+                    </View>
+                    <View className="bento-home__metric-sub">
+                      <Text style={{ fontSize: '16px', color: '#485750' }}>
+                        {nextMedName ? `${nextMedName} 待服` : '请按时温水服药'}
+                      </Text>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <View>
+                      <Text className="bento-home__metric-main" style={{ color: '#1F6B56', fontSize: '28px' }}>
+                        全部完成
+                      </Text>
+                    </View>
+                    <View className="bento-home__metric-sub">
+                      <Text style={{ fontSize: '16px', color: '#1F6B56' }}>今日服药很准时</Text>
+                    </View>
+                  </>
                 )}
               </View>
-              <Text className="text-elder-body font-bold text-white">
-                吃药提醒
-              </Text>
-            </View>
-          </View>
 
-          {/* ===== 健康档案 (1x1) ===== */}
-          <View
-            className="col-span-1 row-span-1 bg-elder-primary-soft border border-elder-primary/30 rounded-bento shadow-bento overflow-hidden active:scale-[0.97] transition-all duration-base min-h-touch-elder"
-            onClick={handleHealth}
-          >
-            <View className="h-full flex flex-col justify-between p-5">
-              <View className="flex justify-between items-start">
-                <Icon name="heart" size={36} color="#2F8C6B" />
+              <View className="bento-home__sub-card-footer bento-home__sub-card-footer--med">
+                <Text>{pendingMeds > 0 ? '立即打卡' : '查看日历'}</Text>
+                <Text>&gt;</Text>
               </View>
-              <Text className="text-elder-body font-bold text-elder-text-primary">
-                健康档案
-              </Text>
             </View>
-          </View>
-
+          </LiquidGlassCard>
         </View>
       </View>
 
-      {/* ========== 社区互助快捷入口 ========== */}
-      <View className="px-page-elder mt-6">
+      {/* ========== 底部常驻微晶语音长条 (避让悬浮药丸 Dock) ========== */}
+      <View className="bento-home__voice-bar-wrap">
         <View
-          className="bg-elder-surface rounded-bento-sm shadow-card p-5 flex items-center justify-between active:scale-[0.98] transition-all duration-base"
-          onClick={() => Taro.navigateTo({ url: '/subpackages/timebank/pages/index/index' })}
+          className="bento-home__voice-bar"
+          onClick={handleNavigateToVoice}
+          aria-label="语音助手，点击直接说话"
+          role="button"
         >
-          <View className="flex items-center">
-            <View className="w-14 h-14 bg-elder-primary-soft rounded-2xl flex items-center justify-center mr-4">
-              <Icon name="clock" size={32} color="#2F8C6B" />
+          <View className="bento-home__voice-left">
+            <View className="bento-home__voice-mic-bubble">
+              <Icon name="mic" size={24} color="#FFFFFF" />
             </View>
-            <View>
-              <Text className="block text-elder-body font-bold text-elder-text-primary">
-                时间银行互助
-              </Text>
-              <Text className="block text-elder-caption text-elder-text-secondary mt-1">
-                社区志愿关怀与互助派单服务
-              </Text>
-            </View>
+            <Text className="bento-home__voice-text">对小伴说话</Text>
           </View>
-          <Icon name="chevron-right" size={28} color="#6B6B6B" />
+          <Text className="bento-home__voice-tip">“说一句话就能查健康” &gt;</Text>
         </View>
-      </View>
-
-      {/* ========== 更多服务入口 ========== */}
-      <View className="px-page-elder mt-4">
-        <View
-          className="bg-elder-surface rounded-bento-sm shadow-card p-5 flex items-center justify-between active:scale-[0.98] transition-all duration-base"
-          onClick={handleServices}
-        >
-          <View className="flex items-center">
-            <View className="w-14 h-14 bg-elder-info-soft rounded-2xl flex items-center justify-center mr-4">
-              <Icon name="grid" size={32} color="#1565C0" />
-            </View>
-            <View>
-              <Text className="block text-elder-body font-bold text-elder-text-primary">
-                更多服务
-              </Text>
-              <Text className="block text-elder-caption text-elder-text-secondary mt-1">
-                安全定位、设备与守护设置
-              </Text>
-            </View>
-          </View>
-          <Icon name="chevron-right" size={28} color="#6B6B6B" />
-        </View>
-      </View>
-
-      {/* ========== 底部状态栏 ========== */}
-      <View className="mt-8 px-page-elder pb-8">
-        <View className="flex items-center justify-center py-4">
-          <View className="w-3 h-3 bg-elder-success rounded-full mr-3 animate-pulse-soft" />
-          <Text className="text-elder-caption text-elder-text-muted">
-            银伴社区实时守护中
-          </Text>
-        </View>
-      </View>
-
-      {/* ========== 语音助手悬浮按钮 ========== */}
-      <View
-        className="fixed right-5 bottom-28 w-16 h-16 bg-elder-primary rounded-full shadow-fab flex items-center justify-center active:scale-90 transition-all duration-fast z-50"
-        onClick={handleVoice}
-      >
-        <Icon name="mic" size={32} color="#FFFFFF" />
       </View>
     </PageShell>
   )

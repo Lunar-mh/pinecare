@@ -1,12 +1,15 @@
-﻿@use './styles/theme/variables.scss' as *;
+@use './styles/theme/variables.scss' as *;
+@use './styles/theme/glass.scss';
+@use './styles/theme/nutui-theme.scss';
+@use './styles/tokens.scss';
 @use './styles/animations.scss';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 page {
-  background: var(--app-bg, $bg-primary);
-  color: var(--app-text, $text-primary);
+  background: var(--app-bg, #F8F6F0);
+  color: var(--app-text, #18221E);
   font-family: $font-family;
   /* Apply safe area bottom by default */
   padding-bottom: env(safe-area-inset-bottom);
@@ -14,12 +17,11 @@ page {
 
 // 动态主题注入
 .elder-mode {
-  --app-bg: #FFF9F0;
-  --app-text: #1A1A1A;
+  --app-bg: #F8F6F0;
+  --app-text: #18221E;
 }
 
 .family-mode {
-  --app-bg: #F5F7FA;
-  --app-text: #1E293B;
+  --app-bg: #F4F6F5;
+  --app-text: #18221E;
 }
-

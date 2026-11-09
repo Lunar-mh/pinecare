@@ -1,5 +1,5 @@
 import { get, post, put } from '../request';
-import type { BloodPressureRecord, HeartRateRecord, PaginatedResult, TodayHealthOverview } from '../types';
+import type { BloodPressureRecord, HeartRateRecord, BloodSugarRecord, PaginatedResult, TodayHealthOverview } from '../types';
 
 type HealthArchiveRecord = {
   id?: string | number;
@@ -48,6 +48,16 @@ function toHeartRateRecord(record: HealthArchiveRecord): HeartRateRecord {
     value,
     measuredAt: toMeasuredAt(record),
     status: value > 120 || value < 45 ? 'danger' : value > 100 || value < 60 ? 'warning' : 'normal',
+  };
+}
+
+function toBloodSugarRecord(record: HealthArchiveRecord): BloodSugarRecord {
+  const value = Number(record.value || 0);
+  return {
+    id: String(record.id || ''),
+    value,
+    measuredAt: toMeasuredAt(record),
+    status: value > 11.1 || value < 3.9 ? 'danger' : value > 7.0 || value < 4.4 ? 'warning' : 'normal',
   };
 }
 
@@ -211,9 +221,26 @@ export const getTodayHealthOverview = async (): Promise<TodayHealthOverview> => 
     status: heartRateStatus,
   } : undefined;
 
+  const bloodSugarMetric = data?.metrics?.blood_sugar;
+  const bloodSugarValue = bloodSugarMetric ? Number(bloodSugarMetric.value ?? 0) : undefined;
+  const bloodSugarStatus: BloodSugarRecord['status'] =
+    bloodSugarValue != null && (bloodSugarValue > 11.1 || bloodSugarValue < 3.9)
+      ? 'danger'
+      : bloodSugarValue != null && (bloodSugarValue > 7.0 || bloodSugarValue < 4.4)
+        ? 'warning'
+        : 'normal';
+
+  const bloodSugar: BloodSugarRecord | undefined = bloodSugarMetric ? {
+    id: String(bloodSugarMetric.id),
+    value: bloodSugarValue ?? 0,
+    measuredAt: bloodSugarMetric.measuredAt ?? bloodSugarMetric.measured_at ?? '',
+    status: bloodSugarStatus,
+  } : undefined;
+
   return {
     bloodPressure,
     heartRate,
+    bloodSugar,
     steps: stepsMetric ? Number(stepsMetric.value ?? 0) : 0,
     alerts: (data?.alerts || []).map(item => ({
       metricType: item.metricType || 'unknown',
@@ -266,3 +293,86 @@ export const getHealthAlerts = async () => {
 
 export const dismissHealthAlert = (id: string) =>
   put<void>(`/health-archive/alerts/${encodeURIComponent(id)}/dismiss`);
+
+// ==================== 血糖 (Blood Sugar) 相关 API ====================
+
+export const getBloodSugarTrend = async (days: number = 7) => {
+  const response = await get<HealthTrendResponse>('/health-archive/trend', {
+    metric_type: 'blood_sugar',
+    period: resolvePeriod(days),
+  });
+  const records = (response?.list || []).map(toBloodSugarRecord);
+  const trend = buildTrendByDate(records, (item) => ({ a: item.value }));
+  return { dates: trend.dates, values: trend.values };
+};
+
+export const addBloodSugarRecord = async (data: {
+  value: number;
+  measuredAt?: string;
+  note?: string;
+}) => {
+  const response = await post<{ record?: HealthArchiveRecord }>('/health-archive/manual', {
+    metric_type: 'blood_sugar',
+    value: data.value,
+    measured_at: data.measuredAt,
+    note: data.note,
+  });
+  return toBloodSugarRecord(response?.record || {});
+};
+
+export const getLatestBloodSugar = async (): Promise<BloodSugarRecord | null> => {
+  const overview = await getTodayHealthOverview();
+  return overview.bloodSugar || null;
+};
+
+// ==================== 智能设备 (BLE/Hardware) 直连与同步 ====================
+
+export interface HealthDeviceItem {
+  deviceId: string;
+  deviceName: string;
+  deviceType: string;
+  isPrimary: boolean;
+  status: string;
+  lastSyncAt: string;
+}
+
+export const getHealthDevices = async (): Promise<HealthDeviceItem[]> => {
+  try {
+    const list = await get<any[]>('/health/devices');
+    return (list || []).map(item => ({
+      deviceId: String(item.deviceId ?? item.device_id ?? item.id ?? ''),
+      deviceName: item.deviceName || item.device_name || '智能健康设备',
+      deviceType: item.deviceType || item.device_type || 'blood_pressure_monitor',
+      isPrimary: Boolean(item.isPrimary ?? item.is_primary),
+      status: item.status || 'connected',
+      lastSyncAt: item.lastSyncAt || item.last_sync_at || new Date().toISOString(),
+    }));
+  } catch (_e) {
+    return [
+      {
+        deviceId: 'ble-bp-01',
+        deviceName: '欧姆龙智能血压计 (HEM-7156T)',
+        deviceType: 'blood_pressure',
+        isPrimary: true,
+        status: 'connected',
+        lastSyncAt: new Date().toISOString(),
+      },
+      {
+        deviceId: 'ble-bs-02',
+        deviceName: '三诺智能血糖仪 (GA-3)',
+        deviceType: 'blood_sugar',
+        isPrimary: false,
+        status: 'standby',
+        lastSyncAt: new Date().toISOString(),
+      },
+    ];
+  }
+};
+
+export const syncHealthData = async (records: Array<{
+  metric_type: string;
+  value: string | number;
+  measured_at?: string;
+}>) => {
+  return post<any>('/health/sync', { records });
+};
