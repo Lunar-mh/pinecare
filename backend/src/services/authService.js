@@ -19,7 +19,6 @@ const REFRESH_EXPIRES_IN = '7d';
 const REFRESH_EXPIRES_SECONDS = 7 * 24 * 60 * 60;
 const LOCK_THRESHOLD = 5;
 const LOCK_MINUTES = 30;
-const ADMIN_SESSION_PREFIX = 'auth:admin:session:';
 const REFRESH_SECRET_DERIVATION_SALT = 'yinban.jwt.refresh.v1';
 function requiredEnv(name, message) {
   const value = String(process.env[name] || '').trim();

@@ -9,10 +9,6 @@ jest.mock('../../src/models/family', () => ({
   upsertNotificationSettings: jest.fn(),
 }));
 
-jest.mock('../../src/models/familySpace', () => ({
-  getInteractionEvidenceSummary: jest.fn(),
-}));
-
 jest.mock('../../src/models/sosEvent', () => ({
   listActiveByUser: jest.fn(),
 }));
@@ -22,7 +18,6 @@ jest.mock('../../src/services/medicationLogService', () => ({
 }));
 
 const familyModel = require('../../src/models/family');
-const familySpaceModel = require('../../src/models/familySpace');
 const SosEventModel = require('../../src/models/sosEvent');
 const medicationLogService = require('../../src/services/medicationLogService');
 const familyService = require('../../src/services/familyService');
@@ -102,13 +97,6 @@ describe('familyService', () => {
       address: 'Hangzhou Xihu',
       updatedAt: '2026-03-11T09:05:00.000Z',
     });
-    familySpaceModel.getInteractionEvidenceSummary.mockResolvedValue({
-      familyId: 3001,
-      voiceMessageCount: 2,
-      albumCount: 3,
-      pointRecordCount: 5,
-      lastInteractionAt: '2026-03-11T09:06:00.000Z',
-    });
     medicationLogService.getTodaySchedule.mockResolvedValue([
       { status: 'taken', actualTime: '2026-03-11T08:00:00.000Z' },
       { status: 'pending', scheduledTime: '2026-03-11T12:00:00.000Z' },
@@ -127,7 +115,6 @@ describe('familyService', () => {
 
     expect(medicationLogService.getTodaySchedule).toHaveBeenCalledWith(3001);
     expect(SosEventModel.listActiveByUser).toHaveBeenCalledWith(3001, 3);
-    expect(familySpaceModel.getInteractionEvidenceSummary).toHaveBeenCalledWith(3001);
     expect(data.elderProfile).toMatchObject({
       elderId: 3001,
       familyId: 3001,
@@ -143,12 +130,6 @@ describe('familyService', () => {
     expect(data.alerts[1]).toMatchObject({
       type: 'medication',
     });
-    expect(data.interactionEvidenceSummary).toMatchObject({
-      hasInteractionEvidence: true,
-      voiceMessageCount: 2,
-      albumCount: 3,
-      pointRecordCount: 5,
-    });
   });
 
   it('uses the first binding when elderId is not provided', async () => {
@@ -160,7 +141,6 @@ describe('familyService', () => {
     ]);
     familyModel.getLatestHealthSnapshot.mockResolvedValue(null);
     familyModel.getLatestLocation.mockResolvedValue(null);
-    familySpaceModel.getInteractionEvidenceSummary.mockResolvedValue(null);
     medicationLogService.getTodaySchedule.mockResolvedValue([]);
     SosEventModel.listActiveByUser.mockResolvedValue([]);
 

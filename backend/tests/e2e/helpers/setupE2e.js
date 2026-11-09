@@ -449,7 +449,7 @@ jest.mock('../../../src/models/medicationLogModel', () => {
       mockHarness.store.medicationLogs.set(id, log);
       return log;
     }),
-    listByUserAndDay: jest.fn(async (userId, dayStart, dayEndExclusive) => {
+    listByUserAndDay: jest.fn(async (userId, dayStart, _dayEndExclusive) => {
       const day = String(dayStart).slice(0, 10);
       return Array.from(mockHarness.store.medicationLogs.values()).filter(
         (l) => l.user_id === Number(userId) && l.scheduled_date === day
@@ -554,7 +554,7 @@ jest.mock('../../../src/models/volunteerModel', () => {
       if (!t || Number(t.community_id) !== Number(scope.communityId)) return null;
       return t;
     }),
-    listTasksByVolunteer: jest.fn(async (scope, filters, pagination) => {
+    listTasksByVolunteer: jest.fn(async (scope, filters, _pagination) => {
       let list = Array.from(mockHarness.store.volunteerTasks.values()).filter(
         (t) => Number(t.community_id) === Number(scope.communityId)
       );
@@ -692,7 +692,7 @@ jest.mock('../../../src/models/timeBank', () => ({
 }), { virtual: true });
 
 jest.mock('../../../src/services/timeBankService', () => ({
-  recordService: jest.fn(async (providerId, payload) => ({
+  recordService: jest.fn(async (_providerId, _payload) => ({
     recordId: 101,
     recordHash: 'hash-record-101',
     prevHash: 'prev-hash-0',

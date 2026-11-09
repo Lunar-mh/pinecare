@@ -1,7 +1,5 @@
 'use strict';
 
-const logger = require('../utils/logger');
-
 class MedicationService {
   async addMedication(userId, payload) {
     const drugName = String(payload && payload.drugName ? payload.drugName : '').trim();
@@ -21,7 +19,7 @@ class MedicationService {
     };
   }
 
-  async editMedication(userId, payload) {
+  async editMedication(_userId, _payload) {
     return {
       message: 'Medication updated.',
       checkBatchId: null,

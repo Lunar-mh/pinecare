@@ -279,7 +279,7 @@ describe('userService', () => {
       'account_delete'
     );
     expect(UserModel.softDelete).toHaveBeenCalledWith(1);
-    expect(redis.del).toHaveBeenCalledWith('auth:refresh:1');
+    expect(redis.del).toHaveBeenCalledWith('yinban:auth:refresh:1');
     expect(result).toBeNull();
   });
 

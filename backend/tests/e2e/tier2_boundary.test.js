@@ -6,7 +6,7 @@ const fallService = require('../../src/services/fallService');
 
 describe('Tier 2: 边界与极值异常测试 (BVA & Defensive Verification)', () => {
   const elderId = 1001;
-  const familyId = 1002;
+  const _familyId = 1002;
   const volunteerId = 2001;
   const otherVolunteerId = 2002;
 

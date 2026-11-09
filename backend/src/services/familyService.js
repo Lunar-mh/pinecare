@@ -58,7 +58,7 @@ function normalizeNotificationPayload(payload) {
   return updates;
 }
 
-async function getOverviewResources(elderId, familyId) {
+async function getOverviewResources(elderId, _familyId) {
   const safeFetch = (task, fallback) => task.catch(() => fallback);
   return Promise.all([
     familyModel.getLatestHealthSnapshot(elderId),
