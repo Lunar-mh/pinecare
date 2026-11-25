@@ -209,7 +209,7 @@ onMounted(async () => {
           <el-table-column label="用户" min-width="160">
             <template #default="{ row }">
               <div>{{ formatUser(row.nickname) }}</div>
-              <div style="font-size: 12px; color: var(--wb-text-soft); margin-top: 4px">{{ row.phone }}</div>
+              <div style="font-size: 14px; color: var(--wb-text-soft); margin-top: 4px">{{ row.phone }}</div>
             </template>
           </el-table-column>
           <el-table-column prop="latitude" label="纬度" width="100" />

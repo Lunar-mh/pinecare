@@ -10,7 +10,6 @@ import {
   Warning,
   House,
   Bell,
-  Timer,
   Location,
 } from '@element-plus/icons-vue'
 
@@ -60,8 +59,7 @@ export const workbenchNavGroups: WorkbenchNavGroup[] = [
     key: 'community',
     label: '社区运营',
     items: [
-      { index: '/community', label: '社区管理', subtitle: '活动、资源与组织运行', icon: OfficeBuilding },
-      { index: '/timebank', label: '时间银行审核', subtitle: '服务记录、兑换与贡献排名', icon: Timer },
+      { index: '/community', label: '社区管理', subtitle: '助老工单与服务调度运行', icon: OfficeBuilding },
     ],
   },
 ]

@@ -101,7 +101,7 @@ describe('adminDiagnosticsService evidence bundle', () => {
     expect(result.defenseScripts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: 'care_event_chain', ready: true }),
-        expect.objectContaining({ id: 'medical_live_chain', ready: true }),
+        expect.objectContaining({ id: 'volunteer_task_chain', ready: true }),
         expect.objectContaining({ id: 'provider_runtime_board', ready: true }),
       ])
     );

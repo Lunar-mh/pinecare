@@ -20,8 +20,8 @@ export type {
 export {
   getCommunityVolunteers,
   getCommunityStats,
-  getCommunityActivities,
-  createCommunityActivity,
+  getCommunityOrders,
+  createCommunityOrder,
 } from './community'
 export type {
   Pagination,
@@ -29,10 +29,10 @@ export type {
   CommunityVolunteerResult,
   CommunityVolunteerParams,
   CommunityStats,
-  CommunityActivityItem,
-  CommunityActivityResult,
-  CommunityActivityParams,
-  CreateCommunityActivityPayload,
+  CommunityOrderItem,
+  CommunityOrderResult,
+  CommunityOrderParams,
+  CreateCommunityOrderPayload,
 } from './community'
 
 export { getAdminFamilyBindings } from './family'
@@ -43,20 +43,6 @@ export type { SosEventStatus, SosEventItem, SosHistoryResult, SosHistoryParams }
 
 export { getFallHistory, getFallSettings, updateFallSettings } from './fall'
 export type { FallEventStatus, FallEventItem, FallHistoryResult, FallHistoryParams } from './fall'
-
-export {
-  getTimeBankLeaderboard,
-  getTimeBankServiceHistory,
-  confirmTimeBankService,
-  getTimeBankExchangeHistory,
-} from './timebank'
-export type {
-  TimeBankLeaderboardItem,
-  TimeBankServiceRecord,
-  TimeBankServiceHistoryResult,
-  TimeBankExchangeRecord,
-  TimeBankServiceHistoryParams,
-} from './timebank'
 
 export {
   getHealthToday,

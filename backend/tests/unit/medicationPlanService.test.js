@@ -167,4 +167,26 @@ describe('medicationPlanService', () => {
     expect(medicationPlanModel.deleteByIdAndUser).toHaveBeenCalledWith(8, 1);
     expect(result).toEqual({ deleted: true, plan_id: 8 });
   });
+
+  it('rejects zero or negative dosage and xss payloads', async () => {
+    await expect(
+      medicationPlanService.createPlan(1, {
+        medication_name: 'Aspirin',
+        dosage: '0mg',
+        frequency: 'once_daily',
+        remind_times: ['08:00'],
+        start_date: '2026-03-11',
+      })
+    ).rejects.toMatchObject({ code: 400, message: 'dosage must be greater than zero.' });
+
+    await expect(
+      medicationPlanService.createPlan(1, {
+        medication_name: '<script>alert(1)</script>',
+        dosage: '1 tablet',
+        frequency: 'once_daily',
+        remind_times: ['08:00'],
+        start_date: '2026-03-11',
+      })
+    ).rejects.toMatchObject({ code: 400, message: 'medication_name contains unsafe characters.' });
+  });
 });

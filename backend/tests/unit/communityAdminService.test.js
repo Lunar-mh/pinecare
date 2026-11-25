@@ -11,9 +11,7 @@ jest.mock('../../src/models/communityAdmin', () => ({
   createOrder: jest.fn(),
   assignOrder: jest.fn(),
   updateOrderStatus: jest.fn(),
-  listActivities: jest.fn(),
-  countActivities: jest.fn(),
-  createActivity: jest.fn(),
+  getStatsData: jest.fn(),
 }));
 
 jest.mock('../../src/models/adminOpsModel', () => ({
@@ -22,10 +20,6 @@ jest.mock('../../src/models/adminOpsModel', () => ({
   summarizeSosNotifications: jest.fn(),
   getSosEventById: jest.fn(),
   updateSosEventStatus: jest.fn(),
-}));
-
-jest.mock('../../src/services/statisticsService', () => ({
-  getCommunityDashboardStats: jest.fn(),
 }));
 
 jest.mock('../../src/services/adminOpsService', () => ({
@@ -53,7 +47,6 @@ const communityAdminModel = require('../../src/models/communityAdmin');
 const adminOpsModel = require('../../src/models/adminOpsModel');
 const AuditLogModel = require('../../src/models/auditLog');
 const adminOpsService = require('../../src/services/adminOpsService');
-const statisticsService = require('../../src/services/statisticsService');
 const communityAdminService = require('../../src/services/communityAdminService');
 
 describe('communityAdminService', () => {
@@ -181,50 +174,7 @@ describe('communityAdminService', () => {
     expect(result.status).toBe('cancelled');
   });
 
-  it('validates activity time ordering and max participants', async () => {
-    await expect(
-      communityAdminService.createActivity(9, {
-        title: 'Activity',
-        content: 'Body',
-        start_time: '2026-03-11T10:00:00Z',
-        end_time: '2026-03-11T09:00:00Z',
-      })
-    ).rejects.toMatchObject({ code: 400 });
-
-    await expect(
-      communityAdminService.createActivity(9, {
-        title: 'Activity',
-        content: 'Body',
-        start_time: '2026-03-11T09:00:00Z',
-        end_time: '2026-03-11T10:00:00Z',
-        max_participants: '0',
-      })
-    ).rejects.toMatchObject({ code: 400 });
-  });
-
-  it('creates activity with normalized participants', async () => {
-    communityAdminModel.createActivity.mockResolvedValue({ id: 7, title: 'Activity' });
-
-    const result = await communityAdminService.createActivity(9, {
-      title: ' Activity ',
-      content: ' Body ',
-      start_time: '2026-03-11T09:00:00Z',
-      end_time: '2026-03-11T10:00:00Z',
-      max_participants: '20',
-    });
-
-    expect(communityAdminModel.createActivity).toHaveBeenCalledWith({
-      communityId: 9,
-      title: 'Activity',
-      content: 'Body',
-      startTime: '2026-03-11T09:00:00Z',
-      endTime: '2026-03-11T10:00:00Z',
-      maxParticipants: 20,
-    });
-    expect(result.id).toBe(7);
-  });
-
-  it('validates stats date range before delegating', async () => {
+  it('validates stats date range before querying community stats', async () => {
     await expect(
       communityAdminService.getStats(9, {
         start_date: 'bad-date',
@@ -239,8 +189,8 @@ describe('communityAdminService', () => {
     ).rejects.toMatchObject({ code: 400 });
   });
 
-  it('delegates stats aggregation to unified statistics service', async () => {
-    statisticsService.getCommunityDashboardStats.mockResolvedValue({
+  it('delegates stats aggregation to communityAdminModel.getStatsData', async () => {
+    communityAdminModel.getStatsData.mockResolvedValue({
       overview: { active_elders: 2 },
       order_distribution: { pending: 1 },
     });
@@ -250,7 +200,7 @@ describe('communityAdminService', () => {
       end_date: '2026-03-31',
     });
 
-    expect(statisticsService.getCommunityDashboardStats).toHaveBeenCalledWith(9);
+    expect(communityAdminModel.getStatsData).toHaveBeenCalledWith(9);
     expect(result.overview.active_elders).toBe(2);
   });
 

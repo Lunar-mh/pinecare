@@ -52,10 +52,10 @@ export default function HealthRecordsPage() {
                 <DataPanel key={item.id} tone={item.status === 'danger' ? 'danger' : item.status === 'warning' ? 'warning' : 'success'}>
                   <View className="flex justify-between items-center">
                     <View>
-                      <Text className="text-xl font-bold block mb-1">{item.systolic}/{item.diastolic} <Text className="text-sm font-normal text-gray-500">mmHg</Text></Text>
-                      <Text className="text-sm text-gray-400">{new Date(item.measuredAt).toLocaleString()}</Text>
+                      <Text className="text-xl font-bold block mb-1">{item.systolic}/{item.diastolic} <Text className="text-base font-normal text-gray-600">mmHg</Text></Text>
+                      <Text className="text-base text-gray-500">{new Date(item.measuredAt).toLocaleString()}</Text>
                     </View>
-                    <View className={`px-2 py-1 rounded text-xs font-bold ${
+                    <View className={`px-2 py-1 rounded text-base font-bold ${
                        item.status === 'danger' ? 'bg-red-100 text-red-600' : 
                        item.status === 'warning' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
                     }`}>
@@ -77,10 +77,10 @@ export default function HealthRecordsPage() {
                 <DataPanel key={item.id} tone={item.status === 'danger' ? 'danger' : item.status === 'warning' ? 'warning' : 'success'}>
                   <View className="flex justify-between items-center">
                     <View>
-                      <Text className="text-xl font-bold block mb-1">{item.value} <Text className="text-sm font-normal text-gray-500">bpm</Text></Text>
-                      <Text className="text-sm text-gray-400">{new Date(item.measuredAt).toLocaleString()}</Text>
+                      <Text className="text-xl font-bold block mb-1">{item.value} <Text className="text-base font-normal text-gray-600">bpm</Text></Text>
+                      <Text className="text-base text-gray-500">{new Date(item.measuredAt).toLocaleString()}</Text>
                     </View>
-                    <View className={`px-2 py-1 rounded text-xs font-bold ${
+                    <View className={`px-2 py-1 rounded text-base font-bold ${
                        item.status === 'danger' ? 'bg-red-100 text-red-600' : 
                        item.status === 'warning' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
                     }`}>
@@ -101,7 +101,7 @@ export default function HealthRecordsPage() {
     <PageShell roleTone="family" className="bg-gray-50 min-h-screen">
       <View className="bg-white p-4 shadow-sm sticky top-0 z-10">
         <Text className="text-xl font-bold text-gray-900">健康数据流水</Text>
-        <Text className="text-xs text-gray-500">按时间倒序排列的所有原始记录</Text>
+        <Text className="text-base text-gray-500">按时间倒序排列的所有原始记录</Text>
       </View>
 
       <ScrollView className="p-4" scrollY>
@@ -110,16 +110,16 @@ export default function HealthRecordsPage() {
         ) : (
           <View className="space-y-6">
             <View>
-              <Text className="text-sm font-bold text-gray-500 mb-2 block uppercase tracking-wider">最新血压 (近20条)</Text>
+              <Text className="text-base font-bold text-gray-600 mb-2 block uppercase tracking-wider">最新血压 (近20条)</Text>
               {bpList.length === 0 ? <View className="text-gray-400 text-center py-4 bg-white rounded-xl">暂无数据</View> : (
                 <View className="bg-white rounded-xl overflow-hidden shadow-sm">
                   {bpList.map((item, idx) => (
                     <View key={item.id} className={`p-4 flex justify-between items-center ${idx < bpList.length - 1 ? 'border-b border-gray-100' : ''}`}>
                        <View>
                          <Text className="text-lg font-bold text-gray-900">{item.systolic}/{item.diastolic}</Text>
-                         <Text className="text-xs text-gray-400">{new Date(item.measuredAt).toLocaleString()}</Text>
+                         <Text className="text-base text-gray-500">{new Date(item.measuredAt).toLocaleString()}</Text>
                        </View>
-                       <Text className={`text-sm font-bold ${
+                       <Text className={`text-base font-bold ${
                            item.status === 'danger' ? 'text-red-600' : 
                            item.status === 'warning' ? 'text-orange-600' : 'text-green-600'
                        }`}>
@@ -132,16 +132,16 @@ export default function HealthRecordsPage() {
             </View>
 
             <View>
-              <Text className="text-sm font-bold text-gray-500 mb-2 block uppercase tracking-wider">最新心率 (近20条)</Text>
+              <Text className="text-base font-bold text-gray-600 mb-2 block uppercase tracking-wider">最新心率 (近20条)</Text>
               {hrList.length === 0 ? <View className="text-gray-400 text-center py-4 bg-white rounded-xl">暂无数据</View> : (
                 <View className="bg-white rounded-xl overflow-hidden shadow-sm">
                   {hrList.map((item, idx) => (
                     <View key={item.id} className={`p-4 flex justify-between items-center ${idx < hrList.length - 1 ? 'border-b border-gray-100' : ''}`}>
                        <View>
                          <Text className="text-lg font-bold text-gray-900">{item.value} bpm</Text>
-                         <Text className="text-xs text-gray-400">{new Date(item.measuredAt).toLocaleString()}</Text>
+                         <Text className="text-base text-gray-500">{new Date(item.measuredAt).toLocaleString()}</Text>
                        </View>
-                       <Text className={`text-sm font-bold ${
+                       <Text className={`text-base font-bold ${
                            item.status === 'danger' ? 'text-red-600' : 
                            item.status === 'warning' ? 'text-orange-600' : 'text-green-600'
                        }`}>

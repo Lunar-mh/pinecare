@@ -222,7 +222,7 @@ onMounted(() => {
 
 .brand-card__subtitle {
   margin-top: 3px;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--wb-text-soft);
 }
 
@@ -242,8 +242,8 @@ onMounted(() => {
 
 .aside-group__title {
   padding: 8px 12px 6px;
-  font-size: 12px;
-  color: #74857D;
+  font-size: 14px;
+  color: #5C6E66;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -319,7 +319,7 @@ onMounted(() => {
 
 .aside-link__subtitle {
   margin-top: 3px;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--wb-text-soft);
 }
 
@@ -364,7 +364,7 @@ onMounted(() => {
 }
 
 .workbench-layout__eyebrow {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--wb-text-soft);
 }
 
@@ -443,7 +443,7 @@ onMounted(() => {
 
 .header-user__role {
   margin-top: 2px;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--wb-text-soft);
   line-height: 1.2;
 }

@@ -31,25 +31,8 @@ async function runFreshInstallSmoke(options = {}) {
   const requiredFiles = [
     '.env.example',
     '.env.production-live.example',
-    'AGENTS.md',
-    'docs/deployment-playbook.md',
-    'docs/compliance-and-contest-package.md',
-    'docs/four-end-release-candidate.md',
-    'docs/real-data-evidence-pack.md',
-    'docs/live-cutover-handover.md',
-    'docs/live-evidence-templates.md',
-    'docs/error-message-spec.md',
-    'docs/defense-evidence-checklist.md',
-    'docs/release-known-issues.md',
-    'docs/privacy-policy.md',
-    'docs/user-agreement.md',
-    'docs/medical-disclaimer.md',
-    'docs/ai-usage-notice.md',
-    'docs/third-party-services-and-authorizations.md',
-    'docs/data-desensitization-note.md',
-    'docs/test-quality-report.md',
-    'docs/performance-audit-report.md',
-    'docs/security-audit-report.md',
+    'docs/法律与隐私合规协议.md',
+    'docs/系统部署与验收白皮书.md',
   ];
   const missingFiles = requiredFiles.filter((file) => !fs.existsSync(path.join(ROOT_DIR, file)));
   const migrationInfo = migrationRunner.getMigrationFilesInOrder();

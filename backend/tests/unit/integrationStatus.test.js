@@ -5,23 +5,6 @@ jest.mock('fs', () => ({
   readFileSync: jest.fn(),
 }));
 
-jest.mock('../../src/services/aiService', () => ({
-  getCapabilityReport: jest.fn(),
-}));
-
-jest.mock('../../src/services/companionService', () => ({
-  getCapabilityReport: jest.fn(),
-}));
-
-jest.mock('../../src/services/voiceService', () => ({
-  getCapabilityReport: jest.fn(),
-}));
-
-jest.mock('../../src/services/medicalApiService', () => ({
-  getCapabilityReport: jest.fn(),
-  getSourceTag: jest.fn(),
-}));
-
 jest.mock('../../src/services/ossService', () => ({
   getCapabilityReport: jest.fn(),
 }));
@@ -43,10 +26,6 @@ jest.mock('../../src/config/runtimeMode', () => ({
 }));
 
 const fs = require('fs');
-const aiService = require('../../src/services/aiService');
-const companionService = require('../../src/services/companionService');
-const voiceService = require('../../src/services/voiceService');
-const medicalApiService = require('../../src/services/medicalApiService');
 const ossService = require('../../src/services/ossService');
 const wechatNotifier = require('../../src/utils/wechatNotifier');
 const smsNotifyService = require('../../src/services/smsNotifyService');
@@ -70,12 +49,7 @@ describe('integrationStatus', () => {
     jest.clearAllMocks();
     fs.existsSync.mockReturnValue(false);
     fs.readFileSync.mockReturnValue('{}');
-    aiService.getCapabilityReport.mockReturnValue(baseCapability());
-    companionService.getCapabilityReport.mockReturnValue(baseCapability());
-    voiceService.getCapabilityReport.mockReturnValue(baseCapability());
     ossService.getCapabilityReport.mockReturnValue(baseCapability());
-    medicalApiService.getCapabilityReport.mockReturnValue(baseCapability());
-    medicalApiService.getSourceTag.mockReturnValue('third_party_stub');
     wechatNotifier.getCapabilityReport.mockReturnValue(baseCapability());
     smsNotifyService.getCapabilityReport.mockReturnValue({
       key: 'sos_sms_notify',
@@ -99,24 +73,14 @@ describe('integrationStatus', () => {
     });
   });
 
-  it('builds sandbox fallback rows for ai, voice, medical, and notify integrations', () => {
+  it('builds sandbox fallback rows for core integrations', () => {
     const rows = buildIntegrationRows();
     const rowMap = new Map(rows.map((item) => [item.key, item]));
 
-    expect(rowMap.get('ai_consult')).toMatchObject({
+    expect(rowMap.get('oss')).toMatchObject({
       effectiveMode: 'stub',
       healthy: true,
-      source: 'ai_consult_stub',
-    });
-    expect(rowMap.get('voice')).toMatchObject({
-      effectiveMode: 'stub',
-      healthy: true,
-      source: 'voice_stub',
-    });
-    expect(rowMap.get('medical')).toMatchObject({
-      effectiveMode: 'stub',
-      healthy: true,
-      source: 'third_party_stub',
+      source: 'oss_stub',
     });
     expect(rowMap.get('wechat_notify')).toMatchObject({
       effectiveMode: 'stub',
@@ -174,33 +138,11 @@ describe('integrationStatus', () => {
       }
       return '{}';
     });
-    aiService.getCapabilityReport.mockReturnValue(baseCapability({
-      effectiveMode: 'live',
-      liveConfigured: true,
-      missingConfig: [],
-    }));
-    companionService.getCapabilityReport.mockReturnValue(baseCapability({
-      effectiveMode: 'live',
-      liveConfigured: true,
-      missingConfig: [],
-    }));
-    voiceService.getCapabilityReport.mockReturnValue(baseCapability({
-      effectiveMode: 'live',
-      liveConfigured: true,
-      missingConfig: [],
-    }));
     ossService.getCapabilityReport.mockReturnValue(baseCapability({
       effectiveMode: 'live',
       liveConfigured: true,
       missingConfig: [],
     }));
-    medicalApiService.getCapabilityReport.mockReturnValue(baseCapability({
-      effectiveMode: 'live',
-      liveConfigured: true,
-      fallbackAllowed: false,
-      missingConfig: [],
-    }));
-    medicalApiService.getSourceTag.mockReturnValue('third_party_live');
     wechatNotifier.getCapabilityReport.mockReturnValue(baseCapability({
       effectiveMode: 'live',
       liveConfigured: true,
@@ -230,13 +172,7 @@ describe('integrationStatus', () => {
     const rows = buildIntegrationRows();
     const rowMap = new Map(rows.map((item) => [item.key, item]));
 
-    expect(rowMap.get('ai_consult')).toMatchObject({ effectiveMode: 'live', healthy: true });
-    expect(rowMap.get('voice')).toMatchObject({ effectiveMode: 'live', healthy: true });
-    expect(rowMap.get('medical')).toMatchObject({
-      effectiveMode: 'live',
-      healthy: true,
-      source: 'third_party_live',
-    });
+    expect(rowMap.get('oss')).toMatchObject({ effectiveMode: 'live', healthy: true });
     expect(rowMap.get('wechat_notify')).toMatchObject({ effectiveMode: 'live', healthy: true });
     expect(rowMap.get('sos_sms_notify')).toMatchObject({ effectiveMode: 'live', healthy: true });
     expect(rowMap.get('sos_wechat_notify')).toMatchObject({ effectiveMode: 'live', healthy: true });

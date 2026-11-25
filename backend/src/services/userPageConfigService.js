@@ -29,11 +29,11 @@ const SERVICES_BY_ROLE = Object.freeze({
     },
     {
       key: 'service',
-      title: '智慧互助',
-      description: '语音直达操作与社区志愿服务。',
+      title: '设备与紧急设置',
+      description: '绑定监测设备与维护紧急联系人。',
       items: [
-        { key: 'voice', label: '语音助手', description: '说一句就能操作', icon: 'mic', path: '/subpackages/voice_ai/pages/index/index' },
-        { key: 'timebank', label: '时间银行', description: '社区互助志愿服务', icon: 'clock', path: '/subpackages/timebank/pages/index/index' },
+        { key: 'device', label: '设备连接', description: '管理手环和血压仪', icon: 'phone', path: '/subpackages/settings/pages/device/index' },
+        { key: 'emergency', label: '紧急联系人', description: '随时更新求助家人', icon: 'alert', path: '/subpackages/settings/pages/emergency/index' },
       ],
     },
   ],
@@ -51,10 +51,10 @@ const SERVICES_BY_ROLE = Object.freeze({
     {
       key: 'coordination',
       title: '服务协同',
-      description: '联动社区互助与用药安排。',
+      description: '联动居家照护与用药安排。',
       items: [
         { key: 'medication', label: '用药进度', description: '查看今日计划与完成度', icon: 'pill', path: '/subpackages/medication/pages/index/index' },
-        { key: 'timebank', label: '时间银行', description: '社区志愿服务协作', icon: 'clock', path: '/subpackages/timebank/pages/index/index' },
+        { key: 'family_manage', label: '家庭管理', description: '管理长辈绑定与协同', icon: 'settings', path: '/pages/family-manage/index' },
       ],
     },
   ],

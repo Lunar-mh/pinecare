@@ -107,9 +107,9 @@ export default function ElderBentoHome() {
     Taro.navigateTo({ url: '/subpackages/medication/pages/index/index' })
   }
 
-  const handleNavigateToVoice = () => {
+  const handleNavigateToServices = () => {
     triggerHaptic('light')
-    Taro.navigateTo({ url: '/subpackages/voice_ai/pages/index/index' })
+    Taro.switchTab({ url: '/pages/services/index' })
   }
 
   const handleNavigateToSettings = () => {
@@ -220,7 +220,7 @@ export default function ElderBentoHome() {
                   <Text style={{ fontWeight: 700, color: '#18221E' }}>
                     {heartRate ? heartRate.value : '72'}
                   </Text>
-                  <Text style={{ fontSize: '14px', color: '#6F7E77' }}>bpm</Text>
+                  <Text style={{ fontSize: '16px', color: '#485750' }}>bpm</Text>
                 </View>
               </View>
 
@@ -292,21 +292,21 @@ export default function ElderBentoHome() {
         </View>
       </View>
 
-      {/* ========== 底部常驻微晶语音长条 (避让悬浮药丸 Dock) ========== */}
+      {/* ========== 底部常驻微晶守护服务直达长条 (避让悬浮药丸 Dock) ========== */}
       <View className="bento-home__voice-bar-wrap">
         <View
           className="bento-home__voice-bar"
-          onClick={handleNavigateToVoice}
-          aria-label="语音助手，点击直接说话"
+          onClick={handleNavigateToServices}
+          aria-label="更多常用照护服务，点击查看"
           role="button"
         >
           <View className="bento-home__voice-left">
             <View className="bento-home__voice-mic-bubble">
-              <Icon name="mic" size={24} color="#FFFFFF" />
+              <Icon name="heart" size={24} color="#FFFFFF" />
             </View>
-            <Text className="bento-home__voice-text">对小伴说话</Text>
+            <Text className="bento-home__voice-text">常用照护服务</Text>
           </View>
-          <Text className="bento-home__voice-tip">“说一句话就能查健康” &gt;</Text>
+          <Text className="bento-home__voice-tip">“定位守护与设备设置” &gt;</Text>
         </View>
       </View>
     </PageShell>

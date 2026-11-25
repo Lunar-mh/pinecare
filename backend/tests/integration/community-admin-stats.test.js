@@ -4,6 +4,17 @@ const express = require('express');
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 
+jest.mock('../../src/middleware/auth', () =>
+  jest.fn((req, res, next) => {
+    const header = req.headers && req.headers.authorization;
+    if (!header || !header.startsWith('Bearer ')) {
+      return res.status(401).json({ code: 401, message: 'Authentication token is missing.', data: null });
+    }
+    const decoded = require('jsonwebtoken').decode(header.slice(7)) || {};
+    req.user = { userId: Number(decoded.userId || 1004), role: 'admin', isAdmin: false };
+    return next();
+  })
+);
 jest.mock('../../src/middleware/adminAuth', () => jest.fn());
 jest.mock('../../src/services/communityAdminService', () => ({
   getVolunteers: jest.fn(),

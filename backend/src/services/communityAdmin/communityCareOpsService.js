@@ -1,6 +1,7 @@
 'use strict';
 
 const adminOpsModel = require('../../models/adminOpsModel');
+const communityAdminModel = require('../../models/communityAdmin');
 const adminOpsService = require('../adminOpsService');
 const {
   SOS_STATUS_ENUM,
@@ -37,6 +38,20 @@ function delegateToAdminOpsWithAudit(methodName, action, detailBuilder) {
 }
 
 const communityCareOpsService = {
+  async getStats(communityId, query = {}) {
+    requireCommunityScope(communityId);
+    const { start_date: startDate, end_date: endDate } = query || {};
+    if (startDate && Number.isNaN(new Date(startDate).getTime())) {
+      throw createBizError('Invalid start_date.', 400, 400);
+    }
+    if (endDate && Number.isNaN(new Date(endDate).getTime())) {
+      throw createBizError('Invalid end_date.', 400, 400);
+    }
+    if (startDate && endDate && new Date(startDate).getTime() > new Date(endDate).getTime()) {
+      throw createBizError('start_date cannot be later than end_date.', 400, 400);
+    }
+    return communityAdminModel.getStatsData(communityId);
+  },
   getHealthOverview: delegateToAdminOps('getHealthOverview'),
   getMedicationLogs: delegateToAdminOps('getMedicationLogs'),
   updateMedicationLogStatus: delegateToAdminOpsWithAudit(

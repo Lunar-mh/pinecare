@@ -128,11 +128,11 @@ export default function BloodPressurePage() {
             <View className="bg-white rounded-[20px] p-5 flex items-center justify-between opacity-80">
                <View>
                  <Text className="text-2xl font-bold text-gray-700 block mb-1">
-                   {records[0].systolic}/{records[0].diastolic} <Text className="text-sm font-normal text-gray-500">mmHg</Text>
+                   {records[0].systolic}/{records[0].diastolic} <Text className="text-base font-normal text-gray-600">mmHg</Text>
                  </Text>
-                 <Text className="text-gray-400 text-sm">{new Date(records[0].measuredAt).toLocaleString()}</Text>
+                 <Text className="text-gray-500 text-base">{new Date(records[0].measuredAt).toLocaleString()}</Text>
                </View>
-               <View className={`px-3 py-1 rounded-full text-sm font-bold ${
+               <View className={`px-3 py-1 rounded-full text-base font-bold ${
                  records[0].status === 'danger' ? 'bg-red-100 text-red-600' : 
                  records[0].status === 'warning' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
                }`}>
@@ -159,9 +159,9 @@ export default function BloodPressurePage() {
          <View className="flex justify-between items-center mb-4">
             <View className="flex-1">
                <Text className="text-xl font-bold text-gray-900 block">血压记录</Text>
-               <Text className="text-xs text-gray-500">{records.length} 条历史数据</Text>
+               <Text className="text-base text-gray-500">{records.length} 条历史数据</Text>
             </View>
-            <Button size="mini" className="bg-blue-600 text-white border-none rounded-full px-4 py-1 text-sm font-normal m-0" onClick={() => setSystolic(systolic ? '' : 'show_input')}>
+            <Button size="mini" className="bg-blue-600 text-white border-none rounded-full px-4 py-1 text-base font-normal m-0" onClick={() => setSystolic(systolic ? '' : 'show_input')}>
                {systolic === 'show_input' ? '取消' : '添加记录'}
             </Button>
          </View>
@@ -171,15 +171,15 @@ export default function BloodPressurePage() {
            <View className="bg-blue-50 p-4 rounded-xl mb-2 animate-fade-in">
              <View className="flex gap-2 mb-3">
                <View className="flex-1 bg-white rounded-lg p-2">
-                 <Text className="text-xs text-gray-500 block">收缩压</Text>
+                 <Text className="text-base text-gray-600 block">收缩压</Text>
                  <Input className="font-bold text-lg" type="number" placeholder="0" onInput={e => setSystolic(e.detail.value === 'show_input' ? '' : e.detail.value)} />
                </View>
                <View className="flex-1 bg-white rounded-lg p-2">
-                 <Text className="text-xs text-gray-500 block">舒张压</Text>
+                 <Text className="text-base text-gray-600 block">舒张压</Text>
                  <Input className="font-bold text-lg" type="number" placeholder="0" onInput={e => setDiastolic(e.detail.value)} />
                </View>
                <View className="flex-1 bg-white rounded-lg p-2">
-                 <Text className="text-xs text-gray-500 block">脉搏</Text>
+                 <Text className="text-base text-gray-600 block">脉搏</Text>
                  <Input className="font-bold text-lg" type="number" placeholder="选填" onInput={e => setPulse(e.detail.value)} />
                </View>
              </View>
@@ -200,19 +200,19 @@ export default function BloodPressurePage() {
                   <View>
                     <View className="flex items-baseline mb-1">
                       <Text className="text-xl font-bold text-gray-900 mr-2">{record.systolic}/{record.diastolic}</Text>
-                      <Text className="text-sm text-gray-500">mmHg</Text>
+                      <Text className="text-base text-gray-500">mmHg</Text>
                     </View>
-                    <Text className="text-xs text-gray-400">{new Date(record.measuredAt).toLocaleString()}</Text>
+                    <Text className="text-base text-gray-500">{new Date(record.measuredAt).toLocaleString()}</Text>
                   </View>
                   
                   <View className="text-right">
-                    <View className={`inline-block px-2 py-0.5 rounded text-xs font-bold mb-1 ${
+                    <View className={`inline-block px-2 py-0.5 rounded text-base font-bold mb-1 ${
                        record.status === 'danger' ? 'bg-red-100 text-red-600' : 
                        record.status === 'warning' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
                     }`}>
                       {record.status === 'danger' ? '危险' : record.status === 'warning' ? '偏高' : '正常'}
                     </View>
-                    {record.pulse && <Text className="block text-xs text-gray-400">❤ {record.pulse} bpm</Text>}
+                    {record.pulse && <Text className="block text-base text-gray-500">❤ {record.pulse} bpm</Text>}
                   </View>
                </View>
              ))}

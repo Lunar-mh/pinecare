@@ -116,4 +116,32 @@ describe('smsService', () => {
     expect(SmsCodeModel.verifyAndConsume).toHaveBeenCalledWith('13800138000', '123456', 'login');
     expect(result).toEqual({ valid: true, record: { id: 1 } });
   });
+
+  it('sets 900s expire TTL on verify failure and blocks 000000 bypass once locked', async () => {
+    redis.get.mockImplementation(async (key) => {
+      if (String(key).includes('verify_fail')) return '0';
+      return '999999';
+    });
+    redis.incr.mockResolvedValue(1);
+    redis.expire.mockResolvedValue(1);
+
+    const firstFail = await smsService.verifyAndConsumeCode('13800138000', '123456', 'login');
+    expect(firstFail).toEqual({ valid: false, message: 'Invalid SMS code.' });
+    expect(redis.expire).toHaveBeenCalledWith(
+      expect.stringContaining('yinban:sms:verify_fail:'),
+      900
+    );
+
+    redis.get.mockImplementation(async (key) => {
+      if (String(key).includes('verify_fail')) return '5';
+      return '999999';
+    });
+
+    const lockedBypass = await smsService.verifyAndConsumeCode('13800138000', '000000', 'login');
+    expect(lockedBypass).toEqual({
+      valid: false,
+      message: 'Too many failed verification attempts. Please request a new code.',
+    });
+    expect(redis.del).not.toHaveBeenCalled();
+  });
 });

@@ -34,60 +34,9 @@ const loadService = () => {
     getTimeBankServiceRecordById: jest.fn(),
     listTimeBankExchangeHistory: jest.fn(),
     listTimeBankLeaderboard: jest.fn(),
+    settleServiceRecord: jest.fn(),
   };
   const AuditLogModel = { list: jest.fn(), count: jest.fn(), create: jest.fn() };
-  const timeBankModel = { settleServiceRecord: jest.fn() };
-  const aiService = {
-    getCapabilityReport: jest.fn(() => ({
-      provider: 'dashscope-ai-consult',
-      liveConfigured: true,
-      requestedMode: 'auto',
-      effectiveMode: 'stub',
-      fallbackAllowed: true,
-      lastSuccessAt: '2026-03-12T00:00:00.000Z',
-      lastOutcome: 'success',
-      successCount: 1,
-      errorCount: 0,
-    })),
-  };
-  const companionService = {
-    getCapabilityReport: jest.fn(() => ({
-      provider: 'dashscope-ai-companion',
-      liveConfigured: false,
-      requestedMode: 'auto',
-      effectiveMode: 'stub',
-      fallbackAllowed: true,
-      successCount: 0,
-      errorCount: 0,
-    })),
-  };
-  const voiceService = {
-    getCapabilityReport: jest.fn(() => ({
-      provider: 'dashscope-voice',
-      liveConfigured: false,
-      requestedMode: 'auto',
-      effectiveMode: 'mock',
-      fallbackAllowed: true,
-      successCount: 0,
-      errorCount: 1,
-      lastError: { code: '504' },
-    })),
-  };
-  const medicalApiService = {
-    getCapabilityReport: jest.fn(() => ({
-      provider: 'medical-api',
-      liveConfigured: false,
-      mode: 'auto',
-      requestedMode: 'auto',
-      effectiveMode: 'stub',
-      fallbackAllowed: true,
-      missingConfig: ['MEDICAL_API_KEY'],
-      circuitOpen: false,
-      successCount: 0,
-      errorCount: 1,
-    })),
-    getSourceTag: jest.fn(() => 'stub'),
-  };
   const ossService = {
     getCapabilityReport: jest.fn(() => ({
       provider: 'oss-upload',
@@ -183,11 +132,6 @@ const loadService = () => {
   jest.doMock('fs', () => ({ existsSync, readFileSync }));
   jest.doMock('../../src/models/adminOpsModel', () => adminOpsModel);
   jest.doMock('../../src/models/auditLog', () => AuditLogModel);
-  jest.doMock('../../src/models/timeBank', () => timeBankModel);
-  jest.doMock('../../src/services/aiService', () => aiService);
-  jest.doMock('../../src/services/companionService', () => companionService);
-  jest.doMock('../../src/services/voiceService', () => voiceService);
-  jest.doMock('../../src/services/medicalApiService', () => medicalApiService);
   jest.doMock('../../src/services/ossService', () => ossService);
   jest.doMock('../../src/services/systemHealthService', () => systemHealthService);
   jest.doMock('../../src/config/demoScenarios', () => ({ DEMO_SCENARIOS, getDemoScenarioById }));
@@ -223,7 +167,6 @@ const loadService = () => {
     readFileSync,
     adminOpsModel,
     AuditLogModel,
-    timeBankModel,
     getDemoScenarioById,
     systemHealthService,
   };
@@ -569,7 +512,7 @@ describe('adminOpsService', () => {
     });
     loaded.AuditLogModel.create.mockResolvedValueOnce(1);
     await expect(loaded.service.getIntegrationStatus()).resolves.toMatchObject({
-      summary: { totalCount: 9, readiness: true, careEventAuditFailures: 2 },
+      summary: { totalCount: 5, readiness: true, careEventAuditFailures: 2 },
       recentErrors: [{ code: '503' }],
       careEventAudit: { totalFailures: 2 },
       items: expect.arrayContaining([

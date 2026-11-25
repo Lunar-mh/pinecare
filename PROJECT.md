@@ -88,8 +88,8 @@
 | **M1** | 业务路线裁撤与后端规范化治理 | 彻底物理移除语音助手(`/voice`)、时间银行代币商城(`/time-bank`)、社区活动(`/community/activities`)、统计别名(`/statistics`)；聚焦加固 4 大刚需主线与设备接口；补齐核心 JSDoc 中文注释；统一 Redis `yinban:` 命名空间；实现 `runInTransaction` 事务编排；清理 46 个失效测试套件，保持核心测试 100% 绿灯。 | M0 | Sub-Orchestrator 1 | PLANNED |
 | **M2** | 小程序端温润适老“液态玻璃”重构 | 清理 `subpackages/family_health` 残留；统合设计令牌与 SCSS 变量，销毁 10-13px 违规小字；重塑基础适老组件库（`LiquidGlassCard`, `LargeButton`, `MetricCard`, `CustomTabBar`）；重塑 Bento 首页、SOS、用药日历、健康大字报四大核心页面；实施低端机平滑降级；严格控制包体 ≤2MB。 | M0 | Sub-Orchestrator 2 | PLANNED |
 | **M3** | 管理后台与志愿者端重构 | Element Plus 深度玻璃化覆写，重塑 `AdminLayout` 玉白微晶浮雕导航；ECharts 适老图表与 `shallowRef` 内存防护；志愿者端地图抽屉通透化与 60px 大按钮。 | M0 | Sub-Orchestrator 3 | PLANNED |
-| **M4** | 全量 E2E 验收与对抗性强化 | Phase 1：跑通 100% `TEST_READY.md` E2E 测试；Phase 2：派生 Challenger 执行 Tier 5 对抗性与覆盖率空隙挖掘与加固。 | M1, M2, M3, Track A | Sub-Orchestrator 4 | PLANNED |
-| **M5** | 司法完整性审计与 GitHub 远程同步 | Forensic Auditor 独立审计（一票否决）；编制重构工作日志 `REFACTOR_LOG.md`；代码与日志全量 push 至 GitHub 远程仓库；向用户与哨兵发送完成报告。 | M4 | Project Orchestrator | PLANNED |
+| **M4** | 全量 E2E 验收与对抗性强化 | Phase 1：跑通 100% `TEST_READY.md` E2E 测试；Phase 2：派生 Challenger 执行 Tier 5 对抗性与覆盖率空隙挖掘与加固。 | M1, M2, M3, Track A | Sub-Orchestrator 4 | COMPLETED |
+| **M5** | 司法完整性审计与 GitHub 远程同步 | Forensic Auditor 独立审计（一票否决）；编制重构工作日志 `REFACTOR_LOG.md`；代码与日志全量 push 至 GitHub 远程仓库；合并 `main` 并交付。 | M4 | Project Orchestrator | COMPLETED |
 
 ---
 

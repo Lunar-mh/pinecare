@@ -10,7 +10,7 @@ const { isProductionLive } = require('../config/runtimeMode');
 const CODE_TTL_SECONDS = redisKeys.TTL.SMS_CODE;
 const DAILY_LIMIT = 10;
 const VERIFY_FAIL_LIMIT = 5;
-const VERIFY_FAIL_WINDOW_SECONDS = redisKeys.TTL.SMS_FAIL;
+const VERIFY_FAIL_WINDOW_SECONDS = redisKeys.TTL.SMS_VERIFY_FAIL;
 const PURPOSES = new Set(['register', 'login', 'bind', 'reset_password', 'account_delete']);
 
 function getDateKey() {
@@ -62,14 +62,14 @@ async function verifyAndConsumeCode(phone, code, purpose) {
   const normalizedCode = String(code || '').trim();
   const failKey = redisKeys.smsVerifyFail(`${phone}:${purpose}`);
 
-  if (!isProductionLive() && normalizedCode === '000000') {
-    await redis.del(failKey);
-    return { valid: true };
-  }
-
   const failCount = Number(await redis.get(failKey) || 0);
   if (failCount >= VERIFY_FAIL_LIMIT) {
     return { valid: false, message: 'Too many failed verification attempts. Please request a new code.' };
+  }
+
+  if (!isProductionLive() && normalizedCode === '000000') {
+    await redis.del(failKey);
+    return { valid: true };
   }
 
   const redisKey = redisKeys.smsCode(`${phone}:${purpose}`);

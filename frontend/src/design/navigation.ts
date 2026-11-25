@@ -32,7 +32,7 @@ export const homeQuickActionsByRole: Record<'elder' | 'family', NavAction[]> = {
   elder: [
     { key: 'health', label: '健康总览', description: '查看血压、心率与趋势', icon: 'heart', path: '/subpackages/health/pages/index/index' },
     { key: 'medication', label: '今日用药', description: '按时服药与补服提醒', icon: 'pill', path: '/subpackages/medication/pages/index/index' },
-    { key: 'voice', label: '语音助手', description: '一句话发起帮助或查询', icon: 'mic', path: '/subpackages/voice_ai/pages/index/index' },
+    { key: 'location', label: '位置共享', description: '同步安全位置给家人', icon: 'location', path: '/subpackages/location/pages/index/index' },
     { key: 'sos', label: '紧急求助', description: '一键求助并通知家人', icon: 'sos', path: '/subpackages/sos/pages/index/index', badge: '重要' },
   ],
   family: [
@@ -65,11 +65,11 @@ export const serviceClustersByRole: Record<'elder' | 'family', ServiceCluster[]>
     },
     {
       key: 'service',
-      title: '社区互助与助手',
-      description: '语音一键查询，社区志愿服务。',
+      title: '设备与紧急设置',
+      description: '绑定监测设备与维护求助联系人。',
       items: [
-        { key: 'voice', label: '语音助手', description: '说一句就能操作', icon: 'mic', path: '/subpackages/voice_ai/pages/index/index' },
-        { key: 'timebank', label: '时间银行', description: '社区互助服务', icon: 'clock', path: '/subpackages/timebank/pages/index/index' },
+        { key: 'device', label: '设备连接', description: '管理手环与血压计', icon: 'phone', path: '/subpackages/settings/pages/device/index' },
+        { key: 'emergency', label: '紧急联系人', description: '维护求助电话与顺序', icon: 'alert', path: '/subpackages/settings/pages/emergency/index' },
       ],
     },
   ],
@@ -87,10 +87,10 @@ export const serviceClustersByRole: Record<'elder' | 'family', ServiceCluster[]>
     {
       key: 'coordination',
       title: '服务协调',
-      description: '用药监督与社区互助。',
+      description: '用药监督与家庭成员协同。',
       items: [
         { key: 'medication', label: '用药进度', description: '查看今日计划与完成度', icon: 'pill', path: '/subpackages/medication/pages/index/index' },
-        { key: 'timebank', label: '时间银行', description: '社区服务协作', icon: 'clock', path: '/subpackages/timebank/pages/index/index' },
+        { key: 'family_manage', label: '家庭管理', description: '长辈绑定与协同配置', icon: 'settings', path: '/pages/family-manage/index' },
       ],
     },
   ],

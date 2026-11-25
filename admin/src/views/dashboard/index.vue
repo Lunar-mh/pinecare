@@ -548,7 +548,7 @@ onMounted(() => {
 }
 
 .badge-pill {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   padding: 3px 10px;
   border-radius: 999px;
@@ -631,9 +631,9 @@ onMounted(() => {
 
 .panel-tag {
   display: inline-block;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
-  color: #74857D;
+  color: #5C6E66;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 4px;
@@ -793,7 +793,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--wb-text-soft);
 }
@@ -808,7 +808,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--wb-text);
 }
@@ -868,7 +868,7 @@ onMounted(() => {
 }
 
 .event-time-stamp {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--wb-text-soft);
 }
 
@@ -889,7 +889,7 @@ onMounted(() => {
 }
 
 .event-status-tag {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 6px;
@@ -955,7 +955,7 @@ onMounted(() => {
 
 .efficiency-label {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--wb-text);
   margin-top: 8px;
@@ -963,7 +963,7 @@ onMounted(() => {
 
 .efficiency-hint {
   display: block;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--wb-text-soft);
   margin-top: 4px;
 }

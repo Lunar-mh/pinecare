@@ -175,17 +175,6 @@ describe('community admin api contract', () => {
       { method: 'post', path: '/community/orders', body: { service_type: 'visit', elder_id: 1 } },
       { method: 'patch', path: '/community/orders/1/assign', body: { volunteer_id: 8 } },
       { method: 'patch', path: '/community/orders/1/status', body: { status: 'cancelled' } },
-      { method: 'get', path: '/community/activities' },
-      {
-        method: 'post',
-        path: '/community/activities',
-        body: {
-          title: '璁插骇',
-          content: '鍋ュ悍璁插骇',
-          start_time: '2026-03-01 09:00:00',
-          end_time: '2026-03-01 10:00:00',
-        },
-      },
       { method: 'get', path: '/community/stats' },
       { method: 'get', path: '/community/health/overview' },
       { method: 'get', path: '/community/medication/logs' },
@@ -206,22 +195,7 @@ describe('community admin api contract', () => {
         path: '/community/sos/events/1/status',
         body: { status: 'confirmed' },
       },
-      { method: 'get', path: '/community/medical/reports' },
       { method: 'get', path: '/community/fall/events' },
-      { method: 'get', path: '/community/drug-interactions' },
-      {
-        method: 'put',
-        path: '/community/drug-interactions/1/status',
-        body: { status: 'acknowledged' },
-      },
-      { method: 'get', path: '/community/time-bank/service/history' },
-      {
-        method: 'post',
-        path: '/community/time-bank/service/confirm',
-        body: { recordId: 1, action: 'confirm' },
-      },
-      { method: 'get', path: '/community/time-bank/exchange/history' },
-      { method: 'get', path: '/community/time-bank/leaderboard' },
     ];
 
     for (const item of endpoints) {
@@ -268,20 +242,6 @@ describe('community admin api contract', () => {
         .send({ status: 'cancelled' })
     );
     responses.push(
-      await request(app).get('/community/activities').set('Authorization', `Bearer ${token}`)
-    );
-    responses.push(
-      await request(app)
-        .post('/community/activities')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          title: '璁插骇',
-          content: '鍋ュ悍璁插骇',
-          start_time: '2026-03-01 09:00:00',
-          end_time: '2026-03-01 10:00:00',
-        })
-    );
-    responses.push(
       await request(app).get('/community/stats').set('Authorization', `Bearer ${token}`)
     );
     responses.push(
@@ -319,40 +279,7 @@ describe('community admin api contract', () => {
         .send({ status: 'confirmed' })
     );
     responses.push(
-      await request(app).get('/community/medical/reports').set('Authorization', `Bearer ${token}`)
-    );
-    responses.push(
       await request(app).get('/community/fall/events').set('Authorization', `Bearer ${token}`)
-    );
-    responses.push(
-      await request(app).get('/community/drug-interactions').set('Authorization', `Bearer ${token}`)
-    );
-    responses.push(
-      await request(app)
-        .put('/community/drug-interactions/1/status')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ status: 'acknowledged' })
-    );
-    responses.push(
-      await request(app)
-        .get('/community/time-bank/service/history')
-        .set('Authorization', `Bearer ${token}`)
-    );
-    responses.push(
-      await request(app)
-        .post('/community/time-bank/service/confirm')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ recordId: 1, action: 'confirm' })
-    );
-    responses.push(
-      await request(app)
-        .get('/community/time-bank/exchange/history')
-        .set('Authorization', `Bearer ${token}`)
-    );
-    responses.push(
-      await request(app)
-        .get('/community/time-bank/leaderboard')
-        .set('Authorization', `Bearer ${token}`)
     );
 
     responses.forEach((res) => {

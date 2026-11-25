@@ -6,8 +6,6 @@ export * from './user';
 export * from './health';
 export * from './medication';
 export * from './sos';
-export * from './voice';
-export * from './timebank';
 export * from './family';
 export * from './location';
 

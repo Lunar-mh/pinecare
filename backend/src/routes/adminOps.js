@@ -48,11 +48,6 @@ router.get(
   deprecatedRoute('/community/family/bindings'),
   adminOpsController.familyBindings
 );
-router.get(
-  '/medical/reports',
-  deprecatedRoute('/community/medical/reports'),
-  adminOpsController.medicalReports
-);
 
 router.get('/sos/events', deprecatedRoute('/community/sos/events'), adminOpsController.sosEvents);
 router.put(
@@ -66,40 +61,6 @@ router.get(
   '/fall/events',
   deprecatedRoute('/community/fall/events'),
   adminOpsController.fallEvents
-);
-
-router.get(
-  '/drug-interactions',
-  deprecatedRoute('/community/drug-interactions'),
-  adminOpsController.drugInteractions
-);
-router.put(
-  '/drug-interactions/:interactionId/status',
-  adminOpsWriteLimiter,
-  deprecatedRoute('/community/drug-interactions/:interactionId/status'),
-  adminOpsController.updateDrugInteractionStatus
-);
-
-router.get(
-  '/time-bank/service/history',
-  deprecatedRoute('/community/time-bank/service/history'),
-  adminOpsController.timeBankServiceHistory
-);
-router.post(
-  '/time-bank/service/confirm',
-  adminOpsWriteLimiter,
-  deprecatedRoute('/community/time-bank/service/confirm'),
-  adminOpsController.confirmTimeBankService
-);
-router.get(
-  '/time-bank/exchange/history',
-  deprecatedRoute('/community/time-bank/exchange/history'),
-  adminOpsController.timeBankExchangeHistory
-);
-router.get(
-  '/time-bank/leaderboard',
-  deprecatedRoute('/community/time-bank/leaderboard'),
-  adminOpsController.timeBankLeaderboard
 );
 router.get('/system/integrations', adminOpsController.integrationStatus);
 router.get('/system/audit-logs', adminOpsController.auditLogs);

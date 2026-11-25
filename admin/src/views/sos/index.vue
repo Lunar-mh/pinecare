@@ -139,7 +139,7 @@ onMounted(fetchHistory)
           <template #default="{ row }">
             <el-button v-if="row.event_status === 'triggered'" type="warning" link size="small" @click="handleConfirm(row)">确认</el-button>
             <el-button v-if="row.event_status === 'triggered' || row.event_status === 'confirmed'" type="success" link size="small" @click="handleResolve(row)">解决</el-button>
-            <span v-if="row.event_status === 'resolved' || row.event_status === 'cancelled'" style="color: #999; font-size: 13px;">已归档</span>
+            <span v-if="row.event_status === 'resolved' || row.event_status === 'cancelled'" style="color: var(--wb-text-soft); font-size: 14px;">已归档</span>
           </template>
         </el-table-column>
       </el-table>

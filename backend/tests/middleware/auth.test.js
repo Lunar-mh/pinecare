@@ -139,7 +139,7 @@ describe('auth middleware', () => {
     await auth(req, res, next);
 
     expect(next).toHaveBeenCalledTimes(1);
-    expect(redis.get).toHaveBeenCalledWith('auth:admin:session:sid-1');
+    expect(redis.get).toHaveBeenCalledWith('yinban:auth:admin_session:sid-1');
     expect(UserModel.findById).not.toHaveBeenCalled();
     expect(req.user).toEqual({ userId: 0, role: 'admin', isAdmin: true });
   });

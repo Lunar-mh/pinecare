@@ -131,7 +131,7 @@ export default function LocationIndex() {
     <PageShell roleTone="family" className="h-screen flex flex-col bg-gray-50">
       <View className="bg-white p-4 pt-12 shadow-sm z-10">
         <Text className="text-xl font-bold text-gray-900 block">位置守护</Text>
-        <Text className="text-sm text-gray-500">
+        <Text className="text-base text-gray-600">
            {myLocation ? `长辈位置更新于刚刚` : '正在同步长辈位置...'}
         </Text>
       </View>
@@ -164,13 +164,13 @@ export default function LocationIndex() {
             </View>
             <ScrollView scrollY className="max-h-48">
                {safeZones.length === 0 ? (
-                  <View className="py-4 text-center text-gray-400 text-sm">暂无围栏，点击上方 + 添加</View>
+                  <View className="py-4 text-center text-gray-500 text-base">暂无围栏，点击上方 + 添加</View>
                ) : (
                   safeZones.map(zone => (
                      <View key={zone.id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
                         <View>
-                           <Text className="text-base font-bold text-gray-900 block">{zone.name}</Text>
-                           <Text className="text-xs text-gray-500">半径 {zone.radius}米</Text>
+                           <Text className="text-lg font-bold text-gray-900 block">{zone.name}</Text>
+                           <Text className="text-base text-gray-500">半径 {zone.radius}米</Text>
                         </View>
                         <Setting size={16} color="#ccc" />
                      </View>

@@ -4,6 +4,26 @@ const medicationPlanModel = require('../models/medicationPlanModel');
 const { createBizError } = require('../utils/serviceError');
 
 const VALID_FREQUENCIES = ['once_daily', 'twice_daily', 'three_times', 'as_needed'];
+const XSS_PATTERN = /[<>]|javascript\s*:|on\w+\s*=/i;
+
+function assertSafeText(value, fieldName) {
+  if (value === undefined) return;
+  if (XSS_PATTERN.test(value)) {
+    throw createBizError(400, `${fieldName} contains unsafe characters.`, 400);
+  }
+}
+
+function assertValidDosage(value) {
+  if (value === undefined) return;
+  assertSafeText(value, 'dosage');
+  if (!value) {
+    throw createBizError(400, 'dosage is required.', 400);
+  }
+  const numericMatch = /^\s*([+-]?\d+(?:\.\d+)?)/.exec(value);
+  if (numericMatch && Number(numericMatch[1]) <= 0) {
+    throw createBizError(400, 'dosage must be greater than zero.', 400);
+  }
+}
 
 function normalizeDate(input, fieldName) {
   if (input === undefined) return undefined;
@@ -82,7 +102,14 @@ function normalizePayload(payload, options) {
     if (!normalized.dosage) throw createBizError(400, 'dosage is required.', 400);
     if (!normalized.frequency) throw createBizError(400, 'frequency is required.', 400);
     if (!normalized.start_date) throw createBizError(400, 'start_date is required.', 400);
+  } else {
+    if (normalized.medication_name !== undefined && !normalized.medication_name) {
+      throw createBizError(400, 'medication_name is required.', 400);
+    }
   }
+
+  assertSafeText(normalized.medication_name, 'medication_name');
+  assertValidDosage(normalized.dosage);
 
   if (normalized.frequency !== undefined && !VALID_FREQUENCIES.includes(normalized.frequency)) {
     throw createBizError(400, 'frequency is invalid.', 400);

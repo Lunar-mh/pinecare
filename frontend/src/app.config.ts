@@ -62,8 +62,6 @@ export default defineAppConfig({
     },
     { root: 'subpackages/medication', pages: ['pages/index/index', 'pages/add/index'] },
     { root: 'subpackages/sos', pages: ['pages/index/index'] },
-    { root: 'subpackages/voice_ai', pages: ['pages/index/index'] },
-    { root: 'subpackages/timebank', pages: ['pages/index/index'] },
     { root: 'subpackages/location', pages: ['pages/index/index'] },
     { root: 'subpackages/settings', pages: ['pages/index/index', 'pages/device/index', 'pages/emergency/index', 'pages/feedback/index', 'pages/about/index'] }
   ]

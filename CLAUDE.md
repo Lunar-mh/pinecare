@@ -120,25 +120,14 @@ GitHub Actions workflow (`.github/workflows/ci.yml`) runs on push/PR to main:
 
 ## Feature Modules
 
-The 15 functional modules in `specs/` map to backend services:
-- 001: User auth & profile
-- 002: Health archive
-- 003: Medication reminder
-- 004: Emergency SOS
-- 005: Family app
-- 006: Voice interaction
-- 007: Fall detection
-- 008: AI health advice
-- 009: Drug interaction check
-- 010: Time bank (volunteer points)
-- 011: AI companion
-- 012: Family space
-- 013: Community admin
-- 014: GPS tracking & geofencing
-- 015: Medical integration (appointments, reports)
+The platform focuses on four core active business domains backed by unified APIs:
+- **居家健康监测 (Health)**: `001` auth/profile, `002` health archive & device sync
+- **用药提醒 (Medication)**: `003` medication plans, logs, adherence calendar & scheduled reminders
+- **SOS 紧急呼救与跌倒监测 (SOS & Fall)**: `004` emergency SOS, `007` fall detection & timeline replay
+- **守护互助与社区协同 (Mutual Aid & Community)**: `005` family supervision, `010`/`013` volunteer tasks & community orders, `014` GPS tracking & geofencing
 
 ## Key Flows for Demo
 
 1. **SOS/Fall/GPS Alert → Notification → Community Handling → Admin Replay**
-2. **Medical Directory → Appointment → Evidence Interface**
+2. **Health Archive & Medication Plan → Reminder → Adherence Check-in → Family Overview**
 3. **Volunteer Task → Accept → Check-in/out → Complete → Admin Sync**

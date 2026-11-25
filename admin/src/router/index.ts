@@ -19,7 +19,6 @@ const routes: RouteRecordRaw[] = [
       { path: 'gps', name: 'Gps', component: () => import('../views/gps/index.vue'), meta: { title: '定位风险中心' } },
       { path: 'fall', name: 'Fall', component: () => import('../views/fall/index.vue'), meta: { title: '跌倒监测' } },
       { path: 'community', name: 'Community', component: () => import('../views/community/index.vue'), meta: { title: '社区管理' } },
-      { path: 'timebank', name: 'Timebank', component: () => import('../views/timebank/index.vue'), meta: { title: '时间银行审核' } },
     ],
   },
   {

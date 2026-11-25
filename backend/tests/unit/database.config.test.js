@@ -16,7 +16,7 @@ describe('config/database', () => {
   it('creates mysql pool and delegates query execution', async () => {
     const pool = {
       on: jest.fn(),
-      execute: jest.fn().mockResolvedValue([[{ id: 1 }], ['fields']]),
+      query: jest.fn().mockResolvedValue([[{ id: 1 }], ['fields']]),
     };
     const createPool = jest.fn(() => pool);
 
@@ -35,20 +35,25 @@ describe('config/database', () => {
     const database = require('../../src/config/database');
     const result = await database.query('SELECT 1', ['a']);
 
-    expect(createPool).toHaveBeenCalledWith({
-      host: 'mysql.local',
-      port: 13307,
-      user: 'tester',
-      password: 'secret',
-      database: 'yinban_test',
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
-      charset: 'utf8mb4',
-    });
+    expect(createPool).toHaveBeenCalledWith(
+      expect.objectContaining({
+        host: 'mysql.local',
+        port: 13307,
+        user: 'tester',
+        password: 'secret',
+        database: 'yinban_test',
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 100,
+        charset: 'utf8mb4',
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 10000,
+        connectTimeout: 10000,
+      })
+    );
     expect(database.pool).toBe(pool);
     expect(result).toEqual([[{ id: 1 }], ['fields']]);
-    expect(pool.execute).toHaveBeenCalledWith('SELECT 1', ['a']);
+    expect(pool.query).toHaveBeenCalledWith('SELECT 1', ['a']);
 
     const [, handler] = pool.on.mock.calls[0];
     handler({ message: 'db down' });

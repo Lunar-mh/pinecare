@@ -54,10 +54,10 @@ describe('rateLimiter middleware', () => {
 
     await limiter(req, res, next);
 
-    expect(redis.zremrangebyscore).toHaveBeenCalledWith('ai:user:18', 0, expect.any(Number));
-    expect(redis.zadd).toHaveBeenCalledWith('ai:user:18', expect.any(Number), expect.stringContaining('req-2'));
+    expect(redis.zremrangebyscore).toHaveBeenCalledWith('yinban:rate_limit:ai:user:18', 0, expect.any(Number));
+    expect(redis.zadd).toHaveBeenCalledWith('yinban:rate_limit:ai:user:18', expect.any(Number), expect.stringContaining('req-2'));
     expect(req.rateLimit).toEqual({
-      key: 'ai:user:18',
+      key: 'yinban:rate_limit:ai:user:18',
       limit: 5,
       count: 3,
       remaining: 2,
@@ -94,7 +94,7 @@ describe('rateLimiter middleware', () => {
     expect(logger.error).toHaveBeenCalledWith(
       'rateLimiter',
       'redis_error',
-      expect.objectContaining({ actorId: 'user:18', key: 'ratelimit:user:18', message: 'redis down' })
+      expect.objectContaining({ actorId: 'user:18', key: 'yinban:rate_limit:ratelimit:user:18', message: 'redis down' })
     );
   });
 });
