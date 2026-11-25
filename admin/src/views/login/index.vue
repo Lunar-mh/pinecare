@@ -44,7 +44,7 @@ async function handleLogin() {
     <div class="login-shell__backdrop"></div>
     <div class="login-layout">
       <section class="login-story">
-        <div class="login-story__badge">银伴</div>
+        <div class="login-story__badge">青松安护 PineCare</div>
         <h1 class="login-story__title">社区照护工作台</h1>
         <p class="login-story__subtitle">把告警、健康、定位、家庭协同和社区运营收进一个更稳定、更温和的管理界面。</p>
 

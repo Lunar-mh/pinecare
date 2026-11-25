@@ -13,7 +13,7 @@ export default defineAppConfig({
   window: {
     backgroundTextStyle: 'light',
     navigationBarBackgroundColor: '#f6f1e7',
-    navigationBarTitleText: '银伴',
+    navigationBarTitleText: '青松安护',
     navigationBarTextStyle: 'black',
     navigationStyle: 'custom' // We will handle our own nav bars for immersive feeling
   },

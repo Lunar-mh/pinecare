@@ -63,7 +63,7 @@ export default function RoleSelectPage() {
       <View className="mt-auto pb-12 flex flex-col items-center justify-center">
         <View className="flex items-center space-x-2 text-dash-text-sub opacity-60">
           <Icon name="shield-check" size={20} color="#64748B" />
-          <Text className="text-[16px] font-medium">银伴社区安全体系认证</Text>
+          <Text className="text-[16px] font-medium">青松安护社区安全体系认证</Text>
         </View>
       </View>
     </View>

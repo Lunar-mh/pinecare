@@ -22,7 +22,7 @@ type AboutConfig = {
 }
 
 const EMPTY_ABOUT: AboutConfig = {
-  appName: '银伴全域智慧照护平台',
+  appName: '青松安护智慧照护平台',
   appVersion: '1.0.0',
   effectiveDate: '',
   summary: '文档信息加载中。',

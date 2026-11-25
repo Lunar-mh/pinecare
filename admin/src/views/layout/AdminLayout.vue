@@ -66,10 +66,10 @@ onMounted(() => {
     <el-aside :width="collapsed ? '88px' : '288px'" class="workbench-layout__aside">
       <div class="brand-card">
         <div class="brand-card__mark">
-          <span>银</span>
+          <span>松</span>
         </div>
         <div v-if="!collapsed" class="brand-card__copy">
-          <span class="brand-card__title">银伴社区工作台</span>
+          <span class="brand-card__title">青松安护工作台</span>
           <span class="brand-card__subtitle">社区管理·风险响应·适老照护</span>
         </div>
       </div>

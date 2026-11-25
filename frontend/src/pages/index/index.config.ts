@@ -1,3 +1,3 @@
 export default definePageConfig({
-  navigationBarTitleText: '银伴'
+  navigationBarTitleText: '青松安护'
 })

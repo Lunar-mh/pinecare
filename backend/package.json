@@ -1,7 +1,7 @@
 {
-  "name": "yinban-backend",
+  "name": "pinecare-backend",
   "version": "1.0.0",
-  "description": "yinban backend",
+  "description": "PineCare (青松安护) backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

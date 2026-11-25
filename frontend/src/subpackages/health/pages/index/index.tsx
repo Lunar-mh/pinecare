@@ -191,7 +191,7 @@ export default function HealthIndex() {
       {/* 顶部标题栏与趋势图入口 */}
       <View className="health-page__header">
         <View className="health-page__header-left">
-          <Text className="health-page__eyebrow">银伴智慧健康档案</Text>
+          <Text className="health-page__eyebrow">青松安护智慧健康档案</Text>
           <Text className="health-page__title">居家健康大字报</Text>
           <Text className="health-page__subtitle">每日体征大字呈现，看医生直接出示</Text>
         </View>

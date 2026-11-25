@@ -361,7 +361,7 @@ function mapRoleLabel(value) {
   if (normalized === 'volunteer') return '持证志愿者';
   if (normalized === 'admin') return '社区网格员';
   if (normalized === 'family') return '长辈家属';
-  if (normalized === 'elder') return '银伴长辈';
+  if (normalized === 'elder') return '青松长辈';
   return String(value || '志愿先锋');
 }
 
@@ -652,7 +652,7 @@ function renderLogin() {
   return `
     <div class="full-panel" role="form">
       <div class="login-brand">
-        <div class="login-logo-pill">银伴智慧照护 · 志愿先锋</div>
+        <div class="login-logo-pill">青松安护 PineCare · 志愿先锋</div>
         <h1>志愿者工作台</h1>
         <p class="muted login-subtitle">真实接口联调模式，一站式暖心助老服务</p>
       </div>
@@ -788,7 +788,7 @@ function renderProfile() {
   const profile = state.profile || {};
   return `
     <article class="profile-card" aria-label="个人档案">
-      <p class="task-line">志愿者姓名：${escapeHtml(normalizeDisplayName(profile.name, '银伴志愿者'))}</p>
+      <p class="task-line">志愿者姓名：${escapeHtml(normalizeDisplayName(profile.name, '青松志愿者'))}</p>
       <p class="task-line">认证手机号：${escapeHtml(profile.phone || '-')}</p>
       <p class="task-line">服务身份：${escapeHtml(mapRoleLabel(profile.role))}</p>
       <p class="task-line">所属网格站：${escapeHtml(profile.community_id || '-')}</p>
@@ -806,7 +806,7 @@ function renderDashboard() {
       <div class="map-grid-overlay"></div>
       <div class="map-station-badge">
         <span class="station-dot"></span>
-        <span>银伴智慧照护 · 社区互助网格</span>
+        <span>青松安护 · 社区互助网格</span>
       </div>
       <div class="map-top-bar">
         <div class="map-status-pill">

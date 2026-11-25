@@ -85,7 +85,7 @@ export default function ProfilePage() {
     if (userInfo?.nickname) return userInfo.nickname
     if (userInfo?.name) return userInfo.name
     if (userInfo?.phone) return userInfo.phone
-    return '银伴用户'
+    return '青松用户'
   }, [userInfo])
 
   const sections = profileSectionsByRole[role] || []
@@ -203,7 +203,7 @@ export default function ProfilePage() {
         >
           退出登录
         </Button>
-        <Text className="text-center text-base text-gray-500 block pb-8">银伴前端版本 · v{appVersion}</Text>
+        <Text className="text-center text-base text-gray-500 block pb-8">青松安护 PineCare · v{appVersion}</Text>
       </View>
     </PageShell>
   )

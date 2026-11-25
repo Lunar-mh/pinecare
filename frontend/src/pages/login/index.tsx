@@ -101,8 +101,8 @@ export default function LoginPage() {
         <View className="w-20 h-20 bg-yinban-primary/10 rounded-3xl flex items-center justify-center mb-6">
           <Icon name="heart-pulse" size={48} color="#10B981" />
         </View>
-        <Text className="text-dash-hero font-bold text-dash-text-main mb-3">欢迎来到银伴</Text>
-        <Text className="text-dash-body text-dash-text-sub text-center">全域智慧照护平台，守护您的每一天</Text>
+        <Text className="text-dash-hero font-bold text-dash-text-main mb-3">欢迎来到青松安护</Text>
+        <Text className="text-dash-body text-dash-text-sub text-center">PineCare 智慧照护平台，守护您的每一天</Text>
       </View>
 
       {/* 登录表单区域 */}
@@ -206,7 +206,7 @@ export default function LoginPage() {
       {/* 底部协议声明 */}
       <View className="pb-10 flex justify-center items-center px-8">
         <Text className="text-dash-tiny text-dash-text-sub text-center">
-          登录即代表您同意银伴<Text className="text-yinban-primary">《用户服务协议》</Text>与<Text className="text-yinban-primary">《隐私政策》</Text>
+          登录即代表您同意青松安护<Text className="text-yinban-primary">《用户服务协议》</Text>与<Text className="text-yinban-primary">《隐私政策》</Text>
         </Text>
       </View>
     </View>

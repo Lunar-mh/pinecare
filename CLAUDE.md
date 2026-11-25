@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-银伴 (YinBan) is a four-endpoint smart elderly care platform: elder mini-program, family mini-program, community admin dashboard, and volunteer workstation - all sharing a unified backend.
+青松安护 (PineCare，原银伴) is a four-endpoint smart elderly care platform: elder mini-program, family mini-program, community admin dashboard, and volunteer workstation - all sharing a unified backend.
 
 ## Repository Structure
 

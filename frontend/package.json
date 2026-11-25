@@ -1,8 +1,8 @@
 {
-  "name": "yinban-frontend",
+  "name": "pinecare-frontend",
   "private": true,
   "version": "0.0.0",
-  "description": "银伴微信小程序前端（Taro 4 + React）",
+  "description": "青松安护（PineCare）微信小程序前端（Taro 4 + React）",
   "scripts": {
     "dev:weapp": "npm run clean && taro build --type weapp --watch",
     "build:weapp": "npm run clean && taro build --type weapp",

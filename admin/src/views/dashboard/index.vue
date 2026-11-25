@@ -399,7 +399,7 @@ onMounted(() => {
       <!-- 中栏：社区网格与数字孪生全景 (温润暖玉微晶底座) -->
       <main class="dashboard-column center-column" aria-label="社区网格数字孪生">
         <div class="twin-base-jade">
-          <div class="twin-watermark">银伴智慧照护网格</div>
+          <div class="twin-watermark">青松安护社区网格</div>
           <div class="twin-map-canvas">
             <!-- 社区建筑温润立体浮雕 -->
             <div class="building b1" title="幸福里智慧养老服务中心"></div>

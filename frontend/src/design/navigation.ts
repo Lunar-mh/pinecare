@@ -112,7 +112,7 @@ export const profileSectionsByRole: Record<'elder' | 'family', ProfileSection[]>
       items: [
         { key: 'settings', label: '通用设置', description: '声音、通知与偏好', icon: 'settings', path: '/subpackages/settings/pages/index/index' },
         { key: 'feedback', label: '意见反馈', description: '告诉我们哪里还不顺手', icon: 'info', path: '/subpackages/settings/pages/feedback/index' },
-        { key: 'about', label: '关于银伴', description: '版本与产品说明', icon: 'info', path: '/subpackages/settings/pages/about/index' },
+        { key: 'about', label: '关于青松安护', description: '版本与产品说明', icon: 'info', path: '/subpackages/settings/pages/about/index' },
       ],
     },
   ],
@@ -131,7 +131,7 @@ export const profileSectionsByRole: Record<'elder' | 'family', ProfileSection[]>
       title: '支持与关于',
       items: [
         { key: 'feedback', label: '意见反馈', description: '反馈问题与建议', icon: 'info', path: '/subpackages/settings/pages/feedback/index' },
-        { key: 'about', label: '关于银伴', description: '版本、协议与产品介绍', icon: 'info', path: '/subpackages/settings/pages/about/index' },
+        { key: 'about', label: '关于青松安护', description: '版本、协议与产品介绍', icon: 'info', path: '/subpackages/settings/pages/about/index' },
       ],
     },
   ],

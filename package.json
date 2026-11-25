@@ -1,4 +1,7 @@
 {
+  "name": "pinecare",
+  "version": "1.0.0",
+  "description": "青松安护（PineCare）四端智慧照护平台",
   "scripts": {
     "dev:weapp": "npm --prefix frontend run dev:weapp",
     "build:weapp": "npm --prefix frontend run build:weapp",

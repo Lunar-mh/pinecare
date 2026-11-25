@@ -251,7 +251,7 @@ export default function SOSIndex() {
     >
       {/* 头部标题区域 */}
       <View className="sos-page__header">
-        <Text className="sos-page__eyebrow">银伴 24 小时守护</Text>
+        <Text className="sos-page__eyebrow">青松安护 24 小时守护</Text>
         <Text
           className={`sos-page__title ${
             stage === 'ACTIVE_ALARM' ? 'sos-page__title--danger' : ''
