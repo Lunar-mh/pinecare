@@ -27,32 +27,9 @@ jest.mock('../../src/controllers/adminOpsController', () => ({
   gpsCurrent: jest.fn(),
   gpsTrail: jest.fn(),
   familyBindings: jest.fn(),
-  medicalReports: jest.fn((_req, res) =>
-    res.json({
-      code: 0,
-      message: 'ok',
-      data: {
-        source: 'admin',
-        list: [],
-        pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
-      },
-    })
-  ),
   sosEvents: jest.fn(),
   updateSosEventStatus: jest.fn(),
   fallEvents: jest.fn(),
-  drugInteractions: jest.fn(),
-  updateDrugInteractionStatus: jest.fn(),
-  timeBankServiceHistory: jest.fn(),
-  confirmTimeBankService: jest.fn(),
-  timeBankExchangeHistory: jest.fn(),
-  timeBankLeaderboard: jest.fn((_req, res) =>
-    res.json({
-      code: 0,
-      message: 'ok',
-      data: [{ rank: 1, userId: 7, balance: 18 }],
-    })
-  ),
   integrationStatus: jest.fn(),
   auditLogs: jest.fn(),
   eventReplay: jest.fn(),

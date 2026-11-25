@@ -1,5 +1,5 @@
 /**
- * 银伴智慧照护平台 - 暖玉微晶·液态温润 (Warm Jade & Liquid Glass) 设计令牌系统
+ * 青松安护（PineCare）智慧照护平台 - 暖玉微晶·液态温润 (Warm Jade & Liquid Glass) 设计令牌系统
  * 遵循 PROJECT.md §1.2 规范与 WCAG AAA 适老无障碍标准
  * 支持长辈端(elder)和家属端(family)双模式
  */

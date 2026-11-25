@@ -6,7 +6,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-1F6B56)](https://nodejs.org/)
 [![Vue 3](https://img.shields.io/badge/Admin-Vue%203%20%2B%20Element%20Plus-2F6C5B)](./admin)
 [![Taro 4](https://img.shields.io/badge/MiniProgram-Taro%204%20%2B%20React%2018-C86D3B)](./frontend)
-[![Backend Tests](https://img.shields.io/badge/Tests-640%20Passed-1F6B56)](./TEST_READY.md)
+[![Backend Tests](https://img.shields.io/badge/Tests-643%20Passed-1F6B56)](./TEST_READY.md)
 
 ---
 
@@ -114,7 +114,7 @@ pinecare/
 - **交互与排版指标**：
   - 小程序端正文字号底线 `>= 16px`，核心生命体征指标 `36px–48px` 加粗呈现；
   - 管理后台辅助文本字号统一 `>= 14px`，图标图表内置 `shallowRef` 与自动 `dispose` 释放防泄漏；
-  - 小程序采用纯 CSS 微晶质感，主包打包体积严格控制在 2MB 红线以内（当前实测 `553.29 KB`）。
+  - 小程序采用纯 CSS 微晶质感，主包打包体积严格控制在 2MB 红线以内（当前实测 `552.06 KB`）。
 
 ---
 
@@ -176,8 +176,8 @@ npm run format:check       # Prettier 格式检查
 # 分层自动化测试
 npm run test:security      # 安全边界与中间件套件（15 suites / 56 tests）
 npm run test:e2e           # Tier 1–5 端到端与对抗测试（8 suites / 83 tests）
-npx jest tests/unit tests/integration tests/contract --runInBand --coverage=false
-                           # 单元、集成与接口合约全量回归（125 suites / 501 tests）
+npx jest tests/unit tests/integration tests/contract tests/performance --runInBand --coverage=false
+                           # 单元、集成、合约与性能全量回归（134 suites / 504 tests）
 ```
 
 ---

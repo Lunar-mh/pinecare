@@ -130,10 +130,9 @@
 
 ### 4.2 代码结构布局 (Code Layout)
 ```text
-/home/antigravity/MH-ai-ai/old/
+pinecare/
 ├── .agents/
-│   ├── skills/                     # 8 大架构与工程规范（权威指导）
-│   └── teamwork/                   # 协作元数据目录（计划、进度、简报、各智能体工作区）
+│   └── skills/                     # 架构与工程规范技能（权威指导）
 ├── backend/
 │   ├── src/
 │   │   ├── config/                 # 数据库、Redis、密钥与全局配置
@@ -150,7 +149,7 @@
 │   │   ├── styles/theme/           # 全局变量 variables.scss
 │   │   ├── components/elderly/     # 适老微晶组件 (LiquidGlassCard, LargeButton 等)
 │   │   ├── pages/                  # 主包页面 (index, dashboard, profile, login 等)
-│   │   └── subpackages/            # 7 大活跃分包 (health, medication, sos, settings 等)
+│   │   └── subpackages/            # 5 大活跃分包 (health, medication, sos, location, settings)
 ├── admin/                          # 社区管理后台 (Vue 3 + Vite + Element Plus)
 │   ├── src/
 │   │   ├── views/                  # 视图页面 (大屏、工单、长辈监管、事件复盘)

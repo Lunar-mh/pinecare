@@ -221,6 +221,28 @@ async function registerPhone({ phone, code, password, ipAddress, userAgent, requ
   return authResult(tokens, user);
 }
 
+async function handleFailedPasswordAttempt(user, context) {
+  const failedAttempts = Number(user.failed_login_attempts || 0) + 1;
+
+  if (failedAttempts >= LOCK_THRESHOLD) {
+    const lockedUntil = getLockUntilDate();
+    await UserModel.setAccountLock(user.id, lockedUntil, failedAttempts);
+    await writeAuditLog(user.id, 'login_fail', context, {
+      reason: 'locked',
+      failed_attempts: failedAttempts,
+      locked_until: lockedUntil,
+    });
+    throw createBusinessError(423, 'Account is locked.', { locked_until: lockedUntil }, 423);
+  }
+
+  await UserModel.incrementFailedLoginAttempts(user.id);
+  await writeAuditLog(user.id, 'login_fail', context, {
+    reason: 'wrong_password',
+    failed_attempts: failedAttempts,
+  });
+  throw createBusinessError(401, 'Invalid phone or password.', null, 401);
+}
+
 async function loginPhone({ phone, password, ipAddress, userAgent, requestId }) {
   const context = createContext(ipAddress, userAgent, requestId);
   let user = await UserModel.findByPhone(phone);
@@ -238,25 +260,7 @@ async function loginPhone({ phone, password, ipAddress, userAgent, requestId }) 
   }
 
   if (!(await bcrypt.compare(password, user.password_hash))) {
-    const failedAttempts = Number(user.failed_login_attempts || 0) + 1;
-
-    if (failedAttempts >= LOCK_THRESHOLD) {
-      const lockedUntil = getLockUntilDate();
-      await UserModel.setAccountLock(user.id, lockedUntil, failedAttempts);
-      await writeAuditLog(user.id, 'login_fail', context, {
-        reason: 'locked',
-        failed_attempts: failedAttempts,
-        locked_until: lockedUntil,
-      });
-      throw createBusinessError(423, 'Account is locked.', { locked_until: lockedUntil }, 423);
-    }
-
-    await UserModel.incrementFailedLoginAttempts(user.id);
-    await writeAuditLog(user.id, 'login_fail', context, {
-      reason: 'wrong_password',
-      failed_attempts: failedAttempts,
-    });
-    throw createBusinessError(401, 'Invalid phone or password.', null, 401);
+    await handleFailedPasswordAttempt(user, context);
   }
 
   return finalizeUserLogin(user, context, 'login_success', { method: 'phone' });
@@ -347,6 +351,29 @@ async function assertRefreshableUser(userId) {
   return user;
 }
 
+async function rotateAdminRefreshSession(decoded) {
+  const isAdminRefresh =
+    Number(decoded.userId) === 0 && (decoded.isAdmin === true || decoded.role === 'admin');
+  if (Number(decoded.userId) === 0 && !isAdminRefresh) {
+    throw createBusinessError(401, 'Invalid refresh_token.', null, 401);
+  }
+  if (!isAdminRefresh) {
+    return;
+  }
+
+  const sid = String(decoded.sid || '').trim();
+  if (!sid) {
+    throw createBusinessError(401, 'Invalid refresh_token.', null, 401);
+  }
+
+  const adminSession = await redis.get(adminSessionKey(sid));
+  if (!adminSession) {
+    throw createBusinessError(401, 'Invalid refresh_token.', null, 401);
+  }
+
+  await redis.del(adminSessionKey(sid));
+}
+
 async function refreshToken(refreshTokenValue, context = {}) {
   const decoded = decodeRefreshToken(refreshTokenValue);
   validateRefreshPayload(decoded);
@@ -357,25 +384,7 @@ async function refreshToken(refreshTokenValue, context = {}) {
   }
 
   await assertRefreshableUser(decoded.userId);
-
-  const isAdminRefresh = Number(decoded.userId) === 0 && (decoded.isAdmin === true || decoded.role === 'admin');
-  if (Number(decoded.userId) === 0 && !isAdminRefresh) {
-    throw createBusinessError(401, 'Invalid refresh_token.', null, 401);
-  }
-
-  if (isAdminRefresh) {
-    const sid = String(decoded.sid || '').trim();
-    if (!sid) {
-      throw createBusinessError(401, 'Invalid refresh_token.', null, 401);
-    }
-
-    const adminSession = await redis.get(adminSessionKey(sid));
-    if (!adminSession) {
-      throw createBusinessError(401, 'Invalid refresh_token.', null, 401);
-    }
-
-    await redis.del(adminSessionKey(sid));
-  }
+  await rotateAdminRefreshSession(decoded);
 
   const nextTokens = await issueTokens(decoded.userId, {
     ...(decoded.role ? { role: decoded.role } : {}),

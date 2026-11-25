@@ -9,8 +9,6 @@ const MEDICATION_LOG_STATUS = ['pending', 'taken', 'skipped', 'missed'];
 const SOS_EVENT_STATUS = ['triggered', 'confirmed', 'resolved', 'cancelled'];
 const SOS_UPDATE_STATUS = ['confirmed', 'resolved', 'cancelled'];
 const FALL_EVENT_STATUS = ['detecting', 'confirmed', 'cancelled', 'false_alarm'];
-const DRUG_INTERACTION_STATUS = ['pending', 'acknowledged'];
-const TIME_BANK_STATUS = ['pending', 'confirmed', 'cancelled'];
 const MAX_PAGE_SIZE = 100;
 
 const err = (message, code = 400, status = 400) => ({ message, code, status });
@@ -140,22 +138,6 @@ const validateUpdateOrderStatus = chain(
   ),
   reasonCheck
 );
-const validateActivityQuery = chain(...pageAndScope);
-const validateCreateActivity = chain(
-  requiredText('body', 'title'),
-  requiredText('body', 'content'),
-  dateCheck('body', 'start_time', 'Invalid start_time.', true),
-  dateCheck('body', 'end_time', 'Invalid end_time.', true),
-  (req) => {
-    const start = dateMs(req.body.start_time);
-    const end = dateMs(req.body.end_time);
-    return start !== null && end !== null && start >= end
-      ? err('start_time \u5fc5\u987b\u65e9\u4e8e end_time')
-      : null;
-  },
-  intCheck('body', 'max_participants', 'max_participants must be a positive integer.', true),
-  scopeCheck
-);
 const validateStatsQuery = chain(
   dateCheck('query', 'start_date', 'Invalid start_date.'),
   dateCheck('query', 'end_date', 'Invalid end_date.'),
@@ -198,12 +180,6 @@ const validateSosEventQuery = chain(
   scopeCheck
 );
 const validateSosEventId = chain(idCheck('eventId'));
-const validateMedicalReportsQuery = chain(
-  pageCheck,
-  dateCheck('query', 'startDate', 'startDate is invalid.'),
-  dateCheck('query', 'endDate', 'endDate is invalid.'),
-  scopeCheck
-);
 const validateUpdateSosEventStatus = chain(
   statusBodyCheck(SOS_UPDATE_STATUS, 'status must be one of: confirmed, resolved, cancelled.'),
   reasonCheck
@@ -211,38 +187,6 @@ const validateUpdateSosEventStatus = chain(
 const validateFallEventsQuery = chain(
   pageCheck,
   enumCheck('query', 'status', FALL_EVENT_STATUS, 'status is invalid.'),
-  scopeCheck
-);
-const validateDrugInteractionsQuery = chain(
-  enumCheck('query', 'status', DRUG_INTERACTION_STATUS, 'status is invalid.'),
-  limitCheck(1000, 'limit must be in 1-1000.'),
-  scopeCheck
-);
-const validateDrugInteractionId = chain(idCheck('interactionId'));
-const validateDrugInteractionStatus = chain(
-  statusBodyCheck(DRUG_INTERACTION_STATUS, 'status must be one of: pending, acknowledged.')
-);
-const validateTimeBankServiceHistoryQuery = chain(
-  pageCheck,
-  enumCheck('query', 'status', TIME_BANK_STATUS, 'status is invalid.'),
-  scopeCheck
-);
-const validateTimeBankServiceConfirm = chain(
-  intCheck('body', 'recordId', 'recordId must be a positive integer.'),
-  (req) => {
-    const { action } = req.body || {};
-    return action && ['confirm', 'cancel'].includes(action)
-      ? null
-      : err('action must be one of: confirm, cancel.');
-  },
-  scopeCheck
-);
-const validateTimeBankExchangeHistoryQuery = chain(
-  limitCheck(1000, 'limit must be in 1-1000.'),
-  scopeCheck
-);
-const validateTimeBankLeaderboardQuery = chain(
-  limitCheck(500, 'limit must be in 1-500.'),
   scopeCheck
 );
 
@@ -253,8 +197,6 @@ module.exports = {
   validateCreateOrder,
   validateAssignOrder,
   validateUpdateOrderStatus,
-  validateActivityQuery,
-  validateCreateActivity,
   validateStatsQuery,
   validateHealthOverviewQuery,
   validateMedicationLogsQuery,
@@ -265,14 +207,6 @@ module.exports = {
   validateFamilyBindingsQuery,
   validateSosEventQuery,
   validateSosEventId,
-  validateMedicalReportsQuery,
   validateUpdateSosEventStatus,
   validateFallEventsQuery,
-  validateDrugInteractionsQuery,
-  validateDrugInteractionId,
-  validateDrugInteractionStatus,
-  validateTimeBankServiceHistoryQuery,
-  validateTimeBankServiceConfirm,
-  validateTimeBankExchangeHistoryQuery,
-  validateTimeBankLeaderboardQuery,
 };

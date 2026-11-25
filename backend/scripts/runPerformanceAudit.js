@@ -9,8 +9,13 @@ const OUTPUT_DIR = path.join(ROOT_DIR, 'generated', 'audits', 'performance');
 const PERF_FILES = [
   'tests/performance/system.probes.perf.test.js',
   'tests/performance/adminDiagnostics.perf.test.js',
-  'tests/performance/timeBank.perf.test.js',
-  'tests/performance/medical.reports.perf.test.js',
+  'tests/performance/auth.perf.test.js',
+  'tests/performance/communityAdmin.stats.perf.test.js',
+  'tests/performance/fall.report.perf.test.js',
+  'tests/performance/family.health.perf.test.js',
+  'tests/performance/gps.perf.test.js',
+  'tests/performance/health.perf.test.js',
+  'tests/performance/reminder.perf.test.js',
   'tests/performance/sos.trigger.latency.test.js',
 ];
 

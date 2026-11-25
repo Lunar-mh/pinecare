@@ -1,18 +1,33 @@
-﻿import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
-import { Script } from 'node:vm'
+﻿import { execFileSync } from 'node:child_process'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const root = resolve(process.cwd())
-const required = ['src/index.html', 'src/styles.css', 'src/app.js']
-for (const file of required) {
-  const full = resolve(root, file)
-  if (!existsSync(full)) {
-    throw new Error(`missing required file: ${file}`)
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const required = [
+  'src/index.html',
+  'src/styles.css',
+  'src/app.js',
+  'src/state.js',
+  'src/formatters.js',
+  'src/api.js',
+  'src/views.js',
+]
+
+for (const rel of required) {
+  if (!existsSync(resolve(root, rel))) {
+    throw new Error(`Missing required file: ${rel}`)
   }
 }
 
-const appSource = readFileSync(resolve(root, 'src/app.js'), 'utf8')
-new Script(appSource)
+const jsFiles = readdirSync(resolve(root, 'src')).filter((file) => file.endsWith('.js'))
+const allSource = jsFiles
+  .map((file) => {
+    const filePath = resolve(root, 'src', file)
+    execFileSync(process.execPath, ['--check', filePath], { stdio: 'pipe' })
+    return readFileSync(filePath, 'utf8')
+  })
+  .join('\n')
 
 const requiredEndpoints = [
   '/auth/sms-code',
@@ -27,16 +42,16 @@ const requiredEndpoints = [
 ]
 
 for (const endpoint of requiredEndpoints) {
-  if (!appSource.includes(endpoint)) {
-    throw new Error(`missing volunteer flow endpoint reference: ${endpoint}`)
+  if (!allSource.includes(endpoint)) {
+    throw new Error(`Missing endpoint reference in volunteer modules: ${endpoint}`)
   }
 }
 
-const forbiddenHints = ['下一阶段', '后续接入', '待扩展', 'static demo']
-for (const hint of forbiddenHints) {
-  if (appSource.includes(hint)) {
-    throw new Error(`volunteer source still contains placeholder text: ${hint}`)
+const forbiddenWords = ['TODO', 'FIXME', 'placeholder_mock']
+for (const word of forbiddenWords) {
+  if (allSource.includes(word)) {
+    throw new Error(`Found unresolved placeholder keyword "${word}" in volunteer modules`)
   }
 }
 
-console.log('volunteer typecheck passed')
+console.log(`Volunteer typecheck passed (${jsFiles.length} modules verified).`)

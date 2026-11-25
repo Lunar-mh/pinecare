@@ -8,9 +8,6 @@ export type { LargeButtonProps } from './LargeButton';
 export { MetricCard } from './MetricCard';
 export type { MetricCardProps } from './MetricCard';
 
-export { VoiceEntryButton } from './VoiceEntryButton';
-export type { VoiceEntryButtonProps } from './VoiceEntryButton';
-
 export { AlertBanner } from './AlertBanner';
 export type { AlertBannerProps, AlertType } from './AlertBanner';
 

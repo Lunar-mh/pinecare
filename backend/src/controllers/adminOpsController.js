@@ -24,28 +24,11 @@ module.exports = {
   gpsCurrent: buildHandler((req) => adminOpsService.getGpsCurrent(req.query || {})),
   gpsTrail: buildHandler((req) => adminOpsService.getGpsTrail(req.query || {})),
   familyBindings: buildHandler((req) => adminOpsService.getFamilyBindings(req.query || {})),
-  medicalReports: buildHandler((req) => adminOpsService.getMedicalReports(req.query || {})),
   sosEvents: buildHandler((req) => adminOpsService.getSosEvents(req.query || {})),
   updateSosEventStatus: buildHandler((req) =>
     adminOpsService.updateSosEventStatus(req.params.eventId, req.body || {})
   ),
   fallEvents: buildHandler((req) => adminOpsService.getFallEvents(req.query || {})),
-  drugInteractions: buildHandler((req) => adminOpsService.getDrugInteractions(req.query || {})),
-  updateDrugInteractionStatus: buildHandler((req) =>
-    adminOpsService.updateDrugInteractionStatus(req.params.interactionId, req.body || {})
-  ),
-  timeBankServiceHistory: buildHandler((req) =>
-    adminOpsService.getTimeBankServiceHistory(req.query || {})
-  ),
-  confirmTimeBankService: buildHandler((req) =>
-    adminOpsService.confirmTimeBankService(req.body || {})
-  ),
-  timeBankExchangeHistory: buildHandler((req) =>
-    adminOpsService.getTimeBankExchangeHistory(req.query || {})
-  ),
-  timeBankLeaderboard: buildHandler((req) =>
-    adminOpsService.getTimeBankLeaderboard(req.query || {})
-  ),
   integrationStatus: buildHandler(() => adminOpsService.getIntegrationStatus()),
   auditLogs: buildHandler((req) => adminOpsService.getAuditLogs(req.query || {})),
   eventReplay: buildHandler((req) => adminOpsService.getEventReplay(req.query || {})),

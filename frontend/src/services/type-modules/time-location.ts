@@ -1,26 +1,3 @@
-export interface TimeBankAccount {
-  userId: string;
-  balance: number;
-  totalEarned: number;
-  totalSpent: number;
-  level: number;
-  title: string;
-}
-
-export interface ServiceRequest {
-  id: string;
-  type: string;
-  description: string;
-  duration: number;
-  location: string;
-  status: 'open' | 'accepted' | 'completed' | 'cancelled' | 'pending' | 'assigned';
-  requesterId: string;
-  providerId?: string;
-  serviceType?: string;
-  scheduledTime?: string;
-  createdAt: string;
-}
-
 export interface LocationData {
   latitude: number;
   longitude: number;
@@ -38,5 +15,3 @@ export interface SafeZone {
   lat?: number;
   lng?: number;
 }
-
-

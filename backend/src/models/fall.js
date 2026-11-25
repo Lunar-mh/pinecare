@@ -2,9 +2,30 @@
 
 const { query } = require('../config/database');
 
+const EVENT_COLUMNS = `id, user_id, status, sensor_data, sensitivity,
+  detected_at, cancelled_at, confirmed_at, created_at`;
+
 /**
- * 跌倒检测数据模�? */
+ * 跌倒检测数据模型
+ */
 class FallModel {
+  /**
+   * 创建跌倒事件记录（内部统一入口）
+   * @param {number} userId
+   * @param {'detecting'|'false_alarm'} status
+   * @param {object} sensorData
+   * @param {'high'|'medium'|'low'} sensitivity
+   * @returns {Promise<number>}
+   */
+  static async _createEvent(userId, status, sensorData, sensitivity) {
+    const [result] = await query(
+      `INSERT INTO fall_events (user_id, status, sensor_data, sensitivity, detected_at)
+       VALUES (?, ?, ?, ?, NOW())`,
+      [userId, status, JSON.stringify(sensorData || {}), sensitivity]
+    );
+    return result.insertId;
+  }
+
   /**
    * 创建检测中事件
    * @param {number} userId
@@ -13,12 +34,7 @@ class FallModel {
    * @returns {Promise<number>}
    */
   static async createDetectingEvent(userId, sensorData, sensitivity) {
-    const [result] = await query(
-      `INSERT INTO fall_events (user_id, status, sensor_data, sensitivity, detected_at)
-       VALUES (?, 'detecting', ?, ?, NOW())`,
-      [userId, JSON.stringify(sensorData || {}), sensitivity]
-    );
-    return result.insertId;
+    return FallModel._createEvent(userId, 'detecting', sensorData, sensitivity);
   }
 
   /**
@@ -29,34 +45,34 @@ class FallModel {
    * @returns {Promise<number>}
    */
   static async createFalseAlarmEvent(userId, sensorData, sensitivity) {
-    const [result] = await query(
-      `INSERT INTO fall_events (user_id, status, sensor_data, sensitivity, detected_at)
-       VALUES (?, 'false_alarm', ?, ?, NOW())`,
-      [userId, JSON.stringify(sensorData || {}), sensitivity]
-    );
-    return result.insertId;
+    return FallModel._createEvent(userId, 'false_alarm', sensorData, sensitivity);
   }
 
   /**
-   * 根据事件与用户查�?   * @param {number} eventId
+   * 查询单个事件（内部统一入口）
+   * @param {string} whereClause
+   * @param {Array} params
+   * @returns {Promise<object|null>}
+   */
+  static async _findSingleEvent(whereClause, params) {
+    const [rows] = await query(
+      `SELECT ${EVENT_COLUMNS}
+       FROM fall_events
+       WHERE ${whereClause}
+       LIMIT 1`,
+      params
+    );
+    return rows.length > 0 ? FallModel._formatEvent(rows[0]) : null;
+  }
+
+  /**
+   * 根据事件与用户查询
+   * @param {number} eventId
    * @param {number} userId
    * @returns {Promise<object|null>}
    */
   static async findEventByIdAndUser(eventId, userId) {
-    const [rows] = await query(
-      `SELECT id, user_id, status, sensor_data, sensitivity,
-              detected_at, cancelled_at, confirmed_at, created_at
-       FROM fall_events
-       WHERE id = ? AND user_id = ?
-       LIMIT 1`,
-      [eventId, userId]
-    );
-
-    if (rows.length === 0) {
-      return null;
-    }
-
-    return FallModel._formatEvent(rows[0]);
+    return FallModel._findSingleEvent('id = ? AND user_id = ?', [eventId, userId]);
   }
 
   /**
@@ -65,48 +81,41 @@ class FallModel {
    * @returns {Promise<object|null>}
    */
   static async findEventById(eventId) {
-    const [rows] = await query(
-      `SELECT id, user_id, status, sensor_data, sensitivity,
-              detected_at, cancelled_at, confirmed_at, created_at
-       FROM fall_events
-       WHERE id = ?
-       LIMIT 1`,
-      [eventId]
-    );
-
-    if (rows.length === 0) {
-      return null;
-    }
-
-    return FallModel._formatEvent(rows[0]);
+    return FallModel._findSingleEvent('id = ?', [eventId]);
   }
 
   /**
-   * 标记已取�?   * @param {number} eventId
+   * 从 detecting 流转至目标状态
+   * @param {number} eventId
+   * @param {string} setClause
+   * @returns {Promise<boolean>}
+   */
+  static async _transitionFromDetecting(eventId, setClause) {
+    const [result] = await query(
+      `UPDATE fall_events
+       SET ${setClause}
+       WHERE id = ? AND status = 'detecting'`,
+      [eventId]
+    );
+    return result.affectedRows > 0;
+  }
+
+  /**
+   * 标记已取消
+   * @param {number} eventId
    * @returns {Promise<boolean>}
    */
   static async markCancelled(eventId) {
-    const [result] = await query(
-      `UPDATE fall_events
-       SET status = 'cancelled', cancelled_at = NOW()
-       WHERE id = ? AND status = 'detecting'`,
-      [eventId]
-    );
-    return result.affectedRows > 0;
+    return FallModel._transitionFromDetecting(eventId, "status = 'cancelled', cancelled_at = NOW()");
   }
 
   /**
-   * 标记已确�?   * @param {number} eventId
+   * 标记已确认
+   * @param {number} eventId
    * @returns {Promise<boolean>}
    */
   static async markConfirmed(eventId) {
-    const [result] = await query(
-      `UPDATE fall_events
-       SET status = 'confirmed', confirmed_at = NOW()
-       WHERE id = ? AND status = 'detecting'`,
-      [eventId]
-    );
-    return result.affectedRows > 0;
+    return FallModel._transitionFromDetecting(eventId, "status = 'confirmed', confirmed_at = NOW()");
   }
 
   /**
@@ -115,24 +124,18 @@ class FallModel {
    * @returns {Promise<boolean>}
    */
   static async markFalseAlarm(eventId) {
-    const [result] = await query(
-      `UPDATE fall_events
-       SET status = 'false_alarm'
-       WHERE id = ? AND status = 'detecting'`,
-      [eventId]
-    );
-    return result.affectedRows > 0;
+    return FallModel._transitionFromDetecting(eventId, "status = 'false_alarm'");
   }
 
   /**
-   * 查询超过阈值仍处于 detecting 的事�?   * @param {number} seconds
+   * 查询超过阈值仍处于 detecting 的事件
+   * @param {number} seconds
    * @returns {Promise<object[]>}
    */
   static async findExpiredDetectingEvents(seconds) {
     const safeSeconds = Number.isFinite(seconds) ? seconds : 15;
     const [rows] = await query(
-      `SELECT id, user_id, status, sensor_data, sensitivity,
-              detected_at, cancelled_at, confirmed_at, created_at
+      `SELECT ${EVENT_COLUMNS}
        FROM fall_events
        WHERE status = 'detecting'
          AND detected_at <= DATE_SUB(NOW(), INTERVAL ? SECOND)
@@ -143,6 +146,16 @@ class FallModel {
     return rows.map((row) => FallModel._formatEvent(row));
   }
 
+  static _buildHistoryFilter(userId, status) {
+    let whereSql = 'WHERE user_id = ?';
+    const params = [userId];
+    if (status) {
+      whereSql += ' AND status = ?';
+      params.push(status);
+    }
+    return { whereSql, params };
+  }
+
   /**
    * 历史总数
    * @param {number} userId
@@ -150,15 +163,8 @@ class FallModel {
    * @returns {Promise<number>}
    */
   static async countHistory(userId, { status = null } = {}) {
-    let sql = 'SELECT COUNT(1) AS total FROM fall_events WHERE user_id = ?';
-    const params = [userId];
-
-    if (status) {
-      sql += ' AND status = ?';
-      params.push(status);
-    }
-
-    const [rows] = await query(sql, params);
+    const { whereSql, params } = FallModel._buildHistoryFilter(userId, status);
+    const [rows] = await query(`SELECT COUNT(1) AS total FROM fall_events ${whereSql}`, params);
     return rows[0] ? rows[0].total : 0;
   }
 
@@ -172,27 +178,22 @@ class FallModel {
     const safePage = Math.max(1, Number(page) || 1);
     const safePageSize = Math.min(100, Math.max(1, Number(pageSize) || 10));
     const offset = (safePage - 1) * safePageSize;
+    const { whereSql, params } = FallModel._buildHistoryFilter(userId, status);
 
-    let sql = `SELECT id, user_id, status, sensor_data, sensitivity,
-                      detected_at, cancelled_at, confirmed_at, created_at
-               FROM fall_events
-               WHERE user_id = ?`;
-    const params = [userId];
-
-    if (status) {
-      sql += ' AND status = ?';
-      params.push(status);
-    }
-
-    sql += ' ORDER BY detected_at DESC LIMIT ? OFFSET ?';
-    params.push(safePageSize, offset);
-
-    const [rows] = await query(sql, params);
+    const [rows] = await query(
+      `SELECT ${EVENT_COLUMNS}
+       FROM fall_events
+       ${whereSql}
+       ORDER BY detected_at DESC
+       LIMIT ? OFFSET ?`,
+      [...params, safePageSize, offset]
+    );
     return rows.map((row) => FallModel._formatEvent(row));
   }
 
   /**
-   * 查询灵敏度设�?   * @param {number} userId
+   * 查询灵敏度设置
+   * @param {number} userId
    * @returns {Promise<object|null>}
    */
   static async getSensitivitySetting(userId) {
@@ -236,7 +237,9 @@ class FallModel {
   }
 
   /**
-   * 查询可通知联系�?   * 说明：不同环境联系人表命名可能不同，按候选表逐个尝试�?   * @param {number} userId
+   * 查询可通知联系人
+   * 说明：不同环境联系人表命名可能不同，按候选表逐个尝试兼容。
+   * @param {number} userId
    * @returns {Promise<Array<{contactId:number,contactType:string,notifyMethod:string,phone:string|null,wechatOpenId:string|null}>>}
    */
   static async getNotificationContacts(userId) {
@@ -284,7 +287,6 @@ class FallModel {
           wechatOpenId: row.wechat_openid || null,
         }));
       } catch (err) {
-        // 表不存在或字段不匹配时尝试下一个候选表
         if (!FallModel._isSchemaError(err)) {
           throw err;
         }
@@ -325,7 +327,8 @@ class FallModel {
   }
 
   /**
-   * 更新通知状�?   * @param {number} notificationId
+   * 更新通知状态
+   * @param {number} notificationId
    * @param {'pending'|'sent'|'failed'} status
    * @returns {Promise<void>}
    */
@@ -387,7 +390,8 @@ class FallModel {
   }
 
   /**
-   * 格式化事件字�?   * @param {object} row
+   * 格式化事件字段
+   * @param {object} row
    * @returns {object}
    */
   static _formatEvent(row) {
@@ -425,7 +429,8 @@ class FallModel {
   }
 
   /**
-   * 判断是否为可容忍的库表兼容错�?   * @param {Error} err
+   * 判断是否为可容忍的库表兼容错误
+   * @param {Error} err
    * @returns {boolean}
    */
   static _isSchemaError(err) {
@@ -440,4 +445,3 @@ class FallModel {
 }
 
 module.exports = FallModel;
-

@@ -23,7 +23,6 @@
     "seed:competition:verify": "node scripts/verifyCompetitionSeed.js",
     "seed:competition:snapshot": "node scripts/snapshotCompetitionSeedDb.js",
     "seed:competition:refresh": "node scripts/refreshCompetitionSeed.js",
-    "medical:directory:import": "node scripts/importMedicalDirectory.js",
     "sos:preview:payload": "node scripts/previewSosNotifyPayload.js",
     "smoke:fresh-install": "node scripts/freshInstallSmoke.js",
     "test:performance": "jest tests/performance --runInBand --coverage=false",

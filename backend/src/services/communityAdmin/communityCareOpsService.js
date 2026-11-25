@@ -66,37 +66,7 @@ const communityCareOpsService = {
   getGpsCurrent: delegateToAdminOps('getGpsCurrent'),
   getGpsTrail: delegateToAdminOps('getGpsTrail'),
   getFamilyBindings: delegateToAdminOps('getFamilyBindings'),
-  getMedicalReports: delegateToAdminOps('getMedicalReports'),
   getFallEvents: delegateToAdminOps('getFallEvents'),
-  getDrugInteractions: delegateToAdminOps('getDrugInteractions'),
-  updateDrugInteractionStatus: delegateToAdminOpsWithAudit(
-    'updateDrugInteractionStatus',
-    'community.drug_interaction.status_update',
-    (communityId, interactionId, result) => ({
-      community_id: Number(communityId),
-      interaction_id: Number(interactionId),
-      status_to: result.status,
-    })
-  ),
-  getTimeBankServiceHistory: delegateToAdminOps('getTimeBankServiceHistory'),
-  confirmTimeBankService: async (communityId, body = {}, actor = {}) => {
-    requireCommunityScope(communityId);
-
-    const result = await adminOpsService.confirmTimeBankService({
-      ...body,
-      communityId,
-    });
-
-    await writeAuditLog(actor, 'community.time_bank.service_settle', {
-      community_id: Number(communityId),
-      record_id: Number(result.recordId),
-      status_to: result.status,
-    });
-
-    return result;
-  },
-  getTimeBankExchangeHistory: delegateToAdminOps('getTimeBankExchangeHistory'),
-  getTimeBankLeaderboard: delegateToAdminOps('getTimeBankLeaderboard'),
 
   async getSosEvents(communityId, query = {}) {
     requireCommunityScope(communityId);

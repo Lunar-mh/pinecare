@@ -69,15 +69,6 @@ function getCompetitionSeedAssetStatus() {
 
 function resolveCapabilitySource(key, capability) {
   const effectiveMode = capability ? capability.effectiveMode : 'stub';
-  if (key === 'ai_consult') {
-    return effectiveMode === 'live' ? 'dashscope_live' : 'ai_consult_stub';
-  }
-  if (key === 'ai_companion') {
-    return effectiveMode === 'live' ? 'ai_companion_live' : 'ai_companion_stub';
-  }
-  if (key === 'voice') {
-    return effectiveMode === 'live' ? 'voice_live' : 'voice_stub';
-  }
   if (key === 'oss') {
     return effectiveMode === 'live' ? 'oss_live' : 'oss_stub';
   }

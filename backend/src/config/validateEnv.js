@@ -79,7 +79,9 @@ function validateJwtSecretStrength() {
 
   if (isProductionLive()) {
     if (!refreshSecret) {
-      throw new Error('JWT_REFRESH_SECRET is required in PRODUCTION_LIVE mode. It must differ from JWT_SECRET.');
+      throw new Error(
+        'JWT_REFRESH_SECRET is required in PRODUCTION_LIVE mode. It must differ from JWT_SECRET.'
+      );
     }
     if (refreshSecret === secret) {
       throw new Error('JWT_REFRESH_SECRET must differ from JWT_SECRET in PRODUCTION_LIVE mode.');
@@ -89,7 +91,9 @@ function validateJwtSecretStrength() {
 
   if (!refreshSecret || refreshSecret === secret) {
     process.env.JWT_REFRESH_SECRET = deriveRefreshSecret(secret);
-    console.warn('[validateEnv] JWT_REFRESH_SECRET is missing or duplicated. A derived refresh secret has been applied.');
+    console.warn(
+      '[validateEnv] JWT_REFRESH_SECRET is missing or duplicated. A derived refresh secret has been applied.'
+    );
   }
 }
 
@@ -100,6 +104,7 @@ function isBcryptHash(value) {
 function resolveAdminPasswordHash() {
   return String(process.env.ADMIN_PASSWORD_HASH || process.env.ADMIN_PASSWORD || '').trim();
 }
+
 function isPlaceholderValue(value) {
   const normalized = String(value || '')
     .trim()
@@ -153,52 +158,13 @@ function validateProductionSecrets() {
   const adminUsername = String(process.env.ADMIN_USERNAME || '').trim();
   const adminPasswordHash = resolveAdminPasswordHash();
   if (!adminUsername || !adminPasswordHash) {
-    throw new Error('ADMIN_USERNAME and ADMIN_PASSWORD_HASH are required in PRODUCTION_LIVE mode.');
+    throw new Error(
+      'ADMIN_USERNAME and ADMIN_PASSWORD_HASH are required in PRODUCTION_LIVE mode.'
+    );
   }
 
   if (!isBcryptHash(adminPasswordHash)) {
     throw new Error('ADMIN_PASSWORD_HASH must be a valid bcrypt hash in PRODUCTION_LIVE mode.');
-  }
-}
-
-function validateAiConfig() {
-  const mode = resolveServiceMode('AI_CONSULT_MODE');
-  if (mode === 'live' || isProductionLive()) {
-    requireEnv(['DASHSCOPE_API_KEY'], 'AI consult live mode requires environment variables');
-  }
-}
-
-function validateVoiceConfig() {
-  const mode = resolveServiceMode('VOICE_SERVICE_MODE');
-  if (mode !== 'live' && !isProductionLive()) {
-    return;
-  }
-
-  requireEnv(['DASHSCOPE_API_KEY'], 'Voice live mode requires environment variables');
-
-  const ossMode = resolveServiceMode('OSS_MODE');
-  const hasUploadApi =
-    Boolean(String(process.env.OSS_UPLOAD_API_URL || '').trim()) &&
-    Boolean(String(process.env.OSS_UPLOAD_TOKEN || '').trim());
-  const hasDirectOssConfig =
-    Boolean(String(process.env.OSS_ENDPOINT || '').trim()) &&
-    Boolean(String(process.env.OSS_ACCESS_KEY_ID || '').trim()) &&
-    Boolean(String(process.env.OSS_ACCESS_KEY_SECRET || '').trim());
-
-  if ((ossMode === 'live' || isProductionLive()) && !hasUploadApi && !hasDirectOssConfig) {
-    throw new Error(
-      'Voice live mode requires OSS live upload configuration: OSS_UPLOAD_API_URL + OSS_UPLOAD_TOKEN or OSS_ENDPOINT + OSS_ACCESS_KEY_ID + OSS_ACCESS_KEY_SECRET.'
-    );
-  }
-}
-
-function validateMedicalConfig() {
-  const mode = resolveServiceMode('MEDICAL_API_MODE');
-  if (mode === 'live' || isProductionLive()) {
-    requireEnv(
-      ['MEDICAL_API_BASE_URL', 'MEDICAL_API_KEY'],
-      'Medical API live mode requires environment variables'
-    );
   }
 }
 
@@ -208,7 +174,10 @@ function validateWeChatConfig() {
     return;
   }
 
-  requireEnv(['WX_ACCESS_TOKEN', 'WX_MSG_TEMPLATE_ID'], 'WeChat notify live mode requires environment variables');
+  requireEnv(
+    ['WX_ACCESS_TOKEN', 'WX_MSG_TEMPLATE_ID'],
+    'WeChat notify live mode requires environment variables'
+  );
 }
 
 function validateOssConfig() {
@@ -243,9 +212,6 @@ function validateEnv() {
   validateJwtSecretStrength();
   normalized.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
   validateProductionSecrets();
-  validateAiConfig();
-  validateVoiceConfig();
-  validateMedicalConfig();
   validateWeChatConfig();
   validateOssConfig();
 
@@ -258,7 +224,3 @@ function validateEnv() {
 module.exports = {
   validateEnv,
 };
-
-
-
-

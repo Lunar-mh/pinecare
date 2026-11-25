@@ -298,7 +298,7 @@ describe('admin ops smoke', () => {
             action: 'admin.demo.bootstrap',
             ip_address: '127.0.0.1',
             user_agent: 'jest',
-            details: '{"scenarioId":"medical-consultation"}',
+            details: '{"scenarioId":"auth-medication-sos"}',
             created_at: '2026-03-10 10:00:00',
           },
         ],
@@ -338,11 +338,11 @@ describe('admin ops smoke', () => {
     const res = await request(app)
       .post('/api/v1/admin/system/demo/bootstrap')
       .set('Authorization', `Bearer ${createAdminToken()}`)
-      .send({ scenarioId: 'medical-consultation' });
+      .send({ scenarioId: 'auth-medication-sos' });
 
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
-    expect(res.body.data.scenarioId).toBe('medical-consultation');
+    expect(res.body.data.scenarioId).toBe('auth-medication-sos');
     expect(res.body.data.status).toBe('ready');
     expect(Array.isArray(res.body.data.replayLog)).toBe(true);
     expect(res.body.data.competitionDataAssets.commands).toContain('npm run seed:competition:sql');

@@ -110,22 +110,6 @@ function mapFamilyBindingRow(row) {
   };
 }
 
-function mapMedicalReportRow(row) {
-  return {
-    id: Number(row.id),
-    userId: Number(row.user_id),
-    userName: getUserLabel(row),
-    userPhone: row.phone || '',
-    reportNo: row.report_no,
-    reportType: row.report_type,
-    reportDate: row.report_date,
-    reportUrl: row.report_url || null,
-    reportData: row.report_data || null,
-    syncStatus: row.sync_status,
-    createdAt: row.created_at,
-  };
-}
-
 function mapFallEventRow(item) {
   return {
     id: Number(item.id),
@@ -142,75 +126,11 @@ function mapFallEventRow(item) {
   };
 }
 
-function mapDrugInteractionRow(item) {
-  return {
-    id: Number(item.id),
-    userId: Number(item.user_id),
-    userName: getUserLabel(item),
-    userPhone: item.phone || '',
-    drugA: item.drug_a,
-    drugB: item.drug_b,
-    level: item.level,
-    mechanism: item.mechanism || '',
-    riskDescription: item.risk_description || '',
-    suggestion: item.suggestion || '',
-    status: item.status,
-    checkBatchId: item.check_batch_id,
-    createdAt: item.created_at,
-  };
-}
-
-function mapTimeBankHistoryRow(item) {
-  return {
-    id: Number(item.id),
-    providerId: Number(item.provider_id),
-    providerName: item.provider_nickname || `User${item.provider_id}`,
-    recipientId: Number(item.recipient_id),
-    recipientName: item.recipient_nickname || `User${item.recipient_id}`,
-    serviceType: item.service_type,
-    startTime: item.start_time,
-    endTime: item.end_time,
-    durationHours: Number(item.duration_hours),
-    timeCoins: Number(item.time_coins),
-    status: item.status,
-    createdAt: item.created_at,
-  };
-}
-
-function mapTimeBankExchangeRow(item) {
-  return {
-    id: Number(item.id),
-    userId: Number(item.user_id),
-    exchangeType: item.exchange_type,
-    itemName: item.item_name,
-    coinsRequired: Number(item.coins_required),
-    status: item.status,
-    createdAt: item.created_at,
-    completedAt: item.completed_at,
-  };
-}
-
-function mapLeaderboardRow(item, index) {
-  return {
-    rank: index + 1,
-    userId: Number(item.user_id),
-    balance: Number(item.balance),
-    totalEarned: Number(item.total_earned),
-    creditScore: Number(item.credit_score),
-    creditLevel: item.credit_level,
-  };
-}
-
 module.exports = {
-  mapDrugInteractionRow,
   mapFallEventRow,
   mapFamilyBindingRow,
   mapGpsCurrentRow,
   mapGpsTrailRow,
   mapHealthOverviewRow,
-  mapLeaderboardRow,
   mapMedicationLogRow,
-  mapMedicalReportRow,
-  mapTimeBankExchangeRow,
-  mapTimeBankHistoryRow,
 };

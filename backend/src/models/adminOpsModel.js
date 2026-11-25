@@ -3,5 +3,4 @@
 module.exports = {
   ...require('./adminOps/healthMedication'),
   ...require('./adminOps/medicalSos'),
-  ...require('./adminOps/timeBank'),
 };

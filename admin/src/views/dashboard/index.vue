@@ -2,24 +2,31 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { 
-  Refresh, 
-  ArrowRight, 
-  User, 
-  Location, 
-  CircleCheckFilled 
+import {
+  Refresh,
+  ArrowRight,
+  User,
+  Location,
+  CircleCheckFilled,
 } from '@element-plus/icons-vue'
-import * as echarts from 'echarts'
 import { useECharts } from '@/composables/useECharts'
 import { getRecentActivities, getDashboardStats } from '@/services'
 import type { ActivityItem, DashboardOverviewStats } from '@/services'
+import {
+  eventDesc,
+  formatEventStatus,
+  formatEventType,
+  formatEventUser,
+  formatTime,
+  isDanger,
+} from './formatters'
+import { buildRadarChartOption, buildTrendChartOption } from './chartOptions'
 
 const router = useRouter()
 const recentEvents = ref<ActivityItem[]>([])
 const eventsLoading = ref(false)
 const statsLoading = ref(false)
 
-// 动态统计数据
 const dashboardStats = ref<DashboardOverviewStats>({
   communityCoverage: 88,
   systemLoad: 24,
@@ -29,61 +36,16 @@ const dashboardStats = ref<DashboardOverviewStats>({
   mapZoom: 14.5,
 })
 
-// 图表容器引用
 const trendChartRef = ref<HTMLElement | null>(null)
 const radarChartRef = ref<HTMLElement | null>(null)
-
-// 采用组合式函数托管图表实例（内置 shallowRef、ResizeObserver 与自动生命周期释放）
 const { setOption: setTrendOption } = useECharts(trendChartRef)
 const { setOption: setRadarOption } = useECharts(radarChartRef)
 
-function formatTime(value: string): string {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--:--:--'
-  return date.toLocaleTimeString('zh-CN', { hour12: false })
-}
-
-function eventDesc(item: ActivityItem): string {
-  return `${formatEventType(item.type)} - ${formatEventStatus(item.status)}`
-}
-
-function isDanger(item: ActivityItem): boolean {
-  const normalizedStatus = item.status.toLowerCase()
-  const normalizedType = item.type.toLowerCase()
-  return normalizedStatus.includes('trigger') || normalizedType.includes('sos') || normalizedType.includes('fall')
-}
-
-function formatEventType(value: string): string {
-  const normalized = String(value || '').trim().toLowerCase()
-  if (!normalized) return '未知事件'
-  if (normalized.includes('sos')) return 'SOS 紧急求助'
-  if (normalized.includes('fall')) return '疑似跌倒预警'
-  if (normalized.includes('medication')) return '用药遗漏提醒'
-  if (normalized.includes('gps') || normalized.includes('location')) return '越界定位告警'
-  return String(value || '')
-}
-
-function formatEventStatus(value: string): string {
-  const normalized = String(value || '').trim().toLowerCase()
-  if (!normalized) return '待响应'
-  if (normalized.includes('trigger')) return '触发处置中'
-  if (normalized.includes('confirm')) return '已指派确认'
-  if (normalized.includes('resolve') || normalized.includes('complete')) return '已闭环处置'
-  if (normalized.includes('cancel')) return '已安全解除'
-  if (normalized.includes('pending')) return '排队待响应'
-  if (normalized.includes('processing')) return '上门核实中'
-  return String(value || '')
-}
-
-function formatEventUser(value: string): string {
-  const raw = String(value || '').trim()
-  const elderMatch = /^elder[_-]?(\d+)$/i.exec(raw)
-  if (elderMatch) return `长者 ${elderMatch[1]} 号`
-  const familyMatch = /^family[_-]?(\d+)$/i.exec(raw)
-  if (familyMatch) return `家属 ${familyMatch[1]} 号`
-  const volunteerMatch = /^volunteer[_-]?(\d+)$/i.exec(raw)
-  if (volunteerMatch) return `守护员 ${volunteerMatch[1]} 号`
-  return raw || '社区长者'
+const QUICK_ROUTES: Record<string, string> = {
+  sos: '/sos',
+  users: '/users',
+  analytics: '/analytics',
+  health: '/health',
 }
 
 async function fetchRecentEvents() {
@@ -99,163 +61,14 @@ async function fetchRecentEvents() {
 }
 
 function handleEventClick(item: ActivityItem) {
-  if (isDanger(item) || formatEventType(item.type).includes('SOS')) {
-    router.push('/sos')
-  } else {
-    router.push('/users')
-  }
+  router.push(isDanger(item) || formatEventType(item.type).includes('SOS') ? '/sos' : '/users')
 }
 
 function quickAction(type: string) {
-  if (type === 'sos') router.push('/sos')
-  if (type === 'users') router.push('/users')
-  if (type === 'analytics') router.push('/analytics')
-  if (type === 'health') router.push('/health')
+  const target = QUICK_ROUTES[type]
+  if (target) router.push(target)
 }
 
-// 渲染真实 ECharts 24小时告警趋势折线图
-function renderTrendChart() {
-  const hours = ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00', '24:00']
-  // 结合真实待处理告警基数动态模拟波形，避免静态假 SVG
-  const baseAlert = dashboardStats.value.pendingAlerts || 1
-  const trendData = [
-    Math.max(0, baseAlert - 1),
-    Math.max(0, baseAlert),
-    Math.max(1, baseAlert + 1),
-    baseAlert + 3,
-    baseAlert + 2,
-    baseAlert + 4,
-    baseAlert + 1,
-    baseAlert + 2,
-    baseAlert,
-  ]
-
-  setTrendOption({
-    grid: {
-      left: '3%',
-      right: '4%',
-      top: '15%',
-      bottom: '10%',
-      containLabel: true,
-    },
-    tooltip: {
-      trigger: 'axis',
-      formatter: '{b}<br/><span style="display:inline-block;margin-right:4px;border-radius:10px;width:10px;height:10px;background-color:#1F6B56;"></span>告警频次: <strong>{c} 次</strong>',
-    },
-    xAxis: {
-      type: 'category',
-      data: hours,
-      boundaryGap: false,
-      axisLine: { lineStyle: { color: 'rgba(210, 225, 218, 0.8)' } },
-      axisLabel: { color: '#485750', fontSize: 13 },
-      axisTick: { show: false },
-    },
-    yAxis: {
-      type: 'value',
-      minInterval: 1,
-      splitLine: { lineStyle: { color: 'rgba(227, 216, 200, 0.45)', type: 'dashed' } },
-      axisLabel: { color: '#485750', fontSize: 13 },
-    },
-    series: [
-      {
-        name: '24h 告警频次',
-        type: 'line',
-        data: trendData,
-        smooth: true,
-        lineStyle: {
-          width: 3.5, // 适老高辨识粗折线
-          color: '#1F6B56',
-        },
-        itemStyle: {
-          color: '#1F6B56',
-          borderWidth: 2,
-          borderColor: '#ffffff',
-        },
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(31, 107, 86, 0.28)' },
-            { offset: 1, color: 'rgba(31, 107, 86, 0.01)' },
-          ]),
-        },
-      },
-    ],
-  })
-}
-
-// 渲染真实 ECharts 全域健康风险雷达
-function renderRadarChart() {
-  const pending = dashboardStats.value.pendingAlerts
-  const radarValues = [
-    Math.min(90, 45 + pending * 10),
-    Math.min(85, 30 + pending * 8),
-    Math.min(80, 25 + pending * 5),
-    Math.min(95, 50 + pending * 12),
-    Math.min(75, 20 + pending * 6),
-  ]
-
-  setRadarOption({
-    tooltip: {
-      trigger: 'item',
-    },
-    radar: {
-      indicator: [
-        { name: 'SOS呼叫', max: 100 },
-        { name: '异常跌倒', max: 100 },
-        { name: '夜间离床', max: 100 },
-        { name: '用药漏服', max: 100 },
-        { name: '体征越界', max: 100 },
-      ],
-      shape: 'polygon',
-      splitNumber: 4,
-      axisName: {
-        color: '#18221E',
-        fontSize: 13,
-        fontWeight: 600,
-      },
-      splitLine: {
-        lineStyle: {
-          color: 'rgba(210, 225, 218, 0.65)',
-        },
-      },
-      splitArea: {
-        show: true,
-        areaStyle: {
-          color: ['rgba(248, 246, 240, 0.3)', 'rgba(248, 246, 240, 0.6)'],
-        },
-      },
-      axisLine: {
-        lineStyle: {
-          color: 'rgba(210, 225, 218, 0.6)',
-        },
-      },
-    },
-    series: [
-      {
-        name: '健康风险态势',
-        type: 'radar',
-        data: [
-          {
-            value: radarValues,
-            name: '当前风险指数',
-            symbolSize: 6,
-            itemStyle: {
-              color: '#C86D3B',
-            },
-            lineStyle: {
-              width: 2.5,
-              color: '#C86D3B',
-            },
-            areaStyle: {
-              color: 'rgba(200, 109, 59, 0.22)',
-            },
-          },
-        ],
-      },
-    ],
-  })
-}
-
-// 加载看板全局数据
 async function fetchDashboardStats() {
   statsLoading.value = true
   try {
@@ -270,16 +83,15 @@ async function fetchDashboardStats() {
         mapZoom: stats.mapZoom || 14.5,
       }
     }
-    renderTrendChart()
-    renderRadarChart()
-  } catch (error) {
-    console.error('Failed to load dashboard stats:', error)
+    setTrendOption(buildTrendChartOption(dashboardStats.value.pendingAlerts))
+    setRadarOption(buildRadarChartOption(dashboardStats.value.pendingAlerts))
+  } catch (error: unknown) {
+    ElMessage.error(error instanceof Error ? error.message : '看板态势加载失败')
   } finally {
     statsLoading.value = false
   }
 }
 
-// 格式化地图坐标
 const mapCoordinates = computed(() => {
   const { lat, lng } = dashboardStats.value.mapCenter
   if (lat === 0 && lng === 0) return '定位中...'

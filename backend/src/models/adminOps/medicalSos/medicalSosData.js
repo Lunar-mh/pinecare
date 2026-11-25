@@ -2,149 +2,38 @@
 
 const { query, buildWhereSql } = require('../common');
 
+function buildSosWhere({ search = '', status = '', communityId = null }) {
+  const where = [];
+  const values = [];
+
+  const text = String(search || '').trim();
+  if (text) {
+    const keyword = `%${text}%`;
+    where.push(
+      '(u.nickname LIKE ? OR u.phone LIKE ? OR e.address LIKE ? OR CAST(e.id AS CHAR) LIKE ?)'
+    );
+    values.push(keyword, keyword, keyword, keyword);
+  }
+
+  if (status) {
+    where.push('e.event_status = ?');
+    values.push(status);
+  }
+
+  if (communityId) {
+    where.push('u.community_id = ?');
+    values.push(Number(communityId));
+  }
+
+  return {
+    whereSql: buildWhereSql(where),
+    values,
+  };
+}
+
 module.exports = {
-  async listMedicalReports(
-    { search = '', reportType = '', startDate = null, endDate = null, communityId = null },
-    { pageSize = 10, offset = 0 } = {}
-  ) {
-    const where = [];
-    const values = [];
-
-    const text = String(search || '').trim();
-    if (text) {
-      const keyword = `%${text}%`;
-      where.push(
-        '(u.nickname LIKE ? OR u.phone LIKE ? OR r.report_no LIKE ? OR CAST(r.id AS CHAR) LIKE ?)'
-      );
-      values.push(keyword, keyword, keyword, keyword);
-    }
-
-    if (reportType) {
-      where.push('r.report_type = ?');
-      values.push(reportType);
-    }
-
-    if (startDate) {
-      where.push('r.report_date >= ?');
-      values.push(startDate);
-    }
-
-    if (endDate) {
-      where.push('r.report_date <= ?');
-      values.push(endDate);
-    }
-
-    if (communityId) {
-      where.push('u.community_id = ?');
-      values.push(Number(communityId));
-    }
-
-    const whereSql = buildWhereSql(where);
-
-    const [rows] = await query(
-      `SELECT
-         r.id,
-         r.user_id,
-         r.report_no,
-         r.report_type,
-         r.report_date,
-         r.report_url,
-         r.report_data,
-         r.sync_status,
-         r.created_at,
-         u.nickname,
-         u.phone
-       FROM medical_reports r
-       LEFT JOIN users u ON u.id = r.user_id
-       ${whereSql}
-       ORDER BY r.report_date DESC, r.id DESC
-       LIMIT ? OFFSET ?`,
-      [...values, Number(pageSize), Number(offset)]
-    );
-
-    return Array.isArray(rows) ? rows : [];
-  },
-
-  async countMedicalReports({
-    search = '',
-    reportType = '',
-    startDate = null,
-    endDate = null,
-    communityId = null,
-  }) {
-    const where = [];
-    const values = [];
-
-    const text = String(search || '').trim();
-    if (text) {
-      const keyword = `%${text}%`;
-      where.push(
-        '(u.nickname LIKE ? OR u.phone LIKE ? OR r.report_no LIKE ? OR CAST(r.id AS CHAR) LIKE ?)'
-      );
-      values.push(keyword, keyword, keyword, keyword);
-    }
-
-    if (reportType) {
-      where.push('r.report_type = ?');
-      values.push(reportType);
-    }
-
-    if (startDate) {
-      where.push('r.report_date >= ?');
-      values.push(startDate);
-    }
-
-    if (endDate) {
-      where.push('r.report_date <= ?');
-      values.push(endDate);
-    }
-
-    if (communityId) {
-      where.push('u.community_id = ?');
-      values.push(Number(communityId));
-    }
-
-    const whereSql = buildWhereSql(where);
-
-    const [rows] = await query(
-      `SELECT COUNT(1) AS total
-       FROM medical_reports r
-       LEFT JOIN users u ON u.id = r.user_id
-       ${whereSql}`,
-      values
-    );
-
-    return Number(rows && rows[0] ? rows[0].total : 0);
-  },
-
-  async listSosEvents(
-    { search = '', status = '', communityId = null },
-    { pageSize = 10, offset = 0 } = {}
-  ) {
-    const where = [];
-    const values = [];
-
-    const text = String(search || '').trim();
-    if (text) {
-      const keyword = `%${text}%`;
-      where.push(
-        '(u.nickname LIKE ? OR u.phone LIKE ? OR e.address LIKE ? OR CAST(e.id AS CHAR) LIKE ?)'
-      );
-      values.push(keyword, keyword, keyword, keyword);
-    }
-
-    if (status) {
-      where.push('e.event_status = ?');
-      values.push(status);
-    }
-
-    if (communityId) {
-      where.push('u.community_id = ?');
-      values.push(Number(communityId));
-    }
-
-    const whereSql = buildWhereSql(where);
-
+  async listSosEvents(filters = {}, { pageSize = 10, offset = 0 } = {}) {
+    const { whereSql, values } = buildSosWhere(filters);
     const [rows] = await query(
       `SELECT
          e.id,
@@ -172,31 +61,8 @@ module.exports = {
     return Array.isArray(rows) ? rows : [];
   },
 
-  async countSosEvents({ search = '', status = '', communityId = null }) {
-    const where = [];
-    const values = [];
-
-    const text = String(search || '').trim();
-    if (text) {
-      const keyword = `%${text}%`;
-      where.push(
-        '(u.nickname LIKE ? OR u.phone LIKE ? OR e.address LIKE ? OR CAST(e.id AS CHAR) LIKE ?)'
-      );
-      values.push(keyword, keyword, keyword, keyword);
-    }
-
-    if (status) {
-      where.push('e.event_status = ?');
-      values.push(status);
-    }
-
-    if (communityId) {
-      where.push('u.community_id = ?');
-      values.push(Number(communityId));
-    }
-
-    const whereSql = buildWhereSql(where);
-
+  async countSosEvents(filters = {}) {
+    const { whereSql, values } = buildSosWhere(filters);
     const [rows] = await query(
       `SELECT COUNT(1) AS total
        FROM sos_events e

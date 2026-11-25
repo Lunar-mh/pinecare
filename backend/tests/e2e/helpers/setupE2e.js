@@ -682,32 +682,6 @@ jest.mock('../../../src/models/adminOpsModel', () => {
   };
 });
 
-// 15. Mock TimeBank Model & Service (pruned route support)
-jest.mock('../../../src/models/timeBank', () => ({
-  createServiceRecord: jest.fn(async () => ({ id: 101, recordHash: 'hash', prevHash: 'prev', status: 'pending' })),
-  getServiceRecordById: jest.fn(async () => null),
-  settleServiceRecord: jest.fn(async () => ({ record: { status: 'confirmed' }, account: { balance: 10 } })),
-  listServiceHistory: jest.fn(async () => ({ list: [], pagination: { total: 0 } })),
-  listLeaderboard: jest.fn(async () => []),
-}), { virtual: true });
-
-jest.mock('../../../src/services/timeBankService', () => ({
-  recordService: jest.fn(async (_providerId, _payload) => ({
-    recordId: 101,
-    recordHash: 'hash-record-101',
-    prevHash: 'prev-hash-0',
-    timeCoins: 2,
-    status: 'pending',
-  })),
-  confirmService: jest.fn(async () => ({
-    status: 'confirmed',
-    record: { status: 'confirmed' },
-    account: { balance: 38, totalEarned: 38 },
-  })),
-  getAccount: jest.fn(async () => ({ balance: 38 })),
-  getBalance: jest.fn(async () => ({ balance: 38 })),
-}), { virtual: true });
-
 // 16. Mock voiceService (pruned in M1)
 jest.mock('../../../src/services/voiceService', () => ({
   recognize: jest.fn(),

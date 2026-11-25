@@ -19,7 +19,7 @@ jest.mock('../../src/config/demoScenarios', () => ({
   getDemoScenarioById: jest.fn((id) => (id === 'care-demo' ? { id: 'care-demo', title: 'Care Demo', checklist: ['step 1'], apiSequence: ['GET /demo'], bootstrap: { userId: 7 }, modules: ['004'] } : null)),
 }));
 jest.mock('../../src/utils/thirdParty', () => ({
-  getRecentThirdPartyErrors: jest.fn(() => [{ provider: 'medical-api', message: 'upstream failed' }]),
+  getRecentThirdPartyErrors: jest.fn(() => [{ provider: 'sos-sms', message: 'upstream failed' }]),
 }));
 jest.mock('../../src/services/eventTimelineService', () => ({
   getCareEventAuditDiagnostics: jest.fn(() => ({ totalFailures: 1, recentCount: 1, items: [{ action: 'sos.triggered' }] })),
@@ -38,8 +38,8 @@ describe('adminDiagnosticsService evidence bundle', () => {
     getEventReplay.mockResolvedValue({ userId: 7, summary: { totalTimelineItems: 5 } });
     buildIntegrationRows.mockReturnValue([
       {
-        key: 'medical',
-        provider: 'medical-api',
+        key: 'oss',
+        provider: 'oss-upload',
         configured: true,
         liveConfigured: true,
         requestedMode: 'live',
@@ -48,7 +48,7 @@ describe('adminDiagnosticsService evidence bundle', () => {
         healthy: true,
         configState: 'ready',
         lastSuccessAt: '2026-03-12T10:00:00.000Z',
-        lastSuccess: { requestId: 'req-med-1', thirdPartyAppointId: 'appt-1' },
+        lastSuccess: { requestId: 'req-oss-1', url: 'https://cdn.example.com/a.jpg' },
         lastErrorAt: null,
         lastError: null,
       },
@@ -66,8 +66,8 @@ describe('adminDiagnosticsService evidence bundle', () => {
         lastSuccess: { msgid: 'msg-1' },
       },
       {
-        key: 'voice',
-        provider: 'dashscope-voice',
+        key: 'sos_sms_notify',
+        provider: 'aliyun-sms',
         configured: true,
         liveConfigured: true,
         requestedMode: 'live',
@@ -94,7 +94,7 @@ describe('adminDiagnosticsService evidence bundle', () => {
 
     expect(result.providerEvidence).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ key: 'medical', recentReceipt: { requestId: 'req-med-1', thirdPartyAppointId: 'appt-1' } }),
+        expect.objectContaining({ key: 'oss', recentReceipt: { requestId: 'req-oss-1', url: 'https://cdn.example.com/a.jpg' } }),
         expect.objectContaining({ key: 'wechat_notify', recentReceipt: { msgid: 'msg-1' } }),
       ])
     );

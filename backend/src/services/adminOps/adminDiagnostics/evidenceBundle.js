@@ -24,68 +24,38 @@ function buildEvidenceDocuments() {
   return [
     {
       key: 'deployment_playbook',
-      title: 'Backend deployment playbook',
-      path: 'backend/docs/deployment-playbook.md',
-    },
-    {
-      key: 'compliance_package',
-      title: 'Compliance and contest package',
-      path: 'backend/docs/compliance-and-contest-package.md',
-    },
-    {
-      key: 'real_data_evidence',
-      title: 'Real data evidence pack',
-      path: 'backend/docs/real-data-evidence-pack.md',
-    },
-    {
-      key: 'api_acceptance',
-      title: 'API acceptance checklist',
-      path: 'backend/docs/api-acceptance-checklist.md',
+      title: '系统部署与验收白皮书',
+      path: 'backend/docs/系统部署与验收白皮书.md',
     },
     {
       key: 'privacy_policy',
-      title: 'Privacy policy',
-      path: 'backend/docs/privacy-policy.md',
+      title: '法律与隐私合规协议',
+      path: 'backend/docs/法律与隐私合规协议.md',
     },
     {
-      key: 'user_agreement',
-      title: 'User agreement',
-      path: 'backend/docs/user-agreement.md',
+      key: 'api_acceptance',
+      title: 'E2E 黑盒测试就绪报告',
+      path: 'TEST_READY.md',
     },
     {
-      key: 'medical_disclaimer',
-      title: 'Medical disclaimer',
-      path: 'backend/docs/medical-disclaimer.md',
-    },
-    {
-      key: 'ai_usage_notice',
-      title: 'AI usage notice',
-      path: 'backend/docs/ai-usage-notice.md',
-    },
-    {
-      key: 'third_party_authorizations',
-      title: 'Third-party services and authorizations',
-      path: 'backend/docs/third-party-services-and-authorizations.md',
+      key: 'live_cutover_handover',
+      title: '系统真实配置与密钥清单',
+      path: '系统真实配置与密钥清单.md',
     },
     {
       key: 'data_desensitization_note',
-      title: 'Data desensitization note',
-      path: 'backend/docs/data-desensitization-note.md',
+      title: '数据脱敏与合规声明',
+      path: 'backend/docs/法律与隐私合规协议.md',
     },
     {
-      key: 'test_quality_report',
-      title: 'Test quality report',
-      path: 'backend/docs/test-quality-report.md',
+      key: 'architecture_blueprint',
+      title: '青松安护架构契约与规范',
+      path: 'PROJECT.md',
     },
     {
-      key: 'performance_audit_report',
-      title: 'Performance audit report',
-      path: 'backend/docs/performance-audit-report.md',
-    },
-    {
-      key: 'security_audit_report',
-      title: 'Security audit report',
-      path: 'backend/docs/security-audit-report.md',
+      key: 'refactor_log',
+      title: '全周期重构与规范治理日志',
+      path: 'REFACTOR_LOG.md',
     },
   ];
 }

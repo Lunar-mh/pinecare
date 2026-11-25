@@ -3,7 +3,6 @@
 const adminOpsModel = require('../../models/adminOpsModel');
 const {
   buildEmptyPagedResult,
-  buildPagination,
   createBizError,
   isSchemaMissingError,
   parseDate,
@@ -19,17 +18,12 @@ const {
   withSchemaFallback,
 } = require('./adminCareOverview/common');
 const {
-  mapDrugInteractionRow,
   mapFallEventRow,
   mapFamilyBindingRow,
   mapGpsCurrentRow,
   mapGpsTrailRow,
   mapHealthOverviewRow,
-  mapLeaderboardRow,
   mapMedicationLogRow,
-  mapMedicalReportRow,
-  mapTimeBankExchangeRow,
-  mapTimeBankHistoryRow,
 } = require('./adminCareOverview/mappers');
 
 const adminCareOverviewService = {
@@ -73,7 +67,9 @@ const adminCareOverviewService = {
   async updateMedicationLogStatus(logId, payload = {}) {
     const id = parsePositiveInt(logId, 'logId');
     const status = String(payload.status || '').trim();
-    const communityId = payload.communityId ? parsePositiveInt(payload.communityId, 'communityId') : null;
+    const communityId = payload.communityId
+      ? parsePositiveInt(payload.communityId, 'communityId')
+      : null;
 
     validateEnum(status, 'status', ['pending', 'taken', 'skipped', 'missed']);
 
@@ -127,20 +123,23 @@ const adminCareOverviewService = {
       throw createBizError(400, 'endDate must be >= startDate.', 400);
     }
 
-    return withSchemaFallback(async () => {
-      const rows = await adminOpsModel.listGpsTrail(userId, {
-        startDate,
-        endDate,
-        limit,
-        communityId,
-      });
+    return withSchemaFallback(
+      async () => {
+        const rows = await adminOpsModel.listGpsTrail(userId, {
+          startDate,
+          endDate,
+          limit,
+          communityId,
+        });
 
-      return {
-        userId,
-        total: rows.length,
-        list: rows.map(mapGpsTrailRow),
-      };
-    }, () => ({ userId, total: 0, list: [] }));
+        return {
+          userId,
+          total: rows.length,
+          list: rows.map(mapGpsTrailRow),
+        };
+      },
+      () => ({ userId, total: 0, list: [] })
+    );
   },
 
   async getFamilyBindings(query = {}) {
@@ -158,31 +157,6 @@ const adminCareOverviewService = {
     });
   },
 
-  async getMedicalReports(query = {}) {
-    const search = getSearch(query);
-    const reportType = String(query.reportType || '').trim();
-    const startDate = parseOptionalDateText(query.startDate, 'startDate');
-    const endDate = parseOptionalDateText(query.endDate, 'endDate');
-    const communityId = getCommunityId(query);
-
-    return buildPagedQueryResult({
-      query,
-      loadRows: ({ pageSize, offset }) =>
-        adminOpsModel.listMedicalReports(
-          { search, reportType, startDate, endDate, communityId },
-          { pageSize, offset }
-        ),
-      loadTotal: () =>
-        adminOpsModel.countMedicalReports({ search, reportType, startDate, endDate, communityId }),
-      mapRow: mapMedicalReportRow,
-      onSchemaMissing: (page, pageSize) => ({
-        source: 'admin',
-        list: [],
-        pagination: buildPagination(page, pageSize, 0),
-      }),
-    }).then((result) => ({ ...result, source: 'admin' }));
-  },
-
   async getFallEvents(query = {}) {
     const search = getSearch(query);
     const status = String(query.status || '').trim();
@@ -198,102 +172,6 @@ const adminCareOverviewService = {
       mapRow: mapFallEventRow,
       onSchemaMissing: buildEmptyPagedResult,
     });
-  },
-
-  async getDrugInteractions(query = {}) {
-    const search = getSearch(query);
-    const status = String(query.status || '').trim();
-    const limit = Math.min(Math.max(Number(query.limit) || 500, 1), 1000);
-    const communityId = getCommunityId(query);
-
-    validateEnum(status, 'status', ['', 'pending', 'acknowledged']);
-
-    return withSchemaFallback(async () => {
-      const rows = await adminOpsModel.listDrugInteractions(
-        { search, status, communityId },
-        { pageSize: limit, offset: 0 }
-      );
-      return rows.map(mapDrugInteractionRow);
-    }, []);
-  },
-
-  async updateDrugInteractionStatus(interactionId, payload = {}) {
-    const id = parsePositiveInt(interactionId, 'interactionId');
-    const status = String(payload.status || '').trim();
-    const communityId = payload.communityId ? parsePositiveInt(payload.communityId, 'communityId') : null;
-
-    validateEnum(status, 'status', ['pending', 'acknowledged']);
-
-    const current = await adminOpsModel.getDrugInteractionById(id, communityId);
-    if (!current) {
-      throw createBizError(404, 'Drug interaction not found.', 404);
-    }
-
-    const affected = await adminOpsModel.updateDrugInteractionStatus(id, status);
-    if (!affected) {
-      throw createBizError(409, 'Drug interaction status update failed.', 409);
-    }
-
-    return { id, status };
-  },
-
-  async getTimeBankServiceHistory(query = {}) {
-    const search = getSearch(query);
-    const status = String(query.status || '').trim();
-    const communityId = getCommunityId(query);
-
-    validateEnum(status, 'status', ['', 'pending', 'confirmed', 'cancelled']);
-
-    return buildPagedQueryResult({
-      query,
-      loadRows: ({ pageSize, offset }) =>
-        adminOpsModel.listTimeBankServiceHistory({ search, status, communityId }, { pageSize, offset }),
-      loadTotal: () => adminOpsModel.countTimeBankServiceHistory({ search, status, communityId }),
-      mapRow: mapTimeBankHistoryRow,
-      onSchemaMissing: buildEmptyPagedResult,
-    });
-  },
-
-  async confirmTimeBankService(payload = {}) {
-    const recordId = parsePositiveInt(payload.recordId, 'recordId');
-    const action = String(payload.action || '').trim();
-    const communityId = payload.communityId ? parsePositiveInt(payload.communityId, 'communityId') : null;
-
-    validateEnum(action, 'action', ['confirm', 'cancel']);
-
-    const existing = await adminOpsModel.getTimeBankServiceRecordById(recordId, communityId);
-    if (!existing) {
-      throw createBizError(404, 'Service record not found.', 404);
-    }
-    if (existing.status !== 'pending') {
-      throw createBizError(409, 'Only pending records can be settled.', 409);
-    }
-
-    await adminOpsModel.settleServiceRecord(recordId, action);
-    return {
-      recordId,
-      status: action === 'confirm' ? 'confirmed' : 'cancelled',
-    };
-  },
-
-  async getTimeBankExchangeHistory(query = {}) {
-    const limit = Math.min(Math.max(Number(query.limit) || 200, 1), 1000);
-    const communityId = getCommunityId(query);
-
-    return withSchemaFallback(async () => {
-      const rows = await adminOpsModel.listTimeBankExchangeHistory({ limit, communityId });
-      return rows.map(mapTimeBankExchangeRow);
-    }, []);
-  },
-
-  async getTimeBankLeaderboard(query = {}) {
-    const limit = Math.min(Math.max(Number(query.limit) || 100, 1), 500);
-    const communityId = getCommunityId(query);
-
-    return withSchemaFallback(async () => {
-      const rows = await adminOpsModel.listTimeBankLeaderboard({ communityId, limit });
-      return rows.map(mapLeaderboardRow);
-    }, []);
   },
 };
 

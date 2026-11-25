@@ -144,64 +144,45 @@ function readAppVersion() {
 }
 
 function readAboutConfig() {
-  const privacyDoc = readFileSafe(path.join(DOCS_DIR, 'privacy-policy.md'));
-  const agreementDoc = readFileSafe(path.join(DOCS_DIR, 'user-agreement.md'));
-  const medicalDoc = readFileSafe(path.join(DOCS_DIR, 'medical-disclaimer.md'));
-  const aiDoc = readFileSafe(path.join(DOCS_DIR, 'ai-usage-notice.md'));
-  const releaseDoc = readFileSafe(path.join(DOCS_DIR, 'four-end-release-candidate.md'));
+  const privacyDoc = readFileSafe(path.join(DOCS_DIR, '法律与隐私合规协议.md'));
+  const deployDoc = readFileSafe(path.join(DOCS_DIR, '系统部署与验收白皮书.md'));
 
   const privacyMeta = extractMeta(privacyDoc);
-  const agreementMeta = extractMeta(agreementDoc);
-  const medicalMeta = extractMeta(medicalDoc);
-  const aiMeta = extractMeta(aiDoc);
+  const deployMeta = extractMeta(deployDoc);
   const fallbackDate = '2026-03-12';
 
-  const hasReleaseDoc = Boolean(releaseDoc);
-  const changelog = hasReleaseDoc
-    ? [
-        '四端已完成 non-live release candidate 收口，联调基线统一。',
-        '后端能力统一了证据链、诊断视图与事件复盘口径。',
-        '医疗、定位、SOS、志愿者等关键流程已进入可联调状态。',
-      ]
-    : [
-        '当前构建已进入稳定联调版本。',
-        '后端与小程序接口已统一为同一基线。',
-        '后续仅保留真实凭据接入与实链路验收。',
-      ];
+  const changelog = [
+    '完成“青松安护 (PineCare)”四端架构收敛与暖玉微晶适老化界面重塑。',
+    '聚焦居家健康、SOS 与跌倒、慢病用药、守护互助四大核心主线。',
+    '统一证据链、运行态诊断、事件时间线复盘与规范测试体系。',
+  ];
 
   return {
     appName: '青松安护智慧照护平台',
     appVersion: readAppVersion(),
-    effectiveDate: privacyMeta.effectiveDate || agreementMeta.effectiveDate || fallbackDate,
-    summary: '本页面内容来自后端文档与版本清单，前端仅做渲染展示。',
+    effectiveDate: privacyMeta.effectiveDate || deployMeta.effectiveDate || fallbackDate,
+    summary: '本页面内容来自后端合规与部署文档，前端仅做安全渲染展示。',
     documents: [
       {
         key: 'privacy',
-        title: '隐私政策',
-        version: privacyMeta.version || '2026.03-live-defense',
+        title: '法律合规与隐私协议',
+        version: privacyMeta.version || '2026.11-pinecare',
         effectiveDate: privacyMeta.effectiveDate || fallbackDate,
-        summary: '说明账号、健康、位置、语音与家庭数据的收集目的、留存周期和删除路径。',
-      },
-      {
-        key: 'agreement',
-        title: '用户协议',
-        version: agreementMeta.version || '2026.03-live-defense',
-        effectiveDate: agreementMeta.effectiveDate || fallbackDate,
-        summary: '明确长辈、家属、社区与志愿者在平台中的使用责任、边界和申诉路径。',
+        summary: '说明健康档案、用药提醒、定位围栏与亲情数据的脱敏原则与合规边界。',
       },
       {
         key: 'medical',
-        title: '医疗免责声明',
-        version: medicalMeta.version || '2026.03-live-defense',
-        effectiveDate: medicalMeta.effectiveDate || fallbackDate,
-        summary: '医疗目录、预约、问诊和报告能力用于协同与信息获取，不替代临床诊断。',
+        title: '健康管理免责声明',
+        version: privacyMeta.version || '2026.11-pinecare',
+        effectiveDate: privacyMeta.effectiveDate || fallbackDate,
+        summary: '体征监测与用药提醒仅用于日常居家照护辅助，不构成临床医疗诊断建议。',
       },
       {
-        key: 'ai',
-        title: 'AI 使用说明',
-        version: aiMeta.version || '2026.03-live-defense',
-        effectiveDate: aiMeta.effectiveDate || fallbackDate,
-        summary: 'AI 咨询、语音与伴聊能力需明确 live/stub 模式并提供人工兜底。',
+        key: 'deployment',
+        title: '系统部署与验收指南',
+        version: deployMeta.version || '2026.11-pinecare',
+        effectiveDate: deployMeta.effectiveDate || fallbackDate,
+        summary: '说明环境准备、受控降级模式（stub/live）与接口验收规范。',
       },
     ],
     changelog,

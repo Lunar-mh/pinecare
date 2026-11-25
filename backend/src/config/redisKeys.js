@@ -1,8 +1,8 @@
 'use strict';
 
 /**
- * @fileoverview 银伴系统统一 Redis 键命名规范与 TTL 常量定义
- * 严格执行根命名空间 yinban 与层级结构 yinban:{module}:{entity}:{id}
+ * @fileoverview 青松安护（PineCare）系统统一 Redis 键命名规范与 TTL 常量定义
+ * 严格执行根命名空间 yinban 与层级结构 yinban:{module}:{entity}:{id}（兼容既有存储键）
  * 强制显式声明 TTL 过期时间，严禁无期限持久 Key
  */
 

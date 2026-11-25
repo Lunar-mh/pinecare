@@ -87,9 +87,6 @@ module.exports = {
   getSosEvents: buildScopedHandler((req) =>
     communityAdminService.getSosEvents(req.adminScope.communityId, req.query)
   ),
-  getMedicalReports: buildScopedHandler((req) =>
-    communityAdminService.getMedicalReports(req.adminScope.communityId, req.query)
-  ),
   updateSosEventStatus: buildScopedHandler((req) =>
     communityAdminService.updateSosEventStatus(
       req.adminScope.communityId,
@@ -100,28 +97,5 @@ module.exports = {
   ),
   getFallEvents: buildScopedHandler((req) =>
     communityAdminService.getFallEvents(req.adminScope.communityId, req.query)
-  ),
-  getDrugInteractions: buildScopedHandler((req) =>
-    communityAdminService.getDrugInteractions(req.adminScope.communityId, req.query)
-  ),
-  updateDrugInteractionStatus: buildScopedHandler((req) =>
-    communityAdminService.updateDrugInteractionStatus(
-      req.adminScope.communityId,
-      req.params.interactionId,
-      req.body,
-      getActor(req)
-    )
-  ),
-  getTimeBankServiceHistory: buildScopedHandler((req) =>
-    communityAdminService.getTimeBankServiceHistory(req.adminScope.communityId, req.query)
-  ),
-  confirmTimeBankService: buildScopedHandler((req) =>
-    communityAdminService.confirmTimeBankService(req.adminScope.communityId, req.body, getActor(req))
-  ),
-  getTimeBankExchangeHistory: buildScopedHandler((req) =>
-    communityAdminService.getTimeBankExchangeHistory(req.adminScope.communityId, req.query)
-  ),
-  getTimeBankLeaderboard: buildScopedHandler((req) =>
-    communityAdminService.getTimeBankLeaderboard(req.adminScope.communityId, req.query)
   ),
 };

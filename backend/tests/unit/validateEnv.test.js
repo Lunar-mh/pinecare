@@ -17,9 +17,6 @@ function applyBaseEnv() {
   process.env.COMPETITION_SANDBOX = '1';
   process.env.PRODUCTION_LIVE = '0';
   process.env.WECHAT_NOTIFY_MOCK = '1';
-  process.env.AI_CONSULT_MODE = 'auto';
-  process.env.VOICE_SERVICE_MODE = 'auto';
-  process.env.MEDICAL_API_MODE = 'auto';
   process.env.WECHAT_NOTIFY_MODE = 'auto';
   process.env.OSS_MODE = 'stub';
   process.env.SERVER_ROLE = 'api';
@@ -82,18 +79,7 @@ describe('validateEnv', () => {
     expect(() => validateEnv()).toThrow(/WECHAT_NOTIFY_MOCK/i);
   });
 
-  it('requires DashScope for AI live mode', () => {
-    process.env.AI_CONSULT_MODE = 'live';
-    delete process.env.DASHSCOPE_API_KEY;
-
-    const { validateEnv } = require('../../src/config/validateEnv');
-
-    expect(() => validateEnv()).toThrow(/AI consult live mode/i);
-  });
-
-  it('requires OSS live config for voice live mode', () => {
-    process.env.VOICE_SERVICE_MODE = 'live';
-    process.env.DASHSCOPE_API_KEY = 'dashscope-key';
+  it('requires OSS live upload configuration when OSS_MODE is live', () => {
     process.env.OSS_MODE = 'live';
     delete process.env.OSS_UPLOAD_API_URL;
     delete process.env.OSS_UPLOAD_TOKEN;
@@ -103,17 +89,7 @@ describe('validateEnv', () => {
 
     const { validateEnv } = require('../../src/config/validateEnv');
 
-    expect(() => validateEnv()).toThrow(/OSS live upload configuration/i);
-  });
-
-  it('requires medical API config for live mode', () => {
-    process.env.MEDICAL_API_MODE = 'live';
-    delete process.env.MEDICAL_API_BASE_URL;
-    delete process.env.MEDICAL_API_KEY;
-
-    const { validateEnv } = require('../../src/config/validateEnv');
-
-    expect(() => validateEnv()).toThrow(/Medical API live mode/i);
+    expect(() => validateEnv()).toThrow(/OSS live mode requires/i);
   });
 
   it('requires wechat notify config for live mode', () => {

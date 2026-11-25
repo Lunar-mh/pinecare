@@ -32,24 +32,61 @@ function assertOptionalBoolean(value, fieldName = 'is_primary') {
   }
 }
 
-function normalizeProfilePayload(payload = {}) {
-  const normalized = {};
+function normalizeRealName(raw) {
+  if (raw !== null && typeof raw !== 'string') {
+    throw createBusinessError(400, 'real_name must be a string.', null, 400);
+  }
+  const name = String(raw || '').trim();
+  if (name.length > MAX_REAL_NAME_LENGTH) {
+    throw createBusinessError(
+      400,
+      `real_name must be at most ${MAX_REAL_NAME_LENGTH} characters.`,
+      null,
+      400
+    );
+  }
+  return name || null;
+}
 
-  if (payload.real_name !== undefined) {
-    if (payload.real_name !== null && typeof payload.real_name !== 'string') {
-      throw createBusinessError(400, 'real_name must be a string.', null, 400);
-    }
-
-    const name = String(payload.real_name || '').trim();
-    if (name.length > MAX_REAL_NAME_LENGTH) {
+function normalizeChronicDiseases(raw) {
+  if (!Array.isArray(raw)) {
+    throw createBusinessError(400, 'chronic_diseases must be an array.', null, 400);
+  }
+  if (raw.length > MAX_CHRONIC_DISEASES) {
+    throw createBusinessError(
+      400,
+      `chronic_diseases can include up to ${MAX_CHRONIC_DISEASES} items.`,
+      null,
+      400
+    );
+  }
+  return raw.map((item) => {
+    if (typeof item !== 'string') {
       throw createBusinessError(
         400,
-        `real_name must be at most ${MAX_REAL_NAME_LENGTH} characters.`,
+        'Each chronic_disease must be a non-empty string up to 30 characters.',
         null,
         400
       );
     }
-    normalized.real_name = name || null;
+    const value = item.trim();
+    if (!value || value.length > MAX_CHRONIC_DISEASE_LENGTH) {
+      throw createBusinessError(
+        400,
+        'Each chronic_disease must be a non-empty string up to 30 characters.',
+        null,
+        400
+      );
+    }
+    return value;
+  });
+}
+
+function normalizeProfilePayload(payload = {}) {
+  const normalized = {};
+
+  if (payload.real_name !== undefined) {
+    normalized.real_name = normalizeRealName(payload.real_name);
   }
 
   if (payload.age !== undefined) {
@@ -69,65 +106,28 @@ function normalizeProfilePayload(payload = {}) {
   }
 
   if (payload.chronic_diseases !== undefined) {
-    if (!Array.isArray(payload.chronic_diseases)) {
-      throw createBusinessError(400, 'chronic_diseases must be an array.', null, 400);
-    }
-    if (payload.chronic_diseases.length > MAX_CHRONIC_DISEASES) {
-      throw createBusinessError(
-        400,
-        `chronic_diseases can include up to ${MAX_CHRONIC_DISEASES} items.`,
-        null,
-        400
-      );
-    }
-
-    normalized.chronic_diseases = payload.chronic_diseases.map((item) => {
-      if (typeof item !== 'string') {
-        throw createBusinessError(
-          400,
-          'Each chronic_disease must be a non-empty string up to 30 characters.',
-          null,
-          400
-        );
-      }
-
-      const value = item.trim();
-      if (!value || value.length > MAX_CHRONIC_DISEASE_LENGTH) {
-        throw createBusinessError(
-          400,
-          'Each chronic_disease must be a non-empty string up to 30 characters.',
-          null,
-          400
-        );
-      }
-
-      return value;
-    });
+    normalized.chronic_diseases = normalizeChronicDiseases(payload.chronic_diseases);
   }
 
   return normalized;
 }
 
-async function assertUserAvailable(userId) {
-  const user = await UserModel.findById(userId);
-  if (!user) {
+function assertNotDeleted(record) {
+  if (!record) {
     throw createBusinessError(404, 'User not found.', null, 404);
   }
-  if (user.account_status === 'deleted') {
+  if (record.account_status === 'deleted') {
     throw createBusinessError(403, 'Account has been deleted.', null, 403);
   }
-  return user;
+  return record;
+}
+
+async function assertUserAvailable(userId) {
+  return assertNotDeleted(await UserModel.findById(userId));
 }
 
 async function getProfile(userId) {
-  const profile = await UserModel.getProfileById(userId);
-  if (!profile) {
-    throw createBusinessError(404, 'User not found.', null, 404);
-  }
-  if (profile.account_status === 'deleted') {
-    throw createBusinessError(403, 'Account has been deleted.', null, 403);
-  }
-  return profile;
+  return assertNotDeleted(await UserModel.getProfileById(userId));
 }
 
 async function getPageConfig(userId) {

@@ -13,8 +13,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ├── frontend/     # WeChat Mini Program (Taro 4 + React)
 ├── admin/        # Admin dashboard (Vue 3 + Vite, Node 20)
 ├── volunteer/    # Volunteer workstation (vanilla JS)
-├── specs/        # 10 core functional module specifications with OpenAPI
-└── design/       # Design system and governance docs
+├── specs/        # Core functional module specifications with OpenAPI 3.1
+└── design/       # Design system and visual token specs
 ```
 
 ## Common Commands
@@ -124,7 +124,7 @@ The platform focuses on four core active business domains backed by unified APIs
 - **居家健康监测 (Health)**: `001` auth/profile, `002` health archive & device sync
 - **用药提醒 (Medication)**: `003` medication plans, logs, adherence calendar & scheduled reminders
 - **SOS 紧急呼救与跌倒监测 (SOS & Fall)**: `004` emergency SOS, `007` fall detection & timeline replay
-- **守护互助与社区协同 (Mutual Aid & Community)**: `005` family supervision, `010`/`013` volunteer tasks & community orders, `014` GPS tracking & geofencing
+- **守护互助与社区协同 (Mutual Aid & Community)**: `005` family supervision, `013` volunteer tasks & community orders, `014` GPS tracking & geofencing
 
 ## Key Flows for Demo
 
