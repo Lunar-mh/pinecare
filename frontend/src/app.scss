@@ -3,9 +3,8 @@
 @use './styles/theme/nutui-theme.scss';
 @use './styles/tokens.scss';
 @use './styles/animations.scss';
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'weapp-tailwindcss';
+@config '../tailwind.config.js';
 
 page {
   background: var(--app-bg, #F8F6F0);

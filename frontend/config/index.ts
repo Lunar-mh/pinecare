@@ -42,7 +42,8 @@ const config: UserConfigExport = {
       // 注册 weapp-tailwindcss 插件以处理小程序的特殊选择器和语法
       chain.plugin('weapp-tailwindcss').use(UnifiedWebpackPluginV5, [
         {
-          appType: 'taro'
+          appType: 'taro',
+          cssEntries: [path.resolve(__dirname, '..', 'src/app.scss')],
         }
       ])
     },

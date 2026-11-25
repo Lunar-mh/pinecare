@@ -11,7 +11,7 @@
 // ============================================
 // CSS 变量 - 动效时长与缓动函数
 // ============================================
-:root {
+page {
   // 时长
   --anim-fast: 150ms;
   --anim-base: 220ms;
@@ -212,13 +212,15 @@
 // ============================================
 
 .stagger-children {
-  > * {
+  > view,
+  > text {
     opacity: 0;
     animation: slideUp var(--anim-slow) var(--ease-out) forwards;
   }
 
   @for $i from 1 through 10 {
-    > *:nth-child(#{$i}) {
+    > view:nth-child(#{$i}),
+    > text:nth-child(#{$i}) {
       animation-delay: #{($i - 1) * 50}ms;
     }
   }
@@ -351,9 +353,11 @@
 // ============================================
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  view,
+  text,
+  button,
+  input,
+  image {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
