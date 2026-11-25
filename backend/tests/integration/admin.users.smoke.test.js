@@ -9,7 +9,7 @@ jest.mock('../../src/config/database', () => ({
 
 jest.mock('../../src/config/redis', () => ({
   set: jest.fn().mockResolvedValue('OK'),
-  get: jest.fn().mockResolvedValue(null),
+  get: jest.fn().mockResolvedValue('1'),
   del: jest.fn().mockResolvedValue(1),
   ping: jest.fn().mockResolvedValue('PONG'),
   on: jest.fn(),
@@ -20,7 +20,7 @@ const app = require('../../src/app');
 
 function createAdminToken() {
   return jwt.sign(
-    { userId: 0, role: 'admin', isAdmin: true },
+    { userId: 0, role: 'admin', isAdmin: true, sid: 'admin-users-smoke-sid' },
     process.env.JWT_SECRET,
     { expiresIn: '1h' }
   );

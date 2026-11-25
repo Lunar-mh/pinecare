@@ -188,7 +188,7 @@ onMounted(async () => {
         <el-table-column label="关注对象" min-width="150">
           <template #default="{ row }">
             <div>{{ formatUser(row.nickname) || `用户 #${row.userId}` }}</div>
-            <div style="font-size: 12px; color: var(--wb-text-soft); margin-top: 4px">{{ row.phone || '未留手机号' }}</div>
+            <div style="font-size: 14px; color: var(--wb-text-soft); margin-top: 4px">{{ row.phone || '未留手机号' }}</div>
           </template>
         </el-table-column>
         <el-table-column label="事件状态" width="120">

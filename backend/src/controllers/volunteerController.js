@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const volunteerService = require('../services/volunteerService');
 const { ok } = require('../utils/response');
@@ -12,6 +12,12 @@ function sendVolunteerError(res, error, action, defaultMessage) {
   });
 }
 
+/**
+ * @description 获取志愿者个人主页档案信息（含累计服务工时与工单统计）
+ * @param {import('express').Request} req HTTP 请求对象，需携带 req.volunteerScope
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>}
+ */
 async function getProfile(req, res) {
   try {
     const data = await volunteerService.getProfile(req.volunteerScope);
@@ -21,6 +27,12 @@ async function getProfile(req, res) {
   }
 }
 
+/**
+ * @description 查询志愿者工单列表与工单状态总览
+ * @param {import('express').Request} req HTTP 请求对象，支持 query.status 与 query.keyword
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>}
+ */
 async function getTasks(req, res) {
   try {
     const data = await volunteerService.getTasks(req.volunteerScope, req.query);
@@ -30,6 +42,12 @@ async function getTasks(req, res) {
   }
 }
 
+/**
+ * @description 志愿者认领接单控制器
+ * @param {import('express').Request} req HTTP 请求对象，params.taskId 工单ID
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>}
+ */
 async function acceptTask(req, res) {
   try {
     const data = await volunteerService.acceptTask(req.volunteerScope, req.params.taskId);
@@ -39,6 +57,12 @@ async function acceptTask(req, res) {
   }
 }
 
+/**
+ * @description 志愿者上门到达签到控制器
+ * @param {import('express').Request} req HTTP 请求对象，params.taskId 工单ID
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>}
+ */
 async function checkInTask(req, res) {
   try {
     const data = await volunteerService.checkInTask(req.volunteerScope, req.params.taskId);
@@ -48,6 +72,12 @@ async function checkInTask(req, res) {
   }
 }
 
+/**
+ * @description 志愿者服务结束上门签退控制器
+ * @param {import('express').Request} req HTTP 请求对象，params.taskId 工单ID
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>}
+ */
 async function checkOutTask(req, res) {
   try {
     const data = await volunteerService.checkOutTask(req.volunteerScope, req.params.taskId);
@@ -57,6 +87,12 @@ async function checkOutTask(req, res) {
   }
 }
 
+/**
+ * @description 志愿者工单结案并完成服务工时结算归档
+ * @param {import('express').Request} req HTTP 请求对象，params.taskId 工单ID
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>}
+ */
 async function completeTask(req, res) {
   try {
     const data = await volunteerService.completeTask(req.volunteerScope, req.params.taskId);
@@ -66,6 +102,12 @@ async function completeTask(req, res) {
   }
 }
 
+/**
+ * @description 查询志愿者培训考核与证书记录
+ * @param {import('express').Request} req HTTP 请求对象
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>}
+ */
 async function getTraining(req, res) {
   try {
     const data = await volunteerService.getTraining(req.volunteerScope, req.query);

@@ -76,6 +76,11 @@ export type IconName =
   | 'heart-pulse'
   | 'shield-check'
   | 'wechat'
+  | 'grid'
+  | 'inbox'
+  | 'wifi-off'
+  | 'alert-circle'
+  | 'clipboard'
 interface IconProps {
   name: IconName
   size?: number
@@ -84,7 +89,8 @@ interface IconProps {
   onClick?: () => void
 }
 
-// NutUI icon 映射�?// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// NutUI icon 映射表
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ICON_MAP: Record<IconName, React.ComponentType<any>> = {
   heart: HeartFill,
   pill: Health,
@@ -123,6 +129,11 @@ const ICON_MAP: Record<IconName, React.ComponentType<any>> = {
   'heart-pulse': HeartFill,
   'shield-check': Checked,
   wechat: Message,
+  grid: Category,
+  inbox: List,
+  'wifi-off': Notice,
+  'alert-circle': Notice,
+  clipboard: List,
 }
 
 /**

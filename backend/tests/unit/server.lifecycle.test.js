@@ -12,7 +12,7 @@ describe('server lifecycle', () => {
   it('stops background workers and closes resources on SIGTERM', async () => {
     const handlers = {};
     const close = jest.fn((cb) => cb());
-    const listen = jest.fn((_port, cb) => {
+    const listen = jest.fn((_port, _host, cb) => {
       cb();
       return { close };
     });

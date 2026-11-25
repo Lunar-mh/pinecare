@@ -110,6 +110,6 @@ describe('adminUserService', () => {
     ).resolves.toBeNull();
 
     expect(adminUserModel.updateStatus).toHaveBeenCalledWith(7, 'locked');
-    expect(redis.del).toHaveBeenCalledWith('auth:refresh:7');
+    expect(redis.del).toHaveBeenCalledWith('yinban:auth:refresh:7');
   });
 });

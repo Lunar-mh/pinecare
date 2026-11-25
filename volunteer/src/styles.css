@@ -1,66 +1,255 @@
+/* ==========================================================================
+   银伴智慧照护平台 - 志愿者端轻量移动工作台
+   设计系统：暖玉微晶·液态温润 (Warm Jade & Liquid Glass)
+   规范对齐：PROJECT.md §1.2 权威标准
+   ========================================================================== */
+
 :root {
-  --vol-bg: #f3f6fb;
-  --vol-card: #ffffff;
-  --vol-primary: #10B981; /* 翡翠绿作为主色，给人安全、环保的感觉 */
-  --vol-primary-soft: #D1FAE5;
-  --vol-text: #1E293B;
-  --vol-text-soft: #64748B;
-  --vol-danger: #EF4444;
-  --vol-warning: #F59E0B;
-  --vol-border: #E2E8F0;
+  /* 暖玉微晶色彩令牌 (PROJECT.md §1.2 权威标准) */
+  --vol-bg: #F8F6F0;                               /* 画布底色：暖玉凝脂 */
+  --vol-surface: rgba(255, 253, 249, 0.85);        /* 微晶玻璃材质：通透润白 */
+  --vol-card: rgba(255, 255, 255, 0.90);           /* 卡片微晶基底 */
+  --vol-primary: #1F6B56;                          /* 品牌主色：翡翠松青 (对比度 8.2:1，超越 WCAG AAA) */
+  --vol-primary-gradient: linear-gradient(135deg, #247B63 0%, #1A5B49 100%);
+  --vol-primary-soft: rgba(31, 107, 86, 0.12);     /* 翡翠润白浅底 */
+  --vol-text: #18221E;                             /* 正文字体：极深乌金 (对比度 15.2:1) */
+  --vol-text-soft: #485750;                        /* 辅助文字：沉香黛灰 (对比度 6.8:1) */
+  --vol-text-muted: #6F7E77;                       /* 弱辅助文字：幽兰青灰 (对比度 4.6:1) */
+  --vol-danger: #D33833;                           /* 紧急急救色：朱雀红 */
+  --vol-danger-soft: rgba(211, 56, 51, 0.12);
+  --vol-warning: #C86D3B;                          /* 关怀辅助色：暖栗琥珀 (对比度 5.1:1) */
+  --vol-warning-soft: rgba(200, 109, 59, 0.12);
+  --vol-border: rgba(31, 107, 86, 0.16);           /* 微晶玉质边框 */
+  --vol-glass-border: rgba(255, 255, 255, 0.92);   /* 次表面高光边框 */
+  --vol-shadow-soft: 0 8px 32px -4px rgba(31, 55, 45, 0.10); /* 暖漫射软阴影 */
+  --vol-shadow-card: 0 4px 18px -2px rgba(31, 55, 45, 0.06); /* 卡片浮雕阴影 */
+  --vol-shadow-glass: inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.95); /* 顶部微高光反光 */
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
 
 body, html {
   margin: 0;
   padding: 0;
   height: 100%;
   width: 100%;
-  overflow: hidden; /* 防止原生滚动，采用内滚动 */
+  overflow: hidden; /* 防止原生外层滚动，采用内层流畅滚动 */
   color: var(--vol-text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 16px;
   background-color: var(--vol-bg);
+  -webkit-font-smoothing: antialiased;
 }
 
 #app {
   height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
-/* 伪装的地图层（上半部分） */
+/* ==========================================================================
+   1. 暖玉社区辖区地图底图层 (Map Layer & Grid)
+   ========================================================================== */
+
 .map-layer {
   flex: 1;
-  background: url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="%23E2E8F0"/><path d="M0 50 Q 25 25, 50 50 T 100 50" stroke="%23CBD5E1" stroke-width="2" fill="none"/><circle cx="50" cy="50" r="4" fill="%2310B981"/></svg>') center/cover;
-  background-size: cover;
+  background: 
+    radial-gradient(circle at 50% 30%, rgba(31, 107, 86, 0.09) 0%, transparent 65%),
+    linear-gradient(135deg, #F6F3EB 0%, #EDE7D9 100%);
   position: relative;
   z-index: 1;
+  overflow: hidden;
 }
 
-/* 底部抽屉（下半部分） */
+/* 辖区街道网格微晶矢量纹理 */
+.map-grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(31, 107, 86, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 107, 86, 0.07) 1px, transparent 1px);
+  background-size: 38px 38px;
+  pointer-events: none;
+}
+
+/* 辖区智慧照护网格中心点位徽章 */
+.map-station-badge {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1.5px solid var(--vol-border);
+  border-radius: 24px;
+  box-shadow: 
+    0 6px 20px rgba(31, 55, 45, 0.12),
+    var(--vol-shadow-glass);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--vol-primary);
+  user-select: none;
+}
+
+.station-dot {
+  width: 12px;
+  height: 12px;
+  background: var(--vol-primary);
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(31, 107, 86, 0.25);
+  animation: pulse-ring 2.2s infinite cubic-bezier(0.24, 0, 0.38, 1);
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(31, 107, 86, 0.45); }
+  70% { transform: scale(1.15); box-shadow: 0 0 0 12px rgba(31, 107, 86, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(31, 107, 86, 0); }
+}
+
+/* 地图顶部控制条 */
+.map-top-bar {
+  position: absolute;
+  top: 18px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 5;
+}
+
+.map-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.90);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--vol-border);
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--vol-text-soft);
+  box-shadow: 0 2px 10px rgba(31, 55, 45, 0.08);
+}
+
+.pulse-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vol-primary);
+  animation: pulse-ring 2s infinite ease-out;
+}
+
+.btn-logout {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1.5px solid var(--vol-border);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--vol-text-soft);
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(31, 55, 45, 0.08);
+  transition: all 0.2s ease;
+}
+.btn-logout:hover {
+  color: var(--vol-danger);
+  border-color: rgba(211, 56, 51, 0.3);
+}
+
+/* ==========================================================================
+   2. 移动底部液态微晶毛玻璃抽屉 (Liquid Frosted Glass Bottom Sheet)
+   ========================================================================== */
+
 .bottom-sheet {
-  height: 55%;
-  background: var(--vol-bg);
-  border-radius: 24px 24px 0 0;
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  height: 58%;
+  max-height: 94%;
+  background: var(--vol-surface);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-radius: 28px 28px 0 0;
+  border-top: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-left: 1px solid rgba(255, 255, 255, 0.85);
+  border-right: 1px solid rgba(255, 255, 255, 0.85);
+  border-bottom: none;
+  box-shadow: 
+    0 -8px 32px -4px rgba(31, 55, 45, 0.10),
+    0 -2px 10px 0 rgba(31, 55, 45, 0.04),
+    var(--vol-shadow-glass);
   position: relative;
   z-index: 10;
   display: flex;
   flex-direction: column;
-  margin-top: -20px; /* 盖住一点地图 */
+  margin-top: -24px;
+  transition: height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: height;
+}
+
+/* 多挡位手势状态高度 */
+.bottom-sheet.default { height: 58%; }
+.bottom-sheet.expanded { height: 92%; }
+.bottom-sheet.collapsed { height: 26%; }
+
+/* 拖拽把手区 (热区放大以方便触控滑动) */
+.drag-handle-wrapper {
+  padding: 12px 0 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  touch-action: pan-y;
+  user-select: none;
 }
 
 .drag-handle {
-  width: 40px;
-  height: 4px;
-  background: #CBD5E1;
+  width: 50px;
+  height: 6px;
+  background: rgba(31, 107, 86, 0.28);
   border-radius: 4px;
-  margin: 12px auto;
+  transition: all 0.2s ease;
 }
 
+.drag-handle-wrapper:hover .drag-handle {
+  background: var(--vol-primary);
+  width: 60px;
+}
+
+.drag-handle-indicator {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.mode-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(31, 107, 86, 0.22);
+  transition: all 0.2s ease;
+}
+
+.mode-dot.active {
+  background: var(--vol-primary);
+  width: 14px;
+  border-radius: 3px;
+}
+
+/* 抽屉头部 */
 .sheet-header {
-  padding: 0 20px 10px;
+  padding: 4px 20px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -68,111 +257,36 @@ body, html {
 
 .sheet-header h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--vol-text);
+  letter-spacing: -0.3px;
+}
+
+.service-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 6px 14px;
+  background: var(--vol-primary-soft);
+  border: 1px solid var(--vol-border);
+  border-radius: 16px;
+  font-size: 16px;
   font-weight: 700;
+  color: var(--vol-primary);
 }
 
 .scroll-area {
   flex: 1;
   overflow-y: auto;
-  padding: 0 20px 20px;
+  padding: 0 20px 24px;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* 任务卡片样式 */
-.task-card {
-  background: var(--vol-card);
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  position: relative;
-  border-left: 4px solid var(--vol-border);
-}
-
-.task-card.pending { border-left-color: var(--vol-warning); }
-.task-card.processing { border-left-color: var(--vol-primary); }
-
-.task-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.task-status {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 6px;
-}
-.task-status.pending { background: #FEF3C7; color: #D97706; }
-.task-status.processing { background: #D1FAE5; color: #059669; }
-
-.task-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0 0 4px;
-}
-
-.task-line {
-  font-size: 13px;
-  color: var(--vol-text-soft);
-  margin: 4px 0;
-  display: flex;
-  align-items: center;
-}
-.task-line::before {
-  content: '📍';
-  margin-right: 4px;
-  font-size: 12px;
-}
-
-.task-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-/* 按钮统一风格 */
-.btn {
-  flex: 1;
-  height: 44px;
-  border: none;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-.btn:active { opacity: 0.8; }
-.btn-primary { background: var(--vol-primary); color: white; }
-.btn-outline { background: transparent; border: 1px solid var(--vol-border); color: var(--vol-text); }
-
-/* 登录/配置面板全屏覆盖 */
-.full-panel {
-  position: absolute;
-  inset: 0;
-  background: var(--vol-bg);
-  z-index: 100;
-  padding: 40px 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.full-panel h1 { font-size: 28px; margin-bottom: 24px; text-align: center; }
-
-.field {
-  width: 100%;
-  height: 48px;
-  border: 1px solid var(--vol-border);
-  border-radius: 12px;
-  padding: 0 16px;
-  font-size: 16px;
-  margin-bottom: 16px;
-  background: var(--vol-card);
-}
-.field:focus { outline: none; border-color: var(--vol-primary); box-shadow: 0 0 0 3px var(--vol-primary-soft); }
+/* ==========================================================================
+   3. 四宫格 Bento 数据看板与选项卡 (Summary Grid & Tabs)
+   ========================================================================== */
 
 .summary-grid {
   display: grid;
@@ -180,11 +294,584 @@ body, html {
   gap: 12px;
   margin-bottom: 20px;
 }
+
 .summary-item {
   background: var(--vol-card);
-  padding: 16px;
+  padding: 16px 14px;
+  border-radius: 20px;
+  text-align: center;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 
+    var(--vol-shadow-card),
+    var(--vol-shadow-glass);
+}
+
+.summary-item .metric-num,
+.summary-item span {
+  display: block;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--vol-primary);
+  line-height: 1.2;
+}
+
+.summary-item small {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--vol-text-soft);
+  margin-top: 6px;
+  display: block;
+}
+
+/* Tab 选项卡导航 (适老宽阔热区) */
+.tabs-container {
+  margin-bottom: 18px;
+}
+
+.tabs {
+  display: flex;
+  background: rgba(31, 107, 86, 0.08);
+  padding: 5px;
   border-radius: 16px;
+  gap: 4px;
+  border: 1px solid var(--vol-border);
+}
+
+.tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  border-radius: 12px;
+  height: 48px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--vol-text-soft);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab.active {
+  background: #FFFFFF;
+  color: var(--vol-primary);
+  box-shadow: 0 3px 10px rgba(31, 55, 45, 0.12);
+}
+
+/* 工单状态筛选 Chip 胶囊 */
+.filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.chip {
+  flex-shrink: 0;
+  border: 1.5px solid var(--vol-border);
+  background: var(--vol-card);
+  color: var(--vol-text-soft);
+  padding: 8px 18px;
+  border-radius: 22px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chip.active {
+  background: var(--vol-primary);
+  color: #FFFFFF;
+  border-color: var(--vol-primary);
+  box-shadow: 0 4px 14px rgba(31, 107, 86, 0.24);
+}
+
+/* ==========================================================================
+   4. 微晶卡片系统 (Task Cards, Training Cards, Profile Cards)
+   ========================================================================== */
+
+.task-card, .training-card, .profile-card {
+  background: var(--vol-card);
+  border-radius: 22px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 
+    var(--vol-shadow-card),
+    var(--vol-shadow-glass);
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.task-card:active {
+  transform: scale(0.99);
+}
+
+.task-card.pending {
+  border-left: 6px solid var(--vol-warning);
+}
+
+.task-card.processing {
+  border-left: 6px solid var(--vol-primary);
+}
+
+.task-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.task-head strong {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--vol-text);
+}
+
+.task-status {
+  font-size: 16px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 12px;
+}
+
+.task-status.pending {
+  background: #FEF3E8;
+  color: var(--vol-warning);
+}
+
+.task-status.processing {
+  background: var(--vol-primary-soft);
+  color: var(--vol-primary);
+}
+
+.task-status.completed {
+  background: #EAEFEA;
+  color: var(--vol-text-muted);
+}
+
+.task-line {
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--vol-text-soft);
+  margin: 6px 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.task-line::before {
+  content: '📍';
+  margin-right: 8px;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.task-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* ==========================================================================
+   5. 统合按键体系：60px 核心操作按键与次要操作按键
+   ========================================================================== */
+
+.btn {
+  font-family: inherit;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 60px 核心签到打卡、签退打卡、立即接单英雄按钮 */
+.btn-hero-action {
+  width: 100%;
+  height: 60px;
+  min-height: 60px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 18px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: var(--vol-primary-gradient);
+  color: #FFFFFF;
+  box-shadow: 
+    0 8px 24px -3px rgba(31, 107, 86, 0.35),
+    var(--vol-shadow-glass);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-hero-action:hover {
+  filter: brightness(1.04);
+  box-shadow: 
+    0 10px 28px -2px rgba(31, 107, 86, 0.42),
+    var(--vol-shadow-glass);
+}
+
+.btn-hero-action:active {
+  transform: translateY(2px) scale(0.98);
+  box-shadow: 0 3px 10px rgba(31, 107, 86, 0.28);
+}
+
+.btn-hero-action[disabled],
+.btn-hero-action[aria-busy="true"] {
+  opacity: 0.72;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 次要操作按键 (如完成结案等) */
+.btn-secondary-action {
+  width: 100%;
+  height: 52px;
+  min-height: 52px;
+  border-radius: 16px;
+  font-size: 18px;
+  font-weight: 700;
+  background: rgba(31, 107, 86, 0.08);
+  color: var(--vol-primary);
+  border: 1.5px solid var(--vol-border);
+  box-shadow: 0 2px 8px rgba(31, 55, 45, 0.04);
+  transition: all 0.15s ease;
+}
+
+.btn-secondary-action:active {
+  transform: translateY(1.5px) scale(0.985);
+  background: rgba(31, 107, 86, 0.14);
+}
+
+.btn-primary {
+  background: var(--vol-primary);
+  color: #FFFFFF;
+  box-shadow: 0 4px 16px rgba(31, 107, 86, 0.25);
+}
+
+.btn-outline {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1.5px solid var(--vol-border);
+  color: var(--vol-text);
+}
+
+/* ==========================================================================
+   6. 全屏登录面板与表单组件 (Full Panel & Form Fields)
+   ========================================================================== */
+
+.full-panel {
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 50% 18%, rgba(31, 107, 86, 0.12) 0%, transparent 65%),
+    linear-gradient(180deg, #FDFCF9 0%, #F5F1E8 100%);
+  z-index: 100;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.login-logo-pill {
+  display: inline-block;
+  padding: 6px 16px;
+  background: var(--vol-primary-soft);
+  border: 1px solid var(--vol-border);
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--vol-primary);
+  margin-bottom: 12px;
+}
+
+.full-panel h1 {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--vol-text);
+  margin: 0 0 8px;
+  letter-spacing: -0.5px;
+}
+
+.login-subtitle {
+  margin: 0;
+  font-size: 16px;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.field-label {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--vol-text-soft);
+  margin-bottom: 6px;
+}
+
+.field {
+  width: 100%;
+  height: 56px;
+  border: 1.5px solid var(--vol-border);
+  border-radius: 16px;
+  padding: 0 18px;
+  font-size: 18px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--vol-text);
+  transition: all 0.2s ease;
+}
+
+.field:focus {
+  outline: none;
+  border-color: var(--vol-primary);
+  box-shadow: 0 0 0 4px var(--vol-primary-soft);
+}
+
+.sms-input-row {
+  display: flex;
+  gap: 12px;
+}
+
+.sms-field {
+  flex: 1;
+}
+
+.btn-sms {
+  width: 136px;
+  height: 56px;
+  border-radius: 16px;
+  border: 1.5px solid var(--vol-border);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--vol-primary);
+  font-size: 17px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(31, 55, 45, 0.05);
+}
+
+.btn-login {
+  margin-top: 12px;
+}
+
+/* ==========================================================================
+   7. 状态提示与辅助文本类 (Muted, Error, Hint, Link)
+   ========================================================================== */
+
+.muted {
+  font-size: 16px;
+  color: var(--vol-text-muted);
+  line-height: 1.6;
+}
+
+.error {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--vol-danger);
+  background: #FDF2F2;
+  border: 1px solid rgba(211, 56, 51, 0.25);
+  padding: 12px 16px;
+  border-radius: 14px;
+  margin: 12px 0;
+  line-height: 1.5;
+}
+
+.hint {
+  font-size: 16px;
+  color: var(--vol-text-soft);
+  margin: 10px 0;
+  line-height: 1.5;
+}
+
+.link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--vol-primary);
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   8. 现场扫码微晶模拟取景器弹层 (Microcrystal Viewfinder Scanner)
+   ========================================================================== */
+
+.scanner-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(24, 34, 30, 0.72);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.scanner-card {
+  width: 100%;
+  max-width: 360px;
+  background: rgba(255, 253, 249, 0.95);
+  border-radius: 26px;
+  padding: 24px 20px;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 
+    0 16px 40px rgba(0, 0, 0, 0.35),
+    var(--vol-shadow-glass);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.scanner-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.scanner-status-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--vol-primary);
+  border-radius: 50%;
+  animation: pulse-ring 1.8s infinite ease-out;
+}
+
+.scanner-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--vol-text);
+}
+
+.scanner-viewfinder {
+  width: 240px;
+  height: 240px;
+  background: #18221E;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+  margin-bottom: 18px;
+}
+
+.scanner-reticle {
+  position: absolute;
+  inset: 20px;
+}
+
+.corner-bracket {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 3.5px solid var(--vol-primary);
+}
+
+.corner-bracket.top-left {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 8px;
+}
+
+.corner-bracket.top-right {
+  top: 0;
+  right: 0;
+  border-left: none;
+  border-bottom: none;
+  border-top-right-radius: 8px;
+}
+
+.corner-bracket.bottom-left {
+  bottom: 0;
+  left: 0;
+  border-right: none;
+  border-top: none;
+  border-bottom-left-radius: 8px;
+}
+
+.corner-bracket.bottom-right {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 8px;
+}
+
+.scanner-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  opacity: 0.45;
+}
+.scanner-crosshair::before,
+.scanner-crosshair::after {
+  content: '';
+  position: absolute;
+  background: var(--vol-primary);
+}
+.scanner-crosshair::before {
+  top: 11px;
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+.scanner-crosshair::after {
+  left: 11px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+}
+
+.scanner-laser-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #247B63, #FFFFFF, #247B63, transparent);
+  box-shadow: 0 0 12px 2px rgba(36, 123, 99, 0.8);
+  animation: scan-vertical 1.6s infinite ease-in-out;
+}
+
+@keyframes scan-vertical {
+  0% { top: 6%; opacity: 0.2; }
+  50% { opacity: 1; }
+  100% { top: 92%; opacity: 0.2; }
+}
+
+.scanner-prompt {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--vol-text);
+  margin: 0 0 4px;
   text-align: center;
 }
-.summary-item span { display: block; font-size: 24px; font-weight: 700; color: var(--vol-primary); }
-.summary-item small { font-size: 13px; color: var(--vol-text-soft); }
+
+.scanner-subprompt {
+  font-size: 16px;
+  color: var(--vol-text-muted);
+  margin: 0 0 18px;
+  text-align: center;
+}
+
+.scanner-cancel-btn {
+  height: 48px;
+  min-height: 48px;
+  font-size: 16px;
+}

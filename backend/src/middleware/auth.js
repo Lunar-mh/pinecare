@@ -1,11 +1,10 @@
-﻿'use strict';
+'use strict';
 
 const jwt = require('jsonwebtoken');
 const redis = require('../config/redis');
+const redisKeys = require('../config/redisKeys');
 const UserModel = require('../models/user');
 const { fail } = require('../utils/response');
-
-const ADMIN_SESSION_PREFIX = 'auth:admin:session:';
 
 function getJwtSecret() {
   const secret = String(process.env.JWT_SECRET || '').trim();
@@ -29,7 +28,7 @@ function isAdminIdentity(userId, decoded) {
 }
 
 function adminSessionKey(sessionId) {
-  return `${ADMIN_SESSION_PREFIX}${sessionId}`;
+  return redisKeys.authAdminSession(sessionId);
 }
 
 async function authMiddleware(req, res, next) {

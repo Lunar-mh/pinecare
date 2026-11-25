@@ -1,18 +1,65 @@
-﻿:root {
+:root {
   color-scheme: light;
-  --wb-bg: #f5efe6;
-  --wb-surface: #fffdfa;
-  --wb-surface-muted: #f1eadf;
-  --wb-line: #e3d8c8;
-  --wb-text: #22303a;
-  --wb-text-soft: #64717d;
-  --wb-primary: #2f6c5b;
-  --wb-secondary: #c97b55;
-  --wb-danger: #cb5a4d;
-  --wb-warning: #d89b47;
-  --wb-success: #4f8d66;
-  --wb-info: #4a7594;
-  --wb-shadow: 0 20px 40px rgba(47, 57, 68, 0.08);
+  /* ======================================================== */
+  /* 暖玉微晶设计令牌系统 (Warm Jade Microcrystalline Tokens)  */
+  /* ======================================================== */
+  --wb-bg: #F8F6F0;                     /* 暖玉凝脂底色 */
+  --wb-surface: rgba(255, 255, 255, 0.82); /* 微晶玻璃表面 */
+  --wb-surface-solid: #FFFDF9;          /* 暖玉固体表面回退 */
+  --wb-surface-muted: #F1EADF;          /* 润灰底色 */
+  --wb-line: rgba(227, 216, 200, 0.8);  /* 温润玉线 */
+  --wb-text: #18221E;                   /* 极深乌金 */
+  --wb-text-soft: #485750;              /* 沉香黛灰 */
+  --wb-primary: #1F6B56;                /* 翡翠松青 */
+  --wb-primary-light: #438470;          /* 青润竹绿 */
+  --wb-secondary: #C86D3B;              /* 暖栗琥珀 */
+  --wb-danger: #D33833;                 /* 朱砂朱雀 */
+  --wb-warning: #D89B47;                /* 金萱秋菊 */
+  --wb-success: #1F6B56;                /* 翡翠常青 */
+  --wb-info: #4A7594;                   /* 静海霁蓝 */
+  --wb-border: rgba(255, 255, 255, 0.85); /* 次表面晶亮高光顶边 */
+  --wb-border-sub: rgba(210, 225, 218, 0.6); /* 次表面反光底边 */
+
+  /* 暖漫射软阴影与液态微晶高光公式 */
+  --wb-glass-shadow: inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.95),
+                     0 4px 14px -2px rgba(31, 55, 45, 0.05),
+                     0 16px 36px -4px rgba(31, 55, 45, 0.08);
+  --wb-shadow: var(--wb-glass-shadow);
+
+  /* ======================================================== */
+  /* Element Plus 品牌主色与空间令牌深度映射                  */
+  /* ======================================================== */
+  --el-color-primary: #1F6B56;
+  --el-color-primary-light-3: #438470;
+  --el-color-primary-light-5: #6EA392;
+  --el-color-primary-light-7: #B2D3C8;
+  --el-color-primary-light-8: #CFE3DC;
+  --el-color-primary-light-9: #EAF3EF;
+  --el-color-primary-dark-2: #165241;
+  --el-color-success: #1F6B56;
+  --el-color-warning: #C86D3B;
+  --el-color-danger: #D33833;
+  --el-color-info: #4A7594;
+  --el-text-color-primary: #18221E;
+  --el-text-color-regular: #485750;
+  --el-text-color-secondary: #74857D;
+  --el-text-color-placeholder: #9CA8A2;
+  --el-border-color: rgba(210, 225, 218, 0.8);
+  --el-border-color-light: rgba(227, 216, 200, 0.6);
+  --el-border-color-lighter: rgba(227, 216, 200, 0.4);
+  --el-border-color-extra-light: rgba(227, 216, 200, 0.25);
+  --el-bg-color: #F8F6F0;
+  --el-bg-color-page: #F8F6F0;
+  --el-bg-color-overlay: rgba(255, 253, 250, 0.95);
+  --el-fill-color: rgba(241, 234, 223, 0.5);
+  --el-fill-color-light: rgba(241, 234, 223, 0.35);
+  --el-fill-color-blank: rgba(255, 255, 255, 0.85);
+  --el-box-shadow-light: 0 4px 16px rgba(31, 55, 45, 0.08);
+  --el-box-shadow: 0 12px 32px rgba(31, 55, 45, 0.1);
+  --el-border-radius-base: 12px;
+  --el-border-radius-small: 8px;
+  --el-border-radius-round: 999px;
+  --el-font-size-base: 15px;
 }
 
 * {
@@ -24,7 +71,11 @@
 html, body, #app {
   height: 100%;
   font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  background: linear-gradient(180deg, #faf5ed 0%, var(--wb-bg) 100%);
+  background: var(--wb-bg);
+  background-image: radial-gradient(circle at 10% 10%, rgba(31, 107, 86, 0.04) 0%, transparent 40%),
+                    radial-gradient(circle at 90% 90%, rgba(200, 109, 59, 0.03) 0%, transparent 40%),
+                    linear-gradient(180deg, #FAF6EE 0%, #F5F1E8 100%);
+  background-attachment: fixed;
   color: var(--wb-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -35,12 +86,15 @@ body {
   overflow-x: hidden;
 }
 
+/* ======================================================== */
+/* 页面结构与排版规范                                        */
+/* ======================================================== */
 .wb-page-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .wb-page-title,
@@ -51,79 +105,117 @@ body {
 }
 
 .wb-page-title {
-  font-size: 28px;
-  line-height: 1.2;
+  font-size: 26px;
+  line-height: 1.25;
   font-weight: 700;
   color: var(--wb-text);
+  letter-spacing: -0.02em;
 }
 
 .wb-page-subtitle {
-  margin-top: 8px;
+  margin-top: 6px;
   font-size: 14px;
   color: var(--wb-text-soft);
   line-height: 1.6;
 }
 
+/* ======================================================== */
+/* 1. 卡片与面板微晶玻璃化深度覆写                          */
+/* ======================================================== */
 .wb-panel,
 .wb-metric-card,
-.wb-filter-card {
-  background: rgba(255, 253, 250, 0.92);
-  border: 1px solid rgba(227, 216, 200, 0.9);
-  box-shadow: var(--wb-shadow);
+.wb-filter-card,
+.el-card {
+  background: var(--wb-surface) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid var(--wb-border) !important;
+  border-bottom: 1px solid var(--wb-border-sub) !important;
+  box-shadow: var(--wb-glass-shadow) !important;
+  border-radius: 20px !important;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+
+.wb-panel:hover,
+.wb-metric-card:hover,
+.el-card:hover {
+  box-shadow: inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 1),
+              0 8px 24px -4px rgba(31, 55, 45, 0.08),
+              0 24px 44px -6px rgba(31, 55, 45, 0.1) !important;
 }
 
 .wb-metric-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 18px;
+  margin-bottom: 22px;
 }
 
 .wb-metric-card {
-  border-radius: 22px;
-  padding: 22px;
+  border-radius: 20px;
+  padding: 22px 24px;
 }
 
 .wb-card-value {
-  margin-top: 16px;
-  font-size: 34px;
+  margin-top: 14px;
+  font-size: 36px;
   line-height: 1.1;
   font-weight: 700;
+  color: var(--wb-text);
+}
+
+.wb-card-value small {
+  font-size: 14px;
+  font-weight: 500;
+  margin-left: 6px;
+  color: var(--wb-text-soft);
 }
 
 .wb-card-label {
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
   color: var(--wb-text-soft);
 }
 
 .wb-card-hint {
   margin-top: 10px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--wb-text-soft);
   line-height: 1.5;
 }
 
 .wb-filter-card,
 .wb-panel {
-  border-radius: 22px;
-  padding: 18px;
+  border-radius: 20px;
+  padding: 22px;
+}
+
+.wb-filter-card {
+  margin-bottom: 20px;
 }
 
 .wb-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
+  gap: 8px;
+  padding: 8px 16px;
   border-radius: 999px;
-  background: rgba(47, 108, 91, 0.08);
+  background: rgba(31, 107, 86, 0.08);
+  border: 1px solid rgba(31, 107, 86, 0.18);
   color: var(--wb-primary);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.wb-chip:hover {
+  background: rgba(31, 107, 86, 0.14);
 }
 
 .wb-grid-2 {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: 1.15fr 1fr;
   gap: 20px;
 }
 
@@ -139,7 +231,7 @@ body {
   justify-content: space-between;
   gap: 12px;
   padding: 14px 0;
-  border-bottom: 1px solid rgba(227, 216, 200, 0.9);
+  border-bottom: 1px solid rgba(227, 216, 200, 0.8);
 }
 
 .wb-list-item:last-child {
@@ -160,14 +252,253 @@ body {
 
 .wb-list-desc {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--wb-text-soft);
   line-height: 1.5;
 }
 
-/* ========== 响应式断点 ========== */
+/* ======================================================== */
+/* 2. 表格与表头温润微晶覆写 (el-table)                     */
+/* ======================================================== */
+.el-table {
+  background: transparent !important;
+  --el-table-header-bg-color: rgba(248, 246, 240, 0.9) !important;
+  --el-table-tr-bg-color: transparent !important;
+  --el-table-row-hover-bg-color: rgba(31, 107, 86, 0.06) !important;
+  --el-table-border-color: rgba(227, 216, 200, 0.6) !important;
+  font-size: 15px !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+}
 
-/* 平板 (768px - 1024px) */
+.el-table th.el-table__cell {
+  background: rgba(248, 246, 240, 0.9) !important;
+  color: var(--wb-text) !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  border-bottom: 1px solid rgba(227, 216, 200, 0.8) !important;
+  padding: 14px 0 !important;
+}
+
+.el-table td.el-table__cell {
+  border-bottom: 1px solid rgba(227, 216, 200, 0.5) !important;
+  padding: 16px 0 !important;
+  color: var(--wb-text) !important;
+}
+
+.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background: rgba(248, 246, 240, 0.45) !important;
+}
+
+/* ======================================================== */
+/* 3. 弹窗与抽屉微晶覆写 (el-dialog / el-drawer)            */
+/* ======================================================== */
+.el-dialog,
+.el-drawer {
+  background: rgba(255, 253, 250, 0.96) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  box-shadow: var(--wb-glass-shadow), 0 24px 48px rgba(31, 55, 45, 0.15) !important;
+  border-radius: 24px !important;
+}
+
+.el-dialog__header {
+  border-bottom: 1px solid rgba(227, 216, 200, 0.6) !important;
+  padding: 20px 24px !important;
+  margin-right: 0 !important;
+}
+
+.el-dialog__title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--wb-text) !important;
+}
+
+.el-dialog__body {
+  padding: 24px !important;
+  font-size: 15px !important;
+  color: var(--wb-text) !important;
+}
+
+.el-overlay {
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  background-color: rgba(24, 34, 30, 0.38) !important;
+}
+
+/* ======================================================== */
+/* 4. 按钮与操作态适老放大与微晶触控 (el-button)            */
+/* ======================================================== */
+.el-button {
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  height: auto !important;
+  padding: 10px 18px !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.el-button--primary {
+  background: linear-gradient(135deg, #1F6B56, #2E8B6E) !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(31, 107, 86, 0.25) !important;
+}
+
+.el-button--primary:hover,
+.el-button--primary:focus {
+  background: linear-gradient(135deg, #257D66, #369E7E) !important;
+  box-shadow: 0 6px 18px rgba(31, 107, 86, 0.35) !important;
+  transform: translateY(-1px) !important;
+}
+
+.el-button--primary:active {
+  transform: translateY(1px) scale(0.98) !important;
+  box-shadow: 0 2px 8px rgba(31, 107, 86, 0.2) !important;
+}
+
+.el-button--default {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(210, 225, 218, 0.8) !important;
+  color: var(--wb-text) !important;
+}
+
+.el-button--default:hover,
+.el-button--default:focus {
+  background: #ffffff !important;
+  border-color: var(--wb-primary) !important;
+  color: var(--wb-primary) !important;
+  box-shadow: 0 4px 12px rgba(31, 55, 45, 0.08) !important;
+}
+
+.el-button--danger {
+  background: linear-gradient(135deg, #D33833, #E04E49) !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(211, 56, 51, 0.25) !important;
+}
+
+.el-button--danger:hover {
+  background: linear-gradient(135deg, #DF433E, #E85E59) !important;
+  box-shadow: 0 6px 18px rgba(211, 56, 51, 0.35) !important;
+}
+
+/* ======================================================== */
+/* 5. 标签体系微晶覆写 (el-tag)                             */
+/* ======================================================== */
+.el-tag {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 4px 12px !important;
+  height: auto !important;
+}
+
+.el-tag--success {
+  background: rgba(31, 107, 86, 0.1) !important;
+  color: #1F6B56 !important;
+  border: 1px solid rgba(31, 107, 86, 0.25) !important;
+}
+
+.el-tag--warning {
+  background: rgba(200, 109, 59, 0.1) !important;
+  color: #C86D3B !important;
+  border: 1px solid rgba(200, 109, 59, 0.25) !important;
+}
+
+.el-tag--danger {
+  background: rgba(211, 56, 51, 0.1) !important;
+  color: #D33833 !important;
+  border: 1px solid rgba(211, 56, 51, 0.25) !important;
+}
+
+.el-tag--info {
+  background: rgba(74, 117, 148, 0.1) !important;
+  color: #4A7594 !important;
+  border: 1px solid rgba(74, 117, 148, 0.25) !important;
+}
+
+/* ======================================================== */
+/* 6. 输入框与下拉选择器微晶覆写 (el-input / el-select)     */
+/* ======================================================== */
+.el-input__wrapper,
+.el-select__wrapper {
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(12px) !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 2px rgba(31, 55, 45, 0.04), 0 0 0 1px rgba(210, 225, 218, 0.7) !important;
+  padding: 8px 14px !important;
+  transition: all 0.2s ease !important;
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused {
+  box-shadow: inset 0 1px 2px rgba(31, 55, 45, 0.04), 0 0 0 1.5px var(--wb-primary) !important;
+}
+
+.el-input__inner {
+  font-size: 15px !important;
+  color: var(--wb-text) !important;
+}
+
+/* ======================================================== */
+/* 7. 分页器温润质感覆写 (el-pagination)                    */
+/* ======================================================== */
+.el-pagination {
+  gap: 8px !important;
+}
+
+.el-pagination button,
+.el-pagination .el-pager li {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border: 1px solid rgba(227, 216, 200, 0.8) !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--wb-text) !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  line-height: 34px !important;
+  transition: all 0.2s ease !important;
+}
+
+.el-pagination .el-pager li.is-active {
+  background: var(--wb-primary) !important;
+  color: #ffffff !important;
+  border-color: var(--wb-primary) !important;
+  box-shadow: 0 4px 12px rgba(31, 107, 86, 0.25) !important;
+}
+
+.el-pagination button:hover:not(:disabled),
+.el-pagination .el-pager li:hover:not(.is-active) {
+  color: var(--wb-primary) !important;
+  border-color: var(--wb-primary) !important;
+}
+
+/* ======================================================== */
+/* 8. 浮层与下拉菜单微晶毛玻璃 (el-popper / dropdown)       */
+/* ======================================================== */
+.el-dropdown-menu,
+.el-select-dropdown__wrap,
+.el-popper.is-light {
+  background: rgba(255, 253, 250, 0.96) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(210, 225, 218, 0.8) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 12px 32px rgba(31, 55, 45, 0.12) !important;
+}
+
+.el-dropdown-menu__item:hover,
+.el-select-dropdown__item.is-hovering {
+  background: rgba(31, 107, 86, 0.08) !important;
+  color: var(--wb-primary) !important;
+}
+
+/* ======================================================== */
+/* 响应式断点适配                                            */
+/* ======================================================== */
 @media (max-width: 1024px) {
   .wb-metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -182,25 +513,24 @@ body {
   }
   
   .wb-card-value {
-    font-size: 28px;
+    font-size: 30px;
   }
 }
 
-/* 手机 (< 768px) */
 @media (max-width: 768px) {
   .wb-metric-grid {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 14px;
   }
   
   .wb-metric-card {
-    padding: 16px;
+    padding: 18px;
     border-radius: 16px;
   }
   
   .wb-panel,
   .wb-filter-card {
-    padding: 14px;
+    padding: 16px;
     border-radius: 16px;
   }
   
@@ -210,36 +540,20 @@ body {
   }
   
   .wb-page-title {
-    font-size: 20px;
+    font-size: 22px;
   }
   
   .wb-page-subtitle {
-    font-size: 13px;
+    font-size: 14px;
   }
   
   .wb-card-value {
-    font-size: 24px;
+    font-size: 26px;
     margin-top: 10px;
   }
   
   .wb-list-item {
     flex-direction: column;
     gap: 8px;
-  }
-}
-
-/* 小屏手机 (< 375px) */
-@media (max-width: 375px) {
-  .wb-page-title {
-    font-size: 18px;
-  }
-  
-  .wb-card-value {
-    font-size: 20px;
-  }
-  
-  .wb-metric-card,
-  .wb-panel {
-    padding: 12px;
   }
 }

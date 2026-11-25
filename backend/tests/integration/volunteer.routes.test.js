@@ -1,9 +1,13 @@
-﻿'use strict';
+'use strict';
 
 const express = require('express');
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 
+jest.mock('../../src/middleware/auth', () => (req, _res, next) => {
+  req.user = { id: 2001, userId: 2001 };
+  next();
+});
 jest.mock('../../src/middleware/volunteerAuth', () => jest.fn());
 jest.mock('../../src/services/volunteerService', () => ({
   getProfile: jest.fn(),

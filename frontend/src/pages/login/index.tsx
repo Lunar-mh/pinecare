@@ -171,7 +171,7 @@ export default function LoginPage() {
             <View className="flex justify-end">
               <Text 
                 className="text-dash-tiny text-yinban-primary active:opacity-50"
-                onClick={() => Taro.navigateTo({ url: '/pages/reset-password/index' })}
+                onClick={() => Taro.showToast({ title: '请使用手机验证码直接登录', icon: 'none' })}
               >
                 忘记密码？
               </Text>

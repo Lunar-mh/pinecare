@@ -22,8 +22,15 @@ module.exports = [
     },
     rules: {
       'no-console': 'off',
-      'no-useless-catch': 'off',
-      'no-unused-vars': 'off',
+      'no-useless-catch': 'error',
+      'no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrors: 'none',
+        },
+      ],
       'no-useless-escape': 'off',
       'no-useless-assignment': 'off',
     },

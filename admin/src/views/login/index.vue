@@ -222,7 +222,7 @@ async function handleLogin() {
   border-radius: 999px;
   background: rgba(201, 123, 85, 0.12);
   color: var(--wb-secondary);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -252,7 +252,7 @@ async function handleLogin() {
 
 .login-form__error {
   margin: -4px 0 0;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--wb-danger);
 }
 
@@ -272,7 +272,7 @@ async function handleLogin() {
 }
 
 .login-card__hint {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--wb-text-soft);
 }
 
@@ -289,7 +289,7 @@ async function handleLogin() {
   border-radius: 999px;
   background: rgba(47, 108, 91, 0.08);
   color: var(--wb-primary);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
 }
 </style>

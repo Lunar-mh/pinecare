@@ -38,6 +38,11 @@ function mapPlanRow(row) {
 }
 
 const medicationPlanModel = {
+  /**
+   * @description 查询指定长辈的全部用药计划列表
+   * @param {number} userId 长辈用户ID
+   * @returns {Promise<Array<object>>} 用药计划列表
+   */
   async listByUserId(userId) {
     const [rows] = await query(
       `SELECT id, user_id, medication_name, dosage, frequency, remind_times, start_date, end_date,
@@ -51,6 +56,11 @@ const medicationPlanModel = {
     return rows.map(mapPlanRow);
   },
 
+  /**
+   * @description 根据计划ID查询单条用药计划
+   * @param {number} planId 计划ID
+   * @returns {Promise<object|null>}
+   */
   async getById(planId) {
     const [rows] = await query(
       `SELECT id, user_id, medication_name, dosage, frequency, remind_times, start_date, end_date,
@@ -64,6 +74,12 @@ const medicationPlanModel = {
     return mapPlanRow(rows[0] || null);
   },
 
+  /**
+   * @description 根据计划ID与用户ID安全查询用药计划（防水平越权）
+   * @param {number} planId 计划ID
+   * @param {number} userId 用户ID
+   * @returns {Promise<object|null>}
+   */
   async getByIdAndUser(planId, userId) {
     const [rows] = await query(
       `SELECT id, user_id, medication_name, dosage, frequency, remind_times, start_date, end_date,
@@ -77,6 +93,11 @@ const medicationPlanModel = {
     return mapPlanRow(rows[0] || null);
   },
 
+  /**
+   * @description 创建新用药计划数据记录
+   * @param {object} payload 计划数据载荷
+   * @returns {Promise<object>} 创建成功的用药计划对象
+   */
   async create(payload) {
     const remindTimes = JSON.stringify(payload.remind_times || []);
 

@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 jest.mock('bcryptjs', () => ({
   hash: jest.fn(),
@@ -241,7 +241,7 @@ describe('authService', () => {
       statusCode: 403,
     });
 
-    expect(redis.del).toHaveBeenCalledWith('auth:refresh:1');
+    expect(redis.del).toHaveBeenCalledWith('yinban:auth:refresh:1');
   });
   it('loginAdmin rejects invalid credentials', async () => {
     AuditLogModel.create.mockResolvedValue({ id: 1 });

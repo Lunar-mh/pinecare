@@ -1,7 +1,7 @@
-﻿'use strict';
+'use strict';
 
 const volunteerModel = require('../../models/volunteerModel');
-const timeBankService = require('../timeBankService');
+const { runInTransaction } = require('../../utils/transaction');
 const {
   requireVolunteerScope,
   ensureAssignedToCurrentVolunteer,
@@ -71,6 +71,12 @@ async function checkOutTask(scope, taskId) {
   return buildTaskState(taskId, 'processing', { check_out_at: checkOutAt });
 }
 
+/**
+ * @description 完成助老志愿工单（在事务内原子更新工单状态并沉淀签退与工时存证）
+ * @param {object} scope 志愿者会话作用域
+ * @param {number} taskId 工单ID
+ * @returns {Promise<object>} 完成状态与工时结算信息
+ */
 async function completeTask(scope, taskId) {
   requireVolunteerScope(scope);
   const task = await loadOwnedTask(scope, taskId);
@@ -78,46 +84,34 @@ async function completeTask(scope, taskId) {
   ensureTaskStatus(task, ['assigned', 'processing'], 'Only assigned or processing tasks can be completed.');
 
   const completedAt = nowMySqlDateTime();
-  await volunteerModel.updateOwnedTaskStatus(taskId, scope.userId, 'completed', { completedAt });
-  await volunteerModel.upsertAttendance({
-    orderId: taskId,
-    communityId: scope.communityId,
-    volunteerUserId: scope.userId,
-    checkOutAt: completedAt,
-  });
-
   const attendanceLog = await volunteerModel.getAttendanceByOrderId(scope, taskId);
   const serviceTime = resolveServiceTimeRange(task, attendanceLog, completedAt);
-  const serviceRecord = await timeBankService.recordService(scope.userId, {
-    recipientId: Number(task.elder_id),
-    type: task.service_type,
-    startTime: serviceTime.startTime,
-    endTime: serviceTime.endTime,
-    communityId: scope.communityId,
-  });
-  const settlement = await timeBankService.confirmService(scope.userId, {
-    recordId: serviceRecord.recordId,
-    action: 'confirm',
-    communityId: scope.communityId,
+  const startMs = new Date(serviceTime.startTime).getTime();
+  const endMs = new Date(serviceTime.endTime).getTime();
+  const rawHours = (endMs - startMs) / (1000 * 60 * 60);
+  const durationHours = Math.max(0.5, Math.min(8.0, Math.round((Number.isFinite(rawHours) && rawHours > 0 ? rawHours : 1.0) * 10) / 10));
+
+  await runInTransaction(async (conn) => {
+    await volunteerModel.updateOwnedTaskStatus(taskId, scope.userId, 'completed', { completedAt }, conn);
+    await volunteerModel.upsertAttendance({
+      orderId: taskId,
+      communityId: scope.communityId,
+      volunteerUserId: scope.userId,
+      checkOutAt: completedAt,
+    }, conn);
   });
 
   await writeAuditLog(scope, 'volunteer.task.complete', buildTaskAudit(scope, taskId, task.status, 'completed', {
     completed_at: completedAt,
-    service_record_id: Number(serviceRecord.recordId),
-    time_coins: Number(serviceRecord.timeCoins),
+    duration_hours: durationHours,
   }));
 
   return buildTaskState(taskId, 'completed', {
     completed_at: completedAt,
     settlement: {
-      serviceRecord: {
-        recordId: Number(serviceRecord.recordId),
-        recordHash: serviceRecord.recordHash,
-        prevHash: serviceRecord.prevHash,
-        status: settlement.status || settlement.record?.status || 'confirmed',
-        timeCoins: Number(serviceRecord.timeCoins),
-      },
-      account: settlement.account || null,
+      duration_hours: durationHours,
+      completed_at: completedAt,
+      status: 'completed',
     },
   });
 }

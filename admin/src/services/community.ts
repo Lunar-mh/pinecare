@@ -44,35 +44,36 @@ export interface CommunityStats {
   }
 }
 
-export interface CommunityActivityItem {
+export interface CommunityOrderItem {
   id: number
-  title: string
-  content: string
-  start_time: string
-  end_time: string
-  max_participants: number | null
-  registered_count: number
+  order_no: string
+  community_id: number
+  service_type: string
+  elder_id: number
+  volunteer_id: number | null
+  status: 'pending' | 'assigned' | 'processing' | 'completed' | 'cancelled'
+  scheduled_at: string | null
+  completed_at: string | null
   created_at: string
 }
 
-export interface CommunityActivityResult {
-  list: CommunityActivityItem[]
+export interface CommunityOrderResult {
+  list: CommunityOrderItem[]
   pagination: Pagination
 }
 
-export interface CommunityActivityParams {
+export interface CommunityOrderParams {
   page?: number
   pageSize?: number
-  keyword?: string
+  status?: string
   communityId?: number
 }
 
-export interface CreateCommunityActivityPayload {
-  title: string
-  content: string
-  start_time: string
-  end_time: string
-  max_participants?: number | null
+export interface CreateCommunityOrderPayload {
+  service_type: string
+  elder_id: number
+  volunteer_id?: number | null
+  scheduled_at?: string
   community_id?: number
 }
 
@@ -102,23 +103,23 @@ export async function getCommunityStats(communityId?: number): Promise<Community
   return await http.get<CommunityStats>(withQuery('/api/v1/community/stats', qs))
 }
 
-export async function getCommunityActivities(
-  params: CommunityActivityParams = {}
-): Promise<CommunityActivityResult> {
+export async function getCommunityOrders(
+  params: CommunityOrderParams = {}
+): Promise<CommunityOrderResult> {
   const qs = new URLSearchParams()
   if (params.page) qs.set('page', String(params.page))
   if (params.pageSize) {
     qs.set('pageSize', String(params.pageSize))
     qs.set('page_size', String(params.pageSize))
   }
-  if (params.keyword) qs.set('keyword', params.keyword)
+  if (params.status) qs.set('status', params.status)
   if (params.communityId) qs.set('community_id', String(params.communityId))
 
-  return await http.get<CommunityActivityResult>(withQuery('/api/v1/community/activities', qs))
+  return await http.get<CommunityOrderResult>(withQuery('/api/v1/community/orders', qs))
 }
 
-export async function createCommunityActivity(
-  payload: CreateCommunityActivityPayload
-): Promise<CommunityActivityItem> {
-  return await http.post<CommunityActivityItem>('/api/v1/community/activities', payload)
+export async function createCommunityOrder(
+  payload: CreateCommunityOrderPayload
+): Promise<CommunityOrderItem> {
+  return await http.post<CommunityOrderItem>('/api/v1/community/orders', payload)
 }

@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 describe('authService extra', () => {
   function loadService() {
@@ -133,14 +133,14 @@ describe('authService extra', () => {
     loaded.redis.get.mockResolvedValueOnce('refresh');
     loaded.UserModel.findById.mockResolvedValueOnce({ id: 7, account_status: 'deleted' });
     await expect(loaded.authService.refreshToken('refresh')).rejects.toMatchObject({ code: 403 });
-    expect(loaded.redis.del).toHaveBeenCalledWith('auth:refresh:7');
+    expect(loaded.redis.del).toHaveBeenCalledWith('yinban:auth:refresh:7');
 
     loaded = loadService();
     loaded.jwt.verify.mockReturnValueOnce({ userId: 8, token_type: 'refresh' });
     loaded.redis.get.mockResolvedValueOnce('refresh');
     loaded.UserModel.findById.mockResolvedValueOnce({ id: 8, account_status: 'locked', locked_until: '2999-01-01T00:00:00.000Z' });
     await expect(loaded.authService.refreshToken('refresh')).rejects.toMatchObject({ code: 423 });
-    expect(loaded.redis.del).toHaveBeenCalledWith('auth:refresh:8');
+    expect(loaded.redis.del).toHaveBeenCalledWith('yinban:auth:refresh:8');
   });
 
   it('covers admin login, wechat update flow, and unlock account branches', async () => {

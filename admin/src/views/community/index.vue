@@ -1,31 +1,35 @@
 ﻿<script setup lang="ts">
 import { onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Plus, Refresh, Search } from '@element-plus/icons-vue'
-import { createCommunityActivity, getCommunityActivities, getCommunityStats } from '@/services'
+import { Plus, Refresh } from '@element-plus/icons-vue'
+import { createCommunityOrder, getCommunityOrders, getCommunityStats } from '@/services'
 import { usePagination } from '@/composables/usePagination'
-import type { CommunityActivityItem, CommunityStats } from '@/services'
+import type { CommunityOrderItem, CommunityStats } from '@/services'
 
 const stats = ref<CommunityStats | null>(null)
-const keyword = ref('')
+const statusFilter = ref('')
 const dialogVisible = ref(false)
 const submitLoading = ref(false)
-const form = reactive({ title: '', content: '', start_time: '', end_time: '', max_participants: null as number | null })
+const form = reactive({
+  service_type: 'door_visit',
+  elder_id: 1,
+  scheduled_at: '',
+})
 
 const {
   page,
   pageSize,
   total,
-  list: activities,
+  list: orders,
   loading,
   loadData,
-} = usePagination<CommunityActivityItem>(getCommunityActivities, 10)
+} = usePagination<CommunityOrderItem>(getCommunityOrders, 10)
 
 async function fetchData() {
   try {
     const [statsData] = await Promise.all([
       getCommunityStats(),
-      loadData({ keyword: keyword.value || undefined }),
+      loadData({ status: statusFilter.value || undefined }),
     ])
     stats.value = statsData
   } catch (err: unknown) {
@@ -33,32 +37,55 @@ async function fetchData() {
   }
 }
 
-async function submitCreateActivity() {
-  if (!form.title || !form.content || !form.start_time || !form.end_time) {
-    ElMessage.warning('Please provide title, content, and time fields')
+async function submitCreateOrder() {
+  if (!form.service_type || !form.elder_id) {
+    ElMessage.warning('请填写服务类型和长辈编号')
     return
   }
   submitLoading.value = true
   try {
-    await createCommunityActivity(form)
+    await createCommunityOrder({
+      service_type: form.service_type,
+      elder_id: Number(form.elder_id),
+      scheduled_at: form.scheduled_at || undefined,
+    })
     dialogVisible.value = false
-    ElMessage.success('Activity created')
+    ElMessage.success('助老工单创建成功')
     await fetchData()
   } catch (err: unknown) {
-    ElMessage.error(err instanceof Error ? err.message : 'Failed to create activity')
+    ElMessage.error(err instanceof Error ? err.message : '助老工单创建失败')
   } finally {
     submitLoading.value = false
   }
 }
 
-const formatTime = (_row: any, _col: any, val: string) => {
-  if (!val) return ''
-  const d = new Date(val)
-  const pad = (n: number) => n.toString().padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+function statusLabel(status: string): string {
+  const map: Record<string, string> = {
+    pending: '待指派',
+    assigned: '已指派',
+    processing: '服务中',
+    completed: '已完成',
+    cancelled: '已取消',
+  }
+  return map[status] || status
 }
 
-watch(keyword, () => {
+function statusTagType(status: string): 'warning' | 'primary' | 'info' | 'success' | 'danger' {
+  if (status === 'pending') return 'warning'
+  if (status === 'assigned' || status === 'processing') return 'primary'
+  if (status === 'completed') return 'success'
+  return 'info'
+}
+
+const formatTime = (_row: unknown, _col: unknown, val: string | null) => {
+  if (!val) return '-'
+  const d = new Date(val)
+  if (Number.isNaN(d.getTime())) return val
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+watch(statusFilter, () => {
   page.value = 1
   fetchData()
 })
@@ -70,11 +97,11 @@ onMounted(fetchData)
     <div class="wb-page-header">
       <div>
         <span class="wb-page-title">社区运营</span>
-        <span class="wb-page-subtitle">活动、服务时长和在册人数收进一个运营视图。</span>
+        <span class="wb-page-subtitle">在册长辈、志愿者力量与社区助老工单收进同一运营视图。</span>
       </div>
       <div style="display:flex; gap:10px">
         <el-button :icon="Refresh" @click="fetchData">刷新</el-button>
-        <el-button type="primary" :icon="Plus" @click="dialogVisible = true">创建活动</el-button>
+        <el-button type="primary" :icon="Plus" @click="dialogVisible = true">派发工单</el-button>
       </div>
     </div>
 
@@ -86,39 +113,59 @@ onMounted(fetchData)
     </div>
 
     <div class="wb-filter-card">
-      <el-input v-model="keyword" :prefix-icon="Search" placeholder="搜索活动名称" clearable style="max-width:320px" />
+      <el-select v-model="statusFilter" placeholder="筛选工单状态" clearable style="width: 240px">
+        <el-option label="待指派" value="pending" />
+        <el-option label="已指派" value="assigned" />
+        <el-option label="服务中" value="processing" />
+        <el-option label="已完成" value="completed" />
+        <el-option label="已取消" value="cancelled" />
+      </el-select>
     </div>
 
     <div class="wb-panel">
       <div class="wb-page-header" style="margin-bottom: 14px">
         <div>
-          <span class="wb-page-title" style="font-size: 22px">社区活动</span>
-          <span class="wb-page-subtitle">保留运营最常用的一张活动表。</span>
+          <span class="wb-page-title" style="font-size: 22px">助老工单列表</span>
+          <span class="wb-page-subtitle">跟踪长辈居家互助服务指派与履约状态。</span>
         </div>
       </div>
-      <el-table :data="activities" stripe v-loading="loading">
-        <el-table-column prop="title" label="活动名称" min-width="180" />
-        <el-table-column prop="content" label="活动内容" min-width="220" show-overflow-tooltip />
-        <el-table-column prop="start_time" label="开始时间" width="180" :formatter="formatTime" />
-        <el-table-column prop="end_time" label="结束时间" width="180" :formatter="formatTime" />
-        <el-table-column prop="registered_count" label="报名人数" width="110" />
+      <el-table :data="orders" stripe v-loading="loading">
+        <el-table-column prop="order_no" label="工单编号" min-width="180" />
+        <el-table-column prop="service_type" label="服务类型" width="140" />
+        <el-table-column prop="elder_id" label="长辈 ID" width="110" />
+        <el-table-column prop="volunteer_id" label="志愿者 ID" width="120">
+          <template #default="{ row }">{{ row.volunteer_id ?? '待指派' }}</template>
+        </el-table-column>
+        <el-table-column label="状态" width="120">
+          <template #default="{ row }">
+            <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="scheduled_at" label="预约时间" min-width="170" :formatter="formatTime" />
+        <el-table-column prop="created_at" label="创建时间" min-width="170" :formatter="formatTime" />
       </el-table>
-      <div style="display:flex; justify-content:flex-end; margin-top:16px"><el-pagination v-model:current-page="page" layout="total, prev, pager, next" :total="total" :page-size="pageSize" @current-change="fetchData" /></div>
+      <div style="display:flex; justify-content:flex-end; margin-top:16px">
+        <el-pagination v-model:current-page="page" layout="total, prev, pager, next" :total="total" :page-size="pageSize" @current-change="fetchData" />
+      </div>
     </div>
 
-    <el-dialog v-model="dialogVisible" title="创建社区活动" width="560px">
+    <el-dialog v-model="dialogVisible" title="创建社区助老工单" width="520px">
       <el-form :model="form" label-width="110px">
-        <el-form-item label="活动名称"><el-input v-model="form.title" /></el-form-item>
-        <el-form-item label="活动内容"><el-input v-model="form.content" type="textarea" :rows="4" /></el-form-item>
-        <el-form-item label="开始时间"><el-date-picker v-model="form.start_time" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" style="width:100%" /></el-form-item>
-        <el-form-item label="结束时间"><el-date-picker v-model="form.end_time" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" style="width:100%" /></el-form-item>
-        <el-form-item label="人数上限"><el-input-number v-model="form.max_participants" :min="1" :max="9999" style="width:100%" /></el-form-item>
+        <el-form-item label="服务类型">
+          <el-select v-model="form.service_type" style="width:100%">
+            <el-option label="上门探访" value="door_visit" />
+            <el-option label="陪诊助医" value="medical" />
+            <el-option label="居家照护" value="care" />
+            <el-option label="应急协助" value="emergency" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="长辈编号"><el-input-number v-model="form.elder_id" :min="1" style="width:100%" /></el-form-item>
+        <el-form-item label="预约时间"><el-date-picker v-model="form.scheduled_at" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" style="width:100%" /></el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="submitCreateActivity">创建</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="submitCreateOrder">创建工单</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
-

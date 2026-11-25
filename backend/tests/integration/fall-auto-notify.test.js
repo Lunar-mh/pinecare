@@ -76,7 +76,7 @@ describe('倒计时到期自动通知集成测试', () => {
     expect(result.processed).toBe(true);
     expect(result.notification).toMatchObject({ total: 1, sent: 1, failed: 0 });
     expect(FallModel.markConfirmed).toHaveBeenCalledWith(99);
-    expect(redis.del).toHaveBeenCalledWith('fall:timer:99');
+    expect(redis.del).toHaveBeenCalledWith('yinban:fall:timer:99');
     expect(FallModel.createNotificationRecords).toHaveBeenCalledWith(99, expect.any(Array));
     expect(FallModel.updateNotificationStatus).toHaveBeenCalledWith(501, 'sent');
   });

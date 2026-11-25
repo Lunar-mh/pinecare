@@ -82,7 +82,10 @@ describe('userService', () => {
 
     UserModel.getProfileById.mockResolvedValue(profile);
     EmergencyContactModel.listByUserId.mockResolvedValue(contacts);
-    buildUserPageConfig.mockReturnValue({ settingsItems: [], profileMeta: { completion: 80, appVersion: '1.0.0' } });
+    buildUserPageConfig.mockReturnValue({
+      settingsItems: [],
+      profileMeta: { completion: 80, appVersion: '1.0.0' },
+    });
 
     const result = await userService.getPageConfig(1);
 
@@ -276,7 +279,7 @@ describe('userService', () => {
       'account_delete'
     );
     expect(UserModel.softDelete).toHaveBeenCalledWith(1);
-    expect(redis.del).toHaveBeenCalledWith('auth:refresh:1');
+    expect(redis.del).toHaveBeenCalledWith('yinban:auth:refresh:1');
     expect(result).toBeNull();
   });
 

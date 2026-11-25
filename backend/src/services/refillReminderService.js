@@ -1,6 +1,7 @@
 'use strict';
 
 const redis = require('../config/redis');
+const redisKeys = require('../config/redisKeys');
 const medicationPlanModel = require('../models/medicationPlanModel');
 const medicationSettingService = require('./medicationSettingService');
 const reminderQueueModel = require('../models/reminderQueueModel');
@@ -15,10 +16,10 @@ function formatDate(date) {
 }
 
 async function acquireDailyLock(planId, dateText) {
-  const key = `medication:refill:${planId}:${dateText}`;
+  const key = redisKeys.refillReminder(planId, 'plan', dateText);
 
   try {
-    const result = await redis.set(key, '1', 'EX', 86400, 'NX');
+    const result = await redis.set(key, '1', 'EX', redisKeys.TTL.REFILL_REMINDER, 'NX');
     return result === 'OK';
   } catch (err) {
     return true;

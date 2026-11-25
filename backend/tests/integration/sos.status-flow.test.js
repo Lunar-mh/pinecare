@@ -43,8 +43,8 @@ describe('SOS 状态流转与自动解决集成测试', () => {
 
     expect(confirmed).toEqual({ event_id: 301, event_status: 'confirmed' });
     expect(resolved).toEqual({ event_id: 301, event_status: 'resolved' });
-    expect(SosEventModel.transitionStatus).toHaveBeenNthCalledWith(1, 301, 9001, 'triggered', 'confirmed');
-    expect(SosEventModel.transitionStatus).toHaveBeenNthCalledWith(2, 301, 9001, 'confirmed', 'resolved');
+    expect(SosEventModel.transitionStatus).toHaveBeenNthCalledWith(1, 301, 9001, 'triggered', 'confirmed', expect.anything());
+    expect(SosEventModel.transitionStatus).toHaveBeenNthCalledWith(2, 301, 9001, 'confirmed', 'resolved', expect.anything());
   });
 
   test('非法流转：triggered 不能直接 resolved', async () => {

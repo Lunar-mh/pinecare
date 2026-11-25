@@ -1,7 +1,6 @@
-﻿﻿'use strict';
+'use strict';
 
 const familyModel = require('../models/family');
-const familySpaceModel = require('../models/familySpace');
 const SosEventModel = require('../models/sosEvent');
 const medicationLogService = require('./medicationLogService');
 const {
@@ -59,14 +58,14 @@ function normalizeNotificationPayload(payload) {
   return updates;
 }
 
-async function getOverviewResources(elderId, familyId) {
+async function getOverviewResources(elderId, _familyId) {
   const safeFetch = (task, fallback) => task.catch(() => fallback);
   return Promise.all([
     familyModel.getLatestHealthSnapshot(elderId),
     safeFetch(medicationLogService.getTodaySchedule(elderId), []),
     safeFetch(SosEventModel.listActiveByUser(elderId, 3), []),
     safeFetch(familyModel.getLatestLocation(elderId), null),
-    safeFetch(familySpaceModel.getInteractionEvidenceSummary(familyId), null),
+    Promise.resolve(null),
   ]);
 }
 

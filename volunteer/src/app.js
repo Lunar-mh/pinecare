@@ -1,4 +1,10 @@
-﻿const API_BASE_CANDIDATES = [
+/**
+ * 银伴智慧照护平台 - 志愿者端轻量移动工作台
+ * 核心设计：暖玉微晶·液态温润 (Warm Jade & Liquid Glass)
+ * 遵循规范：PROJECT.md §1.2 & §4.1 接口契约
+ */
+
+const API_BASE_CANDIDATES = [
   'http://127.0.0.1:3001/api/v1',
   'http://127.0.0.1:3999/api/v1',
 ];
@@ -36,6 +42,7 @@ const state = {
   taskFilter: '',
   profile: null,
   serviceHours: 0,
+  sheetMode: 'default', // 'collapsed' | 'default' | 'expanded'
   taskSummary: {
     available_count: 0,
     assigned_count: 0,
@@ -67,7 +74,7 @@ function saveOfflineQueue() {
   try {
     writeStorage(STORAGE_KEYS.offlineQueue, JSON.stringify(state.offlineQueue));
   } catch (_error) {
-    // ignore
+    // 忽略本地存储写入失败
   }
 }
 
@@ -83,38 +90,37 @@ function addToOfflineQueue(path, options) {
 
 async function processOfflineQueue() {
   if (state.offlineQueue.length === 0) return;
-  
+
   const queue = [...state.offlineQueue];
   state.offlineQueue = [];
   saveOfflineQueue();
-  
+
   for (const item of queue) {
     try {
       await request(item.path, item.options);
     } catch (_error) {
-      // 失败的请求重新入队
       state.offlineQueue.push(item);
     }
   }
   saveOfflineQueue();
-  
+
   if (state.offlineQueue.length === 0) {
-    showInfo('离线数据已同步');
+    showInfo('离线数据已成功同步');
   }
 }
 
-// 网络状态监听
+// 网络状态监听与提示
 function setupNetworkListeners() {
   window.addEventListener('online', () => {
     state.isOnline = true;
-    showInfo('网络已恢复，正在同步数据...');
+    showInfo('网络已恢复，正在同步离线数据...');
     render();
     processOfflineQueue();
   });
-  
+
   window.addEventListener('offline', () => {
     state.isOnline = false;
-    showError('网络已断开，数据将在恢复后同步');
+    showError('当前处于离网状态，操作将在重新连线后自动提交');
     render();
   });
 }
@@ -135,7 +141,7 @@ function writeStorage(key, value) {
       localStorage.removeItem(key);
     }
   } catch (_error) {
-    // ignore local storage failures
+    // 忽略本地存储写入异常
   }
 }
 
@@ -158,6 +164,16 @@ function normalizeApiBase(url) {
 
 function toast(message) {
   state.info = String(message || '');
+  render();
+}
+
+function showInfo(msg) {
+  state.info = String(msg || '');
+  render();
+}
+
+function showError(msg) {
+  state.error = String(msg || '');
   render();
 }
 
@@ -195,7 +211,7 @@ async function detectApiBase() {
         return candidate;
       }
     } catch (_error) {
-      // try next candidate
+      // 尝试下一个可用节点
     }
   }
 
@@ -210,11 +226,11 @@ function toCnBackendMessage(message) {
   if (!raw) return '';
 
   const normalized = raw.toLowerCase();
-  if (normalized.includes('service record hash verification failed')) return '\u670d\u52a1\u8bb0\u5f55\u6821\u9a8c\u5931\u8d25\uff0c\u8bf7\u5237\u65b0\u540e\u91cd\u8bd5\u3002';
-  if (normalized.includes('only processing tasks can be checked out')) return '\u4ec5\u670d\u52a1\u4e2d\u7684\u4efb\u52a1\u53ef\u7b7e\u9000\u3002';
-  if (normalized.includes('only assigned tasks can be checked in')) return '\u4ec5\u5df2\u63a5\u5355\u7684\u4efb\u52a1\u53ef\u7b7e\u5230\u3002';
-  if (normalized.includes('only pending tasks can be accepted')) return '\u4ec5\u5f85\u63a5\u5355\u7684\u4efb\u52a1\u53ef\u63a5\u5355\u3002';
-  if (normalized.includes('order not found')) return '\u4efb\u52a1\u4e0d\u5b58\u5728\u6216\u5df2\u88ab\u5904\u7406\u3002';
+  if (normalized.includes('service record hash verification failed')) return '服务记录校验失败，请刷新后重试。';
+  if (normalized.includes('only processing tasks can be checked out')) return '仅服务中的任务可签退。';
+  if (normalized.includes('only assigned tasks can be checked in')) return '仅已接单的任务可签到。';
+  if (normalized.includes('only pending tasks can be accepted')) return '仅待接单的任务可接单。';
+  if (normalized.includes('order not found')) return '任务不存在或已被处理。';
 
   return raw;
 }
@@ -225,36 +241,34 @@ function extractMessage(payload, fallback) {
   return cn || message || fallback;
 }
 
-// Token刷新状态
+// Token 刷新控制
 let isRefreshing = false;
 let refreshPromise = null;
 
-// 刷新Token
 async function refreshToken() {
   if (!state.refreshToken) {
     throw new Error('No refresh token available');
   }
-  
+
   const apiBase = normalizeApiBase(state.apiBase) || (await detectApiBase());
   const response = await fetch(`${apiBase}/auth/refresh-token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh_token: state.refreshToken }),
   });
-  
+
   const payload = await response.json();
   if (!response.ok || payload.code !== 0) {
     throw new Error('Token refresh failed');
   }
-  
-  // 更新Token
+
   state.token = payload.data.token;
   if (payload.data.refresh_token) {
     state.refreshToken = payload.data.refresh_token;
     writeStorage(STORAGE_KEYS.refreshToken, payload.data.refresh_token);
   }
   writeStorage(STORAGE_KEYS.token, payload.data.token);
-  
+
   return payload.data.token;
 }
 
@@ -277,36 +291,30 @@ async function request(path, options = {}) {
     body,
   });
 
-  // 401 Token过期 - 尝试刷新
+  // 401 令牌过期重试机制
   if (response.status === 401 && state.refreshToken && options.auth !== false) {
     try {
-      // 避免并发刷新
       if (!isRefreshing) {
         isRefreshing = true;
         refreshPromise = refreshToken();
       }
-      
+
       await refreshPromise;
       isRefreshing = false;
       refreshPromise = null;
-      
-      // 用新Token重试
+
       headers.Authorization = `Bearer ${state.token}`;
       response = await fetch(`${apiBase}${path}`, {
         method,
         headers,
         body,
       });
-    } catch (refreshError) {
+    } catch (_refreshError) {
       isRefreshing = false;
       refreshPromise = null;
-      // 刷新失败，清除登录状态
-      state.token = '';
-      state.refreshToken = '';
-      writeStorage(STORAGE_KEYS.token, '');
-      writeStorage(STORAGE_KEYS.refreshToken, '');
+      clearSession();
       render();
-      throw new Error('登录已过期，请重新登录');
+      throw new Error('登录凭证已失效，请重新登录');
     }
   }
 
@@ -325,9 +333,9 @@ async function request(path, options = {}) {
   }
 
   const code = Number(payload && payload.code);
-  if (code !== 0) {
-    const err = new Error(extractMessage(payload, '请求失败'));
-    err.statusCode = Number(payload && payload.code) || 500;
+  if (code !== 0 && code !== 200) {
+    const err = new Error(extractMessage(payload, '请求处理失败'));
+    err.statusCode = code || 500;
     err.payload = payload;
     throw err;
   }
@@ -337,42 +345,41 @@ async function request(path, options = {}) {
 
 function mapServiceTypeLabel(value) {
   const normalized = String(value || '').trim().toLowerCase();
-  if (!normalized) return '-';
-  if (normalized === 'escort') return '\u966a\u8bca\u670d\u52a1';
-  if (normalized === 'visit') return '\u4e0a\u95e8\u63a2\u8bbf';
-  if (normalized === 'meal') return '\u52a9\u9910\u670d\u52a1';
-  if (normalized === 'cleaning') return '\u5c45\u5bb6\u6e05\u6d01';
-  if (normalized === 'shopping') return '\u4ee3\u8d2d\u670d\u52a1';
-  if (normalized === 'medical') return '\u5c31\u533b\u534f\u52a9';
-  return String(value || '-');
+  if (!normalized) return '助老服务';
+  if (normalized === 'escort') return '陪诊服务';
+  if (normalized === 'visit') return '上门探访';
+  if (normalized === 'meal') return '助餐服务';
+  if (normalized === 'cleaning') return '居家保洁';
+  if (normalized === 'shopping') return '生活代购';
+  if (normalized === 'medical') return '就医协助';
+  return String(value || '常规照料');
 }
 
 function mapRoleLabel(value) {
   const normalized = String(value || '').trim().toLowerCase();
-  if (!normalized) return '-';
-  if (normalized === 'volunteer') return '\u5fd7\u613f\u8005';
-  if (normalized === 'admin') return '\u7ba1\u7406\u5458';
-  if (normalized === 'family') return '\u5bb6\u5c5e';
-  if (normalized === 'elder') return '\u957f\u8f88';
-  return String(value || '-');
+  if (!normalized) return '社区志愿者';
+  if (normalized === 'volunteer') return '持证志愿者';
+  if (normalized === 'admin') return '社区网格员';
+  if (normalized === 'family') return '长辈家属';
+  if (normalized === 'elder') return '银伴长辈';
+  return String(value || '志愿先锋');
 }
 
 function mapTrainingStatusLabel(value) {
   const normalized = String(value || '').trim().toLowerCase();
-  if (!normalized) return '-';
-  if (normalized === 'completed') return '\u5df2\u5b8c\u6210';
-  if (normalized === 'in_progress' || normalized === 'processing') return '\u8fdb\u884c\u4e2d';
-  if (normalized === 'expired') return '\u5df2\u8fc7\u671f';
-  if (normalized === 'pending') return '\u5f85\u53c2\u52a0';
-  return String(value || '-');
+  if (!normalized) return '待修读';
+  if (normalized === 'completed') return '考核合格';
+  if (normalized === 'in_progress' || normalized === 'processing') return '研修中';
+  if (normalized === 'expired') return '证书已过期';
+  if (normalized === 'pending') return '待培训';
+  return String(value || '在训');
 }
 
 function normalizeDisplayName(value, fallbackPrefix) {
   const raw = String(value || '').trim();
-  const fallback = String(fallbackPrefix || '\u7528\u6237').trim();
+  const fallback = String(fallbackPrefix || '长辈朋友').trim();
   if (!raw) return fallback;
 
-  // ???????????????????????
   if (/^[A-Za-z0-9\s._-]+$/.test(raw)) {
     return fallback;
   }
@@ -381,33 +388,38 @@ function normalizeDisplayName(value, fallbackPrefix) {
 }
 
 function getStatusLabel(status) {
-  if (status === 'pending') return '待接单';
-  if (status === 'assigned') return '已接单';
+  if (status === 'pending') return '待认领';
+  if (status === 'assigned') return '已认领';
   if (status === 'processing') return '服务中';
-  if (status === 'completed') return '已完成';
-  if (status === 'cancelled') return '已取消';
-  return status || '未知';
+  if (status === 'completed') return '已结案';
+  if (status === 'cancelled') return '已撤销';
+  return status || '流转中';
 }
 
+/**
+ * 统合工单操作：接单、现场扫码签到、签退打卡统一分发为 60px 英雄按钮
+ */
 function taskActions(task) {
   const taskId = Number(task.id);
   if (!Number.isFinite(taskId) || taskId <= 0) return [];
 
   if (task.status === 'pending' && !task.volunteer_id) {
-    return [{ label: '接单', endpoint: `${ENDPOINTS.tasks}/${taskId}${ENDPOINTS.accept}` }];
+    return [
+      { label: '⚡ 立即接单认领', endpoint: `${ENDPOINTS.tasks}/${taskId}${ENDPOINTS.accept}`, hero: true },
+    ];
   }
 
   if (task.status === 'assigned') {
     return [
-      { label: '\u7b7e\u5230', endpoint: `${ENDPOINTS.tasks}/${taskId}${ENDPOINTS.checkIn}` },
-      { label: '\u5b8c\u6210', endpoint: `${ENDPOINTS.tasks}/${taskId}${ENDPOINTS.complete}` },
+      { label: '📷 现场扫码签到', endpoint: `${ENDPOINTS.tasks}/${taskId}${ENDPOINTS.checkIn}`, hero: true, isScan: true },
+      { label: '确认完成结案', endpoint: `${ENDPOINTS.tasks}/${taskId}${ENDPOINTS.complete}`, hero: false },
     ];
   }
 
   if (task.status === 'processing') {
     return [
-      { label: '\u7b7e\u9000', endpoint: `${ENDPOINTS.tasks}/${taskId}${ENDPOINTS.checkOut}` },
-      { label: '\u5b8c\u6210', endpoint: `${ENDPOINTS.tasks}/${taskId}${ENDPOINTS.complete}` },
+      { label: '🏁 服务完成签退打卡', endpoint: `${ENDPOINTS.tasks}/${taskId}${ENDPOINTS.checkOut}`, hero: true },
+      { label: '确认完成结案', endpoint: `${ENDPOINTS.tasks}/${taskId}${ENDPOINTS.complete}`, hero: false },
     ];
   }
 
@@ -428,22 +440,21 @@ async function loadDashboard() {
     ]);
 
     state.profile = profileData || null;
-    // 从 profile 获取服务时长
     state.serviceHours = (profileData && profileData.service_hours) || 0;
     state.taskSummary = (taskData && taskData.summary) || state.taskSummary;
     state.tasks = (taskData && taskData.list) || [];
     state.training = (trainingData && trainingData.list) || [];
-    state.info = `已连接 ${state.apiBase}`;
+    state.info = `已成功连线 ${state.apiBase}`;
   } catch (error) {
-    const message = error instanceof Error ? error.message : '加载失败';
+    const message = error instanceof Error ? error.message : '数据加载失败';
     const statusCode = Number(error && error.statusCode) || 0;
 
     if (statusCode === 401) {
       clearSession();
-      state.error = '会话已失效，请重新登录。';
+      state.error = '会话已过期，请重新登录。';
     } else if (statusCode === 403) {
       clearSession();
-      state.error = '当前账号不是志愿者身份，无法进入志愿者执行端。';
+      state.error = '当前账号非志愿者身份，无法进入工作台。';
     } else {
       state.error = message;
     }
@@ -454,15 +465,14 @@ async function loadDashboard() {
 }
 
 async function handleSendSms() {
-  // 验证手机号格式
   const phoneRegex = /^1[3-9]\d{9}$/;
   if (!state.phone) {
-    state.error = '请输入手机号';
+    state.error = '请输入志愿者手机号';
     render();
     return;
   }
   if (!phoneRegex.test(state.phone)) {
-    state.error = '请输入有效的11位手机号';
+    state.error = '请输入规范的11位大陆手机号';
     render();
     return;
   }
@@ -478,9 +488,9 @@ async function handleSendSms() {
       auth: false,
       body: { phone: state.phone, purpose: 'login' },
     });
-    toast('验证码已发送，请查收短信');
+    toast('短信验证码已下发至您的手机，请注意查收');
   } catch (error) {
-    state.error = error instanceof Error ? error.message : '发送验证码失败';
+    state.error = error instanceof Error ? error.message : '验证码发送失败';
   } finally {
     state.smsLoading = false;
     render();
@@ -488,12 +498,11 @@ async function handleSendSms() {
 }
 
 async function handleLogin() {
-  // 验证手机号和验证码格式
   const phoneRegex = /^1[3-9]\d{9}$/;
   const codeRegex = /^\d{6}$/;
-  
+
   if (!state.phone || !state.code) {
-    state.error = '请输入手机号和验证码';
+    state.error = '请输入手机号及短信验证码';
     render();
     return;
   }
@@ -503,7 +512,7 @@ async function handleLogin() {
     return;
   }
   if (!codeRegex.test(state.code)) {
-    state.error = '验证码必须是6位数字';
+    state.error = '请输入6位短信数字验证码';
     render();
     return;
   }
@@ -523,8 +532,8 @@ async function handleLogin() {
       },
     });
 
-    state.token = String(data && data.token || '').trim();
-    state.refreshToken = String(data && data.refresh_token || '').trim();
+    state.token = String((data && data.token) || '').trim();
+    state.refreshToken = String((data && data.refresh_token) || '').trim();
 
     if (!state.token) {
       throw new Error('登录成功但未返回访问令牌。');
@@ -538,11 +547,71 @@ async function handleLogin() {
     state.currentTab = 'tasks';
     await loadDashboard();
   } catch (error) {
-    state.error = error instanceof Error ? error.message : '登录失败';
+    state.error = error instanceof Error ? error.message : '登录鉴权失败';
   } finally {
     state.loginLoading = false;
     render();
   }
+}
+
+/**
+ * 现场扫码微晶取景器光效弹层
+ */
+function showScannerViewfinder(onComplete) {
+  let overlay = document.getElementById('scanner-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'scanner-overlay';
+    overlay.className = 'scanner-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', '现场微晶核验取景器');
+    overlay.innerHTML = `
+      <div class="scanner-card">
+        <div class="scanner-header">
+          <span class="scanner-status-dot"></span>
+          <span class="scanner-title">现场扫码打卡 · 微晶取景器</span>
+        </div>
+        <div class="scanner-viewfinder">
+          <div class="scanner-reticle">
+            <div class="corner-bracket top-left"></div>
+            <div class="corner-bracket top-right"></div>
+            <div class="corner-bracket bottom-left"></div>
+            <div class="corner-bracket bottom-right"></div>
+            <div class="scanner-laser-line"></div>
+            <div class="scanner-crosshair"></div>
+          </div>
+        </div>
+        <p class="scanner-prompt">请对准长者家中微晶服务二维码</p>
+        <p class="scanner-subprompt">📍 现场地理围栏已自动定位校准</p>
+        <button id="cancel-scan-btn" class="btn btn-secondary-action scanner-cancel-btn">取消扫码</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  overlay.style.display = 'flex';
+
+  let timer = null;
+  const cleanup = () => {
+    if (timer) clearTimeout(timer);
+    if (overlay) overlay.style.display = 'none';
+  };
+
+  const cancelBtn = overlay.querySelector('#cancel-scan-btn');
+  if (cancelBtn) {
+    cancelBtn.onclick = () => {
+      cleanup();
+    };
+  }
+
+  // 模拟微晶光学对焦扫描 650ms 后自动触发完成回调
+  timer = setTimeout(() => {
+    cleanup();
+    if (typeof onComplete === 'function') {
+      onComplete();
+    }
+  }, 650);
 }
 
 async function handleTaskAction(endpoint) {
@@ -560,10 +629,10 @@ async function handleTaskAction(endpoint) {
       method: 'POST',
       body: {},
     });
-    toast('\u64cd\u4f5c\u6210\u529f\uff0c\u6b63\u5728\u5237\u65b0\u4efb\u52a1\u72b6\u6001\u3002');
+    toast('打卡操作成功，已更新工单流转状态');
     await loadDashboard();
   } catch (error) {
-    state.error = error instanceof Error ? error.message : '\u4efb\u52a1\u64cd\u4f5c\u5931\u8d25';
+    state.error = error instanceof Error ? error.message : '工单操作处理失败';
     render();
   } finally {
     state.actionEndpoint = '';
@@ -574,7 +643,7 @@ async function handleTaskAction(endpoint) {
 function handleLogout() {
   clearSession();
   state.currentTab = 'tasks';
-  state.info = '你已退出登录。';
+  state.info = '您已安全退出志愿者工作台。';
   state.error = '';
   render();
 }
@@ -582,23 +651,36 @@ function handleLogout() {
 function renderLogin() {
   return `
     <div class="full-panel" role="form">
-      <h1>志愿者工作台</h1>
-      <p class="muted" style="text-align:center; margin-bottom: 30px;">真实接口联调模式，一站式任务执行</p>
-
-      <input id="api-base" class="field" value="${escapeHtml(state.apiBase || API_BASE_CANDIDATES[0])}" placeholder="http://127.0.0.1:3999/api/v1" aria-label="API 服务器地址" />
-      <input id="phone" class="field" value="${escapeHtml(state.phone)}" placeholder="手机号 (例如 13710000051)" aria-label="手机号" aria-required="true" ${state.error && state.error.includes('手机号') ? 'aria-invalid="true"' : ''} />
-      
-      <div style="display:flex; gap:10px;">
-        <input id="code" class="field" value="${escapeHtml(state.code)}" placeholder="输入验证码" style="flex:1;" aria-label="验证码" aria-required="true" aria-describedby="code-error" ${state.error && state.error.includes('验证码') ? 'aria-invalid="true"' : ''} />
-        <button id="send-sms" class="btn btn-outline" style="width:120px;" ${state.smsLoading ? 'disabled' : ''} aria-busy="${state.smsLoading}">${state.smsLoading ? '发送中' : '获取验证码'}</button>
+      <div class="login-brand">
+        <div class="login-logo-pill">银伴智慧照护 · 志愿先锋</div>
+        <h1>志愿者工作台</h1>
+        <p class="muted login-subtitle">真实接口联调模式，一站式暖心助老服务</p>
       </div>
 
-      <button id="login" class="btn btn-primary" style="margin-top:20px; width:100%;" ${state.loginLoading ? 'disabled' : ''} aria-busy="${state.loginLoading}">
-        ${state.loginLoading ? '登录中...' : '登录'}
+      <div class="form-group">
+        <label for="api-base" class="field-label">API 服务地址</label>
+        <input id="api-base" class="field" value="${escapeHtml(state.apiBase || API_BASE_CANDIDATES[0])}" placeholder="http://127.0.0.1:3999/api/v1" aria-label="API 服务器地址" />
+      </div>
+
+      <div class="form-group">
+        <label for="phone" class="field-label">志愿者手机号</label>
+        <input id="phone" class="field" value="${escapeHtml(state.phone)}" placeholder="请输入手机号 (例如 13710000051)" aria-label="手机号" aria-required="true" ${state.error && state.error.includes('手机号') ? 'aria-invalid="true"' : ''} />
+      </div>
+
+      <div class="form-group">
+        <label for="code" class="field-label">短信验证码</label>
+        <div class="sms-input-row">
+          <input id="code" class="field sms-field" value="${escapeHtml(state.code)}" placeholder="输入 6 位验证码" aria-label="验证码" aria-required="true" aria-describedby="code-error" ${state.error && state.error.includes('验证码') ? 'aria-invalid="true"' : ''} />
+          <button id="send-sms" class="btn btn-sms" ${state.smsLoading ? 'disabled' : ''} aria-busy="${state.smsLoading}">${state.smsLoading ? '发送中...' : '获取验证码'}</button>
+        </div>
+      </div>
+
+      <button id="login" class="btn btn-hero-action btn-login" ${state.loginLoading ? 'disabled' : ''} aria-busy="${state.loginLoading}">
+        ${state.loginLoading ? '正在核验登录...' : '进入志愿者工作台'}
       </button>
 
-      ${state.error ? `<p id="code-error" class="error" style="text-align:center;" role="alert" aria-live="polite">${escapeHtml(state.error)}</p>` : ''}
-      <p class="hint" style="text-align:center; margin-top:10px;" aria-live="polite">${escapeHtml(state.info)}</p>
+      ${state.error ? `<p id="code-error" class="error" role="alert" aria-live="polite">${escapeHtml(state.error)}</p>` : ''}
+      <p class="hint" aria-live="polite">${escapeHtml(state.info)}</p>
     </div>
   `;
 }
@@ -607,21 +689,21 @@ function renderSummary() {
   const summary = state.taskSummary || {};
   return `
     <div class="summary-grid">
-      <div class="summary-item"><span>${Number(summary.available_count || 0)}</span><small>可接任务</small></div>
-      <div class="summary-item"><span>${Number(summary.assigned_count || 0)}</span><small>已接单</small></div>
-      <div class="summary-item"><span>${Number(summary.processing_count || 0)}</span><small>服务中</small></div>
-      <div class="summary-item"><span>${Number(summary.completed_count || 0)}</span><small>已完成</small></div>
+      <div class="summary-item"><span class="metric-num">${Number(summary.available_count || 0)}</span><small>可接工单</small></div>
+      <div class="summary-item"><span class="metric-num">${Number(summary.assigned_count || 0)}</span><small>已认领</small></div>
+      <div class="summary-item"><span class="metric-num">${Number(summary.processing_count || 0)}</span><small>服务中</small></div>
+      <div class="summary-item"><span class="metric-num">${Number(summary.completed_count || 0)}</span><small>已结案</small></div>
     </div>
   `;
 }
 
 function renderTaskFilter() {
   const filters = [
-    { key: '', label: '全部' },
-    { key: 'pending', label: '待接单' },
-    { key: 'assigned', label: '已接单' },
+    { key: '', label: '全部工单' },
+    { key: 'pending', label: '待认领' },
+    { key: 'assigned', label: '已认领' },
     { key: 'processing', label: '服务中' },
-    { key: 'completed', label: '已完成' },
+    { key: 'completed', label: '已结案' },
   ];
 
   return `
@@ -638,32 +720,37 @@ function renderTaskFilter() {
 
 function renderTasks() {
   if (state.loading) {
-    return '<p class="muted" aria-live="polite" aria-busy="true">任务加载中...</p>';
+    return '<p class="muted" aria-live="polite" aria-busy="true">工单数据加载中...</p>';
   }
 
   if (!state.tasks.length) {
-    return '<p class="muted" aria-live="polite">当前没有可处理任务。</p>';
+    return '<p class="muted" aria-live="polite">当前分类下暂无可处理的助老工单。</p>';
   }
 
   return `<div role="list" aria-label="任务列表">${state.tasks
     .map((task) => {
       const actions = taskActions(task);
       return `
-        <article class="task-card ${task.status === 'pending' ? 'pending' : ''}" role="listitem" aria-label="任务 ${escapeHtml(task.order_no || `#${task.id}`)}: ${escapeHtml(getStatusLabel(task.status))}">
+        <article class="task-card ${task.status === 'pending' ? 'pending' : ''} ${task.status === 'processing' ? 'processing' : ''}" role="listitem" aria-label="任务 ${escapeHtml(task.order_no || `#${task.id}`)}: ${escapeHtml(getStatusLabel(task.status))}">
           <div class="task-head">
-            <strong>${escapeHtml(task.order_no || `任务 #${task.id}`)}</strong>
-            <span class="task-status">${escapeHtml(getStatusLabel(task.status))}</span>
+            <strong>${escapeHtml(task.order_no || `工单 #${task.id}`)}</strong>
+            <span class="task-status ${task.status}">${escapeHtml(getStatusLabel(task.status))}</span>
           </div>
-          <p class="task-line">服务类型：${escapeHtml(mapServiceTypeLabel(task.service_type))}</p>
-          <p class="task-line">服务对象：${escapeHtml(normalizeDisplayName(task.elder_name, '\u957f\u8f88\u7528\u6237'))} (${escapeHtml(task.elder_phone || '-')})</p>
+          <p class="task-line">服务项目：${escapeHtml(mapServiceTypeLabel(task.service_type))}</p>
+          <p class="task-line">服务对象：${escapeHtml(normalizeDisplayName(task.elder_name, '长辈用户'))} (${escapeHtml(task.elder_phone || '-')})</p>
           <p class="task-line">预约时间：${escapeHtml(task.scheduled_at || '-')}</p>
-          <p class="task-line">完成时间：${escapeHtml(task.completed_at || '-')}</p>
+          <p class="task-line">结案时间：${escapeHtml(task.completed_at || '-')}</p>
           ${
             actions.length
               ? `<div class="task-actions">${actions
-                  .map((item) => { const pending = state.actionEndpoint === item.endpoint; return `<button class=\"btn btn-primary\" data-endpoint=\"${item.endpoint}\" ${pending ? 'disabled' : ''} aria-busy="${pending}">${pending ? '\\u5904\\u7406\\u4e2d...' : escapeHtml(item.label)}</button>`; })
+                  .map((item) => {
+                    const pending = state.actionEndpoint === item.endpoint;
+                    const btnClass = item.hero ? 'btn btn-hero-action' : 'btn btn-secondary-action';
+                    const scanAttr = item.isScan ? 'data-scan="true"' : '';
+                    return `<button class="${btnClass}" data-endpoint="${item.endpoint}" ${scanAttr} ${pending ? 'disabled' : ''} aria-busy="${pending}">${pending ? '正在处理...' : escapeHtml(item.label)}</button>`;
+                  })
                   .join('')}</div>`
-              : '<p class="hint">该任务当前无需操作。</p>'
+              : '<p class="hint">该工单当前处于正常流转态，暂无需操作。</p>'
           }
         </article>
       `;
@@ -673,24 +760,24 @@ function renderTasks() {
 
 function renderTraining() {
   if (state.loading) {
-    return '<p class="muted" aria-live="polite" aria-busy="true">培训记录加载中...</p>';
+    return '<p class="muted" aria-live="polite" aria-busy="true">培训赋能记录加载中...</p>';
   }
 
   if (!state.training.length) {
-    return '<p class="muted" aria-live="polite">暂无培训记录。</p>';
+    return '<p class="muted" aria-live="polite">暂无专项技能培训记录。</p>';
   }
 
   return state.training
     .map(
       (item) => `
-      <article class="training-card" aria-label="培训课程：${escapeHtml(item.training_title || '培训课程')}">
+      <article class="training-card" aria-label="培训课程：${escapeHtml(item.training_title || '志愿赋能专项培训')}">
         <div class="task-head">
-          <strong>${escapeHtml(item.training_title || '培训课程')}</strong>
-          <span class="task-status">${escapeHtml(mapTrainingStatusLabel(item.training_status))}</span>
+          <strong>${escapeHtml(item.training_title || '志愿赋能专项培训')}</strong>
+          <span class="task-status processing">${escapeHtml(mapTrainingStatusLabel(item.training_status))}</span>
         </div>
-        <p class="task-line">培训时间：${escapeHtml(item.training_at || '-')}</p>
-        <p class="task-line">有效期至：${escapeHtml(item.expires_at || '-')}</p>
-        ${item.certificate_url ? `<a class="link" href="${escapeHtml(item.certificate_url)}" target="_blank" rel="noreferrer">查看证书</a>` : ''}
+        <p class="task-line">修读时间：${escapeHtml(item.training_at || '-')}</p>
+        <p class="task-line">认证有效至：${escapeHtml(item.expires_at || '-')}</p>
+        ${item.certificate_url ? `<a class="link" href="${escapeHtml(item.certificate_url)}" target="_blank" rel="noreferrer">查验资格证书</a>` : ''}
       </article>
     `
     )
@@ -700,50 +787,69 @@ function renderTraining() {
 function renderProfile() {
   const profile = state.profile || {};
   return `
-    <article class="profile-card">
-      <p class="task-line">姓名：${escapeHtml(normalizeDisplayName(profile.name, '\u5fd7\u613f\u8005'))}</p>
-      <p class="task-line">手机号：${escapeHtml(profile.phone || '-')}</p>
-      <p class="task-line">角色：${escapeHtml(mapRoleLabel(profile.role))}</p>
-      <p class="task-line">社区 ID：${escapeHtml(profile.community_id || '-')}</p>
+    <article class="profile-card" aria-label="个人档案">
+      <p class="task-line">志愿者姓名：${escapeHtml(normalizeDisplayName(profile.name, '银伴志愿者'))}</p>
+      <p class="task-line">认证手机号：${escapeHtml(profile.phone || '-')}</p>
+      <p class="task-line">服务身份：${escapeHtml(mapRoleLabel(profile.role))}</p>
+      <p class="task-line">所属网格站：${escapeHtml(profile.community_id || '-')}</p>
       <p class="task-line">加入时间：${escapeHtml(profile.joined_at || '-')}</p>
-      <p class="task-line">当前 API：${escapeHtml(state.apiBase || '-')}</p>
+      <p class="task-line">服务接口节点：${escapeHtml(state.apiBase || '-')}</p>
     </article>
   `;
 }
 
 function renderDashboard() {
-  const profileName = normalizeDisplayName(state.profile && state.profile.name, '\u5fd7\u613f\u8005');
+  const profileName = normalizeDisplayName(state.profile && state.profile.name, '志愿者');
 
   return `
-    <div class="map-layer">
-      <div style="position:absolute; top:20px; right:20px;">
-         <button id="logout" class="btn btn-outline" style="background:#fff; height:36px; border-radius:18px;">退出登录</button>
+    <div class="map-layer" aria-label="辖区社区服务地图">
+      <div class="map-grid-overlay"></div>
+      <div class="map-station-badge">
+        <span class="station-dot"></span>
+        <span>银伴智慧照护 · 社区互助网格</span>
+      </div>
+      <div class="map-top-bar">
+        <div class="map-status-pill">
+          <span class="pulse-indicator"></span>
+          <span>${state.isOnline ? '网格巡航中' : '离线离网模式'}</span>
+        </div>
+        <button id="logout" class="btn btn-logout" aria-label="安全退出">安全退出</button>
       </div>
     </div>
     
-    <div class="bottom-sheet" role="main">
-      <div class="drag-handle"></div>
+    <div class="bottom-sheet ${state.sheetMode}" role="main">
+      <div class="drag-handle-wrapper" role="button" tabindex="0" aria-label="调节工作台抽屉高度">
+        <div class="drag-handle"></div>
+        <div class="drag-handle-indicator">
+          <span class="mode-dot ${state.sheetMode === 'collapsed' ? 'active' : ''}"></span>
+          <span class="mode-dot ${state.sheetMode === 'default' ? 'active' : ''}"></span>
+          <span class="mode-dot ${state.sheetMode === 'expanded' ? 'active' : ''}"></span>
+        </div>
+      </div>
+
       <div class="sheet-header">
         <div>
           <h2>${escapeHtml(profileName)}，辛苦了</h2>
-          <p class="muted" style="margin: 4px 0 0; font-size:12px;">已累计服务 ${state.serviceHours} 小时</p>
+          <div class="service-badge">
+            <span>🏅 已累计奉献服务 <strong>${Number(state.serviceHours || 0)}</strong> 小时</span>
+          </div>
         </div>
       </div>
 
       <div class="scroll-area">
         ${renderSummary()}
 
-        <nav aria-label="主菜单" role="navigation">
-          <div class="tabs" style="display:flex; background:#E2E8F0; padding:4px; border-radius:12px; margin-bottom:16px;" role="tablist">
-            <button style="flex:1; border:none; background:${state.currentTab === 'tasks' ? '#fff' : 'transparent'}; border-radius:8px; height:32px; font-weight:600; cursor:pointer;" class="tab ${state.currentTab === 'tasks' ? 'active' : ''}" data-tab="tasks" role="tab" aria-selected="${state.currentTab === 'tasks'}" aria-controls="tab-tasks">接单大厅</button>
-            <button style="flex:1; border:none; background:${state.currentTab === 'training' ? '#fff' : 'transparent'}; border-radius:8px; height:32px; font-weight:600; cursor:pointer;" class="tab ${state.currentTab === 'training' ? 'active' : ''}" data-tab="training" role="tab" aria-selected="${state.currentTab === 'training'}" aria-controls="tab-training">技能培训</button>
-            <button style="flex:1; border:none; background:${state.currentTab === 'profile' ? '#fff' : 'transparent'}; border-radius:8px; height:32px; font-weight:600; cursor:pointer;" class="tab ${state.currentTab === 'profile' ? 'active' : ''}" data-tab="profile" role="tab" aria-selected="${state.currentTab === 'profile'}" aria-controls="tab-profile">我的账户</button>
+        <nav aria-label="主菜单导航" role="navigation" class="tabs-container">
+          <div class="tabs" role="tablist">
+            <button class="tab ${state.currentTab === 'tasks' ? 'active' : ''}" data-tab="tasks" role="tab" aria-selected="${state.currentTab === 'tasks'}" aria-controls="tab-tasks">接单大厅</button>
+            <button class="tab ${state.currentTab === 'training' ? 'active' : ''}" data-tab="training" role="tab" aria-selected="${state.currentTab === 'training'}" aria-controls="tab-training">技能培训</button>
+            <button class="tab ${state.currentTab === 'profile' ? 'active' : ''}" data-tab="profile" role="tab" aria-selected="${state.currentTab === 'profile'}" aria-controls="tab-profile">我的账户</button>
           </div>
         </nav>
 
         ${state.currentTab === 'tasks' ? renderTaskFilter() : ''}
         ${state.error ? `<p class="error" role="alert" aria-live="polite">${escapeHtml(state.error)}</p>` : ''}
-        <p class="hint" style="margin-bottom:16px;" aria-live="polite">${escapeHtml(state.info)}</p>
+        <p class="hint" aria-live="polite">${escapeHtml(state.info)}</p>
 
         <div role="tabpanel" id="tab-tasks" ${state.currentTab === 'tasks' ? '' : 'hidden'}>
           ${state.currentTab === 'tasks' ? renderTasks() : ''}
@@ -759,11 +865,89 @@ function renderDashboard() {
   `;
 }
 
+// 抽屉多挡位手势与动画管理
+let touchStartY = 0;
+let touchStartTime = 0;
+
+function setupDrawerGestures(root) {
+  const handleWrapper = root.querySelector('.drag-handle-wrapper');
+  if (!handleWrapper) return;
+
+  handleWrapper.addEventListener('click', () => {
+    if (Date.now() - touchStartTime < 250) return;
+    cycleSheetMode();
+  });
+
+  handleWrapper.addEventListener(
+    'touchstart',
+    (e) => {
+      if (e.touches && e.touches[0]) {
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now();
+      }
+    },
+    { passive: true }
+  );
+
+  handleWrapper.addEventListener(
+    'touchend',
+    (e) => {
+      if (!e.changedTouches || !e.changedTouches[0]) return;
+      const touchEndY = e.changedTouches[0].clientY;
+      const diffY = touchEndY - touchStartY;
+      if (Math.abs(diffY) > 25) {
+        if (diffY < 0) {
+          expandSheetMode();
+        } else {
+          collapseSheetMode();
+        }
+      }
+    },
+    { passive: true }
+  );
+}
+
+function cycleSheetMode() {
+  if (state.sheetMode === 'collapsed') state.sheetMode = 'default';
+  else if (state.sheetMode === 'default') state.sheetMode = 'expanded';
+  else state.sheetMode = 'default';
+  updateSheetClass();
+}
+
+function expandSheetMode() {
+  if (state.sheetMode === 'collapsed') state.sheetMode = 'default';
+  else if (state.sheetMode === 'default') state.sheetMode = 'expanded';
+  updateSheetClass();
+}
+
+function collapseSheetMode() {
+  if (state.sheetMode === 'expanded') state.sheetMode = 'default';
+  else if (state.sheetMode === 'default') state.sheetMode = 'collapsed';
+  updateSheetClass();
+}
+
+function updateSheetClass() {
+  const sheet = document.querySelector('.bottom-sheet');
+  if (sheet) {
+    sheet.className = `bottom-sheet ${state.sheetMode}`;
+  }
+  const dots = document.querySelectorAll('.mode-dot');
+  if (dots.length === 3) {
+    dots[0].classList.toggle('active', state.sheetMode === 'collapsed');
+    dots[1].classList.toggle('active', state.sheetMode === 'default');
+    dots[2].classList.toggle('active', state.sheetMode === 'expanded');
+  }
+}
+
 function render() {
   const root = document.getElementById('app');
   if (!root) return;
 
   root.innerHTML = state.token ? renderDashboard() : renderLogin();
+
+  if (state.token) {
+    setupDrawerGestures(root);
+  }
 
   const apiInput = document.getElementById('api-base');
   if (apiInput) {
@@ -777,7 +961,7 @@ function render() {
   if (phoneInput) {
     phoneInput.addEventListener('input', (event) => {
       const target = event.target;
-      state.phone = String(target && target.value || '').trim();
+      state.phone = String((target && target.value) || '').trim();
     });
   }
 
@@ -785,7 +969,7 @@ function render() {
   if (codeInput) {
     codeInput.addEventListener('input', (event) => {
       const target = event.target;
-      state.code = String(target && target.value || '').trim();
+      state.code = String((target && target.value) || '').trim();
     });
   }
 
@@ -829,22 +1013,28 @@ function render() {
     button.addEventListener('click', async () => {
       const endpoint = button.getAttribute('data-endpoint') || '';
       if (!endpoint) return;
-      await handleTaskAction(endpoint);
+
+      const isScan = button.getAttribute('data-scan') === 'true';
+      if (isScan) {
+        showScannerViewfinder(() => {
+          handleTaskAction(endpoint);
+        });
+      } else {
+        await handleTaskAction(endpoint);
+      }
     });
   });
 }
 
 async function bootstrap() {
-  // 初始化离线队列和网络监听
   loadOfflineQueue();
   setupNetworkListeners();
-  
+
   await detectApiBase();
   render();
 
   if (state.token) {
     await loadDashboard();
-    // 恢复网络后处理离线队列
     if (state.isOnline && state.offlineQueue.length > 0) {
       processOfflineQueue();
     }
@@ -853,7 +1043,7 @@ async function bootstrap() {
 
 document.addEventListener('DOMContentLoaded', () => {
   bootstrap().catch((error) => {
-    state.error = error instanceof Error ? error.message : '初始化失败';
+    state.error = error instanceof Error ? error.message : '工作台初始化失败';
     render();
   });
 });

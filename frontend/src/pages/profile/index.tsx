@@ -131,7 +131,7 @@ export default function ProfilePage() {
           </View>
           <View className="flex-1">
             <Text className="text-xl font-bold text-gray-900 block mb-1">{displayName}</Text>
-            <View className="flex items-center text-sm text-gray-500">
+            <View className="flex items-center text-base text-gray-600">
               <Text className={`px-2 py-0.5 rounded-md mr-2 text-white ${isElder ? 'bg-yinban-primary/80' : 'bg-yinban-secondary/80'}`}>
                 {isElder ? '长辈身份' : '家属身份'}
               </Text>
@@ -167,7 +167,7 @@ export default function ProfilePage() {
                     </View>
                     <View className="flex-1">
                       <Text className="text-[20px] font-bold text-gray-900 block mb-1">{item.label}</Text>
-                      <Text className="text-[15px] text-gray-500">{item.description}</Text>
+                      <Text className="text-[16px] text-gray-600">{item.description}</Text>
                     </View>
                     <Icon name="arrow-right" size={24} color="#CBD5E1" />
                   </View>
@@ -186,8 +186,8 @@ export default function ProfilePage() {
                       <Icon name={item.icon as IconName} size={20} color="#EA580C" />
                     </View>
                     <View className="flex-1">
-                      <Text className="text-[16px] font-medium text-gray-900 block">{item.label}</Text>
-                      <Text className="text-[13px] text-gray-400 block mt-0.5">{item.description}</Text>
+                      <Text className="text-[18px] font-medium text-gray-900 block">{item.label}</Text>
+                      <Text className="text-[16px] text-gray-500 block mt-0.5">{item.description}</Text>
                     </View>
                     <Icon name="arrow-right" size={16} color="#94A3B8" />
                   </View>
@@ -203,7 +203,7 @@ export default function ProfilePage() {
         >
           退出登录
         </Button>
-        <Text className="text-center text-xs text-gray-400 block pb-8">银伴前端版本 · v{appVersion}</Text>
+        <Text className="text-center text-base text-gray-500 block pb-8">银伴前端版本 · v{appVersion}</Text>
       </View>
     </PageShell>
   )

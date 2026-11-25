@@ -18,10 +18,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'sos', name: 'Sos', component: () => import('../views/sos/index.vue'), meta: { title: 'SOS 风险中心' } },
       { path: 'gps', name: 'Gps', component: () => import('../views/gps/index.vue'), meta: { title: '定位风险中心' } },
       { path: 'fall', name: 'Fall', component: () => import('../views/fall/index.vue'), meta: { title: '跌倒监测' } },
-      { path: 'drug', name: 'Drug', component: () => import('../views/drug/index.vue'), meta: { title: '药物风险' } },
-      { path: 'medical', name: 'Medical', component: () => import('../views/medical/index.vue'), meta: { title: '医疗资源网络' } },
       { path: 'community', name: 'Community', component: () => import('../views/community/index.vue'), meta: { title: '社区管理' } },
-      { path: 'timebank', name: 'Timebank', component: () => import('../views/timebank/index.vue'), meta: { title: '时间银行审核' } },
     ],
   },
   {

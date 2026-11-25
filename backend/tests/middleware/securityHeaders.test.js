@@ -24,7 +24,7 @@ describe('securityHeaders middleware', () => {
     expect(res.headers['X-Content-Type-Options']).toBe('nosniff');
     expect(res.headers['X-Frame-Options']).toBe('DENY');
     expect(res.headers['Referrer-Policy']).toBe('same-origin');
-    expect(res.headers['Permissions-Policy']).toBe('camera=(), microphone=(), geolocation=()');
+    expect(res.headers['Permissions-Policy']).toBe('camera=(), microphone=(self), geolocation=(self)');
     expect(res.headers['Cross-Origin-Opener-Policy']).toBe('same-origin');
     expect(res.headers['Strict-Transport-Security']).toBeUndefined();
   });

@@ -4,6 +4,17 @@ const express = require('express');
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 
+jest.mock('../../src/middleware/auth', () =>
+  jest.fn((req, res, next) => {
+    const header = req.headers && req.headers.authorization;
+    if (!header || !header.startsWith('Bearer ')) {
+      return res.status(401).json({ code: 401, message: 'Authentication token is missing.', data: null });
+    }
+    const decoded = require('jsonwebtoken').decode(header.slice(7)) || {};
+    req.user = { userId: Number(decoded.userId || 1007), role: 'leader', isAdmin: false };
+    return next();
+  })
+);
 jest.mock('../../src/middleware/adminAuth', () => jest.fn());
 jest.mock('../../src/services/communityAdminService', () => ({
   getVolunteers: jest.fn(),
@@ -156,97 +167,17 @@ describe('community admin operational routes', () => {
     expect(res.body.data.list[0].bindingId).toBe(31);
   });
 
-  test('lists medical reports and fall events from the community namespace', async () => {
-    communityAdminService.getMedicalReports.mockResolvedValue({
-      source: 'admin',
-      list: [{ id: 15, reportType: 'exam' }],
-      pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
-    });
+  test('lists fall events from the community namespace', async () => {
     communityAdminService.getFallEvents.mockResolvedValue({
       list: [{ id: 19, status: 'confirmed' }],
       pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
     });
 
-    const reportsRes = await request(buildApp())
-      .get('/community/medical/reports')
-      .set('Authorization', `Bearer ${createToken()}`);
     const fallsRes = await request(buildApp())
       .get('/community/fall/events')
       .set('Authorization', `Bearer ${createToken()}`);
 
-    expect(reportsRes.status).toBe(200);
-    expect(reportsRes.body.data.list[0].reportType).toBe('exam');
     expect(fallsRes.status).toBe(200);
     expect(fallsRes.body.data.list[0].status).toBe('confirmed');
-  });
-
-  test('lists and updates drug interactions from the community namespace', async () => {
-    communityAdminService.getDrugInteractions.mockResolvedValue([
-      { id: 22, status: 'pending', drugA: 'Aspirin', drugB: 'Warfarin' },
-    ]);
-    communityAdminService.updateDrugInteractionStatus.mockResolvedValue({
-      id: 22,
-      status: 'acknowledged',
-    });
-
-    const listRes = await request(buildApp())
-      .get('/community/drug-interactions')
-      .query({ status: 'pending', limit: 20 })
-      .set('Authorization', `Bearer ${createToken()}`);
-    const updateRes = await request(buildApp())
-      .put('/community/drug-interactions/22/status')
-      .set('Authorization', `Bearer ${createToken()}`)
-      .send({ status: 'acknowledged' });
-
-    expect(listRes.status).toBe(200);
-    expect(listRes.body.data[0].drugA).toBe('Aspirin');
-    expect(updateRes.status).toBe(200);
-    expect(updateRes.body.data.status).toBe('acknowledged');
-    expect(communityAdminService.updateDrugInteractionStatus).toHaveBeenCalledWith(
-      77,
-      '22',
-      expect.objectContaining({ status: 'acknowledged' }),
-      expect.objectContaining({ userId: 1007 })
-    );
-  });
-
-  test('lists and settles time bank records from the community namespace', async () => {
-    communityAdminService.getTimeBankServiceHistory.mockResolvedValue({
-      list: [{ id: 31, status: 'pending', serviceType: 'escort' }],
-      pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
-    });
-    communityAdminService.confirmTimeBankService.mockResolvedValue({
-      recordId: 31,
-      status: 'confirmed',
-    });
-    communityAdminService.getTimeBankExchangeHistory.mockResolvedValue([
-      { id: 41, status: 'completed' },
-    ]);
-    communityAdminService.getTimeBankLeaderboard.mockResolvedValue([
-      { rank: 1, userId: 12, balance: 18 },
-    ]);
-
-    const historyRes = await request(buildApp())
-      .get('/community/time-bank/service/history')
-      .set('Authorization', `Bearer ${createToken()}`);
-    const confirmRes = await request(buildApp())
-      .post('/community/time-bank/service/confirm')
-      .set('Authorization', `Bearer ${createToken()}`)
-      .send({ recordId: 31, action: 'confirm' });
-    const exchangeRes = await request(buildApp())
-      .get('/community/time-bank/exchange/history')
-      .set('Authorization', `Bearer ${createToken()}`);
-    const leaderboardRes = await request(buildApp())
-      .get('/community/time-bank/leaderboard')
-      .set('Authorization', `Bearer ${createToken()}`);
-
-    expect(historyRes.status).toBe(200);
-    expect(historyRes.body.data.list[0].serviceType).toBe('escort');
-    expect(confirmRes.status).toBe(200);
-    expect(confirmRes.body.data.status).toBe('confirmed');
-    expect(exchangeRes.status).toBe(200);
-    expect(exchangeRes.body.data[0].status).toBe('completed');
-    expect(leaderboardRes.status).toBe(200);
-    expect(leaderboardRes.body.data[0].rank).toBe(1);
   });
 });

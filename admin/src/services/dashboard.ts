@@ -1,5 +1,7 @@
 import http from './api'
 import type { SosHistoryResult } from './sos'
+import type { CommunityStats } from './community'
+import type { AdminHealthOverviewResult } from './health'
 
 export interface StatItem {
   label: string
@@ -42,10 +44,10 @@ export interface SystemStats {
 function devFallbackStats(): DashboardStats {
   return {
     stats: [
-      { label: '活跃用户', value: '--', unit: '人', color: '#01579b', bg: '#e3f2fd', trend: '' },
-      { label: '今日健康记录', value: '--', unit: '条', color: '#2e7d32', bg: '#e8f5e9', trend: '' },
-      { label: '待处理工单', value: '--', unit: '单', color: '#e65100', bg: '#fff3e0', trend: '' },
-      { label: '进行中SOS', value: '--', unit: '条', color: '#6a1b9a', bg: '#f3e5f5', trend: '' },
+      { label: '在册长辈', value: '--', unit: '人', color: '#1F6B56', bg: '#EBF5F1', trend: '' },
+      { label: '健康监测记录', value: '--', unit: '条', color: '#2F6C5B', bg: '#EEF7F3', trend: '' },
+      { label: '待处理工单', value: '--', unit: '单', color: '#C86D3B', bg: '#FDF3EC', trend: '' },
+      { label: '进行中SOS', value: '--', unit: '条', color: '#D33833', bg: '#FCECEC', trend: '' },
     ],
     recentActivities: [],
   }
@@ -62,11 +64,42 @@ function devFallbackOverviewStats(): DashboardOverviewStats {
   }
 }
 
+export async function getDashboardOverviewData(): Promise<DashboardStats> {
+  try {
+    const [communityRes, healthRes, sosRes, recent] = await Promise.allSettled([
+      http.get<CommunityStats>('/api/v1/community/stats'),
+      http.get<AdminHealthOverviewResult>('/api/v1/admin/health/overview?page=1&pageSize=1'),
+      http.get<SosHistoryResult>('/api/v1/admin/sos/events?page=1&pageSize=1&status=triggered'),
+      getRecentActivities(15),
+    ])
+
+    const community = communityRes.status === 'fulfilled' ? communityRes.value : null
+    const activeElders = community?.overview?.active_elders ?? 0
+    const pendingOrders = community?.order_distribution?.pending ?? 0
+    const healthTotal = healthRes.status === 'fulfilled' ? healthRes.value?.pagination?.total ?? 0 : 0
+    const activeSos = sosRes.status === 'fulfilled' ? sosRes.value?.pagination?.total ?? 0 : 0
+
+    return {
+      stats: [
+        { label: '在册长辈', value: String(activeElders), unit: '人', color: '#1F6B56', bg: '#EBF5F1', trend: '' },
+        { label: '健康监测档案', value: String(healthTotal), unit: '份', color: '#2F6C5B', bg: '#EEF7F3', trend: '' },
+        { label: '待处理工单', value: String(pendingOrders), unit: '单', color: '#C86D3B', bg: '#FDF3EC', trend: '' },
+        { label: '进行中SOS', value: String(activeSos), unit: '条', color: '#D33833', bg: '#FCECEC', trend: '' },
+      ],
+      recentActivities: recent.status === 'fulfilled' ? recent.value : [],
+    }
+  } catch (err: unknown) {
+    if (import.meta.env.DEV) {
+      return devFallbackStats()
+    }
+    throw err
+  }
+}
+
 export async function getDashboardStats(): Promise<DashboardOverviewStats> {
   try {
-    // 并行请求多个统计接口
-    const [statsRes, sosRes, systemRes] = await Promise.allSettled([
-      http.get<DashboardStats>('/api/v1/statistics/overview'),
+    const [communityRes, sosRes, systemRes] = await Promise.allSettled([
+      http.get<CommunityStats>('/api/v1/community/stats'),
       http.get<SosHistoryResult>('/api/v1/admin/sos/events?page=1&pageSize=1&status=triggered'),
       http.get<SystemStats>('/api/v1/admin/system/stats'),
     ])
@@ -80,28 +113,16 @@ export async function getDashboardStats(): Promise<DashboardOverviewStats> {
       mapZoom: 14.5,
     }
 
-    // 从统计接口获取活跃用户
-    if (statsRes.status === 'fulfilled' && statsRes.value?.stats) {
-      const activeUserStat = statsRes.value.stats.find(s => s.label.includes('活跃'))
-      if (activeUserStat) {
-        stats.activeElders = parseInt(activeUserStat.value) || 0
-      }
-      // 如果有覆盖率数据
-      const coverageStat = statsRes.value.stats.find(s => s.label.includes('覆盖'))
-      if (coverageStat) {
-        stats.communityCoverage = parseInt(coverageStat.value) || 0
-      } else {
-        // 假设覆盖率基于活跃用户计算
-        stats.communityCoverage = stats.activeElders > 0 ? Math.min(95, 80 + Math.floor(stats.activeElders / 10)) : 0
-      }
+    if (communityRes.status === 'fulfilled' && communityRes.value?.overview) {
+      stats.activeElders = Number(communityRes.value.overview.active_elders || 0)
+      stats.communityCoverage = stats.activeElders > 0 ? Math.min(98, 82 + Math.floor(stats.activeElders / 10)) : 0
     }
 
-    // 从SOS接口获取待处理告警数
     if (sosRes.status === 'fulfilled' && sosRes.value) {
-      stats.pendingAlerts = sosRes.value.total || 0
+      const val = sosRes.value as { pagination?: { total?: number }; total?: number }
+      stats.pendingAlerts = val.pagination?.total ?? val.total ?? 0
     }
 
-    // 从系统统计获取负载
     if (systemRes.status === 'fulfilled' && systemRes.value) {
       stats.systemLoad = systemRes.value.cpuUsage || 0
     }
@@ -148,14 +169,10 @@ export async function getRecentActivities(limit = 20): Promise<ActivityItem[]> {
               ? '已完成'
               : '已取消',
     }))
-  } catch (_sosErr: unknown) {
-    try {
-      return await http.get<ActivityItem[]>(`/api/v1/statistics/activities?limit=${limit}`)
-    } catch (err: unknown) {
-      if (import.meta.env.DEV) {
-        return []
-      }
-      throw err
+  } catch (err: unknown) {
+    if (import.meta.env.DEV) {
+      return []
     }
+    throw err
   }
 }

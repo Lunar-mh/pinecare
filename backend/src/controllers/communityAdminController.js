@@ -58,12 +58,6 @@ module.exports = {
       getActor(req)
     )
   ),
-  getActivities: buildScopedHandler((req) =>
-    communityAdminService.getActivities(req.adminScope.communityId, req.query)
-  ),
-  createActivity: buildScopedHandler((req) =>
-    communityAdminService.createActivity(req.adminScope.communityId, req.body)
-  ),
   getStats: buildScopedHandler((req) =>
     communityAdminService.getStats(req.adminScope.communityId, req.query)
   ),

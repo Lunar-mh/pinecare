@@ -9,7 +9,7 @@ jest.mock('../../src/config/database', () => ({
 
 jest.mock('../../src/config/redis', () => ({
   set: jest.fn().mockResolvedValue('OK'),
-  get: jest.fn().mockResolvedValue(null),
+  get: jest.fn().mockResolvedValue('1'),
   ping: jest.fn().mockResolvedValue('PONG'),
   on: jest.fn(),
 }));
@@ -61,27 +61,10 @@ jest.mock('../../src/controllers/adminOpsController', () => ({
   demoBootstrap: jest.fn(),
 }));
 
-jest.mock('../../src/controllers/statisticsController', () => ({
-  overview: jest.fn((_req, res) =>
-    res.json({
-      code: 0,
-      message: 'ok',
-      data: { overview: { active_elders: 1 } },
-    })
-  ),
-  activities: jest.fn((_req, res) =>
-    res.json({
-      code: 0,
-      message: 'ok',
-      data: { list: [] },
-    })
-  ),
-}));
-
 const app = require('../../src/app');
 
 function createAdminToken() {
-  return jwt.sign({ userId: 9, role: 'admin', isAdmin: true }, process.env.JWT_SECRET, {
+  return jwt.sign({ userId: 0, role: 'admin', isAdmin: true, sid: 'deprecation-sid' }, process.env.JWT_SECRET, {
     expiresIn: '1h',
   });
 }
@@ -108,33 +91,19 @@ describe('deprecated admin business routes', () => {
     expectDeprecatedHeaders(res, '/community/health/overview');
   });
 
-  test('GET /admin/medical/reports keeps working with deprecation headers', async () => {
-    const res = await request(app)
+  test('retired admin endpoints return 404', async () => {
+    const medicalRes = await request(app)
       .get('/admin/medical/reports')
       .set('Authorization', `Bearer ${createAdminToken()}`);
-
-    expect(res.status).toBe(200);
-    expect(res.body.code).toBe(0);
-    expectDeprecatedHeaders(res, '/community/medical/reports');
-  });
-
-  test('GET /admin/time-bank/leaderboard keeps working with deprecation headers', async () => {
-    const res = await request(app)
+    const timeBankRes = await request(app)
       .get('/admin/time-bank/leaderboard')
       .set('Authorization', `Bearer ${createAdminToken()}`);
-
-    expect(res.status).toBe(200);
-    expect(res.body.code).toBe(0);
-    expectDeprecatedHeaders(res, '/community/time-bank/leaderboard');
-  });
-
-  test('GET /statistics/overview keeps working with deprecation headers', async () => {
-    const res = await request(app)
+    const statsRes = await request(app)
       .get('/statistics/overview')
       .set('Authorization', `Bearer ${createAdminToken()}`);
 
-    expect(res.status).toBe(200);
-    expect(res.body.code).toBe(0);
-    expectDeprecatedHeaders(res, '/community/stats');
+    expect(medicalRes.status).toBe(404);
+    expect(timeBankRes.status).toBe(404);
+    expect(statsRes.status).toBe(404);
   });
 });

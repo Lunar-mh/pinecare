@@ -1,10 +1,11 @@
-﻿'use strict';
+'use strict';
 
 const { createHmac } = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const redis = require('../config/redis');
+const redisKeys = require('../config/redisKeys');
 const UserModel = require('../models/user');
 const smsService = require('./smsService');
 const { createBusinessError } = require('../utils/serviceError');
@@ -18,7 +19,6 @@ const REFRESH_EXPIRES_IN = '7d';
 const REFRESH_EXPIRES_SECONDS = 7 * 24 * 60 * 60;
 const LOCK_THRESHOLD = 5;
 const LOCK_MINUTES = 30;
-const ADMIN_SESSION_PREFIX = 'auth:admin:session:';
 const REFRESH_SECRET_DERIVATION_SALT = 'yinban.jwt.refresh.v1';
 function requiredEnv(name, message) {
   const value = String(process.env[name] || '').trim();
@@ -76,11 +76,11 @@ function getAdminCredentials() {
 }
 
 function refreshTokenKey(userId) {
-  return `auth:refresh:${userId}`;
+  return redisKeys.authRefreshToken(userId);
 }
 
 function adminSessionKey(sessionId) {
-  return `${ADMIN_SESSION_PREFIX}${sessionId}`;
+  return redisKeys.authAdminSession(sessionId);
 }
 
 function createContext(ipAddress, userAgent, requestId) {

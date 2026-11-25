@@ -3,14 +3,6 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 const familyController = require('../controllers/familyController');
-const familySpaceController = require('../controllers/familySpaceController');
-const { uploadAudio, uploadImage } = require('../middleware/upload');
-const {
-  validatePagination,
-  validateSendMessage,
-  validateUploadAlbum,
-  validateFamilyIdQuery,
-} = require('../middleware/familySpaceValidators');
 const { fail } = require('../utils/response');
 
 const router = express.Router();
@@ -37,13 +29,5 @@ router.get('/elderly-overview', familyController.getElderlyOverview);
 router.get('/health/:elderId', validateElderId, familyController.getHealthByElderId);
 router.get('/settings', familyController.getSettings);
 router.put('/settings', validateSettingsPayload, familyController.updateSettings);
-
-// 在 /family 前缀下暴露家庭空间API
-router.post('/message/send', uploadAudio, validateSendMessage, familySpaceController.sendMessage);
-router.get('/message/list', validatePagination, familySpaceController.listMessages);
-router.post('/album/upload', uploadImage, validateUploadAlbum, familySpaceController.uploadAlbum);
-router.get('/album/list', validateFamilyIdQuery, validatePagination, familySpaceController.listAlbum);
-router.get('/points', validatePagination, familySpaceController.getPoints);
-router.get('/leaderboard', validateFamilyIdQuery, validatePagination, familySpaceController.getLeaderboard);
 
 module.exports = router;

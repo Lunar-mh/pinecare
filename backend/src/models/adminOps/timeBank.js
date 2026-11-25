@@ -186,4 +186,12 @@ module.exports = {
     return Array.isArray(rows) ? rows : [];
   },
 
+  async settleServiceRecord(recordId, action) {
+    const status = action === 'confirm' ? 'confirmed' : 'cancelled';
+    const [result] = await query(
+      'UPDATE service_records SET status = ? WHERE id = ?',
+      [status, Number(recordId)]
+    );
+    return result;
+  },
 };

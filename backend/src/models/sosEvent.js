@@ -3,18 +3,40 @@
 const { query } = require('../config/database');
 
 class SosEventModel {
-  static async createEvent({ userId, triggerType = 'manual', latitude = null, longitude = null, address = null }) {
-    const [result] = await query(
+  /**
+   * @description 创建 SOS 紧急求助事件
+   * @param {object} payload 求救载荷
+   * @param {number} payload.userId 用户ID
+   * @param {string} [payload.triggerType='manual'] 触发方式 ('manual' | 'fall')
+   * @param {number} [payload.latitude] 纬度
+   * @param {number} [payload.longitude] 经度
+   * @param {string} [payload.address] 地址描述
+   * @param {import('mysql2/promise').PoolConnection} [connection] 可选事务连接
+   * @returns {Promise<object>} 返回创建成功的 SOS 事件对象
+   */
+  static async createEvent(
+    { userId, triggerType = 'manual', latitude = null, longitude = null, address = null },
+    connection = null
+  ) {
+    const exec = connection || { query };
+    const [result] = await exec.query(
       `INSERT INTO sos_events (user_id, trigger_type, latitude, longitude, address, event_status)
        VALUES (?, ?, ?, ?, ?, 'triggered')`,
       [userId, triggerType, latitude, longitude, address]
     );
 
-    return SosEventModel.findById(result.insertId);
+    return SosEventModel.findById(result.insertId, connection);
   }
 
-  static async findById(eventId) {
-    const [rows] = await query(
+  /**
+   * @description 根据事件ID查询 SOS 记录
+   * @param {number} eventId 事件ID
+   * @param {import('mysql2/promise').PoolConnection} [connection] 可选事务连接
+   * @returns {Promise<object|null>} SOS 事件对象或 null
+   */
+  static async findById(eventId, connection = null) {
+    const exec = connection || { query };
+    const [rows] = await exec.query(
       `SELECT id, user_id, trigger_type, latitude, longitude, address,
               event_status, created_at, confirmed_at, resolved_at, cancelled_at, updated_at
        FROM sos_events
@@ -25,8 +47,16 @@ class SosEventModel {
     return rows[0] || null;
   }
 
-  static async findByIdAndUser(eventId, userId) {
-    const [rows] = await query(
+  /**
+   * @description 根据事件ID与所属用户ID查询 SOS 记录
+   * @param {number} eventId 事件ID
+   * @param {number} userId 用户ID
+   * @param {import('mysql2/promise').PoolConnection} [connection] 可选事务连接
+   * @returns {Promise<object|null>} SOS 事件对象或 null
+   */
+  static async findByIdAndUser(eventId, userId, connection = null) {
+    const exec = connection || { query };
+    const [rows] = await exec.query(
       `SELECT id, user_id, trigger_type, latitude, longitude, address,
               event_status, created_at, confirmed_at, resolved_at, cancelled_at, updated_at
        FROM sos_events
@@ -37,8 +67,18 @@ class SosEventModel {
     return rows[0] || null;
   }
 
-  static async transitionStatus(eventId, userId, fromStatus, toStatus) {
-    const [result] = await query(
+  /**
+   * @description 原子流转 SOS 事件状态（带乐观锁防重入）
+   * @param {number} eventId 事件ID
+   * @param {number} userId 所属用户ID
+   * @param {string} fromStatus 原状态
+   * @param {string} toStatus 目标状态
+   * @param {import('mysql2/promise').PoolConnection} [connection] 可选事务连接
+   * @returns {Promise<boolean>} 是否流转成功
+   */
+  static async transitionStatus(eventId, userId, fromStatus, toStatus, connection = null) {
+    const exec = connection || { query };
+    const [result] = await exec.query(
       `UPDATE sos_events
        SET event_status = ?,
            confirmed_at = CASE WHEN ? = 'confirmed' THEN NOW() ELSE confirmed_at END,

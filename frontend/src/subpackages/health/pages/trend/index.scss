@@ -1,4 +1,154 @@
 @use '../../../../styles/theme/variables.scss' as *;
-@use '../../../../styles/theme/detail-page.scss' as *;
+@use '../../../../styles/theme/glass.scss' as *;
 
-.health-detail-page {}
+.trend-page {
+  min-height: 100vh;
+  background-color: $color-bg-canvas;
+  color: $color-ink-primary;
+  padding-bottom: 80px;
+  box-sizing: border-box;
+
+  &__header {
+    padding: 24px 20px 16px;
+  }
+
+  &__eyebrow {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    background: rgba(31, 107, 86, 0.12);
+    color: $color-primary;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  &__title {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.25;
+    color: $color-ink-primary;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  &__subtitle {
+    font-size: 18px;
+    color: $color-ink-secondary;
+    line-height: 1.45;
+    display: block;
+  }
+
+  &__content {
+    padding: 0 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* 适老粗实线大字趋势卡片 */
+  &__chart-card {
+    @include liquid-glass-card;
+    border-radius: 26px;
+    padding: 20px;
+    box-shadow: 0 6px 20px rgba(31, 55, 45, 0.06);
+  }
+
+  &__chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(24, 34, 30, 0.08);
+  }
+
+  &__chart-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: $color-ink-primary;
+  }
+
+  &__chart-ref-tag {
+    font-size: 16px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 8px;
+    background: rgba(31, 107, 86, 0.1);
+    color: $color-primary;
+  }
+
+  /* 粗柱条/折线对比步进展示槽 */
+  &__chart-bars-wrap {
+    height: 140px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 10px 8px 4px;
+    background: rgba(24, 34, 30, 0.02);
+    border-radius: 16px;
+  }
+
+  &__bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    gap: 4px;
+  }
+
+  &__bar-val-text {
+    font-size: 16px; // 满足 ≥ 16px，彻底消除 10px
+    font-weight: 700;
+    color: $color-ink-primary;
+    margin-bottom: 2px;
+    white-space: nowrap;
+  }
+
+  /* 粗折线/粗柱体 (宽度 14px 粗实呈现) */
+  &__thick-bar {
+    width: 14px;
+    border-radius: 7px;
+    transition: height 0.3s ease;
+
+    &--bp-sys {
+      background: linear-gradient(180deg, #1F6B56 0%, #2A856C 100%);
+      box-shadow: 0 2px 6px rgba(31, 107, 86, 0.3);
+    }
+
+    &--bp-dia {
+      background: rgba(31, 107, 86, 0.45);
+    }
+
+    &--hr {
+      background: linear-gradient(180deg, #D33833 0%, #E57373 100%);
+      box-shadow: 0 2px 6px rgba(211, 56, 51, 0.3);
+    }
+
+    &--sugar {
+      background: linear-gradient(180deg, #C86D3B 0%, #E09367 100%);
+      box-shadow: 0 2px 6px rgba(200, 109, 59, 0.3);
+    }
+  }
+
+  &__date-label {
+    font-size: 16px; // 严格满足 ≥ 16px
+    font-weight: 600;
+    color: $color-ink-secondary;
+    margin-top: 6px;
+  }
+
+  /* 趋势总结条 */
+  &__chart-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 12px;
+    margin-top: 10px;
+    border-top: 1px solid rgba(24, 34, 30, 0.06);
+    font-size: 16px;
+    color: $color-ink-secondary;
+  }
+}

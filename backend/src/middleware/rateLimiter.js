@@ -1,7 +1,8 @@
-﻿'use strict';
+'use strict';
 
 const { randomUUID } = require('crypto');
 const redis = require('../config/redis');
+const redisKeys = require('../config/redisKeys');
 const { fail } = require('../utils/response');
 const logger = require('../utils/logger');
 
@@ -37,7 +38,7 @@ function createRateLimiter({
       return next();
     }
 
-    const key = `${keyPrefix}:${actorId}`;
+    const key = redisKeys.rateLimit(keyPrefix, actorId);
     const now = Date.now();
     const windowStart = now - windowSeconds * 1000;
 

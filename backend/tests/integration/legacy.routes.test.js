@@ -18,13 +18,6 @@ jest.mock('../../src/models/user', () => ({
   findById: jest.fn(async (userId) => ({ id: userId, account_status: 'active' })),
 }));
 
-jest.mock('../../src/services/timeBankService', () => ({
-  getAccount: jest.fn().mockResolvedValue({
-    balance: 88,
-    totalEarned: 120,
-  }),
-}));
-
 jest.mock('../../src/services/locationService', () => ({
   getCurrent: jest.fn().mockResolvedValue({
     latitude: 31.23,
@@ -56,30 +49,21 @@ jest.mock('../../src/controllers/userController', () => ({
       },
     })
   ),
+  getPageConfig: jest.fn(),
   updateProfile: jest.fn(),
   listEmergencyContacts: jest.fn(),
   createEmergencyContact: jest.fn(),
   updateEmergencyContact: jest.fn(),
   setPrimaryContact: jest.fn(),
   deleteEmergencyContact: jest.fn(),
+  listDevices: jest.fn(),
+  bindDevice: jest.fn(),
+  unbindDevice: jest.fn(),
+  submitFeedback: jest.fn(),
   createBindingQrcode: jest.fn(),
   approveBinding: jest.fn(),
   deleteAccount: jest.fn(),
   unlockAccount: jest.fn(),
-}));
-
-jest.mock('../../src/controllers/companionController', () => ({
-  chat: jest.fn(),
-  getGames: jest.fn((_req, res) =>
-    res.json({
-      code: 0,
-      message: 'ok',
-      data: [{ id: 'memory-cards', title: 'Memory Cards' }],
-    })
-  ),
-  recordGame: jest.fn(),
-  getEmotion: jest.fn(),
-  getNostalgia: jest.fn(),
 }));
 
 const app = require('../../src/app');

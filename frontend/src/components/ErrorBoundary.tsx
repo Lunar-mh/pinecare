@@ -113,7 +113,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
           {/* 开发环境显示错误详情 */}
           {process.env.NODE_ENV === 'development' && this.state.error && (
             <View className="mt-6 p-4 bg-gray-100 rounded-xl text-left">
-              <Text className="text-xs text-red-600 font-mono block break-all">
+              <Text className="text-base text-red-600 font-mono block break-all">
                 {this.state.error.toString()}
               </Text>
             </View>

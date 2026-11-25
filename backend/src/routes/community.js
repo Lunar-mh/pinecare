@@ -11,8 +11,6 @@ const {
   validateCreateOrder,
   validateAssignOrder,
   validateUpdateOrderStatus,
-  validateActivityQuery,
-  validateCreateActivity,
   validateStatsQuery,
   validateHealthOverviewQuery,
   validateMedicationLogsQuery,
@@ -23,16 +21,8 @@ const {
   validateFamilyBindingsQuery,
   validateSosEventQuery,
   validateSosEventId,
-  validateMedicalReportsQuery,
   validateUpdateSosEventStatus,
   validateFallEventsQuery,
-  validateDrugInteractionsQuery,
-  validateDrugInteractionId,
-  validateDrugInteractionStatus,
-  validateTimeBankServiceHistoryQuery,
-  validateTimeBankServiceConfirm,
-  validateTimeBankExchangeHistoryQuery,
-  validateTimeBankLeaderboardQuery,
 } = require('../middleware/validateCommunityAdmin');
 
 const router = express.Router();
@@ -57,9 +47,6 @@ router.patch(
   validateUpdateOrderStatus,
   communityAdminController.updateOrderStatus
 );
-
-router.get('/activities', validateActivityQuery, communityAdminController.getActivities);
-router.post('/activities', validateCreateActivity, communityAdminController.createActivity);
 
 router.get('/stats', validateStatsQuery, communityAdminController.getStats);
 router.get(
@@ -92,42 +79,6 @@ router.patch(
   validateUpdateSosEventStatus,
   communityAdminController.updateSosEventStatus
 );
-router.get(
-  '/medical/reports',
-  validateMedicalReportsQuery,
-  communityAdminController.getMedicalReports
-);
 router.get('/fall/events', validateFallEventsQuery, communityAdminController.getFallEvents);
-router.get(
-  '/drug-interactions',
-  validateDrugInteractionsQuery,
-  communityAdminController.getDrugInteractions
-);
-router.put(
-  '/drug-interactions/:interactionId/status',
-  validateDrugInteractionId,
-  validateDrugInteractionStatus,
-  communityAdminController.updateDrugInteractionStatus
-);
-router.get(
-  '/time-bank/service/history',
-  validateTimeBankServiceHistoryQuery,
-  communityAdminController.getTimeBankServiceHistory
-);
-router.post(
-  '/time-bank/service/confirm',
-  validateTimeBankServiceConfirm,
-  communityAdminController.confirmTimeBankService
-);
-router.get(
-  '/time-bank/exchange/history',
-  validateTimeBankExchangeHistoryQuery,
-  communityAdminController.getTimeBankExchangeHistory
-);
-router.get(
-  '/time-bank/leaderboard',
-  validateTimeBankLeaderboardQuery,
-  communityAdminController.getTimeBankLeaderboard
-);
 
 module.exports = router;

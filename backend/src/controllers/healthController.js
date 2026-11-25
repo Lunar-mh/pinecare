@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const healthArchiveService = require('../services/healthArchiveService');
 const healthSyncService = require('../services/healthSyncService');
@@ -8,6 +8,12 @@ const { ok, fail } = require('../utils/response');
 const { sendControllerError } = require('../utils/controllerError');
 
 const healthController = {
+  /**
+   * @description 查询今日健康概览快照（支持本人及已绑定的家属代理访问）
+   * @param {import('express').Request} req HTTP 请求对象，支持 query.user_id 代理查询
+   * @param {import('express').Response} res HTTP 响应对象
+   * @returns {Promise<void>} 今日最新血压、心率及活跃预警列表
+   */
   async today(req, res) {
     try {
       const currentUserId = req.user.userId;
@@ -25,6 +31,12 @@ const healthController = {
     }
   },
 
+  /**
+   * @description 查询健康指标历史趋势图谱（如 7d/30d 血压或心率波动）
+   * @param {import('express').Request} req HTTP 请求对象，需提供 query.metric_type 与 query.period
+   * @param {import('express').Response} res HTTP 响应对象
+   * @returns {Promise<void>} 趋势点阵数据与聚合统计
+   */
   async trend(req, res) {
     try {
       const metricType = String(req.query.metric_type || '').trim();
@@ -52,6 +64,12 @@ const healthController = {
     }
   },
 
+  /**
+   * @description 同步穿戴硬件或蓝牙设备采集的体征批量数据
+   * @param {import('express').Request} req HTTP 请求对象，包含 body.records 数组
+   * @param {import('express').Response} res HTTP 响应对象
+   * @returns {Promise<void>} 批量入库与告警计算结果
+   */
   async sync(req, res) {
     try {
       const data = await healthSyncService.sync(req.user.userId, req.body || {});
@@ -66,6 +84,12 @@ const healthController = {
     }
   },
 
+  /**
+   * @description 手动录入健康测量记录（大字版录入高低压与脉搏）
+   * @param {import('express').Request} req HTTP 请求对象，包含 systolic, diastolic, pulse, measuredAt
+   * @param {import('express').Response} res HTTP 响应对象
+   * @returns {Promise<void>} 包含记录ID与异常等级
+   */
   async manual(req, res) {
     try {
       const data = await healthManualService.createManualRecord(req.user.userId, req.body || {});
@@ -80,6 +104,12 @@ const healthController = {
     }
   },
 
+  /**
+   * @description 获取最新一次血压测量数据
+   * @param {import('express').Request} req HTTP 请求对象
+   * @param {import('express').Response} res HTTP 响应对象
+   * @returns {Promise<void>}
+   */
   async latestBloodPressure(req, res) {
     try {
       const currentUserId = req.user.userId;
@@ -96,6 +126,12 @@ const healthController = {
     }
   },
 
+  /**
+   * @description 获取最新一次心率测量数据
+   * @param {import('express').Request} req HTTP 请求对象
+   * @param {import('express').Response} res HTTP 响应对象
+   * @returns {Promise<void>}
+   */
   async latestHeartRate(req, res) {
     try {
       const currentUserId = req.user.userId;
@@ -112,6 +148,12 @@ const healthController = {
     }
   },
 
+  /**
+   * @description 消除或确认已知健康风险告警
+   * @param {import('express').Request} req HTTP 请求对象，params.id 告警ID
+   * @param {import('express').Response} res HTTP 响应对象
+   * @returns {Promise<void>}
+   */
   async dismissAlert(req, res) {
     try {
       return ok(

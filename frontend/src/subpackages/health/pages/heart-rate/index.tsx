@@ -86,11 +86,11 @@ export default function HeartRatePage() {
             <View className="bg-white rounded-[20px] p-5 flex items-center justify-between opacity-80">
                <View>
                  <Text className="text-2xl font-bold text-gray-700 block mb-1">
-                   {records[0].value} <Text className="text-sm font-normal text-gray-500">bpm</Text>
+                   {records[0].value} <Text className="text-base font-normal text-gray-600">bpm</Text>
                  </Text>
-                 <Text className="text-gray-400 text-sm">{new Date(records[0].measuredAt).toLocaleString()}</Text>
+                 <Text className="text-gray-500 text-base">{new Date(records[0].measuredAt).toLocaleString()}</Text>
                </View>
-               <View className={`px-3 py-1 rounded-full text-sm font-bold ${
+               <View className={`px-3 py-1 rounded-full text-base font-bold ${
                  records[0].status === 'danger' ? 'bg-red-100 text-red-600' : 
                  records[0].status === 'warning' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
                }`}>
@@ -117,9 +117,9 @@ export default function HeartRatePage() {
          <View className="flex justify-between items-center mb-4">
             <View className="flex-1">
                <Text className="text-xl font-bold text-gray-900 block">心率记录</Text>
-               <Text className="text-xs text-gray-500">{records.length} 条历史数据</Text>
+               <Text className="text-base text-gray-500">{records.length} 条历史数据</Text>
             </View>
-            <Button size="mini" className="bg-red-500 text-white border-none rounded-full px-4 py-1 text-sm font-normal m-0" onClick={() => setValue(value ? '' : 'show_input')}>
+            <Button size="mini" className="bg-red-500 text-white border-none rounded-full px-4 py-1 text-base font-normal m-0" onClick={() => setValue(value ? '' : 'show_input')}>
                {value === 'show_input' ? '取消' : '添加记录'}
             </Button>
          </View>
@@ -129,7 +129,7 @@ export default function HeartRatePage() {
            <View className="bg-red-50 p-4 rounded-xl mb-2 animate-fade-in">
              <View className="flex gap-2 mb-3">
                <View className="flex-1 bg-white rounded-lg p-2">
-                 <Text className="text-xs text-gray-500 block">心率 (bpm)</Text>
+                 <Text className="text-base text-gray-600 block">心率 (bpm)</Text>
                  <Input className="font-bold text-lg" type="number" placeholder="0" onInput={e => setValue(e.detail.value === 'show_input' ? '' : e.detail.value)} />
                </View>
              </View>
@@ -150,13 +150,13 @@ export default function HeartRatePage() {
                   <View>
                     <View className="flex items-baseline mb-1">
                       <Text className="text-xl font-bold text-gray-900 mr-2">{record.value}</Text>
-                      <Text className="text-sm text-gray-500">bpm</Text>
+                      <Text className="text-base text-gray-500">bpm</Text>
                     </View>
-                    <Text className="text-xs text-gray-400">{new Date(record.measuredAt).toLocaleString()}</Text>
+                    <Text className="text-base text-gray-500">{new Date(record.measuredAt).toLocaleString()}</Text>
                   </View>
                   
                   <View className="text-right">
-                    <View className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${
+                    <View className={`inline-block px-2 py-0.5 rounded text-base font-bold ${
                        record.status === 'danger' ? 'bg-red-100 text-red-600' : 
                        record.status === 'warning' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'
                     }`}>

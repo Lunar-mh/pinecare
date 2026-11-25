@@ -110,7 +110,7 @@ export function EmptyState({
       
       {/* 描述 */}
       {description && (
-        <Text className={`${compact ? 'text-sm' : 'text-base'} text-gray-400 text-center px-8 mb-4`}>
+        <Text className="text-base text-gray-500 text-center px-8 mb-4">
           {description}
         </Text>
       )}

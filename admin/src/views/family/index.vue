@@ -132,7 +132,7 @@ onMounted(fetchBindings)
         <el-table-column label="长辈信息" min-width="180">
           <template #default="{ row }">
             <div>{{ elderName(row) }}</div>
-            <div style="font-size: 12px; color: var(--wb-text-soft); margin-top: 4px">长辈 ID {{ row.elderId }} / {{ row.elderProfile.age ?? '-' }} 岁</div>
+            <div style="font-size: 14px; color: var(--wb-text-soft); margin-top: 4px">长辈 ID {{ row.elderId }} / {{ row.elderProfile.age ?? '-' }} 岁</div>
           </template>
         </el-table-column>
         <el-table-column prop="familyId" label="家属 ID" width="100" />

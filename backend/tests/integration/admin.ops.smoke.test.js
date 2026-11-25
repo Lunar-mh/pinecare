@@ -9,7 +9,7 @@ jest.mock('../../src/config/database', () => ({
 
 jest.mock('../../src/config/redis', () => ({
   set: jest.fn().mockResolvedValue('OK'),
-  get: jest.fn().mockResolvedValue(null),
+  get: jest.fn().mockResolvedValue('1'),
   ping: jest.fn().mockResolvedValue('PONG'),
   on: jest.fn(),
 }));
@@ -18,9 +18,13 @@ const { query } = require('../../src/config/database');
 const app = require('../../src/app');
 
 function createAdminToken() {
-  return jwt.sign({ userId: 0, role: 'admin', isAdmin: true }, process.env.JWT_SECRET, {
-    expiresIn: '1h',
-  });
+  return jwt.sign(
+    { userId: 0, role: 'admin', isAdmin: true, sid: 'admin-ops-smoke-sid' },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: '1h',
+    }
+  );
 }
 
 describe('admin ops smoke', () => {
@@ -131,38 +135,6 @@ describe('admin ops smoke', () => {
     expect(res.body.code).toBe(0);
     expect(res.body.data.list[0].bindingId).toBe(31);
     expect(res.body.data.list[0].elderProfile.realName).toBe('Elder Name');
-    expect(res.body.data.pagination.total).toBe(1);
-  });
-
-  it('GET /api/v1/admin/medical/reports returns paged reports', async () => {
-    query
-      .mockResolvedValueOnce([
-        [
-          {
-            id: 61,
-            user_id: 3,
-            report_no: 'RPT-001',
-            report_type: 'blood',
-            report_date: '2026-03-10',
-            report_url: 'https://example.com/r/61',
-            report_data: '{"a":1}',
-            sync_status: 'synced',
-            created_at: '2026-03-10 09:00:00',
-            nickname: 'Carol',
-            phone: '13700000000',
-          },
-        ],
-      ])
-      .mockResolvedValueOnce([[{ total: 1 }]]);
-
-    const res = await request(app)
-      .get('/api/v1/admin/medical/reports?page=1&pageSize=10')
-      .set('Authorization', `Bearer ${createAdminToken()}`);
-
-    expect(res.status).toBe(200);
-    expect(res.body.code).toBe(0);
-    expect(res.body.data.list[0].reportNo).toBe('RPT-001');
-    expect(res.body.data.list[0].userName).toBe('Carol');
     expect(res.body.data.pagination.total).toBe(1);
   });
 
@@ -290,117 +262,6 @@ describe('admin ops smoke', () => {
     expect(res.body.data.list[0].sensorData.verticalPeak).toBe(2.5);
   });
 
-  it('GET /api/v1/admin/drug-interactions returns records', async () => {
-    query.mockResolvedValueOnce([
-      [
-        {
-          id: 81,
-          user_id: 2,
-          nickname: 'Bob',
-          phone: '13900000000',
-          drug_a: 'Aspirin',
-          drug_b: 'Warfarin',
-          level: 'high',
-          mechanism: 'anti-coagulation overlap',
-          risk_description: 'Bleeding risk',
-          suggestion: 'consult doctor',
-          status: 'pending',
-          check_batch_id: 'batch_1',
-          created_at: '2026-03-10 10:00:00',
-        },
-      ],
-    ]);
-
-    const res = await request(app)
-      .get('/api/v1/admin/drug-interactions?status=pending')
-      .set('Authorization', `Bearer ${createAdminToken()}`);
-
-    expect(res.status).toBe(200);
-    expect(res.body.code).toBe(0);
-    expect(res.body.data[0].drugA).toBe('Aspirin');
-  });
-
-  it('GET /api/v1/admin/time-bank/service/history returns paged records', async () => {
-    query
-      .mockResolvedValueOnce([
-        [
-          {
-            id: 21,
-            provider_id: 1,
-            recipient_id: 2,
-            service_type: 'escort',
-            start_time: '2026-03-10 09:00:00',
-            end_time: '2026-03-10 10:00:00',
-            duration_hours: 1,
-            time_coins: 1,
-            status: 'pending',
-            created_at: '2026-03-10 10:00:00',
-            provider_nickname: 'Provider',
-            provider_phone: '13800000000',
-            recipient_nickname: 'Recipient',
-            recipient_phone: '13900000000',
-          },
-        ],
-      ])
-      .mockResolvedValueOnce([[{ total: 1 }]]);
-
-    const res = await request(app)
-      .get('/api/v1/admin/time-bank/service/history?page=1&pageSize=10')
-      .set('Authorization', `Bearer ${createAdminToken()}`);
-
-    expect(res.status).toBe(200);
-    expect(res.body.code).toBe(0);
-    expect(res.body.data.list[0].id).toBe(21);
-  });
-
-  it('GET /api/v1/admin/time-bank/exchange/history returns records', async () => {
-    query.mockResolvedValueOnce([
-      [
-        {
-          id: 31,
-          user_id: 1,
-          exchange_type: 'medical',
-          item_name: 'Checkup Coupon',
-          coins_required: 20,
-          status: 'completed',
-          created_at: '2026-03-10 10:00:00',
-          completed_at: '2026-03-10 10:10:00',
-        },
-      ],
-    ]);
-
-    const res = await request(app)
-      .get('/api/v1/admin/time-bank/exchange/history')
-      .set('Authorization', `Bearer ${createAdminToken()}`);
-
-    expect(res.status).toBe(200);
-    expect(res.body.code).toBe(0);
-    expect(res.body.data[0].id).toBe(31);
-  });
-
-  it('GET /api/v1/admin/time-bank/leaderboard returns ranks', async () => {
-    query.mockResolvedValueOnce([
-      [
-        {
-          user_id: 1,
-          balance: 100,
-          total_earned: 200,
-          credit_score: 95,
-          credit_level: 'angel',
-        },
-      ],
-    ]);
-
-    const res = await request(app)
-      .get('/api/v1/admin/time-bank/leaderboard?limit=10')
-      .set('Authorization', `Bearer ${createAdminToken()}`);
-
-    expect(res.status).toBe(200);
-    expect(res.body.code).toBe(0);
-    expect(res.body.data[0].rank).toBe(1);
-    expect(res.body.data[0].userId).toBe(1);
-  });
-
   it('GET /api/v1/admin/system/integrations returns diagnostics', async () => {
     const res = await request(app)
       .get('/api/v1/admin/system/integrations')
@@ -409,7 +270,7 @@ describe('admin ops smoke', () => {
     expect(res.status).toBe(200);
     expect(res.body.code).toBe(0);
     expect(Array.isArray(res.body.data.items)).toBe(true);
-    expect(res.body.data.items.some((item) => item.key === 'medical')).toBe(true);
+    expect(res.body.data.items.some((item) => item.key === 'oss')).toBe(true);
     expect(res.body.data.items.some((item) => item.key === 'competition_seed')).toBe(true);
     expect(res.body.data.runtimeMode).toBeTruthy();
 
@@ -487,4 +348,3 @@ describe('admin ops smoke', () => {
     expect(res.body.data.competitionDataAssets.commands).toContain('npm run seed:competition:sql');
   });
 });
-

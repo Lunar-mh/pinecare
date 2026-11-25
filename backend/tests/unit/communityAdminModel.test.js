@@ -146,38 +146,6 @@ describe('communityAdmin model', () => {
     );
   });
 
-  it('lists, counts, and creates activities', async () => {
-    const { model, query } = loadModel();
-    query.mockResolvedValueOnce([[{ id: 1 }]]);
-    query.mockResolvedValueOnce([[{ total: 4 }]]);
-    query.mockResolvedValueOnce([{ insertId: 7 }]);
-
-    const filters = {
-      keyword: 'choir',
-      startTime: '2026-03-11 09:00:00',
-      endTime: '2026-03-11 12:00:00',
-    };
-
-    const list = await model.listActivities(9, filters, { page: 2, pageSize: 3 });
-    const total = await model.countActivities(9, filters);
-    const created = await model.createActivity({
-      communityId: 9,
-      title: 'Morning Choir',
-      content: 'Sing together',
-      startTime: '2026-03-11 09:00:00',
-      endTime: '2026-03-11 10:00:00',
-      maxParticipants: 20,
-    });
-
-    expect(list).toEqual([{ id: 1 }]);
-    expect(total).toBe(4);
-    expect(created).toMatchObject({
-      id: 7,
-      title: 'Morning Choir',
-      registered_count: 0,
-    });
-  });
-
   it('builds community stats overview and distribution', async () => {
     const { model, query } = loadModel();
     query

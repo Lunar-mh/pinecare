@@ -21,16 +21,10 @@ describe('fresh install smoke', () => {
     });
     expect(result.files.required).toEqual(
       expect.arrayContaining([
-        'docs/privacy-policy.md',
-        'docs/user-agreement.md',
-        'docs/medical-disclaimer.md',
-        'docs/ai-usage-notice.md',
-        'docs/third-party-services-and-authorizations.md',
-        'docs/data-desensitization-note.md',
-        'docs/four-end-release-candidate.md',
-        'docs/live-cutover-handover.md',
-        'docs/live-evidence-templates.md',
-        'docs/release-known-issues.md',
+        '.env.example',
+        '.env.production-live.example',
+        'docs/法律与隐私合规协议.md',
+        'docs/系统部署与验收白皮书.md',
       ])
     );
     expect(result.migrations.total).toBeGreaterThan(0);

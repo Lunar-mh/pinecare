@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 const sosService = require('../services/sosService');
 const { ok } = require('../utils/response');
@@ -12,6 +12,12 @@ function sendSosError(res, error, action, defaultMessage) {
   });
 }
 
+/**
+ * @description 触发 SOS 一键紧急呼救控制器
+ * @param {import('express').Request} req HTTP 请求对象，需提供 body.latitude, body.longitude, body.address
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>} 返回求救事件ID与 triggered 状态
+ */
 async function trigger(req, res) {
   try {
     const data = await sosService.triggerSos(req.user.userId, req.body || {});
@@ -21,6 +27,12 @@ async function trigger(req, res) {
   }
 }
 
+/**
+ * @description 取消 SOS 呼救控制器（5秒内防误触快速取消）
+ * @param {import('express').Request} req HTTP 请求对象，需提供 body.event_id
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>} 返回取消后的事件状态
+ */
 async function cancel(req, res) {
   try {
     const data = await sosService.cancelSos(req.user.userId, req.body.event_id);
@@ -30,6 +42,12 @@ async function cancel(req, res) {
   }
 }
 
+/**
+ * @description 查询 SOS 呼救历史记录与分页明细
+ * @param {import('express').Request} req HTTP 请求对象，支持 query.page 与 query.page_size
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>} 历史呼救列表与分页信息
+ */
 async function history(req, res) {
   try {
     const data = await sosService.getHistory(req.user.userId, req.query || {});
@@ -39,6 +57,12 @@ async function history(req, res) {
   }
 }
 
+/**
+ * @description 查询单条 SOS 警情事件详情与多渠道触达状态
+ * @param {import('express').Request} req HTTP 请求对象，params.eventId 事件ID
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>}
+ */
 async function detail(req, res) {
   try {
     const data = await sosService.getEventById(req.user.userId, req.params.eventId);
@@ -48,6 +72,12 @@ async function detail(req, res) {
   }
 }
 
+/**
+ * @description 确认警情正在处置控制器
+ * @param {import('express').Request} req HTTP 请求对象，需提供 body.event_id
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>}
+ */
 async function confirm(req, res) {
   try {
     const data = await sosService.confirmSos(req.user.userId, req.body.event_id);
@@ -57,6 +87,12 @@ async function confirm(req, res) {
   }
 }
 
+/**
+ * @description 结案归档 SOS 呼救控制器
+ * @param {import('express').Request} req HTTP 请求对象，需提供 body.event_id
+ * @param {import('express').Response} res HTTP 响应对象
+ * @returns {Promise<void>}
+ */
 async function resolve(req, res) {
   try {
     const data = await sosService.resolveSos(req.user.userId, req.body.event_id);

@@ -3,16 +3,16 @@
 
 .care-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+  background: linear-gradient(180deg, #F8F6F0 0%, #F1ECE1 100%);
   padding-bottom: 140px;
 }
 
 // 顶部 Header
 .care-header {
-  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, #1F6B56 0%, #164F3F 100%);
   padding: 48px 24px 24px;
   border-radius: 0 0 32px 32px;
-  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 8px 32px rgba(31, 107, 86, 0.22);
 
   &-content {
     display: flex;
@@ -210,17 +210,17 @@
 }
 
 .care-alert-title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
-  color: #1E293B;
+  color: #18221E;
   flex: 1;
   margin-right: 12px;
 }
 
 .care-alert-message {
   display: block;
-  font-size: 14px;
-  color: #64748B;
+  font-size: 16px;
+  color: #485750;
   line-height: 1.5;
   margin-bottom: 8px;
   overflow: hidden;
@@ -232,8 +232,8 @@
 
 .care-alert-time {
   display: block;
-  font-size: 12px;
-  color: #94A3B8;
+  font-size: 16px;
+  color: #6F7E77;
 }
 
 .care-alert-dot {
@@ -284,15 +284,15 @@
   padding: 60px 0;
 
   &__description {
-    color: #94A3B8;
-    font-size: 14px;
+    color: #6F7E77;
+    font-size: 16px;
     margin-top: 16px;
   }
 }
 
 // NutUI Tag 组件适配
 .nut-tag {
-  font-size: 12px;
+  font-size: 16px;
   padding: 4px 10px;
   border-radius: 8px;
   font-weight: 500;
